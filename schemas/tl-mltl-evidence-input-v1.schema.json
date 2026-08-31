@@ -53,7 +53,7 @@
       "additionalProperties": false,
       "required": ["tlSyntaxRevision", "cargoLockDigest"],
       "properties": {
-        "tlSyntaxRevision": {"const": "5e59a26d71b4b5d79623850cda50010e18a90dad"},
+        "tlSyntaxRevision": {"const": "740182f13b84858008d6f176f75136737d405c1b"},
         "cargoLockDigest": {"$ref": "#/definitions/digest"}
       }
     },

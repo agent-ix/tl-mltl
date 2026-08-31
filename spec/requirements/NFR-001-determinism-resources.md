@@ -9,8 +9,9 @@ type: NFR
 ## Statement
 
 All library results and serialized records shall depend only on identified
-inputs. Algorithms shall check arithmetic and configured work limits before
-performing impractical temporal expansion.
+inputs. Algorithms shall check arithmetic, configured evaluation recursion and
+work limits, and the mapping recursion boundary before performing impractical
+temporal expansion.
 
 ## Scope
 

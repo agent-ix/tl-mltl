@@ -52,4 +52,4 @@ relationships:
 | TC-013 | Verify mapping identities and digests | Unit | P0 | FR-004-AC-3, NFR-001-AC-1 | ✅ implemented |
 | TC-014 | Exercise deterministic CLI schemas | Integration | P0 | FR-005-AC-1, NFR-001-AC-1, NFR-002-AC-1 | ✅ implemented |
 | TC-015 | Compare supported and non-conclusive differential cases | Integration | P0 | FR-005-AC-2, StR-001-VC-2 | ✅ implemented |
-| TC-016 | Verify retained evidence completeness | Integration | P0 | FR-005-AC-3, NFR-002-AC-2 | ✅ implemented |
+| TC-016 | Verify retained evidence completeness and reject false-success classifications | Integration | P0 | FR-005-AC-3, NFR-002-AC-2, NFR-002-AC-3 | ✅ implemented |

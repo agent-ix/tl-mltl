@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, fs, path::PathBuf};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use tl_mltl::{
-    compare_external, evaluate_prefix, ComparisonStatus, EvaluationLimits, ExternalStatus,
+    compare_external, evaluate_prefix_at, ComparisonStatus, EvaluationLimits, ExternalStatus,
     ExternalVerdict, ToolIdentity, TruthValue,
 };
 use tl_syntax::{FormulaDocument, PropositionId};
@@ -11,11 +11,17 @@ use tl_syntax::{FormulaDocument, PropositionId};
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Manifest {
+    source: Source,
     tools: Tools,
     artifacts: BTreeMap<String, String>,
     trace: Vec<Vec<PropositionId>>,
     cases: Vec<Case>,
     unsupported_cases: Vec<UnsupportedCase>,
+}
+
+#[derive(Deserialize)]
+struct Source {
+    license: String,
 }
 
 #[derive(Deserialize)]
@@ -62,13 +68,13 @@ fn sha256(path: PathBuf) -> String {
         .collect()
 }
 
-fn time_zero_verdicts(stdout: &str) -> BTreeMap<u32, bool> {
+fn time_indexed_verdicts(stdout: &str) -> BTreeMap<(u32, u64), bool> {
     stdout
         .lines()
         .filter_map(|line| {
             let (identity_time, value) = line.split_once(',')?;
             let (identity, time) = identity_time.split_once(':')?;
-            (time == "0").then(|| (identity.parse().unwrap(), value == "T"))
+            Some(((identity.parse().ok()?, time.parse().ok()?), value == "T"))
         })
         .collect()
 }
@@ -79,17 +85,19 @@ fn retained_r2u2_run_agrees_for_supported_cases() {
     let root = root();
     let manifest: Manifest =
         serde_json::from_slice(&fs::read(root.join("manifest.json")).unwrap()).unwrap();
-    let external = time_zero_verdicts(&fs::read_to_string(root.join("r2u2.stdout")).unwrap());
-    assert_eq!(external.len(), 3);
+    assert_eq!(manifest.source.license, "Apache-2.0");
+    let external = time_indexed_verdicts(&fs::read_to_string(root.join("r2u2.stdout")).unwrap());
+    assert!(external.len() >= manifest.cases.len());
 
     for case in manifest.cases {
         let formula = case.formula.validate().unwrap();
-        let reference = evaluate_prefix(
+        let reference = evaluate_prefix_at(
             formula,
             case.id.clone(),
             &manifest.trace,
             "r2u2-v4.2-trace",
             false,
+            case.expected.verdict_time,
             EvaluationLimits::default(),
         )
         .unwrap();
@@ -102,25 +110,33 @@ fn retained_r2u2_run_agrees_for_supported_cases() {
                 TruthValue::False
             }
         );
-        let result = compare_external(
-            &reference,
-            ExternalVerdict {
-                schema_version: "tl-mltl.external-verdict/v1".to_owned(),
-                tool: ToolIdentity {
-                    name: "r2u2".to_owned(),
-                    version: manifest.tools.r2u2.version.clone(),
-                    executable_sha256: manifest.tools.r2u2.sha256.clone(),
-                    configuration_sha256: manifest.artifacts["spec.bin"].clone(),
-                },
-                formula_id: case.id,
-                trace_id: "r2u2-v4.2-trace".to_owned(),
-                status: ExternalStatus::Conclusive,
-                value: external.get(&case.formula_index).copied(),
-                verdict_time: Some(case.expected.verdict_time),
-                detail: None,
+        let ((_, observed_time), observed_value) = external
+            .get_key_value(&(case.formula_index, case.expected.verdict_time))
+            .unwrap();
+        let external_verdict = ExternalVerdict {
+            schema_version: "tl-mltl.external-verdict/v1".to_owned(),
+            tool: ToolIdentity {
+                name: "r2u2".to_owned(),
+                version: manifest.tools.r2u2.version.clone(),
+                executable_sha256: manifest.tools.r2u2.sha256.clone(),
+                configuration_sha256: manifest.artifacts["spec.bin"].clone(),
             },
-        );
+            formula_id: case.id,
+            trace_id: "r2u2-v4.2-trace".to_owned(),
+            status: ExternalStatus::Conclusive,
+            value: Some(*observed_value),
+            verdict_time: Some(*observed_time),
+            detail: None,
+        };
+        let result = compare_external(&reference, external_verdict.clone());
         assert_eq!(result.status, ComparisonStatus::Agreement);
+
+        let mut wrong_time = external_verdict;
+        wrong_time.verdict_time = wrong_time.verdict_time.and_then(|time| time.checked_add(1));
+        assert_eq!(
+            compare_external(&reference, wrong_time).status,
+            ComparisonStatus::Mismatch
+        );
     }
 }
 
@@ -144,7 +160,7 @@ fn retained_external_inputs_and_nonconclusive_cases_are_complete() {
 
     let report: serde_json::Value =
         serde_json::from_slice(&fs::read(root.join("differential-report.json")).unwrap()).unwrap();
-    assert_eq!(report["agreements"], 3);
+    assert_eq!(report["agreements"], 8);
     assert_eq!(report["mismatches"], 0);
     assert_eq!(report["unsupported"], 1);
     assert_eq!(report["releaseDecision"], "pending-human-review");

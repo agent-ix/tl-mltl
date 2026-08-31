@@ -27,4 +27,4 @@ found. Independent human review remains mandatory under AP-001.
 |---|---|---|---|
 | FND-201 | medium | Resolved: recursive evaluator and renderer paths now reject excessive formula nesting before further descent; the work and temporal-span budgets remain independently enforced. | FR-001-AC-3, FR-004-AC-2, NFR-001-AC-2 |
 | FND-202 | low | Closed missing observations, open unknown observations, and unsupported external comparisons remain distinct from Boolean agreement throughout the API, CLI, and evidence records. | FR-001, FR-003, FR-005 |
-| FND-203 | low | Retained R2U2 evidence comes from the canonical 4.2-release source and records executable, C2PO configuration, input, compiled-spec, and raw-output digests; only three declared supported time-zero cases are conclusive. | StR-002, FR-004, FR-005 |
+| FND-203 | low | Retained R2U2 evidence comes from the canonical 4.2-release source and records executable, C2PO configuration, input, compiled-spec, and raw-output digests; eight declared formula/time cases cover unary, Until, Release, nesting, and nonzero verdict times. | StR-002, FR-004, FR-005 |

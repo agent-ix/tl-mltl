@@ -40,6 +40,24 @@ fn analyze_request() -> Value {
     })
 }
 
+fn mapping_request() -> Value {
+    json!({
+        "schemaVersion": "tl-mltl.command/v1",
+        "operation": "map_c2po",
+        "formulaId": "future-zero",
+        "formula": {
+            "schema_version": "tl-syntax.formula/v1",
+            "semantic_profile": "mltl.online-prefix/v1",
+            "root": 1,
+            "nodes": [
+                {"kind": "proposition", "proposition": 0},
+                {"kind": "future", "interval": {"start": 0, "end": 2}, "operand": 0}
+            ]
+        },
+        "trace": null
+    })
+}
+
 // Trace: TC-014, FR-005-AC-1, NFR-001-AC-1, NFR-002-AC-1, StR-002-VC-2
 #[test]
 fn cli_is_deterministic_and_rejects_unknown_command_schema() {
@@ -60,4 +78,20 @@ fn cli_is_deterministic_and_rejects_unknown_command_schema() {
     let rejected = run(&invalid);
     assert_eq!(rejected.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&rejected.stderr).contains("unknown variant"));
+
+    let mapped = run(&mapping_request());
+    assert!(
+        mapped.status.success(),
+        "{}",
+        String::from_utf8_lossy(&mapped.stderr)
+    );
+    let manifest: Value = serde_json::from_slice(&mapped.stdout).unwrap();
+    let revision = manifest["sourceRevision"].as_str().unwrap();
+    assert_eq!(revision.len(), 40);
+    assert!(revision.bytes().all(|byte| byte.is_ascii_hexdigit()));
+    assert_ne!(revision, "uncommitted");
+    assert_eq!(
+        manifest["syntaxRevision"],
+        "740182f13b84858008d6f176f75136737d405c1b"
+    );
 }

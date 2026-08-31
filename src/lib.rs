@@ -10,13 +10,15 @@ mod horizon;
 mod mapping;
 mod wire;
 
+pub(crate) const MAX_RECURSION_DEPTH: u32 = 512;
+
 pub use differential::{
     compare_external, ComparisonStatus, DifferentialReport, ExternalStatus, ExternalVerdict,
     ToolIdentity,
 };
 pub use evaluate::{
-    evaluate_closed, evaluate_prefix, EvaluationError, EvaluationLimits, EvaluationReport,
-    TruthValue,
+    evaluate_closed, evaluate_closed_at, evaluate_prefix, evaluate_prefix_at, EvaluationError,
+    EvaluationLimits, EvaluationReport, TruthValue,
 };
 pub use horizon::{analyze_horizon, HorizonError, HorizonReport};
 pub use mapping::{map_to_c2po, MappingError, MappingManifest};
@@ -25,7 +27,7 @@ pub use wire::{
 };
 
 /// Exact tl-syntax source revision used for cross-repository development.
-pub const TL_SYNTAX_REVISION: &str = "5e59a26d71b4b5d79623850cda50010e18a90dad";
+pub const TL_SYNTAX_REVISION: &str = "740182f13b84858008d6f176f75136737d405c1b";
 
 /// Shared temporal corpus identity consumed by this crate.
 pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";

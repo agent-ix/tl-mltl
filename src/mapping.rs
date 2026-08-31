@@ -5,9 +5,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tl_syntax::{Formula, NodeId, NodeKind, SemanticProfile};
 
-use crate::{ToolIdentity, TL_SYNTAX_REVISION};
-
-const MAX_RECURSION_DEPTH: u32 = 512;
+use crate::{ToolIdentity, MAX_RECURSION_DEPTH, TL_SYNTAX_REVISION};
 
 /// Versioned R2U2/C2PO mapping record.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

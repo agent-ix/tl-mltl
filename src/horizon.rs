@@ -79,10 +79,7 @@ fn add_bound(node: NodeId, bound: u32, child: u64) -> Result<u64, HorizonError> 
 /// Computes lookahead, propagation delay, and buffer size with checked arithmetic.
 ///
 /// Implements: FR-002
-pub fn analyze_horizon(
-    formula: Formula<'_>,
-    formula_id: impl Into<String>,
-) -> Result<HorizonReport, HorizonError> {
+pub(crate) fn lookahead(formula: Formula<'_>) -> Result<u64, HorizonError> {
     let mut values = Vec::with_capacity(formula.nodes().len());
     for (index, node) in formula.nodes().iter().enumerate() {
         let node_id = NodeId(index as u32);
@@ -116,7 +113,17 @@ pub fn analyze_horizon(
         values.push(value);
     }
 
-    let lookahead = prior(&values, formula.root())?;
+    prior(&values, formula.root())
+}
+
+/// Computes lookahead, propagation delay, and buffer size with checked arithmetic.
+///
+/// Implements: FR-002
+pub fn analyze_horizon(
+    formula: Formula<'_>,
+    formula_id: impl Into<String>,
+) -> Result<HorizonReport, HorizonError> {
+    let lookahead = lookahead(formula)?;
     let required_buffer = lookahead
         .checked_add(1)
         .ok_or(HorizonError::ArithmeticOverflow {

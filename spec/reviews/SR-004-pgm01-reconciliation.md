@@ -20,7 +20,7 @@ Envelope schema: `quire.derivation-evidence/v1`, SHA-256
 This is the post-merge reconciliation against the immutable policy revision.
 The collector architecture is adapted under MIT OR Apache-2.0 from the
 same-program tl-syntax collector at immutable revision
-`5e59a26d71b4b5d79623850cda50010e18a90dad`. The adaptation records tl-mltl
+`740182f13b84858008d6f176f75136737d405c1b`. The adaptation records tl-mltl
 semantic and resource gates, both corpora, exact R2U2/C2PO identities,
 differential limitations, complete command failures, canonical envelope
 validation, overwrite refusal, and external checksums. Human review remains

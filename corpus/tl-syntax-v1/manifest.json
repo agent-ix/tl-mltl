@@ -57,19 +57,22 @@
       "id": "malformed-inverted-interval-v1",
       "class": "malformed",
       "formula": "malformed/inverted-interval.json",
-      "expected_validation": "invalid"
+      "expected_validation": "invalid",
+      "expected_error": "interval_inverted"
     },
     {
       "id": "malformed-forward-reference-v1",
       "class": "malformed",
       "formula": "malformed/forward-reference.json",
-      "expected_validation": "invalid"
+      "expected_validation": "invalid",
+      "expected_error": "operand_not_preceding"
     },
     {
       "id": "malformed-unknown-profile-v1",
       "class": "malformed",
       "formula": "malformed/unknown-profile.json",
-      "expected_validation": "invalid"
+      "expected_validation": "invalid",
+      "expected_error": "unsupported_semantic_profile"
     }
   ]
 }

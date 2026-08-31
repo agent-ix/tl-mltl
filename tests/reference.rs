@@ -1,6 +1,6 @@
 use tl_mltl::{
-    analyze_horizon, evaluate_closed, evaluate_prefix, EvaluationError, EvaluationLimits,
-    TruthValue, TL_SYNTAX_CORPUS_REVISION,
+    analyze_horizon, evaluate_closed, evaluate_closed_at, evaluate_prefix, EvaluationError,
+    EvaluationLimits, TruthValue, TL_SYNTAX_CORPUS_REVISION,
 };
 use tl_syntax::{Formula, Interval, Node, NodeId, NodeKind, PropositionId, SemanticProfile};
 
@@ -74,6 +74,16 @@ fn evaluates_until_release_and_closed_boundaries() {
     .unwrap();
     assert_eq!(report.verdict, TruthValue::True);
 
+    let lower_bound_window = evaluate_closed(
+        formula(SemanticProfile::ClosedTraceV1, &until_nodes),
+        "until-lower-bound",
+        &[vec![], vec![PropositionId(1)]],
+        "left-before-window-is-irrelevant",
+        default_limits(),
+    )
+    .unwrap();
+    assert_eq!(lower_bound_window.verdict, TruthValue::True);
+
     let release_nodes = [
         Node::new(NodeKind::False),
         Node::new(NodeKind::True),
@@ -92,6 +102,67 @@ fn evaluates_until_release_and_closed_boundaries() {
     )
     .unwrap();
     assert_eq!(report.verdict, TruthValue::True);
+    assert_eq!(report.observed_through, None);
+
+    let release_nodes = [
+        p(0),
+        p(1),
+        Node::new(NodeKind::Release {
+            interval,
+            left: NodeId(0),
+            right: NodeId(1),
+        }),
+    ];
+    let release = evaluate_closed(
+        formula(SemanticProfile::ClosedTraceV1, &release_nodes),
+        "release-lower-bound",
+        &[vec![PropositionId(0)], vec![]],
+        "right-false-in-window",
+        default_limits(),
+    )
+    .unwrap();
+    assert_eq!(release.verdict, TruthValue::False);
+
+    let nested_nodes = [
+        p(0),
+        p(1),
+        Node::new(NodeKind::Until {
+            interval,
+            left: NodeId(0),
+            right: NodeId(1),
+        }),
+        Node::new(NodeKind::Future {
+            interval: Interval::new(0, 0).unwrap(),
+            operand: NodeId(2),
+        }),
+    ];
+    let nested = evaluate_closed(
+        formula(SemanticProfile::ClosedTraceV1, &nested_nodes),
+        "nested-until",
+        &[vec![], vec![PropositionId(1)]],
+        "nested-window",
+        default_limits(),
+    )
+    .unwrap();
+    assert_eq!(nested.verdict, TruthValue::True);
+}
+
+// Trace: TC-003, FR-001-AC-2, FR-005-AC-2
+#[test]
+fn evaluates_and_reports_requested_verdict_time() {
+    let nodes = [p(0)];
+    let report = evaluate_closed_at(
+        formula(SemanticProfile::ClosedTraceV1, &nodes),
+        "time-indexed",
+        &[vec![], vec![PropositionId(0)]],
+        "two-instants",
+        1,
+        default_limits(),
+    )
+    .unwrap();
+    assert_eq!(report.verdict, TruthValue::True);
+    assert_eq!(report.verdict_time, 1);
+    assert_eq!(report.observed_through, Some(1));
 }
 
 // Trace: TC-003, FR-001-AC-2, NFR-001-AC-1

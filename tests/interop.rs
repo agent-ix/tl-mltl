@@ -4,8 +4,8 @@ use tl_mltl::{
 };
 use tl_syntax::{Formula, Interval, Node, NodeId, NodeKind, PropositionId, SemanticProfile};
 
-fn future_formula(profile: SemanticProfile) -> (Vec<Node>, Formula<'static>) {
-    let nodes = vec![
+fn future_nodes() -> Vec<Node> {
+    vec![
         Node::new(NodeKind::Proposition {
             proposition: PropositionId(7),
         }),
@@ -13,9 +13,11 @@ fn future_formula(profile: SemanticProfile) -> (Vec<Node>, Formula<'static>) {
             interval: Interval::new(0, 2).unwrap(),
             operand: NodeId(0),
         }),
-    ];
-    let leaked = Box::leak(nodes.clone().into_boxed_slice());
-    (nodes, Formula::new(profile, NodeId(1), leaked).unwrap())
+    ]
+}
+
+fn future_formula(profile: SemanticProfile, nodes: &[Node]) -> Formula<'_> {
+    Formula::new(profile, NodeId(1), nodes).unwrap()
 }
 
 fn tool() -> ToolIdentity {
@@ -30,7 +32,8 @@ fn tool() -> ToolIdentity {
 // Trace: TC-011, FR-004-AC-1, StR-002-VC-2
 #[test]
 fn supported_mapping_is_stable_and_identity_preserving() {
-    let (_, formula) = future_formula(SemanticProfile::OnlinePrefixV1);
+    let nodes = future_nodes();
+    let formula = future_formula(SemanticProfile::OnlinePrefixV1, &nodes);
     let run = || {
         map_to_c2po(
             formula,
@@ -52,7 +55,8 @@ fn supported_mapping_is_stable_and_identity_preserving() {
 // Trace: TC-012, FR-004-AC-2, NFR-002-AC-1
 #[test]
 fn unsupported_mapping_emits_no_manifest() {
-    let (_, formula) = future_formula(SemanticProfile::ClosedTraceV1);
+    let fixture_nodes = future_nodes();
+    let formula = future_formula(SemanticProfile::ClosedTraceV1, &fixture_nodes);
     assert!(matches!(
         map_to_c2po(formula, "closed", b"formula", "source", None, 100),
         Err(MappingError::UnsupportedProfile { .. })
@@ -79,7 +83,8 @@ fn unsupported_mapping_emits_no_manifest() {
 // Trace: TC-013, FR-004-AC-3, NFR-001-AC-1
 #[test]
 fn mapping_digests_and_tool_identity_detect_substitution() {
-    let (_, formula) = future_formula(SemanticProfile::OnlinePrefixV1);
+    let nodes = future_nodes();
+    let formula = future_formula(SemanticProfile::OnlinePrefixV1, &nodes);
     let original = map_to_c2po(formula, "f", b"one", "source", Some(tool()), 100).unwrap();
     let changed = map_to_c2po(formula, "f", b"two", "source", Some(tool()), 100).unwrap();
     assert_ne!(original.input_sha256, changed.input_sha256);
@@ -91,7 +96,8 @@ fn mapping_digests_and_tool_identity_detect_substitution() {
 // Trace: TC-015, FR-005-AC-2, StR-001-VC-2
 #[test]
 fn differential_comparison_separates_agreement_mismatch_and_nonconclusive() {
-    let (_, formula) = future_formula(SemanticProfile::OnlinePrefixV1);
+    let nodes = future_nodes();
+    let formula = future_formula(SemanticProfile::OnlinePrefixV1, &nodes);
     let reference = evaluate_prefix(
         formula,
         "formula",

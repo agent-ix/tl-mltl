@@ -4,9 +4,7 @@ use std::collections::BTreeSet;
 use serde::{Deserialize, Serialize};
 use tl_syntax::{Formula, NodeId, NodeKind, PropositionId, SemanticProfile};
 
-use crate::{analyze_horizon, HorizonError};
-
-const MAX_RECURSION_DEPTH: u32 = 512;
+use crate::{horizon::lookahead, HorizonError, MAX_RECURSION_DEPTH};
 
 /// Three-valued result for closed and open-prefix evaluation.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -53,6 +51,8 @@ pub struct EvaluationLimits {
     pub max_node_evaluations: u64,
     /// Maximum number of offsets in one temporal interval.
     pub max_temporal_span: u64,
+    /// Maximum recursive node depth for evaluation.
+    pub max_recursion_depth: u32,
 }
 
 impl Default for EvaluationLimits {
@@ -60,6 +60,7 @@ impl Default for EvaluationLimits {
         Self {
             max_node_evaluations: 1_000_000,
             max_temporal_span: 100_000,
+            max_recursion_depth: MAX_RECURSION_DEPTH,
         }
     }
 }
@@ -84,10 +85,10 @@ pub struct EvaluationReport {
     pub trace_closed: bool,
     /// Boolean or pending result.
     pub verdict: TruthValue,
-    /// Formula-time index represented by this verdict (the API currently evaluates time zero).
+    /// Caller-selected formula-time index represented by this verdict.
     pub verdict_time: u64,
-    /// Last observation index available when the verdict was produced.
-    pub observed_through: u64,
+    /// Last observation index available, or `None` when the trace is empty.
+    pub observed_through: Option<u64>,
     /// Static worst-case decision horizon.
     pub horizon: u64,
     /// Referenced proposition identities in sorted order.
@@ -234,16 +235,16 @@ impl Evaluator<'_, '_> {
     }
 
     fn at(&mut self, node: NodeId, time: u64, depth: u32) -> Result<TruthValue, EvaluationError> {
-        if depth > MAX_RECURSION_DEPTH {
+        if depth > self.limits.max_recursion_depth {
             return Err(EvaluationError::RecursionDepthExceeded {
-                limit: MAX_RECURSION_DEPTH,
+                limit: self.limits.max_recursion_depth,
             });
         }
         self.consume()?;
         let child_depth = depth
             .checked_add(1)
             .ok_or(EvaluationError::RecursionDepthExceeded {
-                limit: MAX_RECURSION_DEPTH,
+                limit: self.limits.max_recursion_depth,
             })?;
         match self.node(node)? {
             NodeKind::False => Ok(TruthValue::False),
@@ -377,7 +378,7 @@ impl Evaluator<'_, '_> {
             if negate_operands {
                 candidate = candidate.not();
             }
-            for offset in 0..witness {
+            for offset in start..witness {
                 if candidate == TruthValue::False {
                     break;
                 }
@@ -433,10 +434,11 @@ fn evaluate(
     trace: &[Vec<PropositionId>],
     trace_id: impl Into<String>,
     closed: bool,
+    verdict_time: u64,
     limits: EvaluationLimits,
 ) -> Result<EvaluationReport, EvaluationError> {
     validate_trace(trace)?;
-    let horizon = analyze_horizon(formula, "evaluation")?.lookahead;
+    let horizon = lookahead(formula)?;
     let mut evaluator = Evaluator {
         formula,
         trace,
@@ -444,7 +446,7 @@ fn evaluate(
         limits,
         evaluations: 0,
     };
-    let verdict = evaluator.at(formula.root(), 0, 0)?;
+    let verdict = evaluator.at(formula.root(), verdict_time, 0)?;
     Ok(EvaluationReport {
         schema_version: "tl-mltl.evaluation/v1".to_owned(),
         formula_id: formula_id.into(),
@@ -454,8 +456,11 @@ fn evaluate(
         trace_length: trace.len() as u64,
         trace_closed: closed,
         verdict,
-        verdict_time: 0,
-        observed_through: trace.len().saturating_sub(1) as u64,
+        verdict_time,
+        observed_through: trace
+            .len()
+            .checked_sub(1)
+            .and_then(|index| u64::try_from(index).ok()),
         horizon,
         proposition_ids: referenced_propositions(formula),
     })
@@ -471,13 +476,33 @@ pub fn evaluate_closed(
     trace_id: impl Into<String>,
     limits: EvaluationLimits,
 ) -> Result<EvaluationReport, EvaluationError> {
+    evaluate_closed_at(formula, formula_id, trace, trace_id, 0, limits)
+}
+
+/// Evaluates a complete trace at `verdict_time` under `mltl.closed-trace/v1`.
+pub fn evaluate_closed_at(
+    formula: Formula<'_>,
+    formula_id: impl Into<String>,
+    trace: &[Vec<PropositionId>],
+    trace_id: impl Into<String>,
+    verdict_time: u64,
+    limits: EvaluationLimits,
+) -> Result<EvaluationReport, EvaluationError> {
     if formula.profile() != SemanticProfile::ClosedTraceV1 {
         return Err(EvaluationError::UnsupportedProfile {
             expected: SemanticProfile::ClosedTraceV1.as_str(),
             actual: formula.profile().as_str(),
         });
     }
-    evaluate(formula, formula_id, trace, trace_id, true, limits)
+    evaluate(
+        formula,
+        formula_id,
+        trace,
+        trace_id,
+        true,
+        verdict_time,
+        limits,
+    )
 }
 
 /// Evaluates an open or explicitly closed prefix under `mltl.online-prefix/v1`.
@@ -491,11 +516,32 @@ pub fn evaluate_prefix(
     closed: bool,
     limits: EvaluationLimits,
 ) -> Result<EvaluationReport, EvaluationError> {
+    evaluate_prefix_at(formula, formula_id, trace, trace_id, closed, 0, limits)
+}
+
+/// Evaluates an open or closed prefix at `verdict_time`.
+pub fn evaluate_prefix_at(
+    formula: Formula<'_>,
+    formula_id: impl Into<String>,
+    trace: &[Vec<PropositionId>],
+    trace_id: impl Into<String>,
+    closed: bool,
+    verdict_time: u64,
+    limits: EvaluationLimits,
+) -> Result<EvaluationReport, EvaluationError> {
     if formula.profile() != SemanticProfile::OnlinePrefixV1 {
         return Err(EvaluationError::UnsupportedProfile {
             expected: SemanticProfile::OnlinePrefixV1.as_str(),
             actual: formula.profile().as_str(),
         });
     }
-    evaluate(formula, formula_id, trace, trace_id, closed, limits)
+    evaluate(
+        formula,
+        formula_id,
+        trace,
+        trace_id,
+        closed,
+        verdict_time,
+        limits,
+    )
 }

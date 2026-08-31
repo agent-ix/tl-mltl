@@ -72,7 +72,7 @@ fn run() -> Result<(), String> {
         Operation::MapC2po => {
             let formula_bytes = serde_json::to_vec(&request.formula)
                 .map_err(|error| format!("serialize formula: {error}"))?;
-            let source_revision = option_env!("TL_MLTL_SOURCE_REVISION").unwrap_or("uncommitted");
+            let source_revision = env!("TL_MLTL_SOURCE_REVISION");
             serde_json::to_value(
                 map_to_c2po(
                     formula,

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://agent-ix.github.io/tl-syntax/schema/formula-v1.schema.json",
   "title": "tl-syntax formula document v1",
   "type": "object",
@@ -37,20 +37,76 @@
         "end": { "$ref": "#/$defs/id" }
       }
     },
-    "node": {
+    "optionalSpan": {
       "type": "object",
-      "properties": {
-        "kind": {
-          "enum": ["false", "true", "proposition", "not", "and", "or", "implies", "equivalent", "future", "globally", "until", "release"]
+      "properties": { "span": { "$ref": "#/$defs/span" } }
+    },
+    "node": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "enum": ["false", "true"] },
+            "span": { "$ref": "#/$defs/span" }
+          }
         },
-        "proposition": { "$ref": "#/$defs/id" },
-        "operand": { "$ref": "#/$defs/id" },
-        "left": { "$ref": "#/$defs/id" },
-        "right": { "$ref": "#/$defs/id" },
-        "interval": { "$ref": "#/$defs/interval" },
-        "span": { "$ref": "#/$defs/span" }
-      },
-      "required": ["kind"]
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "proposition"],
+          "properties": {
+            "kind": { "const": "proposition" },
+            "proposition": { "$ref": "#/$defs/id" },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "operand"],
+          "properties": {
+            "kind": { "const": "not" },
+            "operand": { "$ref": "#/$defs/id" },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "left", "right"],
+          "properties": {
+            "kind": { "enum": ["and", "or", "implies", "equivalent"] },
+            "left": { "$ref": "#/$defs/id" },
+            "right": { "$ref": "#/$defs/id" },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "interval", "operand"],
+          "properties": {
+            "kind": { "enum": ["future", "globally"] },
+            "interval": { "$ref": "#/$defs/interval" },
+            "operand": { "$ref": "#/$defs/id" },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "interval", "left", "right"],
+          "properties": {
+            "kind": { "enum": ["until", "release"] },
+            "interval": { "$ref": "#/$defs/interval" },
+            "left": { "$ref": "#/$defs/id" },
+            "right": { "$ref": "#/$defs/id" },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        }
+      ]
     }
   }
 }

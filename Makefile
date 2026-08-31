@@ -13,9 +13,10 @@ help:
 	@echo "  make test             - cargo test"
 	@echo "  make build            - Release build"
 	@echo "  make clean            - cargo clean"
-	@echo "  make deny             - cargo deny check licenses"
+	@echo "  make deny             - cargo deny check licenses and sources"
 	@echo "  make audit-unsafe     - Enforce // SAFETY: comments on unsafe blocks"
 	@echo "  make check-corpus     - Verify shared and R2U2 corpus bytes"
+	@echo "  make verify-evidence  - Verify every retained evidence SHA-256 manifest"
 	@echo "  make spec             - Validate and cover specification artifacts"
 	@echo "  make rustdoc          - Build warning-free public documentation"
 	@echo "  make evidence-tool    - Syntax-check evidence tooling and schemas"
@@ -46,6 +47,10 @@ check-corpus:
 	sha256sum --check corpus/tl-syntax-v1.sha256
 	cd corpus/r2u2-v4.2 && sha256sum --check SHA256SUMS
 
+.PHONY: verify-evidence
+verify-evidence:
+	bash scripts/verify_evidence.sh
+
 .PHONY: spec
 spec:
 	quire validate --scope . 'spec/**/*.md'
@@ -57,7 +62,8 @@ rustdoc:
 
 .PHONY: evidence-tool
 evidence-tool:
-	python3 -m py_compile scripts/build_evidence_envelope.py scripts/validate_json_schema.py
+	python3 -m py_compile scripts/build_evidence_envelope.py scripts/finalize_collection.py scripts/test_evidence_tool.py scripts/validate_json_schema.py
+	python3 scripts/test_evidence_tool.py
 
 .PHONY: build
 build:
@@ -74,6 +80,7 @@ clean:
 .PHONY: deny
 deny:
 	$(CARGO) deny check licenses
+	$(CARGO) deny check sources
 
 .PHONY: cargo-audit
 cargo-audit:
@@ -88,4 +95,4 @@ audit-unsafe:
 # =============================================================================
 
 .PHONY: ci
-ci: fmt-check lint test check-corpus deny audit-unsafe evidence-tool
+ci: fmt-check lint test check-corpus deny audit-unsafe evidence-tool spec rustdoc verify-evidence
