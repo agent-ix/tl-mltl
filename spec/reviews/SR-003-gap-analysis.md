@@ -28,4 +28,3 @@ candidate claim.
 | FND-302 | low | Optional inspection-archetype and generic property-shape diagnostics are advisory and create neither an unbacked row nor a contradicted implementation status. | SUITE-003 |
 | FND-303 | medium | The differential population is deliberately narrow: three supported time-zero formulas agree, while closed-profile mapping is explicitly unsupported; this does not qualify R2U2 or establish production timing or memory behavior. | FR-005, AP-001, AA-001 |
 | FND-304 | medium | AP-001 requires independent human code review and a source-release decision for the exact candidate; automation cannot approve, tag, publish, accredit, or certify it. | AP-001, AA-001 |
-

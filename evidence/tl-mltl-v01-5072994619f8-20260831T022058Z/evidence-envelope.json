@@ -1,0 +1,102 @@
+{
+  "backend": {
+    "kind": "none",
+    "reason": "deterministic evidence packaging; invoked tools are identified in the input"
+  },
+  "environment": {
+    "dependenciesDigest": {
+      "algorithm": "sha256",
+      "value": "442d71bc805b0f95914584c5633113ece1a056b1326c8b1964d4baa9ad71958b"
+    },
+    "operatingSystem": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "targetTriple": "x86_64-unknown-linux-gnu",
+    "toolchain": "rustc 1.94.1 (e408947bf 2026-03-25)"
+  },
+  "extensions": {
+    "dev.agent-ix.tl-mltl": {
+      "componentClass": "analysis-evidence-tool",
+      "corpusRevision": "tl-mltl-corpus/v1",
+      "envelopeSchemaDigest": "0946e235e9e4b0fa79e9b9ec27ae157b303c17de0a9408d3cc04968fb7152256",
+      "pgm01CandidateRevision": "7dac9d8c19952412b56a0347387666e2ca81e01d",
+      "reviewState": "pending",
+      "sourceState": "clean"
+    }
+  },
+  "inputs": [
+    {
+      "contentDigest": {
+        "algorithm": "sha256",
+        "value": "22c5d19d7f071594c60104dad329ef51b941d3922fd94063a75e655fa726b4b2"
+      },
+      "mediaType": "application/json",
+      "role": "evidence-collection-input",
+      "schema": {
+        "digest": {
+          "algorithm": "sha256",
+          "value": "d763369e194bc9b908b456f6da0f39266720cc4bb77a5102d21c62b51c0b2d3a"
+        },
+        "id": "tl-mltl.evidence-input",
+        "version": "v1"
+      },
+      "uri": "collection-input.json"
+    }
+  ],
+  "outputs": [
+    {
+      "contentDigest": {
+        "algorithm": "sha256",
+        "value": "6c4d9312d0cf1b23bc3ed89e67622b2b9f741eb7f094fe4c39ef841e2e1108ce"
+      },
+      "mediaType": "application/json",
+      "role": "tl-mltl-evidence-manifest",
+      "schema": {
+        "digest": {
+          "algorithm": "sha256",
+          "value": "8744bfe233f10f2dd6fe3a9d2948d2424802eda0489e4874b79428e6bf73cca1"
+        },
+        "id": "tl-mltl.evidence-manifest",
+        "version": "v1"
+      },
+      "uri": "evidence-manifest.json"
+    }
+  ],
+  "parametersDigest": {
+    "algorithm": "sha256",
+    "value": "f7a92a41dc1f61f74c4b6e8e9e364851424e88e5098ba557a3c847b99de9de15"
+  },
+  "producer": {
+    "executableDigest": {
+      "algorithm": "sha256",
+      "value": "d7b016be0f4333ae919f7b9a67fbb99022e73943b56c637e1e5836bc1bf33ed3"
+    },
+    "invocation": [
+      "bash",
+      "scripts/collect_evidence.sh",
+      "evidence/tl-mltl-v01-5072994619f8-20260831T022058Z"
+    ],
+    "name": "tl-mltl-evidence-collector",
+    "sourceRevision": "5072994619f8579f82326a569d265026a0eb0a35",
+    "version": "0.1.0"
+  },
+  "provenance": {
+    "candidateRevision": "5072994619f8579f82326a569d265026a0eb0a35",
+    "contributionMethod": "agent-assisted",
+    "repository": "https://github.com/agent-ix/tl-mltl",
+    "reviewers": [
+      "@kreneskyp"
+    ],
+    "sourceRevision": "5072994619f8579f82326a569d265026a0eb0a35"
+  },
+  "recordId": "tl-mltl-v01-5072994619f8-20260831T022058Z",
+  "recordedAt": "2026-08-31T02:21:09Z",
+  "result": {
+    "requirementRefs": [
+      "PGM-01-R08",
+      "PGM-01-R09",
+      "MP-001"
+    ],
+    "status": "error",
+    "summary": "one or more locally collected tl-mltl checks failed"
+  },
+  "schemaVersion": "quire.derivation-evidence/v1"
+}

@@ -50,4 +50,3 @@ pending.
 The merged policy requires no public semantic API change. Independent review,
 protected-branch checks, and the human source-release decision remain external
 workflow gates.
-
