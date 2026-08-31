@@ -98,8 +98,13 @@ def hash_parameter_files() -> str:
     paths = (
         ROOT / "Cargo.toml",
         ROOT / "Cargo.lock",
+        ROOT / "build.rs",
         ROOT / "Makefile",
+        ROOT / "deny.toml",
         ROOT / "rust-toolchain.toml",
+        ROOT / ".github" / "workflows" / "ci.yml",
+        *sorted((ROOT / "src").glob("*.rs")),
+        *sorted((ROOT / "tests").glob("*.rs")),
         ROOT / "corpus" / "tl-syntax-v1.sha256",
         ROOT / "corpus" / "r2u2-v4.2" / "SHA256SUMS",
         ROOT / "corpus" / "r2u2-v4.2" / "manifest.json",
@@ -108,6 +113,8 @@ def hash_parameter_files() -> str:
         BUILDER,
         SCHEMA_VALIDATOR,
         COLLECTION_FINALIZER,
+        ROOT / "scripts" / "test_evidence_tool.py",
+        ROOT / "scripts" / "verify_evidence.sh",
         INPUT_SCHEMA,
         MANIFEST_SCHEMA,
     )
