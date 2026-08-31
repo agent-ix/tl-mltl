@@ -7,6 +7,9 @@ description: "Chronological changes to the tl-mltl v0.1 plan bundle."
 
 ## History
 
+- **2026-08-31** - Closed the follow-up source-identity, semantic-window, and
+  evidence-integrity findings and sealed passing exact evidence for source
+  revision `da2c7704a534` with all 12 outcomes and 47/47 coverage rows passing.
 - **2026-08-31** - Retained a failed `786d3932a5e5` governance-validation
   record, made the pinned validator interpreter explicit, then sealed the
   passing exact `fced0e687f99` candidate evidence.
