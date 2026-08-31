@@ -1,0 +1,97 @@
+{
+  "commands": [
+    "make ci",
+    "make spec",
+    "quire coverage --scope . --strict",
+    "RUSTDOCFLAGS=-Dwarnings cargo doc --no-deps --all-features",
+    "cargo tree --no-default-features --edges normal",
+    "git diff --check origin/main...786d3932a5e574d651ffa345504b741d17041d81",
+    "python3 scripts/validate_json_schema.py INPUT_SCHEMA collection-input.json",
+    "python3 scripts/validate_json_schema.py MANIFEST_SCHEMA evidence-manifest.json",
+    "python3 scripts/validate_json_schema.py PGM01_SCHEMA evidence-envelope.json",
+    "python3 PGM01_VALIDATOR --fixture evidence-envelope.json",
+    "python3 scripts/build_evidence_envelope.py EVIDENCE_DIR final",
+    "python3 scripts/validate_json_schema.py PGM01_SCHEMA finalized-evidence-envelope.json",
+    "python3 PGM01_VALIDATOR --fixture finalized-evidence-envelope.json",
+    "python3 scripts/finalize_collection.py EVIDENCE_DIR"
+  ],
+  "corpus": {
+    "differentialManifestDigest": {
+      "algorithm": "sha256",
+      "value": "be60c5777415636e24df3ad65508f82256adb141f284b297841767b845c258cb"
+    },
+    "differentialReportDigest": {
+      "algorithm": "sha256",
+      "value": "a6e50d4413cf7444bbf5071bef83743a2633c065058b33771551501144c01421"
+    },
+    "formulaSchema": {
+      "digest": {
+        "algorithm": "sha256",
+        "value": "1a170fb1a687873f4329499292b76c893ffc5b80bb88352b1168d499e05166d0"
+      },
+      "id": "tl-syntax.formula",
+      "version": "v1"
+    },
+    "propositionMapSchema": {
+      "digest": {
+        "algorithm": "sha256",
+        "value": "ed5be5c2747db16f7936a94b6203bb2747a1abb5a0c5521c2efa38beb8dfdc80"
+      },
+      "id": "tl-syntax.proposition-map",
+      "version": "v1"
+    },
+    "revision": "tl-mltl-corpus/v1",
+    "sharedManifestDigest": {
+      "algorithm": "sha256",
+      "value": "3749850e9fbd5b69fc6d2df3385f1dd38e6235c056fecfc915f1a56f7c7b618e"
+    }
+  },
+  "dependencies": {
+    "cargoLockDigest": {
+      "algorithm": "sha256",
+      "value": "9321bd670e902197f7312f8e4c8d061c9b197477dca20979a5d7999e9d7e4263"
+    },
+    "tlSyntaxRevision": "740182f13b84858008d6f176f75136737d405c1b"
+  },
+  "externalTools": {
+    "c2po": {
+      "executableDigest": {
+        "algorithm": "sha256",
+        "value": "f978a32f667a8247c387a66bce35371c97b7d8f7b730035a8ee40cdfc428ce12"
+      },
+      "sourceRevision": "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a",
+      "version": "4.1.0"
+    },
+    "r2u2": {
+      "configurationDigest": {
+        "algorithm": "sha256",
+        "value": "234c5f0a1fb827c1ef10cab4ed4ae9ce8ffdb07e6863c6fa9522730e49ca0da8"
+      },
+      "executableDigest": {
+        "algorithm": "sha256",
+        "value": "6b98ee5cfcad7073eef49a333b00be1e5b512ed9d3bed6b4e07418357a87ab92"
+      },
+      "sourceRevision": "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a",
+      "version": "4.2-release"
+    }
+  },
+  "pgm01": {
+    "candidateRevision": "7dac9d8c19952412b56a0347387666e2ca81e01d",
+    "envelopeSchema": "quire.derivation-evidence/v1",
+    "envelopeSchemaDigest": {
+      "algorithm": "sha256",
+      "value": "0946e235e9e4b0fa79e9b9ec27ae157b303c17de0a9408d3cc04968fb7152256"
+    },
+    "policy": "ix://agent-ix/quire-contract-ir/PGM-01"
+  },
+  "schemaVersion": "tl-mltl.evidence-input/v1",
+  "sourceRevision": "786d3932a5e574d651ffa345504b741d17041d81",
+  "sourceState": "clean",
+  "tools": {
+    "cargo": "cargo 1.94.1 (29ea6fb6a 2026-03-24)",
+    "jsonschema": "3.2.0",
+    "python": "Python 3.10.12",
+    "quire": "0.31.0",
+    "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)"
+  }
+}
