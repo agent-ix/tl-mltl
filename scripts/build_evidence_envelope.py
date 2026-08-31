@@ -17,6 +17,8 @@ PGM01_POLICY_REVISION = "7dac9d8c19952412b56a0347387666e2ca81e01d"
 PGM01_ENVELOPE_SCHEMA_DIGEST = (
     "0946e235e9e4b0fa79e9b9ec27ae157b303c17de0a9408d3cc04968fb7152256"
 )
+TOOLS_LOCK = ROOT / "tools.lock"
+EVIDENCE_RETRACTIONS = ROOT / "evidence" / "RETRACTIONS.json"
 INPUT_SCHEMA = ROOT / "schemas" / "tl-mltl-evidence-input-v1.schema.json"
 MANIFEST_SCHEMA = ROOT / "schemas" / "tl-mltl-evidence-manifest-v1.schema.json"
 COLLECTOR = ROOT / "scripts" / "collect_evidence.sh"
@@ -94,8 +96,8 @@ def classify_result(
     return "conclusive", "all retained tl-mltl checks passed"
 
 
-def hash_parameter_files() -> str:
-    paths = (
+def parameter_paths() -> tuple[Path, ...]:
+    fixed = (
         ROOT / "Cargo.toml",
         ROOT / "Cargo.lock",
         ROOT / "build.rs",
@@ -103,23 +105,26 @@ def hash_parameter_files() -> str:
         ROOT / "deny.toml",
         ROOT / "rust-toolchain.toml",
         ROOT / ".github" / "workflows" / "ci.yml",
+        TOOLS_LOCK,
+        EVIDENCE_RETRACTIONS,
         *sorted((ROOT / "src").glob("*.rs")),
         *sorted((ROOT / "tests").glob("*.rs")),
         ROOT / "corpus" / "tl-syntax-v1.sha256",
         ROOT / "corpus" / "r2u2-v4.2" / "SHA256SUMS",
         ROOT / "corpus" / "r2u2-v4.2" / "manifest.json",
         ROOT / "corpus" / "r2u2-v4.2" / "differential-report.json",
-        COLLECTOR,
-        BUILDER,
-        SCHEMA_VALIDATOR,
-        COLLECTION_FINALIZER,
-        ROOT / "scripts" / "test_evidence_tool.py",
-        ROOT / "scripts" / "verify_evidence.sh",
         INPUT_SCHEMA,
         MANIFEST_SCHEMA,
     )
+    scripts = tuple(sorted((ROOT / "scripts").glob("*.py"))) + tuple(
+        sorted((ROOT / "scripts").glob("*.sh"))
+    )
+    return tuple(sorted(set(fixed + scripts), key=lambda path: str(path.relative_to(ROOT))))
+
+
+def hash_parameter_files() -> str:
     state = hashlib.sha256()
-    for path in paths:
+    for path in parameter_paths():
         state.update(str(path.relative_to(ROOT)).encode("utf-8"))
         state.update(b"\0")
         state.update(path.read_bytes())
@@ -147,10 +152,11 @@ def build(evidence_dir: Path, phase: str) -> None:
 
     collection_input = {
         "schemaVersion": "tl-mltl.evidence-input/v1",
+        "qualificationProfile": "tl-mltl.evidence-qualification/v2",
         "sourceRevision": revision,
         "sourceState": source_state,
         "commands": [
-            "make ci",
+            "make ci-for-evidence (candidate gates; final make ci adds evidence self-binding)",
             "make spec",
             "quire coverage --scope . --strict",
             "RUSTDOCFLAGS=-Dwarnings cargo doc --no-deps --all-features",
@@ -173,6 +179,15 @@ def build(evidence_dir: Path, phase: str) -> None:
                 "version"
             ],
             "rustc": read_first_line(evidence_dir / "rustc-version.txt"),
+            "identities": {
+                name: {
+                    "path": (evidence_dir / f"tool-{name}-path.txt").read_text().strip(),
+                    "sha256": (evidence_dir / f"tool-{name}-sha256.txt").read_text().strip(),
+                }
+                for name in (
+                    "bash", "cargo", "git", "make", "python3", "quire", "rustc", "sha256sum"
+                )
+            },
         },
         "pgm01": {
             "policy": "ix://agent-ix/quire-contract-ir/PGM-01",

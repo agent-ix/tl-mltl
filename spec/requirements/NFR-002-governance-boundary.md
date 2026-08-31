@@ -45,6 +45,7 @@ checksums verify exact source, tool, corpus, and output pins.
 | NFR-002-AC-1 | Unknown schema/profile versions and omitted material identities are rejected. | Test (TC-012, TC-014) |
 | NFR-002-AC-2 | Evidence names exact tl-syntax, PGM-01, corpus, tool, dependency, and output identities without recording an automated release decision. | Test (TC-016) |
 | NFR-002-AC-3 | Missing, skipped, or failing checks cannot produce a conclusive evidence envelope, and the finalized envelope cannot attest to its own validation. | Test (TC-016) |
+| NFR-002-AC-4 | Qualified evidence executes under an allowlisted environment, refuses ambient execution-control overrides, and binds every mandatory executable by absolute path and SHA-256. | Test (TC-017) |
 
 ## Dependencies
 

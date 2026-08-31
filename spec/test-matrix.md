@@ -31,7 +31,7 @@ relationships:
 | Non-Functional Req | Verification Method | Evidence/Test Cases | Status |
 |---|---|---|---|
 | NFR-001 | deterministic and resource-limit tests | TC-003, TC-004, TC-006, TC-013 | ✅ covered |
-| NFR-002 | schema tests and evidence inspection | TC-012, TC-014, TC-016 | ✅ covered |
+| NFR-002 | schema tests and evidence qualification attacks | TC-012, TC-014, TC-016, TC-017 | ✅ covered |
 
 ## Test Case Summary
 
@@ -53,3 +53,4 @@ relationships:
 | TC-014 | Exercise deterministic CLI schemas | Integration | P0 | FR-005-AC-1, NFR-001-AC-1, NFR-002-AC-1 | ✅ implemented |
 | TC-015 | Compare supported and non-conclusive differential cases | Integration | P0 | FR-005-AC-2, StR-001-VC-2 | ✅ implemented |
 | TC-016 | Verify retained evidence completeness and reject false-success classifications | Integration | P0 | FR-005-AC-3, NFR-002-AC-2, NFR-002-AC-3 | ✅ implemented |
+| TC-017 | Reject optimized policy execution, Make/tool overrides, PATH shims, and executable digest drift | Integration | P0 | NFR-002-AC-4 | ✅ implemented |

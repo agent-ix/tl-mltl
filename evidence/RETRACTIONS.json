@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "tl-mltl.evidence-retractions/v1",
+  "records": {
+    "tl-mltl-v01-202f8de64ea8-20260831T060946Z": {
+      "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
+    },
+    "tl-mltl-v01-5072994619f8-20260831T022058Z": {
+      "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
+    },
+    "tl-mltl-v01-786d3932a5e5-20260831T041429Z": {
+      "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
+    },
+    "tl-mltl-v01-a9b7847199c1-20260831T022156Z": {
+      "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
+    },
+    "tl-mltl-v01-da2c7704a534-20260831T052229Z": {
+      "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
+    },
+    "tl-mltl-v01-fced0e687f99-20260831T041645Z": {
+      "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
+    }
+  }
+}

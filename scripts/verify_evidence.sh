@@ -2,21 +2,25 @@
 set -euo pipefail
 
 found=0
-if [[ -f evidence/ANCHORS ]]; then
-  sha256sum --check evidence/ANCHORS
+if [[ -n "$(/usr/bin/git status --porcelain --untracked-files=all)" ]]; then
+  echo "evidence verification requires a clean source tree" >&2
+  exit 1
 fi
+if [[ ! -f evidence/ANCHORS ]]; then
+  echo "retained evidence anchor manifest is missing" >&2
+  exit 1
+fi
+/usr/bin/sha256sum --check evidence/ANCHORS
 while IFS= read -r -d '' checksum; do
   found=1
-  if [[ -f evidence/ANCHORS ]] && ! grep -Fqx "$(sha256sum "$checksum")" evidence/ANCHORS; then
+  if ! /usr/bin/grep -Fqx "$(/usr/bin/sha256sum "$checksum")" evidence/ANCHORS; then
     echo "retained evidence manifest lacks a committed anchor: $checksum" >&2
     exit 1
   fi
-  sha256sum --check "$checksum"
+  /usr/bin/sha256sum --check "$checksum"
   evidence_dir="${checksum%.sha256}"
-  if [[ -e "$evidence_dir/collection-summary.json" ]]; then
-    python3 scripts/finalize_collection.py --check "$evidence_dir"
-  fi
-done < <(find evidence -maxdepth 1 -type f -name '*.sha256' -print0 | sort -z)
+  /usr/bin/python3 scripts/finalize_collection.py --check "$evidence_dir"
+done < <(/usr/bin/find evidence -maxdepth 1 -type f -name '*.sha256' -print0 | /usr/bin/sort -z)
 
 if [[ $found -eq 0 ]]; then
   echo "no retained evidence checksum manifests found" >&2

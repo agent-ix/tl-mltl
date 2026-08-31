@@ -13,7 +13,11 @@ fn evidence_contract_is_complete_and_wired_to_gates() {
     let suites = fs::read_to_string(root.join("spec/evidence/suites.md")).unwrap();
 
     let dry_run = Command::new("make")
-        .args(["--no-print-directory", "-n", "ci"])
+        .args(["--no-print-directory", "-n", "MAKEFLAGS=", "ci"])
+        .env_remove("MAKEFLAGS")
+        .env_remove("MAKELEVEL")
+        .env_remove("PYTHONOPTIMIZE")
+        .env_remove("CARGO")
         .current_dir(&root)
         .output()
         .unwrap();
@@ -42,7 +46,8 @@ fn evidence_contract_is_complete_and_wired_to_gates() {
         "cargo deny check licenses",
         "cargo deny check sources",
         "check_unsafe_comments.sh",
-        "test_evidence_tool.py",
+        "run_policy_tests.py",
+        "check_failure_propagation.py",
         "quire validate --scope . 'spec/**/*.md'",
         "quire coverage --scope . --strict",
         "RUSTDOCFLAGS=-Dwarnings",
@@ -52,11 +57,10 @@ fn evidence_contract_is_complete_and_wired_to_gates() {
         assert!(ci_commands.contains(command), "make ci omits {command}");
     }
     for command in [
-        "make ci",
+        "make ci-for-evidence",
         "make spec",
         "quire coverage --scope . --strict",
         "PGM01_SCHEMA",
-        "PGM01_PYTHON",
         "PGM01_VALIDATOR",
     ] {
         assert!(collector.contains(command), "collector omits {command}");
@@ -118,7 +122,7 @@ fn evidence_contract_is_complete_and_wired_to_gates() {
     }
 }
 
-// Trace: TC-016, NFR-002-AC-3
+// Trace: TC-016, TC-017, NFR-002-AC-3, NFR-002-AC-4
 #[test]
 fn evidence_producer_rejects_false_success_classifications() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));

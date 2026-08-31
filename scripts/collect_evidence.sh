@@ -2,30 +2,61 @@
 set -euo pipefail
 
 if [[ $# -gt 0 ]]; then
-  evidence_dir="$1"
+  final_evidence_dir="$1"
 else
-  evidence_revision="$(git rev-parse --short=12 HEAD)"
-  evidence_timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-  evidence_dir="evidence/tl-mltl-v01-${evidence_revision}-${evidence_timestamp}"
+  evidence_revision="$(/usr/bin/git rev-parse --short=12 HEAD)"
+  evidence_timestamp="$(/usr/bin/date -u +%Y%m%dT%H%M%SZ)"
+  final_evidence_dir="evidence/tl-mltl-v01-${evidence_revision}-${evidence_timestamp}"
 fi
-checksum_path="${evidence_dir}.sha256"
-pgm01_python="${PGM01_PYTHON:-python3}"
+checksum_path="${final_evidence_dir}.sha256"
+pgm01_schema_digest="0946e235e9e4b0fa79e9b9ec27ae157b303c17de0a9408d3cc04968fb7152256"
+pgm01_validator_digest="1c2881d5f8800dab031f6afa26d5ad11f88a5ab42a942bc9fe0c2853b58df2f1"
 
-if [[ -e "$evidence_dir" || -e "$checksum_path" ]]; then
-  echo "refusing to overwrite retained evidence: $evidence_dir" >&2
+if [[ -e "$final_evidence_dir" || -e "$checksum_path" ]]; then
+  echo "refusing to overwrite retained evidence: $final_evidence_dir" >&2
   exit 2
 fi
-if [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
+if [[ -n "$(/usr/bin/git status --porcelain --untracked-files=all)" ]]; then
   echo "refusing to collect evidence from a modified or untracked source tree" >&2
   exit 2
 fi
-if ! python3 -c 'import jsonschema' >/dev/null 2>&1; then
+if [[ -n "${PGM01_PYTHON:-}" ]]; then
+  echo "PGM01_PYTHON overrides are not permitted" >&2
+  exit 2
+fi
+if ! /usr/bin/python3 -c 'import jsonschema' >/dev/null 2>&1; then
   echo "jsonschema is required for evidence collection" >&2
   exit 2
 fi
+if [[ -n "${PGM01_SCHEMA:-}" ]] && \
+   [[ "$(/usr/bin/sha256sum "$PGM01_SCHEMA" | /usr/bin/cut -d' ' -f1)" != "$pgm01_schema_digest" ]]; then
+  echo "PGM-01 schema digest does not match the pinned envelope schema" >&2
+  exit 2
+fi
+if [[ -n "${PGM01_VALIDATOR:-}" ]] && \
+   [[ "$(/usr/bin/sha256sum "$PGM01_VALIDATOR" | /usr/bin/cut -d' ' -f1)" != "$pgm01_validator_digest" ]]; then
+  echo "PGM-01 validator digest does not match the reviewed validator" >&2
+  exit 2
+fi
+if ! /usr/bin/python3 scripts/tool_identity.py --verify-live; then
+  echo "qualified tool identities do not match tools.lock" >&2
+  exit 2
+fi
 
-mkdir -p "$evidence_dir"
+trusted_path="$(/usr/bin/python3 scripts/tool_identity.py --trusted-path)"
+real_home="$(/usr/bin/python3 scripts/tool_identity.py --home)"
+staging_root="$(/usr/bin/mktemp -d -p . .tl-mltl-evidence-stage.XXXXXX)"
+evidence_dir="$staging_root/$(/usr/bin/basename "$final_evidence_dir")"
+/usr/bin/mkdir -p "$evidence_dir"
 collection_failed=0
+clean_env=(/usr/bin/env -i PATH="$trusted_path" HOME="$real_home" USER="${USER:-}" LANG="${LANG:-C}" PGM01_SCHEMA="${PGM01_SCHEMA:-}" PGM01_VALIDATOR="${PGM01_VALIDATOR:-}")
+
+cleanup() {
+  if [[ -d "$staging_root" ]]; then
+    /usr/bin/rm -rf -- "$staging_root"
+  fi
+}
+trap cleanup EXIT
 
 run_and_retain() {
   local name="$1"
@@ -36,7 +67,7 @@ run_and_retain() {
   set -e
   local output_file
   for output_file in "$evidence_dir/$name.stdout" "$evidence_dir/$name.stderr"; do
-    python3 -c 'from pathlib import Path; import sys; p = Path(sys.argv[1]); data = p.read_bytes(); p.write_bytes(data.rstrip(b"\n") + b"\n" if data else data)' "$output_file"
+    "${clean_env[@]}" python3 -c 'from pathlib import Path; import sys; p=Path(sys.argv[1]); d=p.read_bytes(); p.write_bytes(d.rstrip(b"\n") + b"\n" if d else d)' "$output_file"
   done
   echo "$status" >"$evidence_dir/$name.status.txt"
   if [[ $status -ne 0 ]]; then
@@ -52,74 +83,82 @@ retain_skipped() {
   collection_failed=1
 }
 
-git rev-parse HEAD >"$evidence_dir/source-revision.txt"
+"${clean_env[@]}" git rev-parse HEAD >"$evidence_dir/source-revision.txt"
 echo clean >"$evidence_dir/source-state.txt"
-rustc --version --verbose >"$evidence_dir/rustc-version.txt"
-cargo --version --verbose >"$evidence_dir/cargo-version.txt"
-python3 --version >"$evidence_dir/python-version.txt"
-python3 -c 'import importlib.metadata; print(importlib.metadata.version("jsonschema"))' \
-  >"$evidence_dir/jsonschema-version.txt"
-quire provenance --pretty >"$evidence_dir/quire-provenance.json"
-cargo metadata --format-version 1 --all-features >"$evidence_dir/metadata.json"
+"${clean_env[@]}" rustc --version --verbose >"$evidence_dir/rustc-version.txt"
+"${clean_env[@]}" cargo --version --verbose >"$evidence_dir/cargo-version.txt"
+"${clean_env[@]}" python3 --version >"$evidence_dir/python-version.txt"
+"${clean_env[@]}" python3 -c 'import importlib.metadata; print(importlib.metadata.version("jsonschema"))' >"$evidence_dir/jsonschema-version.txt"
+"${clean_env[@]}" quire provenance --pretty >"$evidence_dir/quire-provenance.json"
+"${clean_env[@]}" cargo metadata --format-version 1 --all-features >"$evidence_dir/metadata.json"
+for tool in bash cargo git make python3 quire rustc sha256sum; do
+  "${clean_env[@]}" python3 -c \
+    'import sys, tool_identity; _, tools = tool_identity.load_lock(); print(tools[sys.argv[1]]["path"])' \
+    "$tool" >"$evidence_dir/tool-${tool}-path.txt"
+  "${clean_env[@]}" python3 -c \
+    'import sys, tool_identity; _, tools = tool_identity.load_lock(); print(tools[sys.argv[1]]["sha256"])' \
+    "$tool" >"$evidence_dir/tool-${tool}-sha256.txt"
+done
 
-run_and_retain make-ci make ci
-run_and_retain make-spec make spec
-run_and_retain quire-coverage quire coverage --scope . --strict
-run_and_retain rustdoc env RUSTDOCFLAGS=-Dwarnings cargo doc --no-deps --all-features
-run_and_retain default-dependencies cargo tree --no-default-features --edges normal
-run_and_retain diff-integrity git diff --check "origin/main...$(git rev-parse HEAD)"
+# The candidate cannot already carry a checksum/assurance anchor for itself.
+# Run every substantive prerequisite; ordinary `make ci` adds that self-binding.
+run_and_retain make-ci "${clean_env[@]}" make ci-for-evidence
+run_and_retain make-spec "${clean_env[@]}" make spec
+run_and_retain quire-coverage "${clean_env[@]}" quire coverage --scope . --strict
+run_and_retain rustdoc "${clean_env[@]}" env RUSTDOCFLAGS=-Dwarnings cargo doc --no-deps --all-features
+run_and_retain default-dependencies "${clean_env[@]}" cargo tree --no-default-features --edges normal
+run_and_retain diff-integrity "${clean_env[@]}" git diff --check \
+  "origin/main...$(/usr/bin/git rev-parse HEAD)" -- . ':(exclude)evidence/**'
 
-python3 scripts/build_evidence_envelope.py "$evidence_dir" provisional
-run_and_retain input-schema \
-  python3 scripts/validate_json_schema.py \
+"${clean_env[@]}" python3 scripts/build_evidence_envelope.py "$evidence_dir" provisional
+run_and_retain input-schema "${clean_env[@]}" python3 scripts/validate_json_schema.py \
   schemas/tl-mltl-evidence-input-v1.schema.json "$evidence_dir/collection-input.json"
-run_and_retain manifest-schema \
-  python3 scripts/validate_json_schema.py \
+run_and_retain manifest-schema "${clean_env[@]}" python3 scripts/validate_json_schema.py \
   schemas/tl-mltl-evidence-manifest-v1.schema.json "$evidence_dir/evidence-manifest.json"
 
 if [[ -n "${PGM01_SCHEMA:-}" ]]; then
-  run_and_retain pgm01-schema \
-    python3 scripts/validate_json_schema.py \
+  run_and_retain pgm01-schema "${clean_env[@]}" python3 scripts/validate_json_schema.py \
     "$PGM01_SCHEMA" "$evidence_dir/evidence-envelope.json"
 else
   retain_skipped pgm01-schema
 fi
-
 if [[ -n "${PGM01_VALIDATOR:-}" ]]; then
-  run_and_retain pgm01-validator \
-    "$pgm01_python" "$PGM01_VALIDATOR" --fixture "$evidence_dir/evidence-envelope.json"
+  run_and_retain pgm01-validator "${clean_env[@]}" python3 "$PGM01_VALIDATOR" \
+    --fixture "$evidence_dir/evidence-envelope.json"
 else
   retain_skipped pgm01-validator
 fi
 
-python3 scripts/build_evidence_envelope.py "$evidence_dir" final
+"${clean_env[@]}" python3 scripts/build_evidence_envelope.py "$evidence_dir" final
 
 if [[ -n "${PGM01_SCHEMA:-}" ]]; then
-  run_and_retain sealed-pgm01-schema \
-    python3 scripts/validate_json_schema.py \
+  run_and_retain sealed-pgm01-schema "${clean_env[@]}" python3 scripts/validate_json_schema.py \
     "$PGM01_SCHEMA" "$evidence_dir/evidence-envelope.json"
 else
   retain_skipped sealed-pgm01-schema
 fi
-
 if [[ -n "${PGM01_VALIDATOR:-}" ]]; then
-  run_and_retain sealed-pgm01-validator \
-    "$pgm01_python" "$PGM01_VALIDATOR" --fixture "$evidence_dir/evidence-envelope.json"
+  run_and_retain sealed-pgm01-validator "${clean_env[@]}" python3 "$PGM01_VALIDATOR" \
+    --fixture "$evidence_dir/evidence-envelope.json"
 else
   retain_skipped sealed-pgm01-validator
 fi
 
 if [[ "$(<"$evidence_dir/sealed-pgm01-schema.status.txt")" -ne 0 || \
       "$(<"$evidence_dir/sealed-pgm01-validator.status.txt")" -ne 0 ]]; then
-  python3 scripts/build_evidence_envelope.py "$evidence_dir" sealed-failed
+  "${clean_env[@]}" python3 scripts/build_evidence_envelope.py "$evidence_dir" sealed-failed
 fi
+"${clean_env[@]}" python3 scripts/finalize_collection.py "$evidence_dir"
 
-python3 scripts/finalize_collection.py "$evidence_dir"
+/usr/bin/mkdir -p "$(/usr/bin/dirname "$final_evidence_dir")"
+/usr/bin/mv "$evidence_dir" "$final_evidence_dir"
+/usr/bin/rmdir "$staging_root"
+trap - EXIT
+evidence_dir="$final_evidence_dir"
 
-find "$evidence_dir" -type f -print0 \
-  | sort -z \
-  | xargs -0 sha256sum >"$checksum_path"
-
+/usr/bin/find "$evidence_dir" -type f -print0 \
+  | /usr/bin/sort -z \
+  | /usr/bin/xargs -0 /usr/bin/sha256sum >"$checksum_path"
 if [[ $collection_failed -ne 0 ]]; then
   echo "one or more retained evidence commands failed" >&2
   exit 1

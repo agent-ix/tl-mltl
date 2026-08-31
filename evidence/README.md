@@ -1,5 +1,10 @@
 # Retained evidence
 
+`RETRACTIONS.json` names records that remain checksum-verifiable for audit but
+must not support an active qualification claim. New active records use the
+`tl-mltl.evidence-qualification/v2` profile, a clean-room environment, and the
+exact executable identities in `tools.lock`.
+
 Run `bash scripts/collect_evidence.sh` from a clean repository root. Each run
 creates a revision-and-UTC-time-scoped directory and refuses overwrite. It
 retains separate stdout/stderr, exit codes, tool/source identities, limitations,
