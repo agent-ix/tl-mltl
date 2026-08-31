@@ -7,6 +7,9 @@ description: "Chronological changes to the tl-mltl v0.1 plan bundle."
 
 ## History
 
+- **2026-08-31** - Retained a failed `786d3932a5e5` governance-validation
+  record, made the pinned validator interpreter explicit, then sealed the
+  passing exact `fced0e687f99` candidate evidence.
 - **2026-08-31** - Corrected canonical Until/Release semantics, expanded the
   executed R2U2 differential to eight formula/time cases, hardened evidence and
   supply-chain gates, synchronized the amended syntax candidate, and completed
