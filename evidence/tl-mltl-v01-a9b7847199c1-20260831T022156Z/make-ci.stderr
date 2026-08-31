@@ -1,0 +1,55 @@
+Warning: can't set `imports_granularity = Crate`, unstable features are only available in nightly channel.
+Warning: can't set `group_imports = StdExternalCrate`, unstable features are only available in nightly channel.
+Warning: can't set `imports_granularity = Crate`, unstable features are only available in nightly channel.
+Warning: can't set `group_imports = StdExternalCrate`, unstable features are only available in nightly channel.
+Warning: can't set `imports_granularity = Crate`, unstable features are only available in nightly channel.
+Warning: can't set `group_imports = StdExternalCrate`, unstable features are only available in nightly channel.
+Warning: can't set `imports_granularity = Crate`, unstable features are only available in nightly channel.
+Warning: can't set `group_imports = StdExternalCrate`, unstable features are only available in nightly channel.
+Warning: can't set `imports_granularity = Crate`, unstable features are only available in nightly channel.
+Warning: can't set `group_imports = StdExternalCrate`, unstable features are only available in nightly channel.
+Warning: can't set `imports_granularity = Crate`, unstable features are only available in nightly channel.
+Warning: can't set `group_imports = StdExternalCrate`, unstable features are only available in nightly channel.
+Warning: can't set `imports_granularity = Crate`, unstable features are only available in nightly channel.
+Warning: can't set `group_imports = StdExternalCrate`, unstable features are only available in nightly channel.
+Warning: can't set `imports_granularity = Crate`, unstable features are only available in nightly channel.
+Warning: can't set `group_imports = StdExternalCrate`, unstable features are only available in nightly channel.
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (/tmp/tl-mltl-evidence-target/debug/deps/tl_mltl-0b4cc4a5b66bb5fe)
+     Running unittests src/main.rs (/tmp/tl-mltl-evidence-target/debug/deps/tl_mltl-020a6229e5d22282)
+     Running tests/cli.rs (/tmp/tl-mltl-evidence-target/debug/deps/cli-8bf41174c0cbe992)
+     Running tests/differential.rs (/tmp/tl-mltl-evidence-target/debug/deps/differential-7400f063283d8ab1)
+     Running tests/evidence_contract.rs (/tmp/tl-mltl-evidence-target/debug/deps/evidence_contract-d7887daae56491ca)
+     Running tests/interop.rs (/tmp/tl-mltl-evidence-target/debug/deps/interop-694dd92ee4e2741b)
+     Running tests/reference.rs (/tmp/tl-mltl-evidence-target/debug/deps/reference-b553fd1eeacc8563)
+     Running tests/shared_corpus.rs (/tmp/tl-mltl-evidence-target/debug/deps/shared_corpus-a54cb480050e7617)
+warning[license-not-encountered]: license was not encountered
+  ┌─ /home/peter/dev/tl-mltl/deny.toml:6:6
+  │
+6 │     "BSD-2-Clause",
+  │      ━━━━━━━━━━━━ unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+  ┌─ /home/peter/dev/tl-mltl/deny.toml:7:6
+  │
+7 │     "BSD-3-Clause",
+  │      ━━━━━━━━━━━━ unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+  ┌─ /home/peter/dev/tl-mltl/deny.toml:8:6
+  │
+8 │     "CDLA-Permissive-2.0",
+  │      ━━━━━━━━━━━━━━━━━━━ unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+  ┌─ /home/peter/dev/tl-mltl/deny.toml:9:6
+  │
+9 │     "ISC",
+  │      ━━━ unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ┌─ /home/peter/dev/tl-mltl/deny.toml:11:6
+   │
+11 │     "Zlib",
+   │      ━━━━ unmatched license allowance

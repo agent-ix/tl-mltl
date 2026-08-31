@@ -1,0 +1,152 @@
+{
+  "schemaVersion": "tl-mltl.r2u2-corpus/v1",
+  "source": {
+    "repository": "https://github.com/R2U2/r2u2",
+    "tag": "4.2-release",
+    "revision": "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a",
+    "license": "Apache-2.0"
+  },
+  "tools": {
+    "c2po": {
+      "version": "4.1.0",
+      "path": "compiler/c2po.py",
+      "sha256": "f978a32f667a8247c387a66bce35371c97b7d8f7b730035a8ee40cdfc428ce12"
+    },
+    "r2u2": {
+      "version": "4.2-release",
+      "path": "monitors/c/build/r2u2",
+      "sha256": "6b98ee5cfcad7073eef49a333b00be1e5b512ed9d3bed6b4e07418357a87ab92"
+    }
+  },
+  "artifacts": {
+    "formulas.c2po": "1b16e7446bce55e42b927ce5a3439041cec59e6bfeaff626ef0d78caf00b2938",
+    "signals.map": "257aad1e39c430cf87490fba85d855f9f265af435687ca16ea18b331d4abac5d",
+    "trace.csv": "4f0b0db7cfe9746c323696c3f4a3ae3e5844af4003f9e870587c7c39f40b963a",
+    "spec.bin": "234c5f0a1fb827c1ef10cab4ed4ae9ce8ffdb07e6863c6fa9522730e49ca0da8"
+  },
+  "trace": [[], [0, 1], [1], [1]],
+  "cases": [
+    {
+      "id": "r2u2-future-witness-v1",
+      "formulaIndex": 0,
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.online-prefix/v1",
+        "root": 1,
+        "nodes": [
+          {"kind": "proposition", "proposition": 0},
+          {"kind": "future", "interval": {"start": 1, "end": 2}, "operand": 0}
+        ]
+      },
+      "expected": {"verdict": true, "verdictTime": 0}
+    },
+    {
+      "id": "r2u2-globally-counterexample-v1",
+      "formulaIndex": 1,
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.online-prefix/v1",
+        "root": 1,
+        "nodes": [
+          {"kind": "proposition", "proposition": 1},
+          {"kind": "globally", "interval": {"start": 0, "end": 2}, "operand": 0}
+        ]
+      },
+      "expected": {"verdict": false, "verdictTime": 0}
+    },
+    {
+      "id": "r2u2-future-deadline-v1",
+      "formulaIndex": 2,
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.online-prefix/v1",
+        "root": 1,
+        "nodes": [
+          {"kind": "proposition", "proposition": 2},
+          {"kind": "future", "interval": {"start": 0, "end": 3}, "operand": 0}
+        ]
+      },
+      "expected": {"verdict": false, "verdictTime": 0}
+    },
+    {
+      "id": "r2u2-until-lower-bound-v1",
+      "formulaIndex": 3,
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.online-prefix/v1",
+        "root": 2,
+        "nodes": [
+          {"kind": "proposition", "proposition": 0},
+          {"kind": "proposition", "proposition": 1},
+          {"kind": "until", "interval": {"start": 1, "end": 2}, "left": 0, "right": 1}
+        ]
+      },
+      "expected": {"verdict": true, "verdictTime": 0}
+    },
+    {
+      "id": "r2u2-release-lower-bound-v1",
+      "formulaIndex": 4,
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.online-prefix/v1",
+        "root": 2,
+        "nodes": [
+          {"kind": "proposition", "proposition": 3},
+          {"kind": "proposition", "proposition": 2},
+          {"kind": "release", "interval": {"start": 1, "end": 2}, "left": 0, "right": 1}
+        ]
+      },
+      "expected": {"verdict": false, "verdictTime": 0}
+    },
+    {
+      "id": "r2u2-nested-until-v1",
+      "formulaIndex": 5,
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.online-prefix/v1",
+        "root": 3,
+        "nodes": [
+          {"kind": "proposition", "proposition": 0},
+          {"kind": "proposition", "proposition": 1},
+          {"kind": "until", "interval": {"start": 1, "end": 2}, "left": 0, "right": 1},
+          {"kind": "future", "interval": {"start": 0, "end": 0}, "operand": 2}
+        ]
+      },
+      "expected": {"verdict": true, "verdictTime": 0}
+    },
+    {
+      "id": "r2u2-future-at-one-v1",
+      "formulaIndex": 0,
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.online-prefix/v1",
+        "root": 1,
+        "nodes": [
+          {"kind": "proposition", "proposition": 0},
+          {"kind": "future", "interval": {"start": 1, "end": 2}, "operand": 0}
+        ]
+      },
+      "expected": {"verdict": false, "verdictTime": 1}
+    },
+    {
+      "id": "r2u2-globally-at-one-v1",
+      "formulaIndex": 1,
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.online-prefix/v1",
+        "root": 1,
+        "nodes": [
+          {"kind": "proposition", "proposition": 1},
+          {"kind": "globally", "interval": {"start": 0, "end": 2}, "operand": 0}
+        ]
+      },
+      "expected": {"verdict": true, "verdictTime": 1}
+    }
+  ],
+  "unsupportedCases": [
+    {
+      "id": "closed-profile-not-mapped-v1",
+      "reason": "the adapter requires mltl.online-prefix/v1 and does not reinterpret closed-trace semantics"
+    }
+  ]
+}

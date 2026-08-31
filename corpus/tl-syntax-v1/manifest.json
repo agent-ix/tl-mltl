@@ -1,0 +1,78 @@
+{
+  "corpus_revision": "tl-syntax-corpus/v1",
+  "formula_schema": "tl-syntax.formula/v1",
+  "proposition_map_schema": "tl-syntax.proposition-map/v1",
+  "proposition_map": "propositions.json",
+  "semantic_profiles": [
+    "mltl.closed-trace/v1",
+    "mltl.online-prefix/v1"
+  ],
+  "fixtures": [
+    {
+      "id": "primitive-true-v1",
+      "class": "primitive",
+      "formula": "formulas/primitive-true.json",
+      "expected_validation": "valid",
+      "trace": [],
+      "expected_horizon": 0,
+      "expected_closed_trace": true
+    },
+    {
+      "id": "nested-not-future-v1",
+      "class": "nested",
+      "formula": "formulas/nested-not-future.json",
+      "expected_validation": "valid",
+      "trace": [[], []],
+      "expected_horizon": 1,
+      "expected_closed_trace": true
+    },
+    {
+      "id": "boundary-singleton-globally-v1",
+      "class": "boundary",
+      "formula": "formulas/boundary-singleton-globally.json",
+      "expected_validation": "valid",
+      "trace": [[0]],
+      "expected_horizon": 0,
+      "expected_closed_trace": true
+    },
+    {
+      "id": "short-trace-future-v1",
+      "class": "short-trace",
+      "formula": "formulas/short-trace-future.json",
+      "expected_validation": "valid",
+      "trace": [[0]],
+      "expected_horizon": 2,
+      "expected_closed_trace": false
+    },
+    {
+      "id": "large-bound-future-v1",
+      "class": "large-bound",
+      "formula": "formulas/large-bound-future.json",
+      "expected_validation": "valid",
+      "trace": [],
+      "expected_horizon": 4294967295,
+      "expected_closed_trace": false
+    },
+    {
+      "id": "malformed-inverted-interval-v1",
+      "class": "malformed",
+      "formula": "malformed/inverted-interval.json",
+      "expected_validation": "invalid",
+      "expected_error": "interval_inverted"
+    },
+    {
+      "id": "malformed-forward-reference-v1",
+      "class": "malformed",
+      "formula": "malformed/forward-reference.json",
+      "expected_validation": "invalid",
+      "expected_error": "operand_not_preceding"
+    },
+    {
+      "id": "malformed-unknown-profile-v1",
+      "class": "malformed",
+      "formula": "malformed/unknown-profile.json",
+      "expected_validation": "invalid",
+      "expected_error": "unsupported_semantic_profile"
+    }
+  ]
+}

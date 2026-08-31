@@ -1,0 +1,8 @@
+{
+  "schema_version": "tl-syntax.formula/v1",
+  "semantic_profile": "mltl.closed-trace/v2",
+  "root": 0,
+  "nodes": [
+    { "kind": "true" }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://agent-ix.github.io/tl-syntax/schema/formula-v1.schema.json",
+  "title": "tl-syntax formula document v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "semantic_profile", "root", "nodes"],
+  "properties": {
+    "schema_version": { "const": "tl-syntax.formula/v1" },
+    "semantic_profile": {
+      "enum": ["mltl.closed-trace/v1", "mltl.online-prefix/v1"]
+    },
+    "root": { "$ref": "#/$defs/id" },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/node" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "$ref": "#/$defs/id" },
+        "end": { "$ref": "#/$defs/id" }
+      }
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "$ref": "#/$defs/id" },
+        "end": { "$ref": "#/$defs/id" }
+      }
+    },
+    "optionalSpan": {
+      "type": "object",
+      "properties": { "span": { "$ref": "#/$defs/span" } }
+    },
+    "node": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "enum": ["false", "true"] },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "proposition"],
+          "properties": {
+            "kind": { "const": "proposition" },
+            "proposition": { "$ref": "#/$defs/id" },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "operand"],
+          "properties": {
+            "kind": { "const": "not" },
+            "operand": { "$ref": "#/$defs/id" },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "left", "right"],
+          "properties": {
+            "kind": { "enum": ["and", "or", "implies", "equivalent"] },
+            "left": { "$ref": "#/$defs/id" },
+            "right": { "$ref": "#/$defs/id" },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "interval", "operand"],
+          "properties": {
+            "kind": { "enum": ["future", "globally"] },
+            "interval": { "$ref": "#/$defs/interval" },
+            "operand": { "$ref": "#/$defs/id" },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "interval", "left", "right"],
+          "properties": {
+            "kind": { "enum": ["until", "release"] },
+            "interval": { "$ref": "#/$defs/interval" },
+            "left": { "$ref": "#/$defs/id" },
+            "right": { "$ref": "#/$defs/id" },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        }
+      ]
+    }
+  }
+}

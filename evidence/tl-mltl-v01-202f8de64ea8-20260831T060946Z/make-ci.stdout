@@ -1,0 +1,348 @@
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test --all-targets --all-features
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test cli_is_deterministic_and_rejects_unknown_command_schema ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+test retained_r2u2_run_agrees_for_supported_cases ... ok
+test retained_external_inputs_and_nonconclusive_cases_are_complete ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test evidence_contract_is_complete_and_wired_to_gates ... ok
+test evidence_producer_rejects_false_success_classifications ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+
+running 4 tests
+test differential_comparison_separates_agreement_mismatch_and_nonconclusive ... ok
+test supported_mapping_is_stable_and_identity_preserving ... ok
+test mapping_digests_and_tool_identity_detect_substitution ... ok
+test unsupported_mapping_emits_no_manifest ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 10 tests
+test closing_prefix_matches_closed_trace_evaluation ... ok
+test evaluates_and_reports_requested_verdict_time ... ok
+test evaluates_boolean_and_unary_temporal_primitives ... ok
+test evaluates_until_release_and_closed_boundaries ... ok
+test horizon_report_retains_identities_and_units ... ok
+test nested_large_bounds_do_not_wrap ... ok
+test prefix_semantics_preserve_pending_and_decide_early ... ok
+test preserves_identities_and_deterministic_outcomes ... ok
+test rejects_profile_mismatch_and_work_limits ... ok
+test temporal_lower_bound_windows_match_an_independent_exhaustive_oracle ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+
+running 2 tests
+test shared_malformed_documents_remain_rejected ... ok
+test shared_corpus_horizons_and_closed_verdicts_match ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+sha256sum --check corpus/tl-syntax-v1.sha256
+corpus/tl-syntax-v1/formulas/boundary-singleton-globally.json: OK
+corpus/tl-syntax-v1/formulas/large-bound-future.json: OK
+corpus/tl-syntax-v1/formulas/nested-not-future.json: OK
+corpus/tl-syntax-v1/formulas/primitive-true.json: OK
+corpus/tl-syntax-v1/formulas/short-trace-future.json: OK
+corpus/tl-syntax-v1/malformed/forward-reference.json: OK
+corpus/tl-syntax-v1/malformed/inverted-interval.json: OK
+corpus/tl-syntax-v1/malformed/unknown-profile.json: OK
+corpus/tl-syntax-v1/manifest.json: OK
+corpus/tl-syntax-v1/propositions.json: OK
+corpus/tl-syntax-v1/schema/formula-v1.schema.json: OK
+corpus/tl-syntax-v1/schema/proposition-map-v1.schema.json: OK
+corpus/tl-syntax-v1/SHA256SUMS: OK
+cd corpus/r2u2-v4.2 && sha256sum --check SHA256SUMS
+formulas.c2po: OK
+signals.map: OK
+trace.csv: OK
+spec.bin: OK
+r2u2.stdout: OK
+manifest.json: OK
+differential-report.json: OK
+differential-report.md: OK
+cargo deny check licenses
+licenses ok
+cargo deny check sources
+sources ok
+bash scripts/check_unsafe_comments.sh
+python3 -m py_compile scripts/build_evidence_envelope.py scripts/finalize_collection.py scripts/test_evidence_tool.py scripts/validate_json_schema.py
+python3 scripts/test_evidence_tool.py
+evidence outcome behavior is valid
+quire validate --scope . 'spec/**/*.md'
+quire coverage --scope . --strict
+Coverage: 47/47 rows backed (100%)
+rust: 21/21/21 bound/tagged/candidates (100% read; 100% authored; forms: rust-trace-attribute, rust-trace-line, rust-comment-id, rust-test-name-id, rust-doc-comment-id)
+spec/evidence/suites.md: 7/7 (100%)
+spec/requirements/FR-001-closed-evaluation.md: 3/3 (100%)
+spec/requirements/FR-002-horizon-analysis.md: 3/3 (100%)
+spec/requirements/FR-003-prefix-evaluation.md: 3/3 (100%)
+spec/requirements/FR-004-monitor-mapping.md: 3/3 (100%)
+spec/requirements/FR-005-cli-differential-evidence.md: 3/3 (100%)
+spec/requirements/NFR-001-determinism-resources.md: 2/2 (100%)
+spec/requirements/NFR-002-governance-boundary.md: 3/3 (100%)
+spec/requirements/StR-001-reference-semantics.md: 2/2 (100%)
+spec/requirements/StR-002-monitor-interoperability.md: 2/2 (100%)
+spec/test-matrix.md: 16/16 (100%)
+coverage.backed: over 47 matrix row(s), examined 21, matched 21
+authoring.tag_rate: over 21 evidence symbol(s), examined 21, matched 21
+coverage.property_shaped: over 24 acceptance criterion(s), examined 24, matched 24
+coverage.specific_shaped: over 24 acceptance criterion(s), examined 24, matched 24
+minting.section_hit_rate: over 11 declared minting document(s), examined 11, matched 11
+RUSTDOCFLAGS=-Dwarnings cargo doc --no-deps --all-features
+bash scripts/verify_evidence.sh
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z.sha256: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z.sha256: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z.sha256: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z.sha256: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z.sha256: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/cargo-version.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/collection-input.json: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/default-dependencies.status.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/default-dependencies.stderr: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/default-dependencies.stdout: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/diff-integrity.status.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/diff-integrity.stderr: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/diff-integrity.stdout: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/evidence-envelope.json: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/evidence-manifest.json: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/input-schema.status.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/input-schema.stderr: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/input-schema.stdout: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/jsonschema-version.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/make-ci.status.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/make-ci.stderr: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/make-ci.stdout: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/make-spec.status.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/make-spec.stderr: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/make-spec.stdout: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/manifest-schema.status.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/manifest-schema.stderr: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/manifest-schema.stdout: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/metadata.json: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/pgm01-schema.status.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/pgm01-schema.stderr: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/pgm01-schema.stdout: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/pgm01-validator.status.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/pgm01-validator.stderr: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/pgm01-validator.stdout: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/python-version.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/quire-coverage.status.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/quire-coverage.stderr: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/quire-coverage.stdout: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/quire-provenance.json: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/rustc-version.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/rustdoc.status.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/rustdoc.stderr: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/rustdoc.stdout: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/source-revision.txt: OK
+evidence/tl-mltl-v01-5072994619f8-20260831T022058Z/source-state.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/cargo-version.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/collection-input.json: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/collection-summary.json: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/default-dependencies.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/default-dependencies.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/default-dependencies.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/diff-integrity.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/diff-integrity.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/diff-integrity.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/evidence-envelope.json: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/evidence-manifest.json: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/input-schema.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/input-schema.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/input-schema.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/jsonschema-version.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/make-ci.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/make-ci.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/make-ci.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/make-spec.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/make-spec.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/make-spec.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/manifest-schema.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/manifest-schema.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/manifest-schema.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/metadata.json: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/pgm01-schema.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/pgm01-schema.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/pgm01-schema.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/pgm01-validator.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/pgm01-validator.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/pgm01-validator.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/python-version.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/quire-coverage.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/quire-coverage.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/quire-coverage.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/quire-provenance.json: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/rustc-version.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/rustdoc.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/rustdoc.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/rustdoc.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/sealed-pgm01-schema.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/sealed-pgm01-schema.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/sealed-pgm01-schema.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/sealed-pgm01-validator.status.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/sealed-pgm01-validator.stderr: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/sealed-pgm01-validator.stdout: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/source-revision.txt: OK
+evidence/tl-mltl-v01-786d3932a5e5-20260831T041429Z/source-state.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/cargo-version.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/collection-input.json: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/default-dependencies.status.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/default-dependencies.stderr: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/default-dependencies.stdout: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/diff-integrity.status.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/diff-integrity.stderr: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/diff-integrity.stdout: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/evidence-envelope.json: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/evidence-manifest.json: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/input-schema.status.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/input-schema.stderr: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/input-schema.stdout: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/jsonschema-version.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/make-ci.status.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/make-ci.stderr: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/make-ci.stdout: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/make-spec.status.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/make-spec.stderr: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/make-spec.stdout: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/manifest-schema.status.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/manifest-schema.stderr: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/manifest-schema.stdout: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/metadata.json: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/pgm01-schema.status.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/pgm01-schema.stderr: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/pgm01-schema.stdout: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/pgm01-validator.status.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/pgm01-validator.stderr: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/pgm01-validator.stdout: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/python-version.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/quire-coverage.status.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/quire-coverage.stderr: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/quire-coverage.stdout: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/quire-provenance.json: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/rustc-version.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/rustdoc.status.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/rustdoc.stderr: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/rustdoc.stdout: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/source-revision.txt: OK
+evidence/tl-mltl-v01-a9b7847199c1-20260831T022156Z/source-state.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/cargo-version.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/collection-input.json: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/collection-summary.json: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/default-dependencies.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/default-dependencies.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/default-dependencies.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/diff-integrity.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/diff-integrity.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/diff-integrity.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/evidence-envelope.json: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/evidence-manifest.json: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/input-schema.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/input-schema.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/input-schema.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/jsonschema-version.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/make-ci.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/make-ci.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/make-ci.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/make-spec.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/make-spec.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/make-spec.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/manifest-schema.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/manifest-schema.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/manifest-schema.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/metadata.json: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/pgm01-schema.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/pgm01-schema.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/pgm01-schema.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/pgm01-validator.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/pgm01-validator.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/pgm01-validator.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/python-version.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/quire-coverage.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/quire-coverage.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/quire-coverage.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/quire-provenance.json: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/rustc-version.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/rustdoc.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/rustdoc.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/rustdoc.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/sealed-pgm01-schema.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/sealed-pgm01-schema.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/sealed-pgm01-schema.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/sealed-pgm01-validator.status.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/sealed-pgm01-validator.stderr: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/sealed-pgm01-validator.stdout: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/source-revision.txt: OK
+evidence/tl-mltl-v01-da2c7704a534-20260831T052229Z/source-state.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/cargo-version.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/collection-input.json: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/collection-summary.json: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/default-dependencies.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/default-dependencies.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/default-dependencies.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/diff-integrity.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/diff-integrity.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/diff-integrity.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/evidence-envelope.json: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/evidence-manifest.json: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/input-schema.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/input-schema.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/input-schema.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/jsonschema-version.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/make-ci.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/make-ci.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/make-ci.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/make-spec.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/make-spec.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/make-spec.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/manifest-schema.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/manifest-schema.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/manifest-schema.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/metadata.json: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/pgm01-schema.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/pgm01-schema.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/pgm01-schema.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/pgm01-validator.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/pgm01-validator.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/pgm01-validator.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/python-version.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/quire-coverage.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/quire-coverage.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/quire-coverage.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/quire-provenance.json: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/rustc-version.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/rustdoc.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/rustdoc.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/rustdoc.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/sealed-pgm01-schema.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/sealed-pgm01-schema.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/sealed-pgm01-schema.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/sealed-pgm01-validator.status.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/sealed-pgm01-validator.stderr: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/sealed-pgm01-validator.stdout: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/source-revision.txt: OK
+evidence/tl-mltl-v01-fced0e687f99-20260831T041645Z/source-state.txt: OK

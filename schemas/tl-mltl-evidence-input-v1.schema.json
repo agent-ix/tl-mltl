@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/agent-ix/tl-mltl/schemas/tl-mltl-evidence-input-v1.schema.json",
+  "title": "tl-mltl evidence collection input v1",
+  "description": "SPDX-License-Identifier: MIT OR Apache-2.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "sourceRevision",
+    "sourceState",
+    "commands",
+    "tools",
+    "pgm01",
+    "dependencies",
+    "corpus",
+    "externalTools"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "tl-mltl.evidence-input/v1"},
+    "sourceRevision": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "sourceState": {"enum": ["clean", "modified"]},
+    "commands": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cargo", "jsonschema", "python", "quire", "rustc"],
+      "properties": {
+        "cargo": {"type": "string", "minLength": 1},
+        "jsonschema": {"type": "string", "minLength": 1},
+        "python": {"type": "string", "minLength": 1},
+        "quire": {"type": "string", "minLength": 1},
+        "rustc": {"type": "string", "minLength": 1}
+      }
+    },
+    "pgm01": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy", "candidateRevision", "envelopeSchema", "envelopeSchemaDigest"],
+      "properties": {
+        "policy": {"const": "ix://agent-ix/quire-contract-ir/PGM-01"},
+        "candidateRevision": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+        "envelopeSchema": {"const": "quire.derivation-evidence/v1"},
+        "envelopeSchemaDigest": {"$ref": "#/definitions/digest"}
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tlSyntaxRevision", "cargoLockDigest"],
+      "properties": {
+        "tlSyntaxRevision": {"const": "740182f13b84858008d6f176f75136737d405c1b"},
+        "cargoLockDigest": {"$ref": "#/definitions/digest"}
+      }
+    },
+    "corpus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "revision",
+        "sharedManifestDigest",
+        "formulaSchema",
+        "propositionMapSchema",
+        "differentialManifestDigest",
+        "differentialReportDigest"
+      ],
+      "properties": {
+        "revision": {"const": "tl-mltl-corpus/v1"},
+        "sharedManifestDigest": {"$ref": "#/definitions/digest"},
+        "formulaSchema": {"$ref": "#/definitions/schemaIdentity"},
+        "propositionMapSchema": {"$ref": "#/definitions/schemaIdentity"},
+        "differentialManifestDigest": {"$ref": "#/definitions/digest"},
+        "differentialReportDigest": {"$ref": "#/definitions/digest"}
+      }
+    },
+    "externalTools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["c2po", "r2u2"],
+      "properties": {
+        "c2po": {"$ref": "#/definitions/externalTool"},
+        "r2u2": {"$ref": "#/definitions/externalToolWithConfiguration"}
+      }
+    }
+  },
+  "definitions": {
+    "digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "value"],
+      "properties": {
+        "algorithm": {"const": "sha256"},
+        "value": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "schemaIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "digest"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "pattern": "^v[1-9][0-9]*$"},
+        "digest": {"$ref": "#/definitions/digest"}
+      }
+    },
+    "externalTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "sourceRevision", "executableDigest"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "sourceRevision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "executableDigest": {"$ref": "#/definitions/digest"}
+      }
+    },
+    "externalToolWithConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "sourceRevision", "executableDigest", "configurationDigest"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "sourceRevision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "executableDigest": {"$ref": "#/definitions/digest"},
+        "configurationDigest": {"$ref": "#/definitions/digest"}
+      }
+    }
+  }
+}
