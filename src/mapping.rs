@@ -7,6 +7,43 @@ use tl_syntax::{Formula, NodeId, NodeKind, SemanticProfile};
 
 use crate::{ToolIdentity, MAX_RECURSION_DEPTH, TL_SYNTAX_REVISION};
 
+/// Named source identity embedded in a mapping manifest.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MappingSourceIdentity {
+    /// Exact source revision.
+    pub revision: String,
+    /// Whether the identified source tree was clean or modified.
+    pub state: MappingSourceState,
+}
+
+/// Closed source-state classification for a mapping manifest.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MappingSourceState {
+    /// The tracked source tree matched the revision.
+    Clean,
+    /// The tracked source tree contained modifications.
+    Modified,
+}
+
+impl MappingSourceState {
+    /// Parses the build-time wire value.
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "clean" => Some(Self::Clean),
+            "modified" => Some(Self::Modified),
+            _ => None,
+        }
+    }
+
+    /// Returns the stable mapping-manifest wire value.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Clean => "clean",
+            Self::Modified => "modified",
+        }
+    }
+}
+
 /// Versioned R2U2/C2PO mapping record.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -212,8 +249,7 @@ pub fn map_to_c2po(
     formula: Formula<'_>,
     formula_id: impl Into<String>,
     formula_bytes: &[u8],
-    source_revision: impl Into<String>,
-    source_state: impl Into<String>,
+    source: MappingSourceIdentity,
     external_tool: Option<ToolIdentity>,
     work_limit: u64,
 ) -> Result<MappingManifest, MappingError> {
@@ -241,8 +277,8 @@ pub fn map_to_c2po(
     Ok(MappingManifest {
         schema_version: "tl-mltl.monitor-mapping/v1".to_owned(),
         adapter_version: env!("CARGO_PKG_VERSION").to_owned(),
-        source_revision: source_revision.into(),
-        source_state: source_state.into(),
+        source_revision: source.revision,
+        source_state: source.state.as_str().to_owned(),
         syntax_revision: TL_SYNTAX_REVISION.to_owned(),
         formula_id: formula_id.into(),
         semantic_profile: formula.profile().as_str().to_owned(),

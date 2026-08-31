@@ -1,4 +1,4 @@
-use std::{env, process::Command};
+use std::{env, path::Path, process::Command};
 
 fn git(args: &[&str]) -> Option<String> {
     let output = Command::new("git").args(args).output().ok()?;
@@ -8,16 +8,26 @@ fn git(args: &[&str]) -> Option<String> {
     Some(String::from_utf8(output.stdout).ok()?.trim().to_owned())
 }
 
+fn watch_existing_git_path(path: &str) {
+    if let Some(path) = git(&["rev-parse", "--path-format=absolute", "--git-path", path]) {
+        if Path::new(&path).exists() {
+            println!("cargo:rerun-if-changed={path}");
+        }
+    }
+}
+
 fn main() {
     println!("cargo:rerun-if-env-changed=TL_MLTL_SOURCE_REVISION");
     println!("cargo:rerun-if-env-changed=TL_MLTL_SOURCE_STATE");
-    println!("cargo:rerun-if-changed=.");
-    if let Some(git_dir) = git(&["rev-parse", "--absolute-git-dir"]) {
-        println!("cargo:rerun-if-changed={git_dir}/HEAD");
-        println!("cargo:rerun-if-changed={git_dir}/packed-refs");
-        if let Some(reference) = git(&["symbolic-ref", "--quiet", "HEAD"]) {
-            println!("cargo:rerun-if-changed={git_dir}/{reference}");
+    if let Some(files) = git(&["ls-files"]) {
+        for file in files.lines() {
+            println!("cargo:rerun-if-changed={file}");
         }
+    }
+    watch_existing_git_path("HEAD");
+    watch_existing_git_path("packed-refs");
+    if let Some(reference) = git(&["symbolic-ref", "--quiet", "HEAD"]) {
+        watch_existing_git_path(&reference);
     }
     let revision = env::var("TL_MLTL_SOURCE_REVISION")
         .ok()

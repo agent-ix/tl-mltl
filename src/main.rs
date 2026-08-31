@@ -72,15 +72,17 @@ fn run() -> Result<(), String> {
         Operation::MapC2po => {
             let formula_bytes = serde_json::to_vec(&request.formula)
                 .map_err(|error| format!("serialize formula: {error}"))?;
-            let source_revision = env!("TL_MLTL_SOURCE_REVISION");
-            let source_state = env!("TL_MLTL_SOURCE_STATE");
+            let source = tl_mltl::MappingSourceIdentity {
+                revision: env!("TL_MLTL_SOURCE_REVISION").to_owned(),
+                state: tl_mltl::MappingSourceState::parse(env!("TL_MLTL_SOURCE_STATE"))
+                    .expect("build script emits a closed source-state value"),
+            };
             serde_json::to_value(
                 map_to_c2po(
                     formula,
                     request.formula_id,
                     &formula_bytes,
-                    source_revision,
-                    source_state,
+                    source,
                     None,
                     100_000,
                 )

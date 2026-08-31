@@ -21,7 +21,9 @@ pub use evaluate::{
     EvaluationLimits, EvaluationReport, TruthValue,
 };
 pub use horizon::{analyze_horizon, HorizonError, HorizonReport};
-pub use mapping::{map_to_c2po, MappingError, MappingManifest};
+pub use mapping::{
+    map_to_c2po, MappingError, MappingManifest, MappingSourceIdentity, MappingSourceState,
+};
 pub use wire::{
     CommandDocument, CommandSchemaVersion, Operation, TraceDocument, TraceSchemaVersion,
 };

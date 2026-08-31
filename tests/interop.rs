@@ -1,6 +1,7 @@
 use tl_mltl::{
     compare_external, evaluate_prefix, map_to_c2po, ComparisonStatus, EvaluationLimits,
-    ExternalStatus, ExternalVerdict, MappingError, ToolIdentity, TruthValue,
+    ExternalStatus, ExternalVerdict, MappingError, MappingSourceIdentity, MappingSourceState,
+    ToolIdentity, TruthValue,
 };
 use tl_syntax::{Formula, Interval, Node, NodeId, NodeKind, PropositionId, SemanticProfile};
 
@@ -29,6 +30,13 @@ fn tool() -> ToolIdentity {
     }
 }
 
+fn source() -> MappingSourceIdentity {
+    MappingSourceIdentity {
+        revision: "source-revision".to_owned(),
+        state: MappingSourceState::Clean,
+    }
+}
+
 // Trace: TC-011, FR-004-AC-1, StR-002-VC-2
 #[test]
 fn supported_mapping_is_stable_and_identity_preserving() {
@@ -39,8 +47,7 @@ fn supported_mapping_is_stable_and_identity_preserving() {
             formula,
             "future-seven",
             br#"{"formula":"fixture"}"#,
-            "source-revision",
-            "clean",
+            source(),
             Some(tool()),
             100,
         )
@@ -59,7 +66,7 @@ fn unsupported_mapping_emits_no_manifest() {
     let fixture_nodes = future_nodes();
     let formula = future_formula(SemanticProfile::ClosedTraceV1, &fixture_nodes);
     assert!(matches!(
-        map_to_c2po(formula, "closed", b"formula", "source", "clean", None, 100),
+        map_to_c2po(formula, "closed", b"formula", source(), None, 100),
         Err(MappingError::UnsupportedProfile { .. })
     ));
 
@@ -76,7 +83,7 @@ fn unsupported_mapping_emits_no_manifest() {
     )
     .unwrap();
     assert!(matches!(
-        map_to_c2po(deep, "deep", b"formula", "source", "clean", None, 10_000),
+        map_to_c2po(deep, "deep", b"formula", source(), None, 10_000),
         Err(MappingError::RecursionDepthExceeded { limit: 512 })
     ));
 }
@@ -86,8 +93,8 @@ fn unsupported_mapping_emits_no_manifest() {
 fn mapping_digests_and_tool_identity_detect_substitution() {
     let nodes = future_nodes();
     let formula = future_formula(SemanticProfile::OnlinePrefixV1, &nodes);
-    let original = map_to_c2po(formula, "f", b"one", "source", "clean", Some(tool()), 100).unwrap();
-    let changed = map_to_c2po(formula, "f", b"two", "source", "clean", Some(tool()), 100).unwrap();
+    let original = map_to_c2po(formula, "f", b"one", source(), Some(tool()), 100).unwrap();
+    let changed = map_to_c2po(formula, "f", b"two", source(), Some(tool()), 100).unwrap();
     assert_ne!(original.input_sha256, changed.input_sha256);
     assert_eq!(original.output_sha256, changed.output_sha256);
     assert_eq!(original.external_tool, Some(tool()));
