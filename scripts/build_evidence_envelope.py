@@ -62,15 +62,11 @@ def command_outcomes(evidence_dir: Path) -> list[dict[str, object]]:
     outcomes: list[dict[str, object]] = []
     for name in COMMANDS:
         status_path = evidence_dir / f"{name}.status.txt"
-        stdout_path = evidence_dir / f"{name}.stdout"
         if not status_path.exists():
             outcomes.append({"name": name, "status": "inconclusive", "exitCode": None})
             continue
         exit_code = int(status_path.read_text().strip())
-        skipped = (
-            stdout_path.exists()
-            and stdout_path.read_text(encoding="utf-8").strip() == "skipped-unavailable"
-        )
+        skipped = exit_code == 125
         outcomes.append(
             {
                 "name": name,

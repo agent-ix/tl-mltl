@@ -40,6 +40,7 @@ fn supported_mapping_is_stable_and_identity_preserving() {
             "future-seven",
             br#"{"formula":"fixture"}"#,
             "source-revision",
+            "clean",
             Some(tool()),
             100,
         )
@@ -58,7 +59,7 @@ fn unsupported_mapping_emits_no_manifest() {
     let fixture_nodes = future_nodes();
     let formula = future_formula(SemanticProfile::ClosedTraceV1, &fixture_nodes);
     assert!(matches!(
-        map_to_c2po(formula, "closed", b"formula", "source", None, 100),
+        map_to_c2po(formula, "closed", b"formula", "source", "clean", None, 100),
         Err(MappingError::UnsupportedProfile { .. })
     ));
 
@@ -75,7 +76,7 @@ fn unsupported_mapping_emits_no_manifest() {
     )
     .unwrap();
     assert!(matches!(
-        map_to_c2po(deep, "deep", b"formula", "source", None, 10_000),
+        map_to_c2po(deep, "deep", b"formula", "source", "clean", None, 10_000),
         Err(MappingError::RecursionDepthExceeded { limit: 512 })
     ));
 }
@@ -85,11 +86,12 @@ fn unsupported_mapping_emits_no_manifest() {
 fn mapping_digests_and_tool_identity_detect_substitution() {
     let nodes = future_nodes();
     let formula = future_formula(SemanticProfile::OnlinePrefixV1, &nodes);
-    let original = map_to_c2po(formula, "f", b"one", "source", Some(tool()), 100).unwrap();
-    let changed = map_to_c2po(formula, "f", b"two", "source", Some(tool()), 100).unwrap();
+    let original = map_to_c2po(formula, "f", b"one", "source", "clean", Some(tool()), 100).unwrap();
+    let changed = map_to_c2po(formula, "f", b"two", "source", "clean", Some(tool()), 100).unwrap();
     assert_ne!(original.input_sha256, changed.input_sha256);
     assert_eq!(original.output_sha256, changed.output_sha256);
     assert_eq!(original.external_tool, Some(tool()));
+    assert_eq!(original.source_state, "clean");
     assert_eq!(original.input_sha256.len(), 64);
 }
 

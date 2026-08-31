@@ -17,6 +17,8 @@ pub struct MappingManifest {
     pub adapter_version: String,
     /// Exact tl-mltl source identity supplied by the build.
     pub source_revision: String,
+    /// Whether the source checkout was clean or modified when built.
+    pub source_state: String,
     /// Exact tl-syntax dependency identity.
     pub syntax_revision: String,
     /// Caller-provided formula identity.
@@ -211,6 +213,7 @@ pub fn map_to_c2po(
     formula_id: impl Into<String>,
     formula_bytes: &[u8],
     source_revision: impl Into<String>,
+    source_state: impl Into<String>,
     external_tool: Option<ToolIdentity>,
     work_limit: u64,
 ) -> Result<MappingManifest, MappingError> {
@@ -239,6 +242,7 @@ pub fn map_to_c2po(
         schema_version: "tl-mltl.monitor-mapping/v1".to_owned(),
         adapter_version: env!("CARGO_PKG_VERSION").to_owned(),
         source_revision: source_revision.into(),
+        source_state: source_state.into(),
         syntax_revision: TL_SYNTAX_REVISION.to_owned(),
         formula_id: formula_id.into(),
         semantic_profile: formula.profile().as_str().to_owned(),

@@ -1,5 +1,7 @@
 use std::{fs, path::PathBuf, process::Command};
 
+use sha2::{Digest, Sha256};
+
 // Trace: TC-016, FR-005-AC-3, NFR-002-AC-2, SUITE-001, SUITE-002, SUITE-003
 // Trace: SUITE-004, SUITE-005, SUITE-006, SUITE-007
 #[test]
@@ -41,9 +43,10 @@ fn evidence_contract_is_complete_and_wired_to_gates() {
         "cargo deny check sources",
         "check_unsafe_comments.sh",
         "test_evidence_tool.py",
-        "quire validate",
-        "quire coverage",
-        "cargo doc --no-deps --all-features",
+        "quire validate --scope . 'spec/**/*.md'",
+        "quire coverage --scope . --strict",
+        "RUSTDOCFLAGS=-Dwarnings",
+        "doc --no-deps --all-features",
         "verify_evidence.sh",
     ] {
         assert!(ci_commands.contains(command), "make ci omits {command}");
@@ -81,6 +84,33 @@ fn evidence_contract_is_complete_and_wired_to_gates() {
             serde_json::from_slice(&fs::read(root.join(schema)).unwrap()).unwrap();
         assert_eq!(value["$schema"], "http://json-schema.org/draft-07/schema#");
         assert_eq!(value["additionalProperties"], false);
+    }
+    for (manifest, expected) in [
+        (
+            "tl-mltl-v01-5072994619f8-20260831T022058Z.sha256",
+            "3ef7708da61afc06968b71a9b74cdc959dc2230fb9f963d3497d78c5766de861",
+        ),
+        (
+            "tl-mltl-v01-786d3932a5e5-20260831T041429Z.sha256",
+            "daf272959ed787fbcfe5726d6a63d4d4e3332e95f42050ba1481b56c830b852e",
+        ),
+        (
+            "tl-mltl-v01-a9b7847199c1-20260831T022156Z.sha256",
+            "502f996f24b95714f9caa0adbac4d0a4fee5b27a02e54fb8e273300dda03872f",
+        ),
+        (
+            "tl-mltl-v01-fced0e687f99-20260831T041645Z.sha256",
+            "dd1b29c45df064cfe531aa044f9b5c669a8f79ce198f6ec3c2c30b81b03c543b",
+        ),
+    ] {
+        let actual = format!(
+            "{:x}",
+            Sha256::digest(fs::read(root.join("evidence").join(manifest)).unwrap())
+        );
+        assert_eq!(
+            actual, expected,
+            "retained archive anchor changed: {manifest}"
+        );
     }
 }
 

@@ -21,6 +21,8 @@ and shall emit a Boolean verdict only when every continuation preserves it.
   counterexample is already present.
 - Closing the trace evaluates missing observations using the declared
   closed-trace profile.
+- Callers may evaluate an explicit discrete verdict time; the convenience
+  entry point evaluates time zero and the report preserves the requested time.
 - Each report names its prefix length and worst-case decision horizon.
 
 ## Acceptance Criteria

@@ -12,7 +12,7 @@ and executable identities, dependency lockfile, schemas, and PGM-01.
 
 The collector architecture is adapted under MIT OR Apache-2.0 from the
 same-program tl-syntax collector at revision
-`5e59a26d71b4b5d79623850cda50010e18a90dad`. It is tailored to tl-mltl's
+`740182f13b84858008d6f176f75136737d405c1b`. It is tailored to tl-mltl's
 semantic, resource, CLI, corpus, and external differential gates.
 
 Evidence informs the open human source-release decision. It does not approve,

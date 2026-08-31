@@ -18,8 +18,9 @@ or impersonating an external monitor.
 ## Behavior
 
 - Proposition identities map to stable `p<ID>` aliases.
-- Every output records input/output SHA-256 digests, source revision, formula
-  identity, profile, adapter version, and optional external-tool identity.
+- Every output records input/output SHA-256 digests, exact source revision,
+  clean/modified source state, formula identity, profile, adapter version, and
+  optional external-tool identity.
 - Unsupported profiles, bounds, or constructs are reported before execution.
 - The manifest makes no unmeasured timing or memory claim.
 

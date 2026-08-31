@@ -87,9 +87,25 @@ fn cli_is_deterministic_and_rejects_unknown_command_schema() {
     );
     let manifest: Value = serde_json::from_slice(&mapped.stdout).unwrap();
     let revision = manifest["sourceRevision"].as_str().unwrap();
-    assert_eq!(revision.len(), 40);
-    assert!(revision.bytes().all(|byte| byte.is_ascii_hexdigit()));
-    assert_ne!(revision, "uncommitted");
+    let expected_revision = String::from_utf8(
+        Command::new("git")
+            .args(["rev-parse", "HEAD"])
+            .output()
+            .unwrap()
+            .stdout,
+    )
+    .unwrap();
+    assert_eq!(revision, expected_revision.trim());
+    let modified = !Command::new("git")
+        .args(["status", "--porcelain", "--untracked-files=no"])
+        .output()
+        .unwrap()
+        .stdout
+        .is_empty();
+    assert_eq!(
+        manifest["sourceState"],
+        if modified { "modified" } else { "clean" }
+    );
     assert_eq!(
         manifest["syntaxRevision"],
         "740182f13b84858008d6f176f75136737d405c1b"

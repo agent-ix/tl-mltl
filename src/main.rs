@@ -73,12 +73,14 @@ fn run() -> Result<(), String> {
             let formula_bytes = serde_json::to_vec(&request.formula)
                 .map_err(|error| format!("serialize formula: {error}"))?;
             let source_revision = env!("TL_MLTL_SOURCE_REVISION");
+            let source_state = env!("TL_MLTL_SOURCE_STATE");
             serde_json::to_value(
                 map_to_c2po(
                     formula,
                     request.formula_id,
                     &formula_bytes,
                     source_revision,
+                    source_state,
                     None,
                     100_000,
                 )

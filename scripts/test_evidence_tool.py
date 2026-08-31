@@ -15,6 +15,12 @@ SPEC = importlib.util.spec_from_file_location(
 assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
+FINALIZER_SPEC = importlib.util.spec_from_file_location(
+    "finalize_collection", ROOT / "scripts" / "finalize_collection.py"
+)
+assert FINALIZER_SPEC is not None and FINALIZER_SPEC.loader is not None
+FINALIZER = importlib.util.module_from_spec(FINALIZER_SPEC)
+FINALIZER_SPEC.loader.exec_module(FINALIZER)
 
 
 def main() -> int:
@@ -24,7 +30,7 @@ def main() -> int:
         (evidence_dir / "make-ci.stdout").write_text("passed\n", encoding="utf-8")
         (evidence_dir / "pgm01-schema.status.txt").write_text("125\n", encoding="utf-8")
         (evidence_dir / "pgm01-schema.stdout").write_text(
-            "skipped-unavailable\n", encoding="utf-8"
+            "ordinary-output\n", encoding="utf-8"
         )
         (evidence_dir / "pgm01-validator.status.txt").write_text("3\n", encoding="utf-8")
         outcomes = {item["name"]: item for item in MODULE.command_outcomes(evidence_dir)}
@@ -53,6 +59,17 @@ def main() -> int:
         assert MODULE.classify_result("sealed-failed", [outcomes["make-ci"]])[0] == "error"
         assert MODULE.classify_result("final", [outcomes["pgm01-schema"]])[0] == "inconclusive"
         assert MODULE.classify_result("final", [outcomes["pgm01-validator"]])[0] == "error"
+
+        (evidence_dir / "evidence-envelope.json").write_text("{}\n", encoding="utf-8")
+        for name in FINALIZER.CHECKS:
+            (evidence_dir / f"{name}.status.txt").write_text("0\n", encoding="utf-8")
+        retained = FINALIZER.summary(evidence_dir)
+        assert retained["overallStatus"] == "passed"
+        assert retained["finalEnvelopeValidated"] is True
+        (evidence_dir / "rustdoc.status.txt").write_text("1\n", encoding="utf-8")
+        rederived = FINALIZER.summary(evidence_dir)
+        assert rederived["overallStatus"] == "failed"
+        assert rederived != retained
     print("evidence outcome behavior is valid")
     return 0
 

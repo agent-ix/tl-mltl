@@ -11,10 +11,18 @@ make lint           # clippy with -D warnings
 make test           # cargo test
 make build          # release build
 make clean          # cargo clean
-make deny           # cargo deny check licenses
+make deny           # cargo deny check licenses and sources
 make audit-unsafe   # check that every unsafe block has a // SAFETY: comment
-make ci             # fmt-check + lint + test + deny + audit-unsafe
+make check-corpus   # verify shared and R2U2 corpus checksums
+make verify-evidence # verify checksums and re-derive retained outcomes
+make spec           # validate specs and strict coverage
+make rustdoc        # build warning-free public docs
+make evidence-tool  # test evidence classifiers and schemas
+make ci             # complete local gate
 ```
+
+GitHub Actions is intentionally `workflow_dispatch`-only. Use local `make ci`
+while iterating and dispatch hosted CI only for a finalized revision.
 
 ## Safety scaffolding
 
@@ -30,8 +38,13 @@ Backported from `agent-ix/ecaz`:
 
 ```
 src/lib.rs             # crate root
-tests/integration.rs   # end-to-end tests
-benches/               # criterion benchmarks (opt-in; add criterion to dev-deps)
+src/evaluate.rs        # bounded closed/prefix reference evaluation
+src/horizon.rs         # checked structural lookahead
+src/mapping.rs         # deterministic C2PO mapping manifest
+src/main.rs            # JSON command CLI
+tests/                 # reference, corpus, differential, CLI, and evidence tests
+corpus/                # pinned shared and R2U2 differential records
+evidence/              # immutable candidate collections
 spec/                  # requirements artifacts (from /spec-create-spec)
 scripts/               # local tooling
 ```
