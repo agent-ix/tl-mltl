@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.github.io/tl-syntax/schema/proposition-map-v1.schema.json",
+  "title": "tl-syntax proposition map v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "propositions"],
+  "properties": {
+    "schema_version": { "const": "tl-syntax.proposition-map/v1" },
+    "propositions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+          "name": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

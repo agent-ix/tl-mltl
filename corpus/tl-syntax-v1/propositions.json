@@ -1,0 +1,7 @@
+{
+  "schema_version": "tl-syntax.proposition-map/v1",
+  "propositions": [
+    { "id": 0, "name": "request" },
+    { "id": 1, "name": "response" }
+  ]
+}

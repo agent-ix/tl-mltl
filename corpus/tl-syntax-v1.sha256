@@ -1,0 +1,13 @@
+599d0f4a0297fd29b0cebb2f13b549f0f781c1ddfe20c592172abd409c8499ad  corpus/tl-syntax-v1/formulas/boundary-singleton-globally.json
+2a18ac04cd2b1f09633f1f06bb7a6797a45c8b87bdc3fbbe7bd4f3ad44b59583  corpus/tl-syntax-v1/formulas/large-bound-future.json
+e0249c07816052ab1106556a58b22107b5cd9b88e8b2b2298320ad9120bd7134  corpus/tl-syntax-v1/formulas/nested-not-future.json
+e635278c02ab718ba01bce42d033af5941207f2c82ce439dcf02dc788b47ef7e  corpus/tl-syntax-v1/formulas/primitive-true.json
+9a90bad6e8692e27c9209d6b0ee9851dbf142c39fa0002be31bc0ab4ba1063b8  corpus/tl-syntax-v1/formulas/short-trace-future.json
+b2fc1de68289a09f72a68843ac76e76c8194f6784f4245415d6a30f8b04b9516  corpus/tl-syntax-v1/malformed/forward-reference.json
+b9bfa165dedda2bdff8fb5b9789c835374f3f645377b47c239d2c7a7cd8d1ad6  corpus/tl-syntax-v1/malformed/inverted-interval.json
+2a27934182ce08c35b1c502a892bfe2cefd0b028b24ebf828d3d5e29aa673b65  corpus/tl-syntax-v1/malformed/unknown-profile.json
+905b8babd2125f51972cfbd2acca5b74ecb23e7601fc2efc961e0b1a06340f9a  corpus/tl-syntax-v1/manifest.json
+81dc36509f8d057b6d398932e4acde9434addcb90f93de337ef9e6bd99a641a3  corpus/tl-syntax-v1/propositions.json
+d12b6fa9c21db2bf54b70e7ccf7b8006b3b74e9034f6d4db0d99b39cd80fad87  corpus/tl-syntax-v1/schema/formula-v1.schema.json
+b3293adb2e4b29098748bf9061451d4013c5e5a94dde82569496c4001eee6aaf  corpus/tl-syntax-v1/schema/proposition-map-v1.schema.json
+777ec1710036aa2667a5c2ddac49bcfdcbcad6d2af534fefb1ab12de335a8cdd  corpus/tl-syntax-v1/SHA256SUMS

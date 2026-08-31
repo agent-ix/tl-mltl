@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.github.io/tl-syntax/schema/formula-v1.schema.json",
+  "title": "tl-syntax formula document v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "semantic_profile", "root", "nodes"],
+  "properties": {
+    "schema_version": { "const": "tl-syntax.formula/v1" },
+    "semantic_profile": {
+      "enum": ["mltl.closed-trace/v1", "mltl.online-prefix/v1"]
+    },
+    "root": { "$ref": "#/$defs/id" },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/node" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "$ref": "#/$defs/id" },
+        "end": { "$ref": "#/$defs/id" }
+      }
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "$ref": "#/$defs/id" },
+        "end": { "$ref": "#/$defs/id" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": ["false", "true", "proposition", "not", "and", "or", "implies", "equivalent", "future", "globally", "until", "release"]
+        },
+        "proposition": { "$ref": "#/$defs/id" },
+        "operand": { "$ref": "#/$defs/id" },
+        "left": { "$ref": "#/$defs/id" },
+        "right": { "$ref": "#/$defs/id" },
+        "interval": { "$ref": "#/$defs/interval" },
+        "span": { "$ref": "#/$defs/span" }
+      },
+      "required": ["kind"]
+    }
+  }
+}

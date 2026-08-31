@@ -1,0 +1,9 @@
+{
+  "schema_version": "tl-syntax.formula/v1",
+  "semantic_profile": "mltl.closed-trace/v1",
+  "root": 1,
+  "nodes": [
+    { "kind": "true" },
+    { "kind": "future", "interval": { "start": 3, "end": 2 }, "operand": 0 }
+  ]
+}

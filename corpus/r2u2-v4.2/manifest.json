@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "tl-mltl.r2u2-corpus/v1",
+  "source": {
+    "repository": "https://github.com/R2U2/r2u2",
+    "tag": "4.2-release",
+    "revision": "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a",
+    "license": "MIT OR Apache-2.0"
+  },
+  "tools": {
+    "c2po": {
+      "version": "4.1.0",
+      "path": "compiler/c2po.py",
+      "sha256": "f978a32f667a8247c387a66bce35371c97b7d8f7b730035a8ee40cdfc428ce12"
+    },
+    "r2u2": {
+      "version": "4.2-release",
+      "path": "monitors/c/build/r2u2",
+      "sha256": "6b98ee5cfcad7073eef49a333b00be1e5b512ed9d3bed6b4e07418357a87ab92"
+    }
+  },
+  "artifacts": {
+    "formulas.c2po": "f7897af13640aa7c9fd6d72e31d721c10be8dfdf47b25edc32896b91a353de98",
+    "signals.map": "1c0e2d1168eb5254fc2d7eb68f575a040f088419ae623bbf0fac0b614b93f1b7",
+    "trace.csv": "2716a9f5c2f89bf6956d7b3532d6930a95ef29399a795365ac13ca6242892874",
+    "spec.bin": "4c6493fce4acb61197fb42c1b64176ad43a50e6ceca2b0276e71d203741b30c0"
+  },
+  "trace": [[], [0, 1], [1], [1]],
+  "cases": [
+    {
+      "id": "r2u2-future-witness-v1",
+      "formulaIndex": 0,
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.online-prefix/v1",
+        "root": 1,
+        "nodes": [
+          {"kind": "proposition", "proposition": 0},
+          {"kind": "future", "interval": {"start": 1, "end": 2}, "operand": 0}
+        ]
+      },
+      "expected": {"verdict": true, "verdictTime": 0}
+    },
+    {
+      "id": "r2u2-globally-counterexample-v1",
+      "formulaIndex": 1,
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.online-prefix/v1",
+        "root": 1,
+        "nodes": [
+          {"kind": "proposition", "proposition": 1},
+          {"kind": "globally", "interval": {"start": 0, "end": 2}, "operand": 0}
+        ]
+      },
+      "expected": {"verdict": false, "verdictTime": 0}
+    },
+    {
+      "id": "r2u2-future-deadline-v1",
+      "formulaIndex": 2,
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.online-prefix/v1",
+        "root": 1,
+        "nodes": [
+          {"kind": "proposition", "proposition": 2},
+          {"kind": "future", "interval": {"start": 0, "end": 3}, "operand": 0}
+        ]
+      },
+      "expected": {"verdict": false, "verdictTime": 0}
+    }
+  ],
+  "unsupportedCases": [
+    {
+      "id": "closed-profile-not-mapped-v1",
+      "reason": "the adapter requires mltl.online-prefix/v1 and does not reinterpret closed-trace semantics"
+    }
+  ]
+}
