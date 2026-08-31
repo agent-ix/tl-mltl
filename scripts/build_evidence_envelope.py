@@ -156,10 +156,10 @@ def build(evidence_dir: Path, phase: str) -> None:
             "python3 scripts/validate_json_schema.py INPUT_SCHEMA collection-input.json",
             "python3 scripts/validate_json_schema.py MANIFEST_SCHEMA evidence-manifest.json",
             "python3 scripts/validate_json_schema.py PGM01_SCHEMA evidence-envelope.json",
-            "python3 PGM01_VALIDATOR --fixture evidence-envelope.json",
+            "PGM01_PYTHON PGM01_VALIDATOR --fixture evidence-envelope.json",
             "python3 scripts/build_evidence_envelope.py EVIDENCE_DIR final",
             "python3 scripts/validate_json_schema.py PGM01_SCHEMA finalized-evidence-envelope.json",
-            "python3 PGM01_VALIDATOR --fixture finalized-evidence-envelope.json",
+            "PGM01_PYTHON PGM01_VALIDATOR --fixture finalized-evidence-envelope.json",
             "python3 scripts/finalize_collection.py EVIDENCE_DIR",
         ],
         "tools": {

@@ -9,6 +9,7 @@ else
   evidence_dir="evidence/tl-mltl-v01-${evidence_revision}-${evidence_timestamp}"
 fi
 checksum_path="${evidence_dir}.sha256"
+pgm01_python="${PGM01_PYTHON:-python3}"
 
 if [[ -e "$evidence_dir" || -e "$checksum_path" ]]; then
   echo "refusing to overwrite retained evidence: $evidence_dir" >&2
@@ -86,7 +87,7 @@ fi
 
 if [[ -n "${PGM01_VALIDATOR:-}" ]]; then
   run_and_retain pgm01-validator \
-    python3 "$PGM01_VALIDATOR" --fixture "$evidence_dir/evidence-envelope.json"
+    "$pgm01_python" "$PGM01_VALIDATOR" --fixture "$evidence_dir/evidence-envelope.json"
 else
   retain_skipped pgm01-validator
 fi
@@ -103,7 +104,7 @@ fi
 
 if [[ -n "${PGM01_VALIDATOR:-}" ]]; then
   run_and_retain sealed-pgm01-validator \
-    python3 "$PGM01_VALIDATOR" --fixture "$evidence_dir/evidence-envelope.json"
+    "$pgm01_python" "$PGM01_VALIDATOR" --fixture "$evidence_dir/evidence-envelope.json"
 else
   retain_skipped sealed-pgm01-validator
 fi

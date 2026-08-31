@@ -53,6 +53,7 @@ fn evidence_contract_is_complete_and_wired_to_gates() {
         "make spec",
         "quire coverage --scope . --strict",
         "PGM01_SCHEMA",
+        "PGM01_PYTHON",
         "PGM01_VALIDATOR",
     ] {
         assert!(collector.contains(command), "collector omits {command}");
