@@ -20,6 +20,7 @@ fn evidence_contract_is_complete_and_wired_to_gates() {
         "PYTHONOPTIMIZE",
         "CARGO",
         "CARGO_HOME",
+        "CARGO_TARGET_DIR",
         "RUSTUP_TOOLCHAIN",
         "RUSTUP_HOME",
         "RUSTC",
@@ -77,6 +78,7 @@ fn evidence_contract_is_complete_and_wired_to_gates() {
         "quire coverage --scope . --strict",
         "PGM01_SCHEMA",
         "PGM01_VALIDATOR",
+        "--observed-tool-sha256",
     ] {
         assert!(collector.contains(command), "collector omits {command}");
     }

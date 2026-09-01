@@ -15,6 +15,9 @@ import finalize_collection as finalizer
 
 
 ROOT = Path(__file__).resolve().parent.parent
+KNOWN_REVISION = "54a96ae78a7c427dfb92de8c0a4e543864d88bdd"
+KNOWN_RUST_TESTS = 21
+KNOWN_PARAMETERS_DIGEST = "fa46a390408d1bc3842bbfb33d3f31d12c6c5727687623ab52c9db9a9cdaee96"
 
 
 def expect(condition: bool, message: str) -> None:
@@ -23,11 +26,10 @@ def expect(condition: bool, message: str) -> None:
 
 
 def healthy_output(evidence_dir: Path, name: str) -> str:
-    if name == "make-ci":
-        count = finalizer.expected_rust_tests(evidence_dir)
+    if name == "candidate-gates":
         return (
-            f"test result: ok. {count} passed; 0 failed; 0 ignored\n"
-            "all 10 mandatory local-CI targets propagate failures\n"
+            f"test result: ok. {KNOWN_RUST_TESTS} passed; 0 failed; 0 ignored\n"
+            "all 12 mandatory local/candidate-CI targets propagate failures\n"
             "all 3 evidence-policy behavior tests passed\n"
             "Coverage: 49/49 rows backed (100%)\n"
             "licenses ok\n"
@@ -56,6 +58,45 @@ def healthy_output(evidence_dir: Path, name: str) -> str:
 
 
 def main() -> int:
+    verifier = (ROOT / "scripts" / "verify_evidence.sh").read_text(encoding="utf-8")
+    expect("active=0" in verifier and "if [[ $active -eq 0 ]]" in verifier, (
+        "evidence verifier does not require a non-retracted active record"
+    ))
+    expect(
+        finalizer.evidence_profile.revision_reachable(KNOWN_REVISION),
+        "reviewed source revision is not reachable from a retained ref",
+    )
+    with tempfile.TemporaryDirectory(prefix="tl-mltl-reachability-") as directory:
+        repository = Path(directory)
+        subprocess.run(["/usr/bin/git", "init", "-q", "-b", "main"], cwd=repository, check=True)
+        subprocess.run(
+            ["/usr/bin/git", "config", "user.name", "Evidence Test"], cwd=repository, check=True
+        )
+        subprocess.run(
+            ["/usr/bin/git", "config", "user.email", "evidence@example.invalid"],
+            cwd=repository,
+            check=True,
+        )
+        marker = repository / "marker"
+        marker.write_text("reachable\n", encoding="utf-8")
+        subprocess.run(["/usr/bin/git", "add", "marker"], cwd=repository, check=True)
+        subprocess.run(["/usr/bin/git", "commit", "-qm", "reachable"], cwd=repository, check=True)
+        subprocess.run(["/usr/bin/git", "checkout", "-qb", "discarded"], cwd=repository, check=True)
+        marker.write_text("dangling\n", encoding="utf-8")
+        subprocess.run(["/usr/bin/git", "commit", "-qam", "dangling"], cwd=repository, check=True)
+        dangling = subprocess.run(
+            ["/usr/bin/git", "rev-parse", "HEAD"],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        subprocess.run(["/usr/bin/git", "checkout", "-q", "main"], cwd=repository, check=True)
+        subprocess.run(["/usr/bin/git", "branch", "-D", "discarded"], cwd=repository, check=True)
+        expect(
+            not finalizer.evidence_profile.revision_reachable(dangling, repository),
+            "unreferenced squash-source commit was accepted as reachable",
+        )
     with tempfile.TemporaryDirectory(prefix="tl-mltl-retractions-") as directory:
         root = Path(directory)
         evidence_root = root / "evidence"
@@ -106,20 +147,32 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as directory:
         evidence_dir = Path(directory)
-        (evidence_dir / "make-ci.status.txt").write_text("0\n", encoding="utf-8")
-        (evidence_dir / "make-ci.stdout").write_text("passed\n", encoding="utf-8")
+        (evidence_dir / "candidate-gates.status.txt").write_text("0\n", encoding="utf-8")
+        (evidence_dir / "candidate-gates.stdout").write_text("passed\n", encoding="utf-8")
         (evidence_dir / "pgm01-schema.status.txt").write_text("125\n", encoding="utf-8")
         (evidence_dir / "pgm01-schema.stdout").write_text("ordinary-output\n", encoding="utf-8")
         (evidence_dir / "pgm01-validator.status.txt").write_text("3\n", encoding="utf-8")
         outcomes = {item["name"]: item for item in builder.command_outcomes(evidence_dir)}
         expect(
-            outcomes["make-ci"] == {"name": "make-ci", "status": "passed", "exitCode": 0},
-            "zero make-ci status was not classified as passed",
+            outcomes["candidate-gates"]
+            == {"name": "candidate-gates", "status": "passed", "exitCode": 0},
+            "zero candidate-gates status was not classified as passed",
         )
         expect(
             outcomes["pgm01-schema"]
-            == {"name": "pgm01-schema", "status": "skipped-unavailable", "exitCode": 125},
-            "unavailable schema gate was not classified as skipped",
+            == {"name": "pgm01-schema", "status": "failed", "exitCode": 125},
+            "status 125 without the skip marker was not failed",
+        )
+        (evidence_dir / "pgm01-schema.stdout").write_text(
+            "skipped-unavailable\n", encoding="utf-8"
+        )
+        (evidence_dir / "pgm01-schema.stderr").write_text("", encoding="utf-8")
+        explicitly_skipped = {
+            item["name"]: item for item in builder.command_outcomes(evidence_dir)
+        }
+        expect(
+            explicitly_skipped["pgm01-schema"]["status"] == "skipped-unavailable",
+            "paired status-125 skip marker was not preserved",
         )
         expect(
             outcomes["pgm01-validator"]
@@ -127,8 +180,8 @@ def main() -> int:
             "failed validator was not classified as failed",
         )
         expect(outcomes["make-spec"]["status"] == "inconclusive", "missing command became conclusive")
-        expect(builder.classify_result("final", [outcomes["make-ci"]])[0] == "inconclusive", "final envelope self-attested")
-        expect(builder.classify_result("sealed-failed", [outcomes["make-ci"]])[0] == "error", "sealed failure was hidden")
+        expect(builder.classify_result("final", [outcomes["candidate-gates"]])[0] == "inconclusive", "final envelope self-attested")
+        expect(builder.classify_result("sealed-failed", [outcomes["candidate-gates"]])[0] == "error", "sealed failure was hidden")
 
         (evidence_dir / "evidence-envelope.json").write_text("{}\n", encoding="utf-8")
         for name in finalizer.CHECKS:
@@ -144,19 +197,32 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="tl-mltl-qualified-") as directory:
         evidence_dir = Path(directory)
-        revision = subprocess.run(
-            ["/usr/bin/git", "rev-parse", "HEAD"],
-            cwd=ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
+        revision = KNOWN_REVISION
         (evidence_dir / "source-revision.txt").write_text(revision + "\n", encoding="utf-8")
+        expected_tools = finalizer.tool_identity.validate_lock(
+            json.loads(finalizer.git_text(revision, "tools.lock")),
+            required=finalizer.tool_identity.LEGACY_REQUIRED,
+            expected_target=None,
+        )
         (evidence_dir / "collection-input.json").write_text(
-            json.dumps({"qualificationProfile": finalizer.evidence_profile.PROFILE}) + "\n",
+            json.dumps(
+                {
+                    "qualificationProfile": finalizer.evidence_profile.PROFILE,
+                    "tools": {"identities": expected_tools},
+                }
+            )
+            + "\n",
             encoding="utf-8",
         )
         parameters = finalizer.historical_parameters_digest(revision)
+        expect(
+            finalizer.expected_rust_tests(evidence_dir) == KNOWN_RUST_TESTS,
+            "source-derived Rust test census disagrees with the known-answer revision",
+        )
+        expect(
+            parameters == KNOWN_PARAMETERS_DIGEST,
+            "source-derived parameter digest disagrees with the known-answer revision",
+        )
         (evidence_dir / "evidence-envelope.json").write_text(
             json.dumps(
                 {
@@ -176,14 +242,33 @@ def main() -> int:
 
         value = finalizer.summary(evidence_dir)
         expect(value["overallStatus"] == "passed", "healthy v2 evidence did not pass")
-        make_ci = (evidence_dir / "make-ci.stdout").read_text(encoding="utf-8")
+        expect(
+            not finalizer.validate_tool_identity(evidence_dir),
+            "independently retained tool identities did not match the source lock",
+        )
+        forged_collection = json.loads(
+            (evidence_dir / "collection-input.json").read_text(encoding="utf-8")
+        )
+        forged_collection["tools"]["identities"]["cargo"]["sha256"] = "0" * 64
+        (evidence_dir / "collection-input.json").write_text(
+            json.dumps(forged_collection) + "\n", encoding="utf-8"
+        )
+        expect(
+            bool(finalizer.validate_tool_identity(evidence_dir)),
+            "forged observed tool identity was accepted",
+        )
+        forged_collection["tools"]["identities"] = expected_tools
+        (evidence_dir / "collection-input.json").write_text(
+            json.dumps(forged_collection) + "\n", encoding="utf-8"
+        )
+        make_ci = (evidence_dir / "candidate-gates.stdout").read_text(encoding="utf-8")
         for signature in finalizer.MAKE_CI_SIGNATURES:
-            (evidence_dir / "make-ci.stdout").write_text(
+            (evidence_dir / "candidate-gates.stdout").write_text(
                 make_ci.replace(signature, "missing-signature", 1), encoding="utf-8"
             )
             expect(
                 finalizer.summary(evidence_dir)["overallStatus"] == "failed",
-                f"missing make-ci signature was accepted: {signature}",
+                f"missing candidate-gates signature was accepted: {signature}",
             )
         (evidence_dir / "diff-integrity.stdout").write_text(
             "unexpected diff diagnostic\n", encoding="utf-8"
@@ -204,7 +289,7 @@ def main() -> int:
             healthy_output(evidence_dir, "default-dependencies"), encoding="utf-8"
         )
         count = finalizer.expected_rust_tests(evidence_dir)
-        (evidence_dir / "make-ci.stdout").write_text(
+        (evidence_dir / "candidate-gates.stdout").write_text(
             make_ci.replace(f"ok. {count} passed", f"ok. {count + 1} passed", 1),
             encoding="utf-8",
         )
@@ -212,7 +297,7 @@ def main() -> int:
             finalizer.summary(evidence_dir)["overallStatus"] == "failed",
             "Rust test census drift was accepted",
         )
-        (evidence_dir / "make-ci.stdout").write_text(make_ci, encoding="utf-8")
+        (evidence_dir / "candidate-gates.stdout").write_text(make_ci, encoding="utf-8")
         (evidence_dir / "rustdoc.status.txt").unlink()
         missing = finalizer.summary(evidence_dir)
         expect(
@@ -238,6 +323,64 @@ def main() -> int:
             bool(finalizer.validate_parameter_identity(evidence_dir)),
             "forged parametersDigest was accepted",
         )
+
+        # The retained summary is the qualification verdict: passed, failed,
+        # and inconclusive must produce three distinct process exit classes.
+        envelope["parametersDigest"]["value"] = parameters
+        envelope["result"]["status"] = "inconclusive"
+        (evidence_dir / "evidence-envelope.json").write_text(
+            json.dumps(envelope) + "\n", encoding="utf-8"
+        )
+        for name in finalizer.CHECKS:
+            status = evidence_dir / f"{name}.status.txt"
+            if not status.exists():
+                status.write_text("0\n", encoding="utf-8")
+        (evidence_dir / "candidate-gates.stdout").write_text(make_ci, encoding="utf-8")
+        passed = finalizer.summary(evidence_dir)
+        (evidence_dir / "collection-summary.json").write_text(
+            json.dumps(passed, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        result = subprocess.run(
+            ["/usr/bin/python3", "scripts/finalize_collection.py", "--check", str(evidence_dir)],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+        )
+        expect(result.returncode == 0, "passing retained summary did not exit zero")
+
+        (evidence_dir / "rustdoc.status.txt").write_text("1\n", encoding="utf-8")
+        envelope["result"]["status"] = "error"
+        (evidence_dir / "evidence-envelope.json").write_text(
+            json.dumps(envelope) + "\n", encoding="utf-8"
+        )
+        failed = finalizer.summary(evidence_dir)
+        (evidence_dir / "collection-summary.json").write_text(
+            json.dumps(failed, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        result = subprocess.run(
+            ["/usr/bin/python3", "scripts/finalize_collection.py", "--check", str(evidence_dir)],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+        )
+        expect(result.returncode == 1, "failed retained summary did not exit with failure")
+
+        (evidence_dir / "rustdoc.status.txt").unlink()
+        envelope["result"]["status"] = "inconclusive"
+        (evidence_dir / "evidence-envelope.json").write_text(
+            json.dumps(envelope) + "\n", encoding="utf-8"
+        )
+        inconclusive = finalizer.summary(evidence_dir)
+        (evidence_dir / "collection-summary.json").write_text(
+            json.dumps(inconclusive, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        result = subprocess.run(
+            ["/usr/bin/python3", "scripts/finalize_collection.py", "--check", str(evidence_dir)],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+        )
+        expect(result.returncode == 3, "inconclusive summary lacked its distinct exit class")
 
     optimized = dict(os.environ)
     optimized["PYTHONOPTIMIZE"] = "1"

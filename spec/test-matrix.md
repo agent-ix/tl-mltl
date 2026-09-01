@@ -53,4 +53,4 @@ relationships:
 | TC-014 | Exercise deterministic CLI schemas | Integration | P0 | FR-005-AC-1, NFR-001-AC-1, NFR-002-AC-1 | ✅ implemented |
 | TC-015 | Compare supported and non-conclusive differential cases | Integration | P0 | FR-005-AC-2, StR-001-VC-2 | ✅ implemented |
 | TC-016 | Verify retained evidence completeness and reject false-success classifications | Integration | P0 | FR-005-AC-3, NFR-002-AC-2, NFR-002-AC-3 | ✅ implemented |
-| TC-017 | Run all evidence-policy behavior suites: reject optimized policy execution, ambient Make/Rust/tool overrides, shell failure controls, PATH shims, executable digest drift, missing positive outputs, test-census drift, and forged parameter identity | Integration | P0 | NFR-002-AC-3, NFR-002-AC-4 | ✅ implemented |
+| TC-017 | Run the content-bound evidence-policy behavior suites: reject optimized policy execution, ambient Make/Rust/tool overrides, global shell directives and shell assignments, PATH shims, executable digest drift, missing positive outputs, inactive archives, compiled-test-census drift, and forged tool or parameter identity | Integration | P0 | NFR-002-AC-3, NFR-002-AC-4 | ✅ implemented |

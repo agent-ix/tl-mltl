@@ -45,15 +45,22 @@ def main() -> int:
             tools[name] = {"path": str(path), "sha256": digest}
         value = {
             "schemaVersion": "tl-mltl.qualified-tools/v1",
-            "environment": {"home": "/qualified", "cargoTargetDir": "/qualified/target"},
+            "environment": {
+                "home": tool_identity.EXPECTED_HOME,
+                "cargoTargetDir": str(tool_identity.ROOT / ".qualification-target"),
+            },
             "tools": tools,
         }
         validated = tool_identity.validate_lock(value)
-        unavailable, mismatches = tool_identity.verify_live(value, validated)
+        unavailable, mismatches = tool_identity.verify_live(
+            value, validated, search_path=tool_identity.trusted_path(validated)
+        )
         expect(not unavailable and not mismatches, "synthetic qualified tool identities disagreed")
         value["tools"]["cargo"]["sha256"] = "0" * 64
         changed = tool_identity.validate_lock(value)
-        _, changed_mismatches = tool_identity.verify_live(value, changed)
+        _, changed_mismatches = tool_identity.verify_live(
+            value, changed, search_path=tool_identity.trusted_path(changed)
+        )
         expect(any("cargo" in item for item in changed_mismatches), "digest mutation was not detected")
     print("qualified tool identity behavior is valid")
     return 0

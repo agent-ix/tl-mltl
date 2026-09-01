@@ -6,12 +6,33 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
 PROFILE = "tl-mltl.evidence-qualification/v2"
 RETRACTIONS = ROOT / "evidence" / "RETRACTIONS.json"
+
+
+def revision_reachable(revision: str, root: Path = ROOT) -> bool:
+    result = subprocess.run(
+        [
+            "/usr/bin/git",
+            "for-each-ref",
+            "--format=%(refname)",
+            "--contains",
+            revision,
+            "refs/heads",
+            "refs/remotes",
+            "refs/tags",
+        ],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0 and bool(result.stdout.strip())
 
 
 def retracted_records(
@@ -68,4 +89,20 @@ def resolve_profile(evidence_dir: Path) -> str:
         check=False,
         capture_output=True,
     )
-    return "v2" if result.returncode == 0 else "inconclusive"
+    return "v2" if result.returncode == 0 and revision_reachable(revision) else "inconclusive"
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        print("usage: evidence_profile.py EVIDENCE_DIR", file=sys.stderr)
+        return 2
+    try:
+        print(resolve_profile(Path(sys.argv[1])))
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        print(f"cannot resolve evidence profile: {error}", file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

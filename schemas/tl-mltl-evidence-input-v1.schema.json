@@ -40,16 +40,31 @@
         "identities": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["bash", "cargo", "git", "make", "python3", "quire", "rustc", "sha256sum"],
+          "required": ["bash", "basename", "cargo", "cut", "date", "dirname", "env", "find", "git", "grep", "make", "mkdir", "mktemp", "mv", "printf", "python3", "quire", "rm", "rmdir", "rustc", "sha256sum", "sort", "xargs"],
           "properties": {
             "bash": {"$ref": "#/definitions/toolIdentity"},
+            "basename": {"$ref": "#/definitions/toolIdentity"},
             "cargo": {"$ref": "#/definitions/toolIdentity"},
+            "cut": {"$ref": "#/definitions/toolIdentity"},
+            "date": {"$ref": "#/definitions/toolIdentity"},
+            "dirname": {"$ref": "#/definitions/toolIdentity"},
+            "env": {"$ref": "#/definitions/toolIdentity"},
+            "find": {"$ref": "#/definitions/toolIdentity"},
             "git": {"$ref": "#/definitions/toolIdentity"},
+            "grep": {"$ref": "#/definitions/toolIdentity"},
             "make": {"$ref": "#/definitions/toolIdentity"},
+            "mkdir": {"$ref": "#/definitions/toolIdentity"},
+            "mktemp": {"$ref": "#/definitions/toolIdentity"},
+            "mv": {"$ref": "#/definitions/toolIdentity"},
+            "printf": {"$ref": "#/definitions/toolIdentity"},
             "python3": {"$ref": "#/definitions/toolIdentity"},
             "quire": {"$ref": "#/definitions/toolIdentity"},
+            "rm": {"$ref": "#/definitions/toolIdentity"},
+            "rmdir": {"$ref": "#/definitions/toolIdentity"},
             "rustc": {"$ref": "#/definitions/toolIdentity"},
-            "sha256sum": {"$ref": "#/definitions/toolIdentity"}
+            "sha256sum": {"$ref": "#/definitions/toolIdentity"},
+            "sort": {"$ref": "#/definitions/toolIdentity"},
+            "xargs": {"$ref": "#/definitions/toolIdentity"}
           }
         }
       }

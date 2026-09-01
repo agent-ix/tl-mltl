@@ -11,12 +11,14 @@ import sys
 from pathlib import Path
 
 import evidence_profile
+import parameter_identity
+import rust_test_census
 import tool_identity
 
 
 ROOT = Path(__file__).resolve().parent.parent
 CHECKS = (
-    "make-ci",
+    "candidate-gates",
     "make-spec",
     "quire-coverage",
     "rustdoc",
@@ -39,6 +41,7 @@ MAKE_CI_SIGNATURES = (
     "fmt-check gate passed",
     "lint gate passed",
     "Rust test gate passed",
+    "rust-test-census gate passed",
     "corpus-integrity gate passed",
     "deny gate passed",
     "audit-unsafe gate passed",
@@ -87,39 +90,7 @@ def parameter_paths_at_revision(revision: str) -> list[str]:
             text=True,
         ).stdout.splitlines()
     )
-    fixed = {
-        "Cargo.toml",
-        "Cargo.lock",
-        "build.rs",
-        "Makefile",
-        "deny.toml",
-        "rust-toolchain.toml",
-        ".github/workflows/ci.yml",
-        "tools.lock",
-        "evidence/RETRACTIONS.json",
-        "corpus/tl-syntax-v1.sha256",
-        "corpus/r2u2-v4.2/SHA256SUMS",
-        "corpus/r2u2-v4.2/manifest.json",
-        "corpus/r2u2-v4.2/differential-report.json",
-        "schemas/tl-mltl-evidence-input-v1.schema.json",
-        "schemas/tl-mltl-evidence-manifest-v1.schema.json",
-    }
-    missing = fixed - tree
-    if missing:
-        raise OSError(f"source revision lacks parameter files: {sorted(missing)}")
-    dynamic = {
-        path
-        for path in tree
-        if (
-            (path.startswith("src/") or path.startswith("tests/"))
-            and path.endswith(".rs")
-        )
-        or (
-            path.startswith("scripts/")
-            and Path(path).suffix in {".py", ".sh"}
-        )
-    }
-    return sorted(fixed | dynamic)
+    return parameter_identity.parameter_names(tree)
 
 
 def historical_parameters_digest(revision: str) -> str:
@@ -134,18 +105,7 @@ def historical_parameters_digest(revision: str) -> str:
 
 def expected_rust_tests(evidence_dir: Path) -> int:
     revision = source_revision(evidence_dir)
-    paths = subprocess.run(
-        ["/usr/bin/git", "ls-tree", "-r", "--name-only", revision, "--", "src", "tests"],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.splitlines()
-    count = sum(
-        len(re.findall(r"(?m)^\s*#\[test\]\s*$", git_text(revision, relative)))
-        for relative in paths
-        if relative.endswith(".rs")
-    )
+    count = len(rust_test_census.git_tagged_test_names(ROOT, revision))
     if count <= 0:
         raise ValueError("cannot derive a non-empty Rust test census from the source revision")
     return count
@@ -166,11 +126,11 @@ def positive_output(evidence_dir: Path, name: str) -> bool:
     )
     if name == "diff-integrity":
         return not output.strip()
-    if name == "make-ci":
+    if name == "candidate-gates":
         passed = [int(value) for value in TEST_SUCCESS.findall(output)]
         return (
             sum(passed) == expected_rust_tests(evidence_dir)
-            and "all 10 mandatory local-CI targets propagate failures" in output
+            and "all 12 mandatory local/candidate-CI targets propagate failures" in output
             and "all 3 evidence-policy behavior tests passed" in output
             and complete_fraction(output, r"Coverage:")
             and "licenses ok" in output
@@ -211,8 +171,17 @@ def derive_outcomes(evidence_dir: Path, require_positive: bool) -> list[dict[str
             outcomes.append({"name": name, "status": "inconclusive", "exitCode": None})
             continue
         exit_code = int(status_path.read_text(encoding="utf-8").strip())
-        skipped = exit_code == 125
+        stdout_path = evidence_dir / f"{name}.stdout"
         stderr_path = evidence_dir / f"{name}.stderr"
+        explicit_skip = (
+            exit_code == 125
+            and stdout_path.exists()
+            and stdout_path.read_text(encoding="utf-8", errors="replace").strip()
+            == "skipped-unavailable"
+            and stderr_path.exists()
+            and not stderr_path.read_text(encoding="utf-8", errors="replace").strip()
+        )
+        malformed_skip = exit_code == 125 and not explicit_skip
         validator_error = (
             exit_code == 0
             and name in {"pgm01-validator", "sealed-pgm01-validator"}
@@ -230,9 +199,9 @@ def derive_outcomes(evidence_dir: Path, require_positive: bool) -> list[dict[str
                 "name": name,
                 "status": (
                     "skipped-unavailable"
-                    if skipped
+                    if explicit_skip
                     else "failed"
-                    if validator_error or contradiction or positive_missing
+                    if malformed_skip or validator_error or contradiction or positive_missing
                     else "passed"
                     if exit_code == 0
                     else "failed"
@@ -271,7 +240,21 @@ def summary(evidence_dir: Path) -> dict[str, object]:
 def validate_tool_identity(evidence_dir: Path) -> list[str]:
     revision = source_revision(evidence_dir)
     try:
-        expected = tool_identity.validate_lock(json.loads(git_text(revision, "tools.lock")))
+        source_lock = json.loads(git_text(revision, "tools.lock"))
+        source_tools = source_lock.get("tools")
+        required = (
+            tool_identity.REQUIRED
+            if isinstance(source_tools, dict)
+            and set(source_tools) == set(tool_identity.REQUIRED)
+            else tool_identity.LEGACY_REQUIRED
+        )
+        expected = tool_identity.validate_lock(
+            source_lock,
+            required=required,
+            # Verification is portable: only a new collection must reproduce
+            # this checkout's host-local absolute target path.
+            expected_target=None,
+        )
         collection_input = json.loads(
             (evidence_dir / "collection-input.json").read_text(encoding="utf-8")
         )
@@ -338,10 +321,10 @@ def main() -> int:
             print(f"refusing to rewrite explicitly retracted evidence: {evidence_dir}", file=sys.stderr)
             return 2
         print(f"retained evidence is explicitly retracted: {evidence_dir}")
-        return 0
+        return 3
     if profile != "v2":
         print(f"active evidence is inconclusive without qualification-v2: {evidence_dir}", file=sys.stderr)
-        return 1
+        return 3
     try:
         value = summary(evidence_dir)
     except (OSError, ValueError, json.JSONDecodeError, subprocess.CalledProcessError) as error:
@@ -365,6 +348,12 @@ def main() -> int:
             return 2
         if actual != value:
             print(f"retained summary disagrees with status files: {evidence_dir}", file=sys.stderr)
+            return 1
+        if value["overallStatus"] == "inconclusive":
+            print(f"retained evidence is inconclusive: {evidence_dir}", file=sys.stderr)
+            return 3
+        if value["overallStatus"] != "passed":
+            print(f"retained evidence failed qualification: {evidence_dir}", file=sys.stderr)
             return 1
         return 0
     summary_path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")

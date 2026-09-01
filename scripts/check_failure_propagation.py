@@ -16,15 +16,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PROBES = {
     "fmt-check", "lint", "test", "check-corpus", "deny", "audit-unsafe",
-    "evidence-tool", "spec", "rustdoc", "verify-evidence",
+    "evidence-tool", "spec", "rustdoc", "verify-evidence", "rust-test-census",
 }
 COLLECTION_PROBES = PROBES - {"verify-evidence"}
 QUALIFICATION_TARGET = "check-tool-identities"
 GUARD_TARGET = "check-failure-propagation"
 TARGET = re.compile(r"^([A-Za-z0-9_.-]+):(?:\s+(.*?))?\s*$")
 IGNORE_ATTRIBUTE = re.compile(r"#\s*\[[^\]]*\bignore\b[^\]]*\]")
+DISABLED_CRATE_OR_MODULE = re.compile(r"#!\s*\[\s*cfg\s*\([^\]]*\)\s*\]")
 MAKEFLAGS_ASSIGNMENT = re.compile(
-    r"^\s*(?:(?:export|override|unexport)\s+)*MAKEFLAGS\s*(?::|\+|\?)?=\s*(.*)$"
+    r"^\s*(?:(?:export|override|unexport|private)\s+)*MAKEFLAGS\s*[:+?!]*=\s*(.*)$"
+)
+SHELL_ASSIGNMENT = re.compile(
+    r"^\s*(?:(?:export|override|unexport|private)\s+)*(?:SHELL|\.SHELLFLAGS)\s*[:+?!]*="
 )
 FORBIDDEN_SHELL_CONTROL = re.compile(r"\|\||(?<!&)\&(?!&)|(?<!\|)\|(?!\|)|;|(?:^|\s)set\s+\+e(?:\s|$)")
 
@@ -92,8 +96,10 @@ def inspect(makefile: Path, root: Path = ROOT) -> list[str]:
             f"extra={sorted(candidate_observed - candidate_required)}"
         )
     for number, line in enumerate(text.splitlines(), start=1):
-        if re.match(r"^\s*\.(?:IGNORE|SILENT)\s*(?::|$)", line):
+        if re.match(r"^\s*\.(?:IGNORE|SILENT|ONESHELL|DEFAULT)\s*(?::|$)", line):
             errors.append(f"Makefile:{number} declares a global recipe-control directive")
+        if SHELL_ASSIGNMENT.match(line):
+            errors.append(f"Makefile:{number} overrides the mandatory recipe shell")
         assignment = MAKEFLAGS_ASSIGNMENT.match(line)
         if assignment is not None and makeflags_ignore_errors(assignment.group(1)):
             errors.append(f"Makefile:{number} enables MAKEFLAGS ignore-errors")
@@ -111,10 +117,13 @@ def inspect(makefile: Path, root: Path = ROOT) -> list[str]:
                     f"mandatory target {target} uses a forbidden shell control operator: {command}"
                 )
     for source in root.rglob("*.rs"):
-        if ".git" in source.parts or "target" in source.parts:
+        if any(part in {".git", "target", ".qualification-target"} for part in source.parts):
             continue
-        if IGNORE_ATTRIBUTE.search(source.read_text(encoding="utf-8")):
+        source_text = source.read_text(encoding="utf-8")
+        if IGNORE_ATTRIBUTE.search(source_text):
             errors.append(f"{source.relative_to(root)} disables a Rust test with #[ignore]")
+        if DISABLED_CRATE_OR_MODULE.search(source_text):
+            errors.append(f"{source.relative_to(root)} has a crate/module-level cfg exclusion")
     return errors
 
 
@@ -129,7 +138,7 @@ def probe_command_positions(makefile: Path) -> list[str]:
     clean_env.pop("MAKEFLAGS", None)
     with tempfile.TemporaryDirectory() as directory:
         probe = Path(directory) / "Makefile"
-        for target in sorted(PROBES):
+        for target in sorted(PROBES | {QUALIFICATION_TARGET}):
             commands = recipes.get(target, [])
             for selected in range(len(commands)):
                 lines = [f".PHONY: {target}", f"{target}:"]
@@ -170,7 +179,9 @@ def main() -> int:
         print(error, file=sys.stderr)
     if errors:
         return 1
-    print(f"all {len(PROBES)} mandatory local-CI targets propagate failures")
+    print(
+        f"all {len(PROBES) + 1} mandatory local/candidate-CI targets propagate failures"
+    )
     return 0
 
 

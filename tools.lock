@@ -2,24 +2,68 @@
   "schemaVersion": "tl-mltl.qualified-tools/v1",
   "environment": {
     "home": "/home/peter",
-    "cargoTargetDir": "/home/peter/.cargo-target"
+    "cargoTargetDir": "/home/peter/dev/tl-mltl/.qualification-target"
   },
   "tools": {
     "bash": {
       "path": "/usr/bin/bash",
       "sha256": "59474588a312b6b6e73e5a42a59bf71e62b55416b6c9d5e4a6e1c630c2a9ecd4"
     },
+    "basename": {
+      "path": "/usr/bin/basename",
+      "sha256": "3c19cca8e2630f570580104778cc1e3398811c4c57e3252f0727ce411ab0ad22"
+    },
     "cargo": {
-      "path": "/home/peter/.cargo/bin/cargo",
-      "sha256": "4acc9acc76d5079515b46346a485974457b5a79893cfb01112423c89aeb5aa10"
+      "path": "/home/peter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo",
+      "sha256": "b7561ebe947acf816451536f19871ea4810f6be3f82fd252feab6ca7be8396f5"
+    },
+    "cut": {
+      "path": "/usr/bin/cut",
+      "sha256": "009c33a29d9bd64aac20430b729d0f797c05a97931e0a8a0fdc5bbbf47817758"
+    },
+    "date": {
+      "path": "/usr/bin/date",
+      "sha256": "08b85d43067bcd15edb0882d5372a8b5635e211f76b62ccc4d575f2ed4920e18"
+    },
+    "dirname": {
+      "path": "/usr/bin/dirname",
+      "sha256": "674a6c35e9ece6a6ac62e6442e3c65f391f8a1a8d1537bdd4b2203423ec16e94"
+    },
+    "env": {
+      "path": "/usr/bin/env",
+      "sha256": "85036540673319c6c2f54233fd2b9e45a8a71246b51cc96c4e6ab8ee6c419eb0"
+    },
+    "find": {
+      "path": "/usr/bin/find",
+      "sha256": "791b89c8bffb8101fd7d4d212b80af66a2332834b05a42721104eb47e8fa2eb1"
     },
     "git": {
       "path": "/usr/bin/git",
       "sha256": "587ef21868c948b883993e23209b86a72a6ddc06aab1545c697ffc31075acd4a"
     },
+    "grep": {
+      "path": "/usr/bin/grep",
+      "sha256": "73abb4280520053564fd4917286909ba3b054598b32c9cdfaf1d733e0202cc96"
+    },
     "make": {
       "path": "/usr/bin/make",
       "sha256": "92f646030615cd98490a68a94c0aefd87b552be3158b941c02e43b0bfdb576db"
+    },
+    "mkdir": {
+      "path": "/usr/bin/mkdir",
+      "sha256": "bd2f081ac37d653181332bd27f35a6041dbf215a7957f65838a9cbec9e64928b"
+    },
+    "mktemp": {
+      "path": "/usr/bin/mktemp",
+      "sha256": "b239a8e9703853fde69bcf2721c1b474eff8f07c4528ae603e2f0f34d8a063a6"
+    },
+    "mv": {
+      "path": "/usr/bin/mv",
+      "sha256": "8e2b0545d39a38c2167949bafa943a9d848f363ded3782a9c350fe5e1a66d82c"
+    },
+    "printf": {
+      "path": "/usr/bin/printf",
+      "sha256": "71f5e524ddba07b97b8b79913103f57dc7ac6a0dd71eed1f3945083b630b4af2"
     },
     "python3": {
       "path": "/usr/bin/python3",
@@ -29,13 +73,29 @@
       "path": "/home/peter/.npm-global/bin/quire",
       "sha256": "96ce25fe91ab75ee96505b343b251a3e1db16de430a524aabef1f5590dbc02b3"
     },
+    "rm": {
+      "path": "/usr/bin/rm",
+      "sha256": "7477c0f734a465a39a4fe40f6a9bb9d7431827e0a1d799ad1f25855b5dc63682"
+    },
+    "rmdir": {
+      "path": "/usr/bin/rmdir",
+      "sha256": "2c3cc56b1fde06c1ee31b0e713952d175b4bc5accda731c81ffc08182e687a9d"
+    },
     "rustc": {
-      "path": "/home/peter/.cargo/bin/rustc",
-      "sha256": "4acc9acc76d5079515b46346a485974457b5a79893cfb01112423c89aeb5aa10"
+      "path": "/home/peter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustc",
+      "sha256": "ef6d716e5d1c6c93def277c0afa037c21e7a74f7de3aed4ee0700646c3301b1d"
     },
     "sha256sum": {
       "path": "/usr/bin/sha256sum",
       "sha256": "7645c8e76d75515ccb75c9086bdcf0d4071f2985f380f249253ead7d7c6810b3"
+    },
+    "sort": {
+      "path": "/usr/bin/sort",
+      "sha256": "0fc26ce295e8e549635da2129e389f63685745b3be7c1737db6251a296f1cd78"
+    },
+    "xargs": {
+      "path": "/usr/bin/xargs",
+      "sha256": "ff3eca2d9d88883c0e997a5dbe62883819fffb40d12194ebd753848b7c7b3f0b"
     }
   }
 }

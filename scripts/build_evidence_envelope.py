@@ -7,9 +7,13 @@ import datetime as dt
 import hashlib
 import json
 import platform
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+import parameter_identity
+import tool_identity
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -27,7 +31,7 @@ SCHEMA_VALIDATOR = ROOT / "scripts" / "validate_json_schema.py"
 COLLECTION_FINALIZER = ROOT / "scripts" / "finalize_collection.py"
 
 COMMANDS = (
-    "make-ci",
+    "candidate-gates",
     "make-spec",
     "quire-coverage",
     "rustdoc",
@@ -68,7 +72,16 @@ def command_outcomes(evidence_dir: Path) -> list[dict[str, object]]:
             outcomes.append({"name": name, "status": "inconclusive", "exitCode": None})
             continue
         exit_code = int(status_path.read_text().strip())
-        skipped = exit_code == 125
+        stdout_path = evidence_dir / f"{name}.stdout"
+        stderr_path = evidence_dir / f"{name}.stderr"
+        skipped = (
+            exit_code == 125
+            and stdout_path.exists()
+            and stdout_path.read_text(encoding="utf-8", errors="replace").strip()
+            == "skipped-unavailable"
+            and stderr_path.exists()
+            and not stderr_path.read_text(encoding="utf-8", errors="replace").strip()
+        )
         outcomes.append(
             {
                 "name": name,
@@ -97,29 +110,16 @@ def classify_result(
 
 
 def parameter_paths() -> tuple[Path, ...]:
-    fixed = (
-        ROOT / "Cargo.toml",
-        ROOT / "Cargo.lock",
-        ROOT / "build.rs",
-        ROOT / "Makefile",
-        ROOT / "deny.toml",
-        ROOT / "rust-toolchain.toml",
-        ROOT / ".github" / "workflows" / "ci.yml",
-        TOOLS_LOCK,
-        EVIDENCE_RETRACTIONS,
-        *sorted((ROOT / "src").glob("*.rs")),
-        *sorted((ROOT / "tests").glob("*.rs")),
-        ROOT / "corpus" / "tl-syntax-v1.sha256",
-        ROOT / "corpus" / "r2u2-v4.2" / "SHA256SUMS",
-        ROOT / "corpus" / "r2u2-v4.2" / "manifest.json",
-        ROOT / "corpus" / "r2u2-v4.2" / "differential-report.json",
-        INPUT_SCHEMA,
-        MANIFEST_SCHEMA,
+    tree = set(
+        subprocess.run(
+            ["/usr/bin/git", "ls-files"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
     )
-    scripts = tuple(sorted((ROOT / "scripts").glob("*.py"))) + tuple(
-        sorted((ROOT / "scripts").glob("*.sh"))
-    )
-    return tuple(sorted(set(fixed + scripts), key=lambda path: str(path.relative_to(ROOT))))
+    return tuple(ROOT / relative for relative in parameter_identity.parameter_names(tree))
 
 
 def hash_parameter_files() -> str:
@@ -184,9 +184,7 @@ def build(evidence_dir: Path, phase: str) -> None:
                     "path": (evidence_dir / f"tool-{name}-path.txt").read_text().strip(),
                     "sha256": (evidence_dir / f"tool-{name}-sha256.txt").read_text().strip(),
                 }
-                for name in (
-                    "bash", "cargo", "git", "make", "python3", "quire", "rustc", "sha256sum"
-                )
+                for name in tool_identity.REQUIRED
             },
         },
         "pgm01": {

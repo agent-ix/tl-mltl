@@ -12,6 +12,11 @@ endif
 ifneq ($(strip $(RUSTUP_TOOLCHAIN)$(RUSTUP_HOME)$(CARGO_HOME)$(RUSTC)$(RUSTDOC)$(RUSTC_WRAPPER)$(RUSTC_WORKSPACE_WRAPPER)$(RUSTFLAGS)$(CARGO_ENCODED_RUSTFLAGS)$(RUSTDOCFLAGS)$(LD_PRELOAD)$(LD_LIBRARY_PATH)$(PYTHONPATH)),)
 $(error local CI refuses ambient compiler, loader, or Python-path overrides)
 endif
+ifneq ($(strip $(CARGO_TARGET_DIR)),)
+ifneq ($(CARGO_TARGET_DIR),$(CURDIR)/.qualification-target)
+$(error local CI refuses an unqualified CARGO_TARGET_DIR)
+endif
+endif
 ifneq ($(origin CARGO),undefined)
 $(error local CI refuses a CARGO override)
 endif
@@ -75,6 +80,11 @@ lint:
 test:
 	cargo test --all-targets --all-features
 	@/usr/bin/printf 'Rust test gate passed\n'
+
+.PHONY: rust-test-census
+rust-test-census:
+	/usr/bin/python3 scripts/rust_test_census.py
+	@/usr/bin/printf 'rust-test-census gate passed\n'
 
 .PHONY: check-failure-propagation
 check-failure-propagation:
@@ -145,8 +155,8 @@ audit-unsafe:
 # =============================================================================
 
 .PHONY: ci ci-for-evidence
-ci-for-evidence: fmt-check lint test check-corpus deny audit-unsafe evidence-tool spec rustdoc check-failure-propagation check-tool-identities
+ci-for-evidence: fmt-check lint rust-test-census test check-corpus deny audit-unsafe evidence-tool spec rustdoc check-failure-propagation check-tool-identities
 	@/usr/bin/printf 'candidate CI gate passed\n'
 
-ci: fmt-check lint test check-corpus deny audit-unsafe evidence-tool spec rustdoc verify-evidence check-failure-propagation
+ci: fmt-check lint rust-test-census test check-corpus deny audit-unsafe evidence-tool spec rustdoc verify-evidence check-failure-propagation
 	@/usr/bin/printf 'full local CI gate passed\n'

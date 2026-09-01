@@ -14,21 +14,32 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 LOCK = ROOT / "tools.lock"
-REQUIRED = ("bash", "cargo", "git", "make", "python3", "quire", "rustc", "sha256sum")
+EXPECTED_HOME = "/home/peter"
+EXPECTED_TARGET = str(ROOT / ".qualification-target")
+REQUIRED = (
+    "bash", "basename", "cargo", "cut", "date", "dirname", "env", "find", "git",
+    "grep", "make", "mkdir", "mktemp", "mv", "printf", "python3", "quire", "rm",
+    "rmdir", "rustc", "sha256sum", "sort", "xargs",
+)
+LEGACY_REQUIRED = ("bash", "cargo", "git", "make", "python3", "quire", "rustc", "sha256sum")
 
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def validate_lock(value: Any) -> dict[str, dict[str, str]]:
+def validate_lock(
+    value: Any,
+    required: tuple[str, ...] = REQUIRED,
+    expected_target: str | None = EXPECTED_TARGET,
+) -> dict[str, dict[str, str]]:
     if not isinstance(value, dict) or value.get("schemaVersion") != "tl-mltl.qualified-tools/v1":
         raise ValueError("tools.lock has an unknown schema")
     tools = value.get("tools")
-    if not isinstance(tools, dict) or set(tools) != set(REQUIRED):
+    if not isinstance(tools, dict) or set(tools) != set(required):
         raise ValueError("tools.lock does not contain the exact mandatory-tool census")
     validated: dict[str, dict[str, str]] = {}
-    for name in REQUIRED:
+    for name in required:
         identity = tools.get(name)
         if not isinstance(identity, dict) or set(identity) != {"path", "sha256"}:
             raise ValueError(f"tools.lock has a malformed identity for {name}")
@@ -43,10 +54,10 @@ def validate_lock(value: Any) -> dict[str, dict[str, str]]:
     if (
         not isinstance(environment, dict)
         or set(environment) != {"home", "cargoTargetDir"}
-        or not isinstance(environment.get("home"), str)
-        or not Path(environment["home"]).is_absolute()
+        or environment.get("home") != EXPECTED_HOME
         or not isinstance(environment.get("cargoTargetDir"), str)
         or not Path(environment["cargoTargetDir"]).is_absolute()
+        or (expected_target is not None and environment["cargoTargetDir"] != expected_target)
     ):
         raise ValueError("tools.lock has a malformed qualification environment")
     return validated
@@ -67,7 +78,9 @@ def trusted_path(tools: dict[str, dict[str, str]]) -> str:
 
 
 def verify_live(
-    value: dict[str, Any], tools: dict[str, dict[str, str]]
+    value: dict[str, Any],
+    tools: dict[str, dict[str, str]],
+    search_path: str | None = None,
 ) -> tuple[list[str], list[str]]:
     unavailable: list[str] = []
     mismatches: list[str] = []
@@ -84,7 +97,7 @@ def verify_live(
                 f"locked tool digest mismatch for {name}: expected {expected['sha256']}, got {locked_digest}"
             )
             continue
-        observed = shutil.which(name, path=trusted_path(tools))
+        observed = shutil.which(name, path=search_path)
         if observed is None:
             unavailable.append(f"qualified tool is unavailable: {name}")
             continue
@@ -101,16 +114,28 @@ def verify_live(
     return unavailable, mismatches
 
 
+def observed_identity(
+    name: str, tools: dict[str, dict[str, str]], search_path: str | None = None
+) -> tuple[str, str]:
+    observed = shutil.which(name, path=search_path)
+    if observed is None:
+        raise OSError(f"qualified tool is unavailable: {name}")
+    return observed, sha256(Path(observed))
+
+
 def main() -> int:
     simple_options = {"--verify-live", "--trusted-path", "--home", "--cargo-target-dir"}
-    tool_options = {"--tool-path", "--tool-sha256"}
+    tool_options = {
+        "--tool-path", "--tool-sha256", "--observed-tool-path", "--observed-tool-sha256"
+    }
     if not (
         (len(sys.argv) == 2 and sys.argv[1] in simple_options)
         or (len(sys.argv) == 3 and sys.argv[1] in tool_options and sys.argv[2] in REQUIRED)
     ):
         print(
             "usage: tool_identity.py {--verify-live|--trusted-path|--home|"
-            "--cargo-target-dir|--tool-path NAME|--tool-sha256 NAME}",
+            "--cargo-target-dir|--tool-path NAME|--tool-sha256 NAME|"
+            "--observed-tool-path NAME|--observed-tool-sha256 NAME}",
             file=sys.stderr,
         )
         return 2
@@ -133,6 +158,14 @@ def main() -> int:
         return 0
     if sys.argv[1] == "--tool-sha256":
         print(tools[sys.argv[2]]["sha256"])
+        return 0
+    if sys.argv[1] in {"--observed-tool-path", "--observed-tool-sha256"}:
+        try:
+            observed_path, observed_digest = observed_identity(sys.argv[2], tools)
+        except OSError as error:
+            print(error, file=sys.stderr)
+            return 2
+        print(observed_path if sys.argv[1] == "--observed-tool-path" else observed_digest)
         return 0
     unavailable, mismatches = verify_live(value, tools)
     for error in unavailable + mismatches:

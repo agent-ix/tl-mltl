@@ -41,14 +41,16 @@ if ! /usr/bin/python3 -c 'import jsonschema' >/dev/null 2>&1; then
 fi
 verify_pinned_external "${PGM01_SCHEMA:-}" "$pgm01_schema_digest" "PGM-01 schema"
 verify_pinned_external "${PGM01_VALIDATOR:-}" "$pgm01_validator_digest" "PGM-01 validator"
-if ! /usr/bin/python3 scripts/tool_identity.py --verify-live; then
-  echo "qualified tool identities do not match tools.lock" >&2
-  exit 2
-fi
-
 trusted_path="$(/usr/bin/python3 scripts/tool_identity.py --trusted-path)"
 real_home="$(/usr/bin/python3 scripts/tool_identity.py --home)"
 cargo_target_dir="$(/usr/bin/python3 scripts/tool_identity.py --cargo-target-dir)"
+if ! /usr/bin/env -i PATH="$trusted_path" HOME="$real_home" \
+     CARGO_TARGET_DIR="$cargo_target_dir" USER=qualified LANG=C.UTF-8 LC_ALL=C.UTF-8 \
+     python3 scripts/tool_identity.py --verify-live; then
+  echo "qualified tool identities do not match tools.lock" >&2
+  exit 2
+fi
+/usr/bin/rm -rf -- "$cargo_target_dir"
 staging_root="$(/usr/bin/mktemp -d -p . .tl-mltl-evidence-stage.XXXXXX)"
 evidence_dir="$staging_root/$(/usr/bin/basename "$final_evidence_dir")"
 /usr/bin/mkdir -p "$evidence_dir"
@@ -95,16 +97,17 @@ echo clean >"$evidence_dir/source-state.txt"
 "${clean_env[@]}" python3 -c 'import importlib.metadata; print(importlib.metadata.version("jsonschema"))' >"$evidence_dir/jsonschema-version.txt"
 "${clean_env[@]}" quire provenance --pretty >"$evidence_dir/quire-provenance.json"
 "${clean_env[@]}" cargo metadata --format-version 1 --all-features >"$evidence_dir/metadata.json"
-for tool in bash cargo git make python3 quire rustc sha256sum; do
-  "${clean_env[@]}" python3 scripts/tool_identity.py --tool-path "$tool" \
+for tool in bash basename cargo cut date dirname env find git grep make mkdir mktemp mv \
+  printf python3 quire rm rmdir rustc sha256sum sort xargs; do
+  "${clean_env[@]}" python3 scripts/tool_identity.py --observed-tool-path "$tool" \
     >"$evidence_dir/tool-${tool}-path.txt"
-  "${clean_env[@]}" python3 scripts/tool_identity.py --tool-sha256 "$tool" \
+  "${clean_env[@]}" python3 scripts/tool_identity.py --observed-tool-sha256 "$tool" \
     >"$evidence_dir/tool-${tool}-sha256.txt"
 done
 
 # The candidate cannot already carry a checksum/assurance anchor for itself.
 # Run every substantive prerequisite; ordinary `make ci` adds that self-binding.
-run_and_retain make-ci "${clean_env[@]}" make ci-for-evidence
+run_and_retain candidate-gates "${clean_env[@]}" make ci-for-evidence
 run_and_retain make-spec "${clean_env[@]}" make spec
 run_and_retain quire-coverage "${clean_env[@]}" quire coverage --scope . --strict
 run_and_retain rustdoc "${clean_env[@]}" env RUSTDOCFLAGS=-Dwarnings cargo doc --no-deps --all-features

@@ -5,15 +5,19 @@ revision and outer-manifest digest. Those records remain checksum-verifiable for
 audit but must not support an active qualification claim; the legacy disposition
 cannot be applied to qualification-v2 evidence. New active records use the
 `tl-mltl.evidence-qualification/v2` profile, a clean-room environment, and the
-exact executable identities in `tools.lock`.
+exact executable identities in `tools.lock`. The collector independently
+resolves and hashes all 23 mandatory executables; the retained observations are
+compared with the lock at the record's source revision.
 
 The lock is deliberately scoped to the qualification host. `make ci-for-evidence`
-checks those live identities immediately before collection; ordinary `make ci`
-validates the retained identities against the record's exact source revision but
-does not require another operator to reproduce this host's absolute paths.
-The source branch carrying an active record must remain reachable until its
-bound source revision is an ancestor of a retained remote ref; a squash merge
-must therefore retain that branch unless an equivalent protected ref is added.
+checks those live identities immediately before collection. The collector
+deletes and recreates the ignored repository-local `.qualification-target`
+cache before those candidate gates. Ordinary `make ci` validates retained
+identities against the record's exact source revision but does not require
+another operator to reproduce this host's absolute paths. An active record is
+accepted only while its source revision remains reachable from a local branch,
+remote-tracking branch, or tag; a squash merge must therefore retain an
+appropriate ref.
 
 Run `bash scripts/collect_evidence.sh` from a clean repository root. Each run
 creates a revision-and-UTC-time-scoped directory and refuses overwrite. It
@@ -23,7 +27,9 @@ canonical `quire.derivation-evidence/v1`, and an external SHA-256 file.
 `evidence/ANCHORS` binds every retained outer manifest. `make verify-evidence`
 first checks those committed anchors, requires every retained manifest to have
 one, and then checks its contents and re-derives the post-seal summary, including
-the complete positive-output census and parameter digest.
+the complete positive-output census and parameter digest. It fails unless at
+least one reachable, non-retracted qualification-v2 record has an overall
+passing result; the current all-retracted archive therefore remains blocked.
 
 Set `PGM01_SCHEMA` to the merged PGM-01 Draft 7 schema and `PGM01_VALIDATOR` to
 its exact validator. Missing external gates are recorded as unavailable, never

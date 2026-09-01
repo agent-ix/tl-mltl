@@ -1,4 +1,5 @@
 /target
+/.qualification-target/
 __pycache__/
 *.pyc
 Cargo.lock.bak
