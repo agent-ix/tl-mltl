@@ -24,12 +24,23 @@ GUARD_TARGET = "check-failure-propagation"
 TARGET = re.compile(r"^([A-Za-z0-9_.-]+):(?:\s+(.*?))?\s*$")
 IGNORE_ATTRIBUTE = re.compile(r"#\s*\[[^\]]*\bignore\b[^\]]*\]")
 DISABLED_CRATE_OR_MODULE = re.compile(r"#!\s*\[\s*cfg\s*\([^\]]*\)\s*\]")
-MAKEFLAGS_ASSIGNMENT = re.compile(
-    r"^\s*(?:(?:export|override|unexport|private)\s+)*MAKEFLAGS\s*[:+?!]*=\s*(.*)$"
+ASSIGNMENT_OPERATOR = r"(?:\+=|\?=|!=|:::=|::=|:=|=)"
+CONTROL_NAMES = r"MAKEFLAGS|MAKE|SHELL|\.SHELLFLAGS"
+CONTROL_ASSIGNMENT = re.compile(
+    rf"^\s*(?:(?:export|override|unexport|private)\s+)*"
+    rf"({CONTROL_NAMES})\s*{ASSIGNMENT_OPERATOR}\s*(.*)$"
 )
-SHELL_ASSIGNMENT = re.compile(
-    r"^\s*(?:(?:export|override|unexport|private)\s+)*(?:SHELL|\.SHELLFLAGS)\s*[:+?!]*="
+CONTROL_DEFINE = re.compile(
+    rf"^\s*(?:(?:export|override|unexport|private)\s+)*define\s+"
+    rf"({CONTROL_NAMES})(?:\s|$)"
 )
+CONTROL_DIRECTIVE = re.compile(r"^\s*\.(IGNORE|SILENT|ONESHELL|DEFAULT)\s*(?::|$)")
+CONTROL_EVAL = re.compile(r"\$\s*[({]\s*eval\b")
+TARGET_SCOPED_CONTROL = re.compile(
+    rf"^\s*([^#=\n]+?):\s*(?:(?:export|override|unexport|private)\s+)*"
+    rf"({CONTROL_NAMES})\s*{ASSIGNMENT_OPERATOR}"
+)
+MAKEFILE_IMPORT = re.compile(r"^\s*(?:-?include|sinclude)\b")
 FORBIDDEN_SHELL_CONTROL = re.compile(r"\|\||(?<!&)\&(?!&)|(?<!\|)\|(?!\|)|;|(?:^|\s)set\s+\+e(?:\s|$)")
 
 
@@ -49,21 +60,30 @@ def parse_makefile(text: str) -> tuple[dict[str, list[str]], dict[str, list[str]
         if match is None or match.group(1).startswith("."):
             continue
         current = match.group(1)
+        if current in dependencies:
+            raise ValueError(f"duplicate target rule can overwrite policy state: {current}")
         dependencies[current] = (match.group(2) or "").split()
     return dependencies, recipes
 
 
 def makeflags_ignore_errors(value: str) -> bool:
+    """Return whether GNU Make flags can change what mandatory CI executes."""
     try:
         tokens = shlex.split(value)
     except ValueError:
         return True
-    return any(
-        token == "--ignore-errors"
-        or (token.startswith("-") and not token.startswith("--") and "i" in token[1:])
-        or (token and not token.startswith("-") and "=" not in token and "i" in token)
-        for token in tokens
-    )
+    for token in tokens:
+        if token.startswith(("--jobs", "--jobserver-", "--load-average", "--output-sync")):
+            continue
+        if token in {"--print-directory", "--no-print-directory"}:
+            continue
+        if re.fullmatch(r"-(?:j|l|O)(?:[0-9.]+|[A-Za-z]+)?", token):
+            continue
+        if token == "-w":
+            continue
+        if token:
+            return True
+    return False
 
 
 def command_parts(command: str) -> tuple[str, str]:
@@ -75,10 +95,48 @@ def command_parts(command: str) -> tuple[str, str]:
     return modifiers, stripped
 
 
-def inspect(makefile: Path, root: Path = ROOT) -> list[str]:
-    text = makefile.read_text(encoding="utf-8")
-    dependencies, recipes = parse_makefile(text)
+def inspect_execution_controls(text: str) -> list[str]:
+    """Reject global, scoped, generated, and imported Make execution controls."""
     errors: list[str] = []
+    for number, line in enumerate(text.splitlines(), start=1):
+        if line.startswith("\t"):
+            continue
+        target_scoped = TARGET_SCOPED_CONTROL.match(line)
+        if target_scoped is not None:
+            targets, name = target_scoped.groups()
+            errors.append(
+                f"Makefile:{number} assigns target-scoped execution control {name} "
+                f"for {targets.strip()}"
+            )
+        directive = CONTROL_DIRECTIVE.match(line)
+        if directive is not None:
+            errors.append(f"Makefile:{number} declares .{directive.group(1)}")
+        assignment = CONTROL_ASSIGNMENT.match(line)
+        if assignment is not None:
+            name, value = assignment.groups()
+            if name != "MAKEFLAGS" or makeflags_ignore_errors(value):
+                errors.append(f"Makefile:{number} assigns execution control {name}")
+        define = CONTROL_DEFINE.match(line)
+        if define is not None:
+            errors.append(f"Makefile:{number} defines execution control {define.group(1)}")
+        if CONTROL_EVAL.search(line):
+            errors.append(f"Makefile:{number} uses eval, which can hide execution controls")
+        if MAKEFILE_IMPORT.match(line):
+            errors.append(f"Makefile:{number} includes an uninspected Make fragment")
+    return errors
+
+
+def inspect(makefile: Path, root: Path = ROOT) -> list[str]:
+    try:
+        text = makefile.read_text(encoding="utf-8")
+    except OSError as error:
+        return [f"cannot read Makefile {makefile}: {error}"]
+    errors = inspect_execution_controls(text)
+    try:
+        dependencies, recipes = parse_makefile(text)
+    except ValueError as error:
+        errors.append(f"Makefile structure is ambiguous: {error}")
+        return errors
     ci_required = PROBES | {GUARD_TARGET}
     required = ci_required | {QUALIFICATION_TARGET}
     observed = set(dependencies.get("ci", []))
@@ -95,14 +153,6 @@ def inspect(makefile: Path, root: Path = ROOT) -> list[str]:
             f"missing={sorted(candidate_required - candidate_observed)}, "
             f"extra={sorted(candidate_observed - candidate_required)}"
         )
-    for number, line in enumerate(text.splitlines(), start=1):
-        if re.match(r"^\s*\.(?:IGNORE|SILENT|ONESHELL|DEFAULT)\s*(?::|$)", line):
-            errors.append(f"Makefile:{number} declares a global recipe-control directive")
-        if SHELL_ASSIGNMENT.match(line):
-            errors.append(f"Makefile:{number} overrides the mandatory recipe shell")
-        assignment = MAKEFLAGS_ASSIGNMENT.match(line)
-        if assignment is not None and makeflags_ignore_errors(assignment.group(1)):
-            errors.append(f"Makefile:{number} enables MAKEFLAGS ignore-errors")
     for target in sorted(required):
         commands = recipes.get(target, [])
         if not commands:
@@ -127,9 +177,49 @@ def inspect(makefile: Path, root: Path = ROOT) -> list[str]:
     return errors
 
 
+def inspect_expanded_recipes(makefile: Path, root: Path = ROOT) -> list[str]:
+    """Inspect recipes after Make variable expansion for hidden shell controls."""
+    errors: list[str] = []
+    clean_env = dict(os.environ)
+    clean_env.pop("MAKEFLAGS", None)
+    clean_env.pop("PYTHONOPTIMIZE", None)
+    for target in sorted(PROBES | {QUALIFICATION_TARGET}):
+        try:
+            result = subprocess.run(
+                ["/usr/bin/make", "--no-print-directory", "-n", "-f", str(makefile), target],
+                cwd=root,
+                check=False,
+                capture_output=True,
+                text=True,
+                env=clean_env,
+            )
+        except FileNotFoundError:
+            return ["required Make executable is unavailable: /usr/bin/make"]
+        if result.returncode != 0:
+            errors.append(f"cannot expand mandatory target {target}: {result.stderr.strip()}")
+            continue
+        for command in result.stdout.splitlines():
+            if FORBIDDEN_SHELL_CONTROL.search(command):
+                errors.append(
+                    f"expanded mandatory target {target} uses a forbidden shell control "
+                    f"operator: {command}"
+                )
+    return errors
+
+
 def probe_command_positions(makefile: Path) -> list[str]:
     """Substitute false at every mandatory recipe position and require Make to fail."""
-    _, recipes = parse_makefile(makefile.read_text(encoding="utf-8"))
+    text = makefile.read_text(encoding="utf-8")
+    control_errors = inspect_execution_controls(text)
+    if control_errors:
+        return [
+            "command-position probe refuses a Makefile with execution controls: " + error
+            for error in control_errors
+        ]
+    try:
+        _, recipes = parse_makefile(text)
+    except ValueError as error:
+        return [f"command-position probe refuses an ambiguous Makefile: {error}"]
     errors: list[str] = []
     make = shutil.which("make")
     if make != "/usr/bin/make":
@@ -167,12 +257,14 @@ def main() -> int:
     parser.add_argument("--static-only", action="store_true")
     args = parser.parse_args()
     errors = inspect(args.makefile)
-    if os.environ.get("MAKEFLAGS"):
-        errors.append("ambient MAKEFLAGS is not permitted for local CI")
+    if makeflags_ignore_errors(os.environ.get("MAKEFLAGS", "")):
+        errors.append("ambient MAKEFLAGS can change mandatory local CI execution")
     if os.environ.get("MAKE"):
         errors.append("ambient MAKE override is not permitted")
     if os.environ.get("PYTHONOPTIMIZE") or sys.flags.optimize:
         errors.append("optimized Python disables policy checks")
+    if not args.static_only and not errors:
+        errors.extend(inspect_expanded_recipes(args.makefile, ROOT))
     if not args.inspect_only and not args.static_only and not errors:
         errors.extend(probe_command_positions(args.makefile))
     for error in errors:

@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED = {
     "test_evidence_tool.py": "845f664db6aeabe1ffb506a595ca46f4f8838f18adb658aeaa5724e67d6213c8",
-    "test_failure_propagation.py": "705dfd9fc890e0094168b17dfe8bfb37bf8401087fc82a67d0af223cb47b39a2",
+    "test_failure_propagation.py": "3238cbd7d0daa31a7ecd5237b4f2a84a19882089962bcdf320bd30555568a9f5",
     "test_tool_identity.py": "37be9238d65df8b977d73ef0805b2b6a48c9ae256fc3ae82fb4ed473e24e7cc4",
 }
 
