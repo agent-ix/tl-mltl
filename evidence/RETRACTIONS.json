@@ -1,22 +1,40 @@
 {
-  "schemaVersion": "tl-mltl.evidence-retractions/v1",
+  "schemaVersion": "tl-mltl.evidence-retractions/v2",
   "records": {
     "tl-mltl-v01-202f8de64ea8-20260831T060946Z": {
+      "disposition": "legacy-unqualified",
+      "outerManifestSha256": "7d1d75a734625ae149d17fb113bdbc96c86e9a62325801ecc7a1f3c59949e178",
+      "sourceRevision": "202f8de64ea8dd06d4c8bb9bf7972644817fabc7",
       "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
     },
     "tl-mltl-v01-5072994619f8-20260831T022058Z": {
+      "disposition": "legacy-unqualified",
+      "outerManifestSha256": "3ef7708da61afc06968b71a9b74cdc959dc2230fb9f963d3497d78c5766de861",
+      "sourceRevision": "5072994619f8579f82326a569d265026a0eb0a35",
       "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
     },
     "tl-mltl-v01-786d3932a5e5-20260831T041429Z": {
+      "disposition": "legacy-unqualified",
+      "outerManifestSha256": "daf272959ed787fbcfe5726d6a63d4d4e3332e95f42050ba1481b56c830b852e",
+      "sourceRevision": "786d3932a5e574d651ffa345504b741d17041d81",
       "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
     },
     "tl-mltl-v01-a9b7847199c1-20260831T022156Z": {
+      "disposition": "legacy-unqualified",
+      "outerManifestSha256": "502f996f24b95714f9caa0adbac4d0a4fee5b27a02e54fb8e273300dda03872f",
+      "sourceRevision": "a9b7847199c1d846abd7b67901cd6836374ccee2",
       "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
     },
     "tl-mltl-v01-da2c7704a534-20260831T052229Z": {
+      "disposition": "legacy-unqualified",
+      "outerManifestSha256": "c0c2ee5426a0fc0a07bcb23ebadc2325a5b34615ba5e0dcfe1c25e6f6253d16d",
+      "sourceRevision": "da2c7704a5347d063398c852acf6aa5bf9b5752d",
       "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
     },
     "tl-mltl-v01-fced0e687f99-20260831T041645Z": {
+      "disposition": "legacy-unqualified",
+      "outerManifestSha256": "dd1b29c45df064cfe531aa044f9b5c669a8f79ce198f6ec3c2c30b81b03c543b",
+      "sourceRevision": "fced0e687f9975d1d0e128dc7c92c57b73a0eb97",
       "reason": "collector inherited ambient execution controls and recorded banners rather than executable identities"
     }
   }

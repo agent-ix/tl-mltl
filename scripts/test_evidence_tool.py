@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -55,6 +56,54 @@ def healthy_output(evidence_dir: Path, name: str) -> str:
 
 
 def main() -> int:
+    with tempfile.TemporaryDirectory(prefix="tl-mltl-retractions-") as directory:
+        root = Path(directory)
+        evidence_root = root / "evidence"
+        evidence_root.mkdir()
+        name = "legacy-record"
+        record = evidence_root / name
+        record.mkdir()
+        revision = "1" * 40
+        (record / "source-revision.txt").write_text(revision + "\n", encoding="utf-8")
+        (record / "collection-input.json").write_text("{}\n", encoding="utf-8")
+        outer = evidence_root / f"{name}.sha256"
+        outer.write_text("sealed record manifest\n", encoding="utf-8")
+        registry = evidence_root / "RETRACTIONS.json"
+        registry_value = {
+            "schemaVersion": "tl-mltl.evidence-retractions/v2",
+            "records": {
+                name: {
+                    "disposition": "legacy-unqualified",
+                    "outerManifestSha256": hashlib.sha256(outer.read_bytes()).hexdigest(),
+                    "reason": "legacy collector lacked qualification controls",
+                    "sourceRevision": revision,
+                }
+            },
+        }
+        registry.write_text(json.dumps(registry_value) + "\n", encoding="utf-8")
+        expect(
+            finalizer.evidence_profile.retracted_records(registry, evidence_root) == {name},
+            "bound legacy retraction was not accepted",
+        )
+        outer.write_text("tampered\n", encoding="utf-8")
+        try:
+            finalizer.evidence_profile.retracted_records(registry, evidence_root)
+        except ValueError:
+            pass
+        else:
+            raise RuntimeError("retraction accepted a changed outer manifest")
+        outer.write_text("sealed record manifest\n", encoding="utf-8")
+        (record / "collection-input.json").write_text(
+            json.dumps({"qualificationProfile": finalizer.evidence_profile.PROFILE}) + "\n",
+            encoding="utf-8",
+        )
+        try:
+            finalizer.evidence_profile.retracted_records(registry, evidence_root)
+        except ValueError:
+            pass
+        else:
+            raise RuntimeError("legacy disposition retracted qualification-v2 evidence")
+
     with tempfile.TemporaryDirectory() as directory:
         evidence_dir = Path(directory)
         (evidence_dir / "make-ci.status.txt").write_text("0\n", encoding="utf-8")

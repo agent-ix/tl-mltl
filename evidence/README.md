@@ -1,7 +1,9 @@
 # Retained evidence
 
-`RETRACTIONS.json` names records that remain checksum-verifiable for audit but
-must not support an active qualification claim. New active records use the
+`RETRACTIONS.json` binds each legacy disposition to the record's exact source
+revision and outer-manifest digest. Those records remain checksum-verifiable for
+audit but must not support an active qualification claim; the legacy disposition
+cannot be applied to qualification-v2 evidence. New active records use the
 `tl-mltl.evidence-qualification/v2` profile, a clean-room environment, and the
 exact executable identities in `tools.lock`.
 

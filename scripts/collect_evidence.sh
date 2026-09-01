@@ -12,6 +12,17 @@ checksum_path="${final_evidence_dir}.sha256"
 pgm01_schema_digest="0946e235e9e4b0fa79e9b9ec27ae157b303c17de0a9408d3cc04968fb7152256"
 pgm01_validator_digest="1c2881d5f8800dab031f6afa26d5ad11f88a5ab42a942bc9fe0c2853b58df2f1"
 
+verify_pinned_external() {
+  local path="$1"
+  local expected="$2"
+  local label="$3"
+  if [[ -n "$path" ]] && \
+     [[ "$(/usr/bin/sha256sum "$path" | /usr/bin/cut -d' ' -f1)" != "$expected" ]]; then
+    echo "$label digest does not match the reviewed artifact" >&2
+    return 1
+  fi
+}
+
 if [[ -e "$final_evidence_dir" || -e "$checksum_path" ]]; then
   echo "refusing to overwrite retained evidence: $final_evidence_dir" >&2
   exit 2
@@ -28,16 +39,8 @@ if ! /usr/bin/python3 -c 'import jsonschema' >/dev/null 2>&1; then
   echo "jsonschema is required for evidence collection" >&2
   exit 2
 fi
-if [[ -n "${PGM01_SCHEMA:-}" ]] && \
-   [[ "$(/usr/bin/sha256sum "$PGM01_SCHEMA" | /usr/bin/cut -d' ' -f1)" != "$pgm01_schema_digest" ]]; then
-  echo "PGM-01 schema digest does not match the pinned envelope schema" >&2
-  exit 2
-fi
-if [[ -n "${PGM01_VALIDATOR:-}" ]] && \
-   [[ "$(/usr/bin/sha256sum "$PGM01_VALIDATOR" | /usr/bin/cut -d' ' -f1)" != "$pgm01_validator_digest" ]]; then
-  echo "PGM-01 validator digest does not match the reviewed validator" >&2
-  exit 2
-fi
+verify_pinned_external "${PGM01_SCHEMA:-}" "$pgm01_schema_digest" "PGM-01 schema"
+verify_pinned_external "${PGM01_VALIDATOR:-}" "$pgm01_validator_digest" "PGM-01 validator"
 if ! /usr/bin/python3 scripts/tool_identity.py --verify-live; then
   echo "qualified tool identities do not match tools.lock" >&2
   exit 2
@@ -116,12 +119,14 @@ run_and_retain manifest-schema "${clean_env[@]}" python3 scripts/validate_json_s
   schemas/tl-mltl-evidence-manifest-v1.schema.json "$evidence_dir/evidence-manifest.json"
 
 if [[ -n "${PGM01_SCHEMA:-}" ]]; then
+  verify_pinned_external "$PGM01_SCHEMA" "$pgm01_schema_digest" "PGM-01 schema"
   run_and_retain pgm01-schema "${clean_env[@]}" python3 scripts/validate_json_schema.py \
     "$PGM01_SCHEMA" "$evidence_dir/evidence-envelope.json"
 else
   retain_skipped pgm01-schema
 fi
 if [[ -n "${PGM01_VALIDATOR:-}" ]]; then
+  verify_pinned_external "$PGM01_VALIDATOR" "$pgm01_validator_digest" "PGM-01 validator"
   run_and_retain pgm01-validator "${clean_env[@]}" python3 "$PGM01_VALIDATOR" \
     --fixture "$evidence_dir/evidence-envelope.json"
 else
@@ -131,12 +136,14 @@ fi
 "${clean_env[@]}" python3 scripts/build_evidence_envelope.py "$evidence_dir" final
 
 if [[ -n "${PGM01_SCHEMA:-}" ]]; then
+  verify_pinned_external "$PGM01_SCHEMA" "$pgm01_schema_digest" "PGM-01 schema"
   run_and_retain sealed-pgm01-schema "${clean_env[@]}" python3 scripts/validate_json_schema.py \
     "$PGM01_SCHEMA" "$evidence_dir/evidence-envelope.json"
 else
   retain_skipped sealed-pgm01-schema
 fi
 if [[ -n "${PGM01_VALIDATOR:-}" ]]; then
+  verify_pinned_external "$PGM01_VALIDATOR" "$pgm01_validator_digest" "PGM-01 validator"
   run_and_retain sealed-pgm01-validator "${clean_env[@]}" python3 "$PGM01_VALIDATOR" \
     --fixture "$evidence_dir/evidence-envelope.json"
 else
