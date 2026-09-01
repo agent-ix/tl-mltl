@@ -58,10 +58,110 @@ def healthy_output(evidence_dir: Path, name: str) -> str:
 
 
 def main() -> int:
-    verifier = (ROOT / "scripts" / "verify_evidence.sh").read_text(encoding="utf-8")
-    expect("active=0" in verifier and "if [[ $active -eq 0 ]]" in verifier, (
-        "evidence verifier does not require a non-retracted active record"
-    ))
+    with tempfile.TemporaryDirectory(prefix="tl-mltl-rust-census-") as directory:
+        repository = Path(directory)
+        scripts = repository / "scripts"
+        tests = repository / "tests"
+        fake_bin = repository / "bin"
+        scripts.mkdir()
+        tests.mkdir()
+        fake_bin.mkdir()
+        (scripts / "rust_test_census.py").write_bytes(
+            (ROOT / "scripts" / "rust_test_census.py").read_bytes()
+        )
+        (tests / "orphan.rs").write_text(
+            "// Trace: TC-ORPHAN\n#[test]\nfn orphan_is_not_compiled() {}\n",
+            encoding="utf-8",
+        )
+        cargo = fake_bin / "cargo"
+        cargo.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        cargo.chmod(0o755)
+        result = subprocess.run(
+            ["/usr/bin/python3", "scripts/rust_test_census.py"],
+            cwd=repository,
+            env={"PATH": str(fake_bin), "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"},
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        expect(result.returncode == 1, "orphan requirement-tagged Rust test escaped the census")
+        expect(
+            "missing=['orphan_is_not_compiled']" in result.stderr,
+            "orphan Rust-test fixture failed before reaching the compiled-test comparison",
+        )
+
+    with tempfile.TemporaryDirectory(prefix="tl-mltl-inactive-evidence-") as directory:
+        repository = Path(directory)
+        scripts = repository / "scripts"
+        evidence = repository / "evidence"
+        record = evidence / "legacy-record"
+        scripts.mkdir()
+        record.mkdir(parents=True)
+        for name in ("verify_evidence.sh", "evidence_profile.py"):
+            (scripts / name).write_bytes((ROOT / "scripts" / name).read_bytes())
+        revision = "1" * 40
+        (record / "source-revision.txt").write_text(revision + "\n", encoding="utf-8")
+        (record / "collection-input.json").write_text("{}\n", encoding="utf-8")
+        outer = evidence / "legacy-record.sha256"
+        outer.write_text(
+            "".join(
+                f"{hashlib.sha256(path.read_bytes()).hexdigest()}  "
+                f"{path.relative_to(repository)}\n"
+                for path in sorted(record.iterdir())
+            ),
+            encoding="utf-8",
+        )
+        (evidence / "RETRACTIONS.json").write_text(
+            json.dumps(
+                {
+                    "schemaVersion": "tl-mltl.evidence-retractions/v2",
+                    "records": {
+                        record.name: {
+                            "disposition": "legacy-unqualified",
+                            "outerManifestSha256": hashlib.sha256(outer.read_bytes()).hexdigest(),
+                            "reason": "fixture intentionally supplies no active evidence",
+                            "sourceRevision": revision,
+                        }
+                    },
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (evidence / "ANCHORS").write_text(
+            f"{hashlib.sha256(outer.read_bytes()).hexdigest()}  {outer.relative_to(repository)}\n",
+            encoding="utf-8",
+        )
+        subprocess.run(["/usr/bin/git", "init", "-q", "-b", "main"], cwd=repository, check=True)
+        subprocess.run(
+            ["/usr/bin/git", "config", "user.name", "Evidence Test"],
+            cwd=repository,
+            check=True,
+        )
+        subprocess.run(
+            ["/usr/bin/git", "config", "user.email", "evidence@example.invalid"],
+            cwd=repository,
+            check=True,
+        )
+        subprocess.run(["/usr/bin/git", "add", "."], cwd=repository, check=True)
+        subprocess.run(
+            ["/usr/bin/git", "commit", "-qm", "inactive evidence fixture"],
+            cwd=repository,
+            check=True,
+        )
+        result = subprocess.run(
+            ["/usr/bin/bash", "scripts/verify_evidence.sh"],
+            cwd=repository,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        expect(result.returncode == 1, "all-retracted retained evidence was accepted")
+        expect(
+            result.stderr.strip() == "no active non-retracted evidence record supports qualification",
+            "inactive-evidence fixture failed for the wrong reason",
+        )
+
     expect(
         finalizer.evidence_profile.revision_reachable(KNOWN_REVISION),
         "reviewed source revision is not reachable from a retained ref",

@@ -12,9 +12,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED = {
-    "test_evidence_tool.py": "02085c338d6042643746b1facfab4a9d05e291b52c7c025d439e5ec41b81f8aa",
+    "test_evidence_tool.py": "845f664db6aeabe1ffb506a595ca46f4f8838f18adb658aeaa5724e67d6213c8",
     "test_failure_propagation.py": "705dfd9fc890e0094168b17dfe8bfb37bf8401087fc82a67d0af223cb47b39a2",
-    "test_tool_identity.py": "7c9f66bcb7cafd8dbd529852ef9560cd2cfa802d76cd7b96c1767d19a0414704",
+    "test_tool_identity.py": "37be9238d65df8b977d73ef0805b2b6a48c9ae256fc3ae82fb4ed473e24e7cc4",
 }
 
 

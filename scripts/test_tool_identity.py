@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import subprocess
 import tempfile
 from pathlib import Path
@@ -56,6 +57,59 @@ def main() -> int:
             value, validated, search_path=tool_identity.trusted_path(validated)
         )
         expect(not unavailable and not mismatches, "synthetic qualified tool identities disagreed")
+
+        # Exercise the collector's observed-identity subprocess routes against
+        # an isolated copy of the script and its synthetic source lock.
+        scripts = root / "scripts"
+        scripts.mkdir()
+        (scripts / "tool_identity.py").write_bytes(
+            (tool_identity.ROOT / "scripts" / "tool_identity.py").read_bytes()
+        )
+        cli_value = json.loads(json.dumps(value))
+        cli_value["environment"]["cargoTargetDir"] = str(root / ".qualification-target")
+        cli_value["tools"]["cargo"] = {
+            "path": "/synthetic/locked/cargo",
+            "sha256": "0" * 64,
+        }
+        (root / "tools.lock").write_text(json.dumps(cli_value) + "\n", encoding="utf-8")
+        clean_env = {
+            "HOME": tool_identity.EXPECTED_HOME,
+            "PATH": str(root),
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+        }
+        observed_path = subprocess.run(
+            ["/usr/bin/python3", "scripts/tool_identity.py", "--observed-tool-path", "cargo"],
+            cwd=root,
+            env=clean_env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        expect(observed_path.returncode == 0, "observed tool-path CLI route was unreachable")
+        expect(
+            observed_path.stdout.strip() == tools["cargo"]["path"],
+            "observed tool-path CLI route returned the wrong path",
+        )
+        observed_digest = subprocess.run(
+            [
+                "/usr/bin/python3",
+                "scripts/tool_identity.py",
+                "--observed-tool-sha256",
+                "cargo",
+            ],
+            cwd=root,
+            env=clean_env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        expect(observed_digest.returncode == 0, "observed tool-digest CLI route was unreachable")
+        expect(
+            observed_digest.stdout.strip() == digest,
+            "observed tool-digest CLI route returned the lock transcription",
+        )
+
         value["tools"]["cargo"]["sha256"] = "0" * 64
         changed = tool_identity.validate_lock(value)
         _, changed_mismatches = tool_identity.verify_live(
