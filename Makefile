@@ -9,6 +9,9 @@ endif
 ifneq ($(strip $(PYTHONOPTIMIZE)),)
 $(error local CI refuses optimized Python policy execution)
 endif
+ifneq ($(strip $(RUSTUP_TOOLCHAIN)$(RUSTUP_HOME)$(CARGO_HOME)$(RUSTC)$(RUSTDOC)$(RUSTC_WRAPPER)$(RUSTC_WORKSPACE_WRAPPER)$(RUSTFLAGS)$(CARGO_ENCODED_RUSTFLAGS)$(RUSTDOCFLAGS)$(LD_PRELOAD)$(LD_LIBRARY_PATH)$(PYTHONPATH)),)
+$(error local CI refuses ambient compiler, loader, or Python-path overrides)
+endif
 ifneq ($(origin CARGO),undefined)
 $(error local CI refuses a CARGO override)
 endif
@@ -24,7 +27,7 @@ endif
 ifneq ($(origin BASH),undefined)
 $(error local CI refuses a BASH override)
 endif
-tl_ci_static_status := $(shell env -u PYTHONOPTIMIZE MAKEFLAGS= /usr/bin/python3 scripts/check_failure_propagation.py --makefile '$(firstword $(MAKEFILE_LIST))' --inspect-only >/dev/null 2>&1; echo $$?)
+tl_ci_static_status := $(shell /usr/bin/env -u PYTHONOPTIMIZE MAKEFLAGS= /usr/bin/python3 scripts/check_failure_propagation.py --makefile '$(firstword $(MAKEFILE_LIST))' --static-only >/dev/null; echo $$?)
 ifneq ($(tl_ci_static_status),0)
 $(error local CI refuses unsafe Make recipe controls)
 endif
@@ -76,6 +79,11 @@ test:
 .PHONY: check-failure-propagation
 check-failure-propagation:
 	/usr/bin/python3 scripts/check_failure_propagation.py
+
+.PHONY: check-tool-identities
+check-tool-identities:
+	/usr/bin/python3 scripts/tool_identity.py --verify-live
+	@/usr/bin/printf 'qualified tool identities passed\n'
 
 .PHONY: check-corpus
 check-corpus:
@@ -137,7 +145,7 @@ audit-unsafe:
 # =============================================================================
 
 .PHONY: ci ci-for-evidence
-ci-for-evidence: fmt-check lint test check-corpus deny audit-unsafe evidence-tool spec rustdoc check-failure-propagation
+ci-for-evidence: fmt-check lint test check-corpus deny audit-unsafe evidence-tool spec rustdoc check-failure-propagation check-tool-identities
 	@/usr/bin/printf 'candidate CI gate passed\n'
 
 ci: fmt-check lint test check-corpus deny audit-unsafe evidence-tool spec rustdoc verify-evidence check-failure-propagation

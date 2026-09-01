@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 
 import check_failure_propagation as policy
+import tool_identity
 
 
 def expect(condition: bool, message: str) -> None:
@@ -33,6 +34,16 @@ def main() -> int:
     expect(any("ignores a recipe failure" in item for item in inspect_text(mutated)), "ignored recipe failure was missed")
     mutated = makefile.replace("ci:", ".IGNORE:\n\nci:", 1)
     expect(any("global recipe-control" in item for item in inspect_text(mutated)), "global ignore was missed")
+    for suffix in (" || true", " ; true", " &", " | true", " ; set +e"):
+        mutated = makefile.replace(
+            "\tcargo test --all-targets --all-features",
+            "\tcargo test --all-targets --all-features" + suffix,
+            1,
+        )
+        expect(
+            any("forbidden shell control" in item for item in inspect_text(mutated)),
+            f"shell failure-control route was missed: {suffix}",
+        )
 
     base_env = dict(os.environ)
     base_env.pop("MAKEFLAGS", None)
@@ -56,15 +67,9 @@ def main() -> int:
         shim.chmod(0o755)
         attacked = dict(base_env)
         attacked["PATH"] = f"{directory}:{base_env['PATH']}"
-        result = subprocess.run(
-            ["/usr/bin/make", "--no-print-directory", "-n", "MAKEFLAGS=", "ci"],
-            cwd=policy.ROOT,
-            env=attacked,
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        expect(result.returncode != 0, "ambient PATH shim attack was accepted")
+        value, tools = tool_identity.load_lock()
+        unavailable, mismatches = tool_identity.verify_live(value, tools)
+        expect(not unavailable and not mismatches, "qualified path did not ignore ambient PATH")
     print("failure propagation behavior is valid")
     return 0
 

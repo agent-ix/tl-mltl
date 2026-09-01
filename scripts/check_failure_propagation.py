@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import re
 import shlex
@@ -14,21 +13,20 @@ import sys
 import tempfile
 from pathlib import Path
 
-import tool_identity
-
-
 ROOT = Path(__file__).resolve().parent.parent
 PROBES = {
     "fmt-check", "lint", "test", "check-corpus", "deny", "audit-unsafe",
     "evidence-tool", "spec", "rustdoc", "verify-evidence",
 }
 COLLECTION_PROBES = PROBES - {"verify-evidence"}
+QUALIFICATION_TARGET = "check-tool-identities"
 GUARD_TARGET = "check-failure-propagation"
 TARGET = re.compile(r"^([A-Za-z0-9_.-]+):(?:\s+(.*?))?\s*$")
 IGNORE_ATTRIBUTE = re.compile(r"#\s*\[[^\]]*\bignore\b[^\]]*\]")
 MAKEFLAGS_ASSIGNMENT = re.compile(
     r"^\s*(?:(?:export|override|unexport)\s+)*MAKEFLAGS\s*(?::|\+|\?)?=\s*(.*)$"
 )
+FORBIDDEN_SHELL_CONTROL = re.compile(r"\|\||(?<!&)\&(?!&)|(?<!\|)\|(?!\|)|;|(?:^|\s)set\s+\+e(?:\s|$)")
 
 
 def parse_makefile(text: str) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
@@ -77,14 +75,15 @@ def inspect(makefile: Path, root: Path = ROOT) -> list[str]:
     text = makefile.read_text(encoding="utf-8")
     dependencies, recipes = parse_makefile(text)
     errors: list[str] = []
-    required = PROBES | {GUARD_TARGET}
+    ci_required = PROBES | {GUARD_TARGET}
+    required = ci_required | {QUALIFICATION_TARGET}
     observed = set(dependencies.get("ci", []))
-    if observed != required:
+    if observed != ci_required:
         errors.append(
             "ci prerequisite census drift: "
-            f"missing={sorted(required - observed)}, extra={sorted(observed - required)}"
+            f"missing={sorted(ci_required - observed)}, extra={sorted(observed - ci_required)}"
         )
-    candidate_required = COLLECTION_PROBES | {GUARD_TARGET}
+    candidate_required = COLLECTION_PROBES | {GUARD_TARGET, QUALIFICATION_TARGET}
     candidate_observed = set(dependencies.get("ci-for-evidence", []))
     if candidate_observed != candidate_required:
         errors.append(
@@ -104,9 +103,13 @@ def inspect(makefile: Path, root: Path = ROOT) -> list[str]:
             errors.append(f"mandatory target {target} has no recipe")
             continue
         for command in commands:
-            modifiers, _ = command_parts(command)
+            modifiers, executable = command_parts(command)
             if "-" in modifiers:
                 errors.append(f"mandatory target {target} ignores a recipe failure: {command}")
+            if FORBIDDEN_SHELL_CONTROL.search(executable):
+                errors.append(
+                    f"mandatory target {target} uses a forbidden shell control operator: {command}"
+                )
     for source in root.rglob("*.rs"):
         if ".git" in source.parts or "target" in source.parts:
             continue
@@ -148,15 +151,6 @@ def probe_command_positions(makefile: Path) -> list[str]:
     return errors
 
 
-def inspect_toolchain() -> list[str]:
-    try:
-        value, tools = tool_identity.load_lock()
-    except (OSError, ValueError, json.JSONDecodeError) as error:
-        return [f"qualified tool lock is unavailable: {error}"]
-    unavailable, mismatches = tool_identity.verify_live(value, tools)
-    return unavailable + mismatches
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--makefile", type=Path, default=ROOT / "Makefile")
@@ -170,8 +164,6 @@ def main() -> int:
         errors.append("ambient MAKE override is not permitted")
     if os.environ.get("PYTHONOPTIMIZE") or sys.flags.optimize:
         errors.append("optimized Python disables policy checks")
-    if not args.static_only:
-        errors.extend(inspect_toolchain())
     if not args.inspect_only and not args.static_only and not errors:
         errors.extend(probe_command_positions(args.makefile))
     for error in errors:

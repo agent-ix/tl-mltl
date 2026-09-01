@@ -1,7 +1,8 @@
 {
   "schemaVersion": "tl-mltl.qualified-tools/v1",
   "environment": {
-    "home": "/home/peter"
+    "home": "/home/peter",
+    "cargoTargetDir": "/home/peter/.cargo-target"
   },
   "tools": {
     "bash": {

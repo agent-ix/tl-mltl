@@ -35,6 +35,19 @@ CONTRADICTION = re.compile(
 TEST_SUCCESS = re.compile(
     r"^test result: ok\. ([0-9]+) passed; 0 failed; 0 ignored", re.MULTILINE
 )
+MAKE_CI_SIGNATURES = (
+    "fmt-check gate passed",
+    "lint gate passed",
+    "Rust test gate passed",
+    "corpus-integrity gate passed",
+    "deny gate passed",
+    "audit-unsafe gate passed",
+    "evidence-tool gate passed",
+    "spec gate passed",
+    "rustdoc gate passed",
+    "candidate CI gate passed",
+    "qualified tool identities passed",
+)
 
 
 def sha256(path: Path) -> str:
@@ -53,6 +66,70 @@ def git_text(revision: str, relative: str) -> str:
         capture_output=True,
         text=True,
     ).stdout
+
+
+def git_bytes(revision: str, relative: str) -> bytes:
+    return subprocess.run(
+        ["/usr/bin/git", "show", f"{revision}:{relative}"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    ).stdout
+
+
+def parameter_paths_at_revision(revision: str) -> list[str]:
+    tree = set(
+        subprocess.run(
+            ["/usr/bin/git", "ls-tree", "-r", "--name-only", revision],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+    )
+    fixed = {
+        "Cargo.toml",
+        "Cargo.lock",
+        "build.rs",
+        "Makefile",
+        "deny.toml",
+        "rust-toolchain.toml",
+        ".github/workflows/ci.yml",
+        "tools.lock",
+        "evidence/RETRACTIONS.json",
+        "corpus/tl-syntax-v1.sha256",
+        "corpus/r2u2-v4.2/SHA256SUMS",
+        "corpus/r2u2-v4.2/manifest.json",
+        "corpus/r2u2-v4.2/differential-report.json",
+        "schemas/tl-mltl-evidence-input-v1.schema.json",
+        "schemas/tl-mltl-evidence-manifest-v1.schema.json",
+    }
+    missing = fixed - tree
+    if missing:
+        raise OSError(f"source revision lacks parameter files: {sorted(missing)}")
+    dynamic = {
+        path
+        for path in tree
+        if (
+            (path.startswith("src/") or path.startswith("tests/"))
+            and path.endswith(".rs")
+        )
+        or (
+            path.startswith("scripts/")
+            and Path(path).suffix in {".py", ".sh"}
+        )
+    }
+    return sorted(fixed | dynamic)
+
+
+def historical_parameters_digest(revision: str) -> str:
+    state = hashlib.sha256()
+    for relative in parameter_paths_at_revision(revision):
+        state.update(relative.encode("utf-8"))
+        state.update(b"\0")
+        state.update(git_bytes(revision, relative))
+        state.update(b"\0")
+    return state.hexdigest()
 
 
 def expected_rust_tests(evidence_dir: Path) -> int:
@@ -88,21 +165,9 @@ def positive_output(evidence_dir: Path, name: str) -> bool:
         if path.exists()
     )
     if name == "diff-integrity":
-        return True
+        return not output.strip()
     if name == "make-ci":
         passed = [int(value) for value in TEST_SUCCESS.findall(output)]
-        signatures = (
-            "fmt-check gate passed",
-            "lint gate passed",
-            "Rust test gate passed",
-            "corpus-integrity gate passed",
-            "deny gate passed",
-            "audit-unsafe gate passed",
-            "evidence-tool gate passed",
-            "spec gate passed",
-            "rustdoc gate passed",
-            "candidate CI gate passed",
-        )
         return (
             sum(passed) == expected_rust_tests(evidence_dir)
             and "all 10 mandatory local-CI targets propagate failures" in output
@@ -110,7 +175,7 @@ def positive_output(evidence_dir: Path, name: str) -> bool:
             and complete_fraction(output, r"Coverage:")
             and "licenses ok" in output
             and "sources ok" in output
-            and all(signature in output for signature in signatures)
+            and all(signature in output for signature in MAKE_CI_SIGNATURES)
         )
     if name == "make-spec":
         return complete_fraction(output, r"Coverage:") and "spec gate passed" in output
@@ -119,7 +184,8 @@ def positive_output(evidence_dir: Path, name: str) -> bool:
     if name == "rustdoc":
         return "Generated " in output and "/doc/tl_mltl/index.html" in output
     if name == "default-dependencies":
-        return "tl-mltl v0.1.0" in output
+        lines = [line.strip() for line in output.splitlines() if line.strip()]
+        return len(lines) == 1 and lines[0].startswith("tl-mltl v0.1.0 ")
     if name in {
         "input-schema",
         "manifest-schema",
@@ -217,6 +283,27 @@ def validate_tool_identity(evidence_dir: Path) -> list[str]:
     ]
 
 
+def validate_parameter_identity(evidence_dir: Path) -> list[str]:
+    revision = source_revision(evidence_dir)
+    try:
+        envelope = json.loads(
+            (evidence_dir / "evidence-envelope.json").read_text(encoding="utf-8")
+        )
+        observed = envelope["parametersDigest"]["value"]
+        expected = historical_parameters_digest(revision)
+    except (
+        KeyError,
+        OSError,
+        ValueError,
+        json.JSONDecodeError,
+        subprocess.CalledProcessError,
+    ) as error:
+        return [f"cannot rederive retained parameter identity: {error}"]
+    return [] if observed == expected else [
+        f"retained parameters digest disagrees with source revision: {evidence_dir}"
+    ]
+
+
 def validate_envelope_result(evidence_dir: Path, value: dict[str, object]) -> list[str]:
     try:
         envelope = json.loads((evidence_dir / "evidence-envelope.json").read_text(encoding="utf-8"))
@@ -260,7 +347,11 @@ def main() -> int:
     except (OSError, ValueError, json.JSONDecodeError, subprocess.CalledProcessError) as error:
         print(f"cannot derive retained collection summary: {error}", file=sys.stderr)
         return 2
-    errors = validate_envelope_result(evidence_dir, value) + validate_tool_identity(evidence_dir)
+    errors = (
+        validate_envelope_result(evidence_dir, value)
+        + validate_tool_identity(evidence_dir)
+        + validate_parameter_identity(evidence_dir)
+    )
     if errors:
         for error in errors:
             print(error, file=sys.stderr)

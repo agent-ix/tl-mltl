@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
 import shutil
 import sys
@@ -41,8 +40,15 @@ def validate_lock(value: Any) -> dict[str, dict[str, str]]:
             raise ValueError(f"tools.lock digest for {name} is malformed")
         validated[name] = {"path": path, "sha256": digest}
     environment = value.get("environment")
-    if not isinstance(environment, dict) or environment.get("home") != "/home/peter":
-        raise ValueError("tools.lock has an unknown qualification home")
+    if (
+        not isinstance(environment, dict)
+        or set(environment) != {"home", "cargoTargetDir"}
+        or not isinstance(environment.get("home"), str)
+        or not Path(environment["home"]).is_absolute()
+        or not isinstance(environment.get("cargoTargetDir"), str)
+        or not Path(environment["cargoTargetDir"]).is_absolute()
+    ):
+        raise ValueError("tools.lock has a malformed qualification environment")
     return validated
 
 
@@ -58,18 +64,6 @@ def trusted_path(tools: dict[str, dict[str, str]]) -> str:
         if parent not in parents:
             parents.append(parent)
     return ":".join(parents)
-
-
-def qualified_environment(value: dict[str, Any], tools: dict[str, dict[str, str]]) -> dict[str, str]:
-    environment = dict(os.environ)
-    environment["HOME"] = value["environment"]["home"]
-    environment["PATH"] = trusted_path(tools)
-    for name in (
-        "MAKE", "MAKEFLAGS", "CARGO", "PYTHON", "QUIRE", "SHA256SUM", "BASH",
-        "PYTHONOPTIMIZE", "RUSTC", "RUSTDOC", "RUSTFLAGS", "RUSTDOCFLAGS",
-    ):
-        environment.pop(name, None)
-    return environment
 
 
 def verify_live(
@@ -90,7 +84,7 @@ def verify_live(
                 f"locked tool digest mismatch for {name}: expected {expected['sha256']}, got {locked_digest}"
             )
             continue
-        observed = shutil.which(name)
+        observed = shutil.which(name, path=trusted_path(tools))
         if observed is None:
             unavailable.append(f"qualified tool is unavailable: {name}")
             continue
@@ -108,8 +102,17 @@ def verify_live(
 
 
 def main() -> int:
-    if len(sys.argv) != 2 or sys.argv[1] not in {"--verify-live", "--trusted-path", "--home"}:
-        print("usage: tool_identity.py {--verify-live|--trusted-path|--home}", file=sys.stderr)
+    simple_options = {"--verify-live", "--trusted-path", "--home", "--cargo-target-dir"}
+    tool_options = {"--tool-path", "--tool-sha256"}
+    if not (
+        (len(sys.argv) == 2 and sys.argv[1] in simple_options)
+        or (len(sys.argv) == 3 and sys.argv[1] in tool_options and sys.argv[2] in REQUIRED)
+    ):
+        print(
+            "usage: tool_identity.py {--verify-live|--trusted-path|--home|"
+            "--cargo-target-dir|--tool-path NAME|--tool-sha256 NAME}",
+            file=sys.stderr,
+        )
         return 2
     try:
         value, tools = load_lock()
@@ -121,6 +124,15 @@ def main() -> int:
         return 0
     if sys.argv[1] == "--home":
         print(value["environment"]["home"])
+        return 0
+    if sys.argv[1] == "--cargo-target-dir":
+        print(value["environment"]["cargoTargetDir"])
+        return 0
+    if sys.argv[1] == "--tool-path":
+        print(tools[sys.argv[2]]["path"])
+        return 0
+    if sys.argv[1] == "--tool-sha256":
+        print(tools[sys.argv[2]]["sha256"])
         return 0
     unavailable, mismatches = verify_live(value, tools)
     for error in unavailable + mismatches:

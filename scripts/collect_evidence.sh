@@ -45,11 +45,12 @@ fi
 
 trusted_path="$(/usr/bin/python3 scripts/tool_identity.py --trusted-path)"
 real_home="$(/usr/bin/python3 scripts/tool_identity.py --home)"
+cargo_target_dir="$(/usr/bin/python3 scripts/tool_identity.py --cargo-target-dir)"
 staging_root="$(/usr/bin/mktemp -d -p . .tl-mltl-evidence-stage.XXXXXX)"
 evidence_dir="$staging_root/$(/usr/bin/basename "$final_evidence_dir")"
 /usr/bin/mkdir -p "$evidence_dir"
 collection_failed=0
-clean_env=(/usr/bin/env -i PATH="$trusted_path" HOME="$real_home" USER="${USER:-}" LANG="${LANG:-C}" PGM01_SCHEMA="${PGM01_SCHEMA:-}" PGM01_VALIDATOR="${PGM01_VALIDATOR:-}")
+clean_env=(/usr/bin/env -i PATH="$trusted_path" HOME="$real_home" CARGO_TARGET_DIR="$cargo_target_dir" USER=qualified LANG=C.UTF-8 LC_ALL=C.UTF-8 PGM01_SCHEMA="${PGM01_SCHEMA:-}" PGM01_VALIDATOR="${PGM01_VALIDATOR:-}")
 
 cleanup() {
   if [[ -d "$staging_root" ]]; then
@@ -92,12 +93,10 @@ echo clean >"$evidence_dir/source-state.txt"
 "${clean_env[@]}" quire provenance --pretty >"$evidence_dir/quire-provenance.json"
 "${clean_env[@]}" cargo metadata --format-version 1 --all-features >"$evidence_dir/metadata.json"
 for tool in bash cargo git make python3 quire rustc sha256sum; do
-  "${clean_env[@]}" python3 -c \
-    'import sys, tool_identity; _, tools = tool_identity.load_lock(); print(tools[sys.argv[1]]["path"])' \
-    "$tool" >"$evidence_dir/tool-${tool}-path.txt"
-  "${clean_env[@]}" python3 -c \
-    'import sys, tool_identity; _, tools = tool_identity.load_lock(); print(tools[sys.argv[1]]["sha256"])' \
-    "$tool" >"$evidence_dir/tool-${tool}-sha256.txt"
+  "${clean_env[@]}" python3 scripts/tool_identity.py --tool-path "$tool" \
+    >"$evidence_dir/tool-${tool}-path.txt"
+  "${clean_env[@]}" python3 scripts/tool_identity.py --tool-sha256 "$tool" \
+    >"$evidence_dir/tool-${tool}-sha256.txt"
 done
 
 # The candidate cannot already carry a checksum/assurance anchor for itself.

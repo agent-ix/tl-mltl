@@ -12,15 +12,30 @@ fn evidence_contract_is_complete_and_wired_to_gates() {
     let makefile = fs::read_to_string(root.join("Makefile")).unwrap();
     let suites = fs::read_to_string(root.join("spec/evidence/suites.md")).unwrap();
 
-    let dry_run = Command::new("make")
-        .args(["--no-print-directory", "-n", "MAKEFLAGS=", "ci"])
-        .env_remove("MAKEFLAGS")
-        .env_remove("MAKELEVEL")
-        .env_remove("PYTHONOPTIMIZE")
-        .env_remove("CARGO")
-        .current_dir(&root)
-        .output()
-        .unwrap();
+    let mut dry_run_command = Command::new("/usr/bin/make");
+    dry_run_command.args(["--no-print-directory", "-n", "MAKEFLAGS=", "ci"]);
+    for name in [
+        "MAKEFLAGS",
+        "MAKELEVEL",
+        "PYTHONOPTIMIZE",
+        "CARGO",
+        "CARGO_HOME",
+        "RUSTUP_TOOLCHAIN",
+        "RUSTUP_HOME",
+        "RUSTC",
+        "RUSTDOC",
+        "RUSTC_WRAPPER",
+        "RUSTC_WORKSPACE_WRAPPER",
+        "RUSTFLAGS",
+        "CARGO_ENCODED_RUSTFLAGS",
+        "RUSTDOCFLAGS",
+        "LD_PRELOAD",
+        "LD_LIBRARY_PATH",
+        "PYTHONPATH",
+    ] {
+        dry_run_command.env_remove(name);
+    }
+    let dry_run = dry_run_command.current_dir(&root).output().unwrap();
     assert!(
         dry_run.status.success(),
         "make -n ci failed: {}",
@@ -126,8 +141,9 @@ fn evidence_contract_is_complete_and_wired_to_gates() {
 #[test]
 fn evidence_producer_rejects_false_success_classifications() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let output = Command::new("python3")
-        .arg("scripts/test_evidence_tool.py")
+    // Trace: TC-017, NFR-002-AC-4
+    let output = Command::new("/usr/bin/python3")
+        .arg("scripts/run_policy_tests.py")
         .current_dir(root)
         .output()
         .unwrap();

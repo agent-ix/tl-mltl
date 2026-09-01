@@ -44,8 +44,8 @@ checksums verify exact source, tool, corpus, and output pins.
 |---|---|---|
 | NFR-002-AC-1 | Unknown schema/profile versions and omitted material identities are rejected. | Test (TC-012, TC-014) |
 | NFR-002-AC-2 | Evidence names exact tl-syntax, PGM-01, corpus, tool, dependency, and output identities without recording an automated release decision. | Test (TC-016) |
-| NFR-002-AC-3 | Missing, skipped, or failing checks cannot produce a conclusive evidence envelope, and the finalized envelope cannot attest to its own validation. | Test (TC-016) |
-| NFR-002-AC-4 | Qualified evidence executes under an allowlisted environment, refuses ambient execution-control overrides, and binds every mandatory executable by absolute path and SHA-256. | Test (TC-017) |
+| NFR-002-AC-3 | Missing, skipped, failing, or uncorroborated checks cannot produce a passing evidence summary; the derived Rust-test census and parameter identity are re-derived from the record's exact source revision, and the finalized envelope cannot attest to its own validation. | Test (TC-016, TC-017) |
+| NFR-002-AC-4 | Host-scoped evidence collection executes under an allowlisted environment, refuses ambient execution-control overrides, and binds every mandatory launcher by absolute path and SHA-256; ordinary source CI remains portable and does not require the qualification host's lock. | Test (TC-017) |
 
 ## Dependencies
 
