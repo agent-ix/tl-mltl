@@ -114,6 +114,73 @@ class ChainError(RuntimeError):
     """The chain could not be driven. Distinct from a scenario that did not match."""
 
 
+# ---------------------------------------------------------------------------
+# The execution boundary, enforced by this file on itself
+# ---------------------------------------------------------------------------
+
+# Every child process this driver is permitted to start, and a record of every
+# one it actually started.
+#
+# An adversarial review showed why observing this from outside does not work.
+# `quoin evidence record` runs `quire coverage` itself, inside the store it is
+# writing, so `quire` cannot be replaced by a logging shim without breaking a
+# legitimate use. And a driver that ran `quire coverage` and discarded the
+# output left no trace at all: no shim invocation, no recreated input file,
+# nothing for a test to see. The isolation test passed with that injection in
+# place.
+#
+# So the boundary is enforced here instead. A CPython audit hook sees every
+# `subprocess.Popen` this process starts — including ones a future edit adds
+# without thinking about it — and refuses anything not on this list. Two things
+# are permitted, and nothing else:
+#
+#   * the pinned Quoin CLI, which is what this driver exists to run;
+#   * a version observation, which is what the compatibility matrix's own
+#     `observe` column does. `quire provenance` counts, because it is how the
+#     CLI and engine versions are read and `quire --version` reports only the
+#     first.
+#
+# `quire coverage`, `cargo run`, `rustup run … check` and anything else that
+# asks a tool to do work are refused with exit 2, naming the argv.
+EXECUTED: list[list[str]] = []
+
+
+def permitted_child(argv: list[str]) -> bool:
+    """Is this child process a Quoin invocation or a version observation?"""
+    if not argv:
+        return False
+    name = Path(argv[0]).name
+    if name == "quoin":
+        return True
+    if name == "quire" and list(argv[1:2]) == ["provenance"]:
+        return True
+    return any(argument in ("--version", "-V") for argument in argv[1:])
+
+
+def _normalise(candidate: Any) -> list[str]:
+    if isinstance(candidate, (str, bytes)):
+        return [candidate.decode() if isinstance(candidate, bytes) else candidate]
+    if isinstance(candidate, (list, tuple)):
+        return [item.decode() if isinstance(item, bytes) else str(item) for item in candidate]
+    return [str(candidate)]
+
+
+def _execution_boundary(event: str, arguments: tuple[Any, ...]) -> None:
+    if event != "subprocess.Popen":
+        return
+    argv = _normalise(arguments[1] if len(arguments) > 1 else arguments[0])
+    EXECUTED.append(argv)
+    if not permitted_child(argv):
+        raise ChainError(
+            "this driver started a child process it is not permitted to start: "
+            f"{argv}. It runs the pinned Quoin CLI and observes versions; it does "
+            "not run producers. Producer output comes from `make assurance-inputs`."
+        )
+
+
+sys.addaudithook(_execution_boundary)
+
+
 def digest_of(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
@@ -294,11 +361,18 @@ class Chain:
         raise ChainError("Cargo.toml declares no package version")
 
     def observe_tool_versions(self) -> dict[str, str]:
-        """One observed version per declared tool identity.
+        """One version per declared tool identity, observed or stated.
 
-        A tool whose version cannot be observed raises. The alternative is a
-        sealed attestation naming a version nobody measured, and an attestation
-        is only worth its weakest field.
+        A tool whose version is *probed* and cannot be observed raises. The
+        alternative is a sealed attestation naming a version nobody measured,
+        and an attestation is only worth its weakest field.
+
+        Four identities are probed: the pinned MSRV cargo, quire, and the two
+        Python interpreters that run this repository's script producers. The
+        three remaining identities are this repository's own compiled examples,
+        and their version is the crate version from `Cargo.toml` — which is a
+        real fact about the binary that produced the bytes, not a default, and
+        is stated as such rather than dressed up as an observation.
         """
         crate = self.crate_version()
         probes = {
@@ -311,6 +385,16 @@ class Chain:
             ),
             "quire": lambda: semantic_version(
                 (self.environment.get("quire") or "").split(" ")[0] or None
+            ),
+            # The two producers that are Python scripts are versioned by the
+            # interpreter that runs them, observed. An adversarial review found
+            # both being attested as the crate version, which is a fact about
+            # the Rust crate and says nothing about what actually ran them.
+            "tl-mltl/legacy_evidence_view": lambda: semantic_version(
+                tool_version([str(ROOT / ".venv-assurance/bin/python"), "--version"])
+            ),
+            "tl-mltl-test-census": lambda: semantic_version(
+                tool_version(["python3", "--version"])
             ),
         }
         versions: dict[str, str] = {}
@@ -1177,6 +1261,7 @@ def run_chain(candidate_revision: str, workspace: Path) -> dict[str, Any]:
             (ASSURANCE_DIR / INPUTS["PROOF-quire-static-export"][0]).relative_to(ROOT)
         ),
         "attested_results": observed_results,
+        "child_processes": sorted({" ".join(argv) for argv in EXECUTED}),
         "malformed_rows": len(malformed_rows),
         "declared_malformed_fixtures": declared_malformed,
         "unsupported_rows": len(unsupported_rows),

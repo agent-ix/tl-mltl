@@ -79,7 +79,7 @@ help:
 	@echo "  make build            - Release build"
 	@echo "  make clean            - cargo clean and drop the assurance environment"
 	@echo "  make assurance-env    - Create the pinned shared-assurance interpreter"
-	@echo "  make assurance-inputs - Run the producers and write their structured results"
+	@echo "  make assurance-inputs - Write the structured results the assurance chain reads"
 	@echo "  make pins             - Classify the toolchain through the shared matrix"
 	@echo "  make compat-view      - Read retained evidence through the shared mapping"
 	@echo "  make assurance-chain  - Seal, retain, and verify through Quoin"
@@ -192,8 +192,11 @@ $(ASSURANCE_PYTHON): requirements-assurance.txt
 .PHONY: assurance-env
 assurance-env: $(ASSURANCE_PYTHON)
 
-# The only target that runs a producer. Everything downstream consumes these
-# files and refuses to create them.
+# The only target that WRITES THE CHAIN'S INPUTS. `conformance`,
+# `differential`, `cli-conformance`, `test-census` and `spec` run producers
+# too — they are the same producers, run as ordinary gates. What is unique
+# here is that these are the bytes the chain reads, and everything
+# downstream consumes them and refuses to create them.
 .PHONY: assurance-inputs
 assurance-inputs: assurance-env
 	mkdir -p $(ASSURANCE_DIR)

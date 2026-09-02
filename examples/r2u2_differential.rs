@@ -42,8 +42,8 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use tl_mltl::{
     analyze_horizon, compare_external, evaluate_prefix, evaluate_prefix_at, map_to_c2po,
-    ComparisonStatus, EvaluationLimits, ExternalStatus, ExternalVerdict, MappingSourceIdentity,
-    MappingSourceState, ToolIdentity, TruthValue,
+    ComparisonStatus, EvaluationLimits, ExternalStatus, ExternalVerdict, MappingError,
+    MappingSourceIdentity, MappingSourceState, ToolIdentity, TruthValue,
 };
 use tl_syntax::{FormulaDocument, PropositionId};
 
@@ -95,9 +95,19 @@ struct Expected {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct UnsupportedCase {
     id: String,
     reason: String,
+    /// The out-of-profile formula the adapter must refuse.
+    ///
+    /// Required, not optional. An adversarial review found this case carrying
+    /// only an id and a reason, so the producer printed `unsupported` by
+    /// iterating a list rather than by anything refusing anything — deleting
+    /// the profile check from `map_to_c2po` changed nothing. The formula makes
+    /// the row falsifiable.
+    formula: FormulaDocument,
+    expected_refusal: String,
 }
 
 struct Row {
@@ -478,16 +488,65 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
     }
 
     // -- the cases the corpus declares outside the adapter's profile ------------
+    //
+    // The refusal is performed, not asserted. Each declared case carries a real
+    // out-of-profile formula and it is handed to the adapter; the row is
+    // `unsupported` only when the adapter actually refuses it with the declared
+    // error. Deleting the profile check from `map_to_c2po` turns this row
+    // `fail`, which is the whole point: before the formula was added, the row
+    // was an echo of a list the producer had just iterated and nothing could
+    // make it false.
     for case in &manifest.unsupported_cases {
+        let formula = match case.formula.validate() {
+            Ok(value) => value,
+            Err(error) => {
+                rows.push(Row {
+                    symbol: format!("{}/declared-unsupported", case.id),
+                    family: "declared-unsupported",
+                    outcome: "fail",
+                    trace_ids: vec!["FR-004-AC-2", "TC-012"],
+                    detail: json!({
+                        "why": "the declared out-of-profile formula does not validate",
+                        "error": format!("{error}"),
+                    }),
+                });
+                continue;
+            }
+        };
+        let formula_bytes = serde_json::to_vec(&case.formula)
+            .map_err(|error| format!("case {} did not serialize: {error}", case.id))?;
+        let refusal = map_to_c2po(
+            formula,
+            case.id.clone(),
+            &formula_bytes,
+            source.clone(),
+            Some(tool.clone()),
+            100_000,
+        );
+        let (refused, observed) = match &refusal {
+            Err(MappingError::UnsupportedProfile { actual }) => (
+                case.expected_refusal == "unsupported_profile",
+                format!("unsupported_profile:{actual}"),
+            ),
+            Err(other) => (false, format!("{other:?}")),
+            Ok(manifest_row) => (
+                false,
+                format!("accepted and produced {:?}", manifest_row.expression),
+            ),
+        };
         rows.push(Row {
             symbol: format!("{}/declared-unsupported", case.id),
             family: "declared-unsupported",
-            outcome: "unsupported",
+            outcome: if refused { "unsupported" } else { "fail" },
             trace_ids: vec!["FR-004-AC-2", "FR-005-AC-2", "TC-012", "TC-015"],
             detail: json!({
-                "why": "the corpus manifest declares this case outside the adapter's profile; \
-                        it is reported unsupported and was never handed to the external monitor",
+                "why": "the corpus manifest declares this case outside the adapter's \
+                        profile; the adapter is asked and must refuse, and the case is \
+                        never handed to the external monitor",
                 "reason": case.reason,
+                "declaredRefusal": case.expected_refusal,
+                "observedRefusal": observed,
+                "declaredProfile": "mltl.closed-trace/v1",
                 "sourceRevision": manifest.source.revision,
             }),
         });

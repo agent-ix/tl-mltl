@@ -481,6 +481,97 @@ fn an_unobservable_tool_version_is_refused_rather_than_defaulted() {
     );
 }
 
+// Trace: TC-019, FR-006-AC-2, NFR-003-AC-2
+#[test]
+fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() {
+    // The PATH-shim runs cannot establish this and an adversarial review showed
+    // exactly why: `quoin evidence record` runs `quire coverage` itself, so
+    // `quire` cannot be shimmed; and a driver that ran `quire coverage` and
+    // discarded the output left no shim invocation, no recreated input file and
+    // no trace of any kind. The isolation test passed with that injection in.
+    //
+    // So the boundary is enforced inside the driver by an audit hook, and here
+    // it is exercised: a copy of the driver with the review's exact injection
+    // must exit 2 and name the argv it refused.
+    let report = chain_report();
+    let children = report["child_processes"]
+        .as_array()
+        .expect("child_processes");
+    assert!(
+        !children.is_empty(),
+        "the driver recorded no child processes at all, so this test is measuring \
+         nothing: {report:#}"
+    );
+    for child in children {
+        let command = child.as_str().unwrap_or("");
+        let permitted = command.starts_with("quoin ")
+            || command == "quoin"
+            || command.starts_with("quire provenance")
+            || command.contains(" --version")
+            || command.contains(" -V");
+        assert!(
+            permitted,
+            "the driver started `{command}`, which is neither the pinned Quoin CLI \
+             nor a version observation"
+        );
+    }
+
+    let scratch = root().join("target/execution-boundary-probe");
+    let _ = fs::remove_dir_all(&scratch);
+    fs::create_dir_all(scratch.join("scripts")).unwrap();
+    let driver = fs::read_to_string(root().join("scripts/assurance_chain.py")).unwrap();
+    let marker = "def run_chain(candidate_revision: str, workspace: Path) -> dict[str, Any]:\n";
+    assert!(driver.contains(marker), "the driver's entry point moved");
+    let mutated = driver.replacen(
+        marker,
+        &format!(
+            "{marker}    subprocess.run([\"quire\", \"coverage\", \"--scope\", \".\", \
+             \"--json\"], cwd=ROOT, check=False, capture_output=True)\n"
+        ),
+        1,
+    );
+    assert_ne!(mutated, driver, "the injection did not apply");
+    fs::write(scratch.join("scripts/assurance_chain.py"), &mutated).unwrap();
+    for entry in fs::read_dir(root()).expect("repository root") {
+        let path = entry.expect("directory entry").path();
+        let name = path
+            .file_name()
+            .and_then(|v| v.to_str())
+            .unwrap_or("")
+            .to_owned();
+        if name == "scripts" || name == ".git" {
+            continue;
+        }
+        let _ = std::os::unix::fs::symlink(&path, scratch.join(&name));
+    }
+
+    let revision = head_revision();
+    let output = Command::new("python3")
+        .args([
+            "scripts/assurance_chain.py",
+            "--candidate-revision",
+            &revision,
+        ])
+        .current_dir(&scratch)
+        .output()
+        .expect("failed to run the injected chain");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert_eq!(
+        output.status.code(),
+        Some(2),
+        "a driver that ran `quire coverage` was not refused; it exited {:?}\n{stderr}",
+        output.status.code()
+    );
+    assert!(
+        stderr.contains("not permitted to start"),
+        "the refusal did not name the cause: {stderr}"
+    );
+    assert!(
+        stderr.contains("quire"),
+        "the refusal did not name the argv it refused: {stderr}"
+    );
+}
+
 // Trace: TC-020, FR-006-AC-3, SUITE-003
 #[test]
 fn the_sealed_records_impact_snapshot_is_the_quire_export() {
@@ -519,7 +610,15 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    assert_eq!(totals["total"], 68, "matrix row count changed: {totals}");
+    // 68 is every row Quire mints from `spec/`: 35 acceptance criteria, 24
+    // test-matrix rows and 9 suite-registry rows. Naming the population matters
+    // — "matrix rows" would have been wrong, since the test matrix contributes
+    // 24 of them.
+    assert_eq!(
+        totals["total"], 68,
+        "the declared-row population changed: {totals}. It is 35 acceptance \
+         criteria + 24 test-matrix rows + 9 suite-registry rows."
+    );
     assert_eq!(
         totals["backed"], 66,
         "backed-row count changed: {totals}. Exactly two rows are unbacked on \
@@ -648,19 +747,29 @@ fn all_twelve_verification_outcomes_are_demonstrated_and_paired_with_controls() 
     // exchange, whose manifest declares one case outside the adapter's profile.
     // Both are this repository's own domain behaviour rather than a compatibility
     // artefact.
+    // Each state is bound to the NAMED case that owns it, not merely to the
+    // set of state strings the run happened to emit. An adversarial review
+    // deleted the only real `suspect` demonstration and relabelled an unrelated
+    // probe `suspect`; every gate stayed green, because `states_demonstrated`
+    // is built from a free-text label the author types next to the assertion.
+    // Requiring a named owner means a relabelled bystander no longer stands in
+    // for a demonstration that was removed.
     const REQUIRED: [(&str, &str); 12] = [
-        ("pass", "chain"),
-        ("fail", "chain"),
-        ("unavailable", "chain"),
-        ("unsupported", "chain/r2u2-corpus"),
-        ("inconclusive", "chain"),
-        ("not-computed", "chain"),
-        ("malformed", "chain/shared-corpus"),
-        ("partial", "chain"),
-        ("stale", "chain"),
-        ("suspect", "chain"),
-        ("vacuous", "chain"),
-        ("tampered", "chain"),
+        ("pass", "retain-producer-output"),
+        ("fail", "attested-failed"),
+        ("unavailable", "attested-unavailable"),
+        (
+            "unsupported",
+            "declared-unsupported-case-is-reported-unsupported",
+        ),
+        ("inconclusive", "declared-unknowns-are-carried-not-dropped"),
+        ("not-computed", "attested-not_computed"),
+        ("malformed", "malformed-formula-is-reported-as-malformed"),
+        ("partial", "receipt-reports-the-absent-human-decision"),
+        ("stale", "stale-candidate-binding"),
+        ("suspect", "audit-reports-a-suspect-link"),
+        ("vacuous", "audit-reports-a-vacuous-run"),
+        ("tampered", "refuse-an-edited-receipt"),
     ];
 
     let python = assurance_python();
@@ -699,6 +808,53 @@ fn all_twelve_verification_outcomes_are_demonstrated_and_paired_with_controls() 
         "these verification outcomes were never demonstrated: {missing:?}; \
          demonstrated: {demonstrated:?}"
     );
+
+    // And each one is demonstrated by the case that is supposed to demonstrate
+    // it. Without this, deleting a demonstration and relabelling any other case
+    // with its state keeps the set complete and the gate green.
+    let mut owners: BTreeSet<(String, String)> = BTreeSet::new();
+    for group in ["scenarios", "adapter_probes"] {
+        for item in report[group].as_array().unwrap() {
+            if item["matched"] != serde_json::Value::Bool(true) {
+                continue;
+            }
+            let name = item
+                .get("scenario")
+                .or_else(|| item.get("probe"))
+                .and_then(|value| value.as_str())
+                .unwrap_or("");
+            if let Some(state) = item["state"].as_str() {
+                owners.insert((state.to_owned(), name.to_owned()));
+            }
+        }
+    }
+    for (state, owner) in REQUIRED {
+        assert!(
+            owners.contains(&(state.to_owned(), owner.to_owned())),
+            "the state `{state}` is not demonstrated by `{owner}`, which is the case \
+             that owns it. A state carried by some other case is a label, not a \
+             demonstration. Observed owners: {owners:?}"
+        );
+    }
+
+    // The two states Quoin's audit produces are additionally required to carry
+    // the finding that produced them, so the label cannot outlive the finding.
+    let probes = report["adapter_probes"].as_array().unwrap();
+    for (probe_name, kind) in [
+        ("audit-reports-a-suspect-link", "suspect-link"),
+        ("audit-reports-a-vacuous-run", "vacuous-evidence"),
+    ] {
+        let probe = probes
+            .iter()
+            .find(|item| item["probe"] == probe_name)
+            .unwrap_or_else(|| panic!("the probe {probe_name} did not run"));
+        let count = probe["detail"][kind].as_u64().unwrap_or(0);
+        assert!(
+            count > 0,
+            "{probe_name} reports no `{kind}` finding, so the state it claims to \
+             demonstrate was not produced by anything: {probe:#}"
+        );
+    }
 
     // The compatibility lane's own six-state vocabulary, measured the same way:
     // the census reports which states it observed and which it did not.
@@ -918,6 +1074,17 @@ fn collect_sources(directory: &Path, into: &mut Vec<PathBuf>) {
     };
     for entry in entries {
         let path = entry.expect("directory entry").path();
+        let name = path
+            .file_name()
+            .and_then(|value| value.to_str())
+            .unwrap_or("");
+        // Four exclusions, and they are exactly the ones `schemas/README.md`
+        // names: Git's own store, build output, the assurance interpreter, and
+        // the retained evidence, whose bytes are immutable and do name the
+        // schemas.
+        if matches!(name, ".git" | "target" | ".venv-assurance" | "evidence") {
+            continue;
+        }
         if path.is_dir() {
             collect_sources(&path, into);
             continue;
@@ -1044,29 +1211,15 @@ fn no_local_evidence_framework_remains_and_the_frozen_schemas_are_referenced_by_
     // covers the build and workflow files too, because a reintroduced validator
     // one directory down, or a CI step, would otherwise not be caught. A census
     // this small would be vacuous, so its size is asserted as well.
+    // The whole repository, recursively, minus four excluded trees. An
+    // adversarial review appended a frozen-schema reference to `build.rs` — a
+    // file that executes on every cargo invocation — and to `CLAUDE.md`, and
+    // the census saw neither, because it walked seven named directories and
+    // four named files while `schemas/README.md` claimed it walked everything.
+    // It now walks everything, and the README is true.
     let mut sources = Vec::new();
-    for directory in [
-        "scripts",
-        "tests",
-        "examples",
-        "src",
-        "spec",
-        "assurance",
-        ".github",
-    ] {
-        collect_sources(&root.join(directory), &mut sources);
-    }
-    for file in [
-        "Makefile",
-        "Cargo.toml",
-        "requirements-assurance.txt",
-        "README.md",
-    ] {
-        let path = root.join(file);
-        if path.is_file() {
-            sources.push(path);
-        }
-    }
+    collect_sources(&root, &mut sources);
+
     let mut inspected = 0;
     for path in &sources {
         inspected += 1;
@@ -1090,7 +1243,9 @@ fn no_local_evidence_framework_remains_and_the_frozen_schemas_are_referenced_by_
             "shared_assurance.rs" => true,
             "README.md" => parent == "schemas",
             "change-assurance.json" => parent == "assurance",
-            _ => false,
+            // The frozen schemas carry their own `$id`. A file naming itself is
+            // not a reference to it.
+            other => parent == "schemas" && other.ends_with(".schema.json"),
         };
         for (schema, _) in frozen {
             let name = Path::new(schema).file_name().unwrap().to_str().unwrap();
@@ -1166,6 +1321,10 @@ fn no_local_evidence_framework_remains_and_the_frozen_schemas_are_referenced_by_
         "example reference_conformance",
         "example r2u2_differential",
         "example cli_conformance",
+        // The build line that keeps `cli_conformance` from replaying a stale
+        // binary. The producer cannot check this for itself without becoming a
+        // builder, so the graph is what holds it.
+        "build --quiet --bin tl-mltl",
         "RUSTDOCFLAGS=-Dwarnings",
     ] {
         assert!(

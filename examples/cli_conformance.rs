@@ -92,6 +92,15 @@ fn default_binary() -> Result<PathBuf, String> {
     Ok(profile.join("tl-mltl"))
 }
 
+/// The repository root, from the request-manifest directory.
+fn root_of(fixtures: &Path) -> PathBuf {
+    fixtures
+        .parent()
+        .and_then(Path::parent)
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| fixtures.to_path_buf())
+}
+
 /// Are two runs' outputs the same bytes?
 ///
 /// One function, used both for the determinism comparison and for the
@@ -287,12 +296,7 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
     // names a different revision than `git rev-parse HEAD` and fails here.
     let head = Command::new("git")
         .args(["rev-parse", "HEAD"])
-        .current_dir(
-            fixtures
-                .parent()
-                .and_then(Path::parent)
-                .unwrap_or(&fixtures),
-        )
+        .current_dir(root_of(&fixtures))
         .output()
         .map(|out| String::from_utf8_lossy(&out.stdout).trim().to_owned())
         .unwrap_or_default();
@@ -302,6 +306,21 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
         .ok()
         .and_then(|value| value["sourceRevision"].as_str().map(str::to_owned))
         .unwrap_or_default();
+    // What this catches, and what it does not, stated rather than implied.
+    //
+    // It catches a binary built from a different commit: the revision it stamps
+    // into its own mapping manifest will not be HEAD.
+    //
+    // It does NOT catch an edited working tree that was never rebuilt, because
+    // the stamped revision is still HEAD. An adversarial review demonstrated
+    // exactly that. A modification-time comparison was tried and rejected: Git
+    // rewrites source mtimes on checkout while Cargo correctly declines to
+    // rebuild on content, so it reports staleness that is not there.
+    //
+    // The real protection for that case is that `make cli-conformance` and
+    // `make assurance-inputs` both run `cargo build --bin tl-mltl` immediately
+    // before this producer, and TC-024's `make -n ci` graph check asserts that
+    // build line is present. That is a gate; this row is an identity check.
     rows.push(Row {
         symbol: "binary-identity".to_owned(),
         outcome: if !head.is_empty() && stamped == head {
@@ -314,6 +333,9 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
             "why": "the CLI under test must be the one this revision builds, not a \
                     leftover in the profile directory",
             "headRevision": head,
+            "limitation": "catches a binary from another commit; an unrebuilt working \
+                           tree is caught by the build line make runs before this, which \
+                           TC-024 asserts is present",
             "revisionStampedIntoTheBinary": stamped,
         }),
     });

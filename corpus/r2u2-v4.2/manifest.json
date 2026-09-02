@@ -146,7 +146,17 @@
   "unsupportedCases": [
     {
       "id": "closed-profile-not-mapped-v1",
-      "reason": "the adapter requires mltl.online-prefix/v1 and does not reinterpret closed-trace semantics"
+      "reason": "the adapter requires mltl.online-prefix/v1 and does not reinterpret closed-trace semantics",
+      "formula": {
+        "schema_version": "tl-syntax.formula/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "root": 1,
+        "nodes": [
+          {"kind": "proposition", "proposition": 0},
+          {"kind": "globally", "interval": {"start": 0, "end": 2}, "operand": 0}
+        ]
+      },
+      "expectedRefusal": "unsupported_profile"
     }
   ]
 }

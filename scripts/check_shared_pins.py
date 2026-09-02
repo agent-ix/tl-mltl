@@ -163,15 +163,19 @@ def upstream_pin_mismatches(pins: dict[str, Any]) -> list[str]:
         "Cargo.toml": f'rev = "{compiled}"',
         "Cargo.lock": f"#{compiled}",
         "src/lib.rs": f'TL_SYNTAX_REVISION: &str = "{compiled}"',
+        # The corpus basis is a constant too, and it drifting is exactly the
+        # confusion this function exists to prevent. An adversarial review found
+        # only the compiled revision being checked here.
+        "src/lib.rs ": f'TL_SYNTAX_CORPUS_BASIS: &str = "{corpus}"',
         "corpus/README.md": f"`{corpus}`",
     }
     for name, needle in checks.items():
-        path = ROOT / name
+        path = ROOT / name.strip()
         if not path.is_file():
             problems.append(f"{name}: absent")
             continue
         if needle not in path.read_text(encoding="utf-8"):
-            problems.append(f"{name}: does not name the expected revision")
+            problems.append(f"{name.strip()}: does not name the expected revision")
     if compiled == corpus:
         problems.append(
             "the compiled revision and the corpus basis are the same string; they are "

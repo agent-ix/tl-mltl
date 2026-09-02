@@ -44,11 +44,20 @@ ix-flow contracts. It owns its domain producers and owns no evidence framework.
 Three rules to keep in mind before changing anything under `assurance/`,
 `scripts/` or `examples/`:
 
-- **`make assurance-inputs` is the only target that runs a producer.** Everything
-  downstream consumes those files and refuses to create them. A driver that can
-  produce its own inputs can produce a green run out of nothing.
-- **Every attested result is read from the bytes a producer wrote.** Nothing is
-  inferred from an exit code alone, and nothing is scraped from a transcript.
+- **`make assurance-inputs` is the only target that writes the chain's inputs.**
+  `conformance`, `differential`, `cli-conformance`, `test-census` and `spec` run
+  the same producers as ordinary gates; what is unique about `assurance-inputs`
+  is that its output is what the chain reads. Everything downstream consumes
+  those files and refuses to create them, and `scripts/assurance_chain.py`
+  enforces that on itself with an audit hook that refuses any child process
+  other than the pinned Quoin CLI and a version observation.
+- **Every attested result is read from the bytes a producer wrote.** Nothing the
+  chain attests is inferred from an exit code alone or scraped from a
+  transcript. Two *producers* do read message text, by stated necessity and
+  never for a chain verdict: `reference_conformance` distinguishes three
+  wire-boundary refusals that `tl_syntax` surfaces only in a message, and
+  `cli_conformance` distinguishes five CLI refusals that all exit 2. Both are
+  cross-checked so a marker matching more than one case fails.
 - **Nothing executes R2U2 or C2PO.** The external exchange under
   `corpus/r2u2-v4.2/` is retained and pinned by digest; every claim is a replay
   against those bytes.

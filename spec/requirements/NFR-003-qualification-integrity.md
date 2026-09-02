@@ -38,8 +38,9 @@ of the 14 `ci` prerequisites do not complete: `fmt-check`, `lint`, `test`,
 `conformance`, `differential`, `cli-conformance`, `test-census`, `msrv`,
 `rustdoc` and `assurance`. Four still complete: `check-corpus`, `deny`,
 `audit-unsafe` and `spec`. Adding a single `.IGNORE:` line to the `Makefile`
-makes all 10 report success and `make ci` exits 0; the run log records 16
-individual recipe errors, every one of them ignored. Nothing in this repository inspects Make's own execution
+makes all 10 report success and `make ci` exits 0, with every individual recipe
+error in the run log ignored — including `assurance-chain` exiting 2, which is
+the chain correctly refusing empty producer output. Nothing in this repository inspects Make's own execution
 controls to notice, because the parse-time guard block and
 `scripts/check_failure_propagation.py` that used to do so were removed with the
 collector they were protecting.
@@ -71,6 +72,7 @@ claimed to be closed by the structural replacement.
 | Retained evidence bytes modified | 0 | 0 | Test |
 | Attested results not derived from producer bytes | 0 | 0 | Test |
 | Gates that execute the external monitor | 0 | 0 | Test |
+| Child processes the driver starts that are neither Quoin nor a version observation | 0 | 0 | Test |
 | Automatic release decisions | 0 | 0 | Inspection |
 
 ## Verification
@@ -87,7 +89,7 @@ check at a time and require the corresponding gate to go red.
 | ID | Criteria | Verification |
 |---|---|---|
 | NFR-003-AC-1 | Every attested proof result is derived from the producer's own structured output; a producer whose output is absent, empty, or unreadable is an error naming the target that writes it, and never a pass. | Test (TC-019) |
-| NFR-003-AC-2 | Neither Quire nor Quoin executes a producer, and no gate executes R2U2 or C2PO, demonstrated by stubbing every producer and requiring no invocation, together with a control that stubs Quoin and requires the chain to fail. | Test (TC-019) |
+| NFR-003-AC-2 | Neither Quire nor Quoin executes a producer, and no gate executes R2U2 or C2PO. Demonstrated four ways, because no single one is sufficient: every producer on `PATH` replaced by a logging stub with the log required to be empty; a control that stubs Quoin and requires the chain to fail; every declared input moved aside in turn with the driver required to refuse rather than recreate it; and an audit hook inside the driver that refuses any child process which is neither the pinned Quoin CLI nor a version observation, exercised by injecting `quire coverage` into a copy of the driver. A PATH shim alone cannot establish this, because Quoin legitimately runs `quire coverage` itself. | Test (TC-019) |
 | NFR-003-AC-3 | The twelve verification outcomes stay distinguishable, each demonstrated by a case that produced it and matched, with every negative paired with a positive control and a control naming a non-existent scenario refused. | Test (TC-022) |
 | NFR-003-AC-4 | Retained evidence is read without a byte moving, Git is consulted for whether the retained bytes are the committed bytes, and no local digest claims external attestation or release authority. | Test (TC-021) |
 

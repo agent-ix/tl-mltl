@@ -23,9 +23,11 @@ repository-local generic evidence framework.
 - Component versions are classified by the compatibility matrix packaged with
   the pinned Engineering Assurance release. This repository observes what is
   installed and restates no version rule of its own.
-- One target, `make assurance-inputs`, runs the producers and writes their
-  structured results. Everything downstream consumes those files and refuses to
-  create them; an absent input is an error naming that target, never a skip.
+- One target, `make assurance-inputs`, writes the structured results the chain
+  reads. Everything downstream consumes those files and refuses to create them;
+  an absent input is an error naming that target, never a skip. The driver
+  enforces this on itself: it refuses to start any child process other than the
+  pinned Quoin CLI and a version observation.
 - Each proof attestation states the verdict read out of the bytes its producer
   wrote. No verdict is inferred from a transcript, an exit code alone, or a
   caller's expectation.

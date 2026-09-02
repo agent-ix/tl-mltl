@@ -22,9 +22,20 @@ make assurance-inputs        the ONLY target that runs a producer
 
 Four rules make this different from what it replaced.
 
-**The driver never produces.** If an input is absent, the chain says so and
-names `make assurance-inputs`. It does not run the producer itself. A driver
-that can produce its own inputs can produce a green run out of nothing.
+**The driver never produces, and enforces that on itself.** If an input is
+absent, the chain says so and names `make assurance-inputs`. It does not run the
+producer itself — and it does not merely intend not to: an audit hook refuses any
+child process other than the pinned Quoin CLI and a version observation, so a
+future edit that reaches for `quire coverage` or `cargo run` is refused at exit
+2 naming the argv. An adversarial review found that a PATH shim could not
+establish this, because `quoin evidence record` legitimately runs `quire
+coverage` itself and a driver that ran a producer and discarded the output left
+no trace at all.
+
+Note that `make assurance-inputs` is the only target that writes *the chain's
+inputs*, not the only target that runs a producer. `conformance`,
+`differential`, `cli-conformance`, `test-census` and `spec` run the same
+producers as ordinary gates.
 
 **Every attested result is read from producer bytes.** `derive_result()` reads a
 field the producer wrote — row outcomes, `matched`, or cargo's own
