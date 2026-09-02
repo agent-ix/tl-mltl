@@ -92,6 +92,28 @@ fn default_binary() -> Result<PathBuf, String> {
     Ok(profile.join("tl-mltl"))
 }
 
+/// Are two runs' outputs the same bytes?
+///
+/// One function, used both for the determinism comparison and for the
+/// `determinism-discrimination` row that requires two *different* requests to
+/// produce different output. Weakening it to a constant makes every case look
+/// deterministic and simultaneously makes the discrimination row fail, which is
+/// the only way a check that currently passes can be given a failure direction.
+fn same_output(left: &[u8], right: &[u8]) -> bool {
+    left == right
+}
+
+/// Does a refusal name this declared cause?
+///
+/// One function, used both for a case's own outcome and for the cross-case
+/// discrimination row. If it is ever weakened to a constant, the case's own
+/// check still passes but every marker starts matching every other case's
+/// stderr and `marker-discrimination` fails. Two separate implementations would
+/// let one be neutered while the other agreed with itself.
+fn marker_hits(stderr: &str, marker: &str) -> bool {
+    stderr.contains(marker)
+}
+
 fn run_once(binary: &Path, request: &Path) -> Result<(i32, Vec<u8>, String), String> {
     let output = Command::new(binary)
         .arg(request)
@@ -116,7 +138,7 @@ fn case_row(binary: &Path, fixtures: &Path, case: &Case) -> Result<Row, String> 
     let (first_code, first_stdout, first_stderr) = run_once(binary, &request)?;
     let (second_code, second_stdout, _) = run_once(binary, &request)?;
 
-    let deterministic = first_stdout == second_stdout && first_code == second_code;
+    let deterministic = same_output(&first_stdout, &second_stdout) && first_code == second_code;
     let exit_matched = first_code == case.expected_exit;
 
     let mut missing: Vec<&str> = Vec::new();
@@ -140,7 +162,7 @@ fn case_row(binary: &Path, fixtures: &Path, case: &Case) -> Result<Row, String> 
     // not hidden.
     let marker_observed = match case.stderr_marker.as_deref() {
         None => true,
-        Some(marker) => first_stderr.contains(marker),
+        Some(marker) => marker_hits(&first_stderr, marker),
     };
 
     let matched =
@@ -219,11 +241,83 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
                 continue;
             }
             let (_, _, stderr) = run_once(&binary, &fixtures.join(&other.request))?;
-            if stderr.contains(marker) {
+            if marker_hits(&stderr, marker) {
                 collisions.push(json!({ "marker": marker, "alsoMatched": other.id }));
             }
         }
     }
+    // -- the determinism comparison has to be able to say "different" -------
+    //
+    // Every accepted case is run twice and the two outputs compared. On a
+    // deterministic CLI that comparison always says "same", so a comparison that
+    // could only ever say "same" would be indistinguishable from a working one.
+    // Two different requests are compared here and must differ. Measured rather
+    // than assumed: hardcoding the determinism result to `true` on a
+    // deterministic tree is otherwise invisible.
+    let accepted: Vec<&Case> = manifest
+        .cases
+        .iter()
+        .filter(|case| case.expected_exit == 0)
+        .collect();
+    let mut distinguishable = false;
+    let mut compared = 0;
+    if accepted.len() > 1 {
+        let (_, left, _) = run_once(&binary, &fixtures.join(&accepted[0].request))?;
+        let (_, right, _) = run_once(&binary, &fixtures.join(&accepted[1].request))?;
+        compared = 2;
+        distinguishable = !same_output(&left, &right) && !left.is_empty() && !right.is_empty();
+    }
+    rows.push(Row {
+        symbol: "determinism-discrimination".to_owned(),
+        outcome: if distinguishable { "pass" } else { "fail" },
+        trace_ids: vec!["FR-005-AC-1".to_owned(), "NFR-001-AC-1".to_owned()],
+        detail: json!({
+            "why": "a comparison that can only ever report `same` measures nothing",
+            "requestsCompared": compared,
+            "outputsDiffer": distinguishable,
+        }),
+    });
+
+    // -- the binary under test has to be the binary this revision builds ----
+    //
+    // `current_exe()` finds whatever is in the profile directory. If a build was
+    // skipped, that is a binary from an older revision, and every row above
+    // would report on it happily. The CLI stamps the revision it was built from
+    // into its C2PO mapping manifest, so the two are compared: a stale binary
+    // names a different revision than `git rev-parse HEAD` and fails here.
+    let head = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(
+            fixtures
+                .parent()
+                .and_then(Path::parent)
+                .unwrap_or(&fixtures),
+        )
+        .output()
+        .map(|out| String::from_utf8_lossy(&out.stdout).trim().to_owned())
+        .unwrap_or_default();
+    let mapping_request = fixtures.join("map-c2po.json");
+    let (_, stdout, _) = run_once(&binary, &mapping_request)?;
+    let stamped = serde_json::from_slice::<Value>(&stdout)
+        .ok()
+        .and_then(|value| value["sourceRevision"].as_str().map(str::to_owned))
+        .unwrap_or_default();
+    rows.push(Row {
+        symbol: "binary-identity".to_owned(),
+        outcome: if !head.is_empty() && stamped == head {
+            "pass"
+        } else {
+            "fail"
+        },
+        trace_ids: vec!["FR-005-AC-1".to_owned(), "NFR-002-AC-2".to_owned()],
+        detail: json!({
+            "why": "the CLI under test must be the one this revision builds, not a \
+                    leftover in the profile directory",
+            "headRevision": head,
+            "revisionStampedIntoTheBinary": stamped,
+        }),
+    });
+
     rows.push(Row {
         symbol: "marker-discrimination".to_owned(),
         outcome: if collisions.is_empty() && markers > 1 {

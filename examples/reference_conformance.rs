@@ -272,6 +272,79 @@ fn closed_row(fixture: &Fixture, corpus: &Path) -> Result<Option<Row>, String> {
     ))
 }
 
+/// Does a rejection message name this declared cause?
+///
+/// One function, used both for a fixture's own outcome and for the
+/// cross-fixture discrimination row below. That is deliberate: if this is ever
+/// weakened to a constant, the diagonal still passes but the off-diagonal
+/// collapses and `malformed-marker-discrimination` fails. A separate
+/// implementation for each purpose would let one be neutered while the other
+/// went on agreeing with itself.
+fn marker_hits(message: &str, marker: &str) -> bool {
+    message.contains(marker)
+}
+
+/// The rejection a declared-invalid fixture actually produced.
+fn observe_rejection(fixture: &Fixture, corpus: &Path) -> Result<(&'static str, String), String> {
+    let bytes = read_declared(corpus, &fixture.formula)?;
+    Ok(match serde_json::from_slice::<FormulaDocument>(&bytes) {
+        Err(error) => ("deserialize", error.to_string()),
+        Ok(document) => match document.validate() {
+            Err(error) => ("validate", format!("{error}")),
+            Ok(_) => ("accepted", String::new()),
+        },
+    })
+}
+
+/// Every declared marker must name its own fixture's refusal and no other's.
+///
+/// Without this, "rejected for the declared reason" is satisfied by a marker
+/// that matches everything, and an evaluator that refused every document for one
+/// reason would look correct. Measured rather than assumed: disabling the
+/// per-row cause check on a tree where every cause matches is invisible, so the
+/// check needs an off-diagonal that must come out false.
+fn marker_discrimination_row(fixtures: &[&Fixture], corpus: &Path) -> Result<Row, String> {
+    let mut observed = Vec::new();
+    for fixture in fixtures {
+        let declared = fixture
+            .expected_error
+            .as_deref()
+            .ok_or_else(|| format!("fixture {} declares no expected error", fixture.id))?;
+        let (_, marker) = declared_rejection(declared)
+            .ok_or_else(|| format!("fixture {} declares an unnamed rejection", fixture.id))?;
+        let (_, message) = observe_rejection(fixture, corpus)?;
+        observed.push((fixture.id.clone(), marker, message));
+    }
+    let mut collisions = Vec::new();
+    let mut missing = Vec::new();
+    for (id, marker, message) in &observed {
+        if !marker_hits(message, marker) {
+            missing.push(id.clone());
+        }
+        for (other_id, _, other_message) in &observed {
+            if other_id == id {
+                continue;
+            }
+            if marker_hits(other_message, marker) {
+                collisions.push(format!("{marker} also matches {other_id}"));
+            }
+        }
+    }
+    let matched = collisions.is_empty() && missing.is_empty() && observed.len() > 1;
+    Ok(Row {
+        symbol: "malformed-marker-discrimination".to_owned(),
+        family: "malformed",
+        outcome: if matched { "pass" } else { "fail" },
+        trace_ids: vec!["FR-001-AC-3", "NFR-002-AC-1", "TC-012"],
+        detail: json!({
+            "why": "each declared cause must name its own fixture's refusal and no other's",
+            "fixtures": observed.len(),
+            "markersThatMatchedNothing": missing,
+            "collisions": collisions,
+        }),
+    })
+}
+
 fn malformed_row(fixture: &Fixture, corpus: &Path) -> Result<Row, String> {
     let symbol = format!("{}/malformed", fixture.id);
     let declared = fixture.expected_error.as_deref().ok_or_else(|| {
@@ -304,7 +377,7 @@ fn malformed_row(fixture: &Fixture, corpus: &Path) -> Result<Row, String> {
         },
     };
     let stage_matched = observed_stage == expected_stage;
-    let cause_matched = message.contains(marker);
+    let cause_matched = marker_hits(&message, marker);
     Ok(Row {
         symbol,
         family: "malformed",
@@ -346,6 +419,7 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
 
     let mut classes: BTreeMap<&str, usize> = BTreeMap::new();
     let mut rows = Vec::new();
+    let mut invalid: Vec<&Fixture> = Vec::new();
     for fixture in &manifest.fixtures {
         *classes.entry(fixture.class.as_str()).or_insert(0) += 1;
         match fixture.expected_validation.as_str() {
@@ -355,7 +429,10 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
                     rows.push(row);
                 }
             }
-            "invalid" => rows.push(malformed_row(fixture, &corpus)?),
+            "invalid" => {
+                rows.push(malformed_row(fixture, &corpus)?);
+                invalid.push(fixture);
+            }
             other => {
                 return Err(format!(
                     "fixture {} declares expected_validation {other:?}, which this replay \
@@ -366,6 +443,7 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
         }
     }
     let _ = classes;
+    rows.push(marker_discrimination_row(&invalid, &corpus)?);
     Ok(rows)
 }
 

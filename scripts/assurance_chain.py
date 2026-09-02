@@ -755,6 +755,41 @@ def run_chain(candidate_revision: str, workspace: Path) -> dict[str, Any]:
         observed_results,
     )
 
+    # The control that makes the scenario above mean anything.
+    #
+    # On a tree where every producer genuinely passes, a `derive_result` that
+    # ignored its input entirely and returned the constant "passed" would
+    # produce exactly the same report. That is Wave 1's first high finding, and
+    # it is invisible to every honest-path assertion — a mutation probe that
+    # hardcoded `passed` here was run against this chain and was NOT detected.
+    #
+    # So the same function is handed a stream derived from the real one with its
+    # first passing row flipped to fail, and it has to say `failed`. A constant
+    # cannot satisfy both halves.
+    derive_probe = scratch / "derive-probe.jsonl"
+    derive_probe.write_text(
+        derive_failed_stream(inputs["PROOF-r2u2-differential"].read_text(encoding="utf-8")),
+        encoding="utf-8",
+    )
+    derived_from_failure = derive_result("PROOF-r2u2-differential", derive_probe)
+    derived_from_success = derive_result(
+        "PROOF-r2u2-differential", inputs["PROOF-r2u2-differential"]
+    )
+    control(
+        "attested-results-are-derived-and-not-constant",
+        "attested-results-are-read-from-producer-output",
+        derived_from_failure == "failed" and derived_from_success == "passed",
+        {
+            "from_the_real_bytes": derived_from_success,
+            "from_one_row_flipped_to_fail": derived_from_failure,
+            "why": (
+                "a deriver that returned a constant would agree with every honest-path "
+                "assertion on a green tree; the only way to see it is to hand the same "
+                "function bytes that must produce a different answer"
+            ),
+        },
+    )
+
     # -- 1b. the repository-owned states this migration must not lose --------
     #
     # Two families, each asserted by several separate facts, because any one of
@@ -1325,6 +1360,32 @@ def adapter_probes(workspace: Path) -> list[dict[str, Any]]:
             "state": "vacuous",
             "matched": empty_refused,
             "detail": {},
+        }
+    )
+
+    # Probe 8: a failing row transcribes to a Quoin `fail` entry.
+    #
+    # Every other probe here exercises a refusal or a non-success outcome. None
+    # of them would notice the outcome table quietly mapping `fail` to `pass`,
+    # because the real stream contains no failing row. That was measured rather
+    # than reasoned about: the mutation was applied to `CONFORMANCE_OUTCOMES` and
+    # no gate in this repository detected it.
+    transcribed_failure = adapt_conformance(derive_failed_stream(stream))
+    failed_entries = [
+        entry for entry in transcribed_failure["entries"] if entry["outcome"] == "fail"
+    ]
+    results.append(
+        {
+            "probe": "adapter-carries-a-failure-through-as-a-failure",
+            "state": "fail",
+            "matched": len(failed_entries) == 1
+            and all(entry["domainOutcome"] == "fail" for entry in failed_entries),
+            "detail": {
+                "fail_entries": len(failed_entries),
+                "domain_outcomes": sorted(
+                    {entry["domainOutcome"] for entry in transcribed_failure["entries"]}
+                ),
+            },
         }
     )
 

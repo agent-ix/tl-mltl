@@ -429,6 +429,58 @@ fn the_chain_never_executes_a_producer_and_the_probe_can_prove_it() {
     }
 }
 
+// Trace: TC-019, FR-006-AC-2, NFR-003-AC-1
+#[test]
+fn an_unobservable_tool_version_is_refused_rather_than_defaulted() {
+    // A sealed attestation names the version of the tool that produced the bytes.
+    // A version nobody measured, filled in with a plausible-looking default, is
+    // worse than an absent one: a reader cannot tell it apart from a real
+    // observation. The driver raises rather than defaulting, and that raise is
+    // on a branch the honest path never takes — measured, not assumed: a
+    // mutation inserting `observed = "0.0.0"` before the raise was applied and
+    // no gate detected it, because on a working toolchain the branch is dead.
+    //
+    // So the branch is made live. `rustup` is replaced by a stub that fails for
+    // every argument including `--version`, which is how the MSRV proof's cargo
+    // version is observed. The chain must refuse with exit 2 and say why.
+    let directory = root().join("target/unobservable-version-shim");
+    let _ = fs::remove_dir_all(&directory);
+    fs::create_dir_all(&directory).unwrap();
+    let shim = directory.join("rustup");
+    fs::write(&shim, "#!/bin/sh\nexit 1\n").unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&shim, fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
+    let inherited = std::env::var("PATH").unwrap_or_default();
+    let revision = head_revision();
+    let output = Command::new("python3")
+        .args([
+            "scripts/assurance_chain.py",
+            "--candidate-revision",
+            &revision,
+        ])
+        .current_dir(root())
+        .env("PATH", format!("{}:{inherited}", directory.display()))
+        .output()
+        .expect("failed to run the assurance chain");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert_eq!(
+        output.status.code(),
+        Some(2),
+        "the chain did not refuse an unobservable tool version; it exited {:?} \
+         and would have sealed an attestation naming a version nobody \
+         measured\n{stderr}",
+        output.status.code()
+    );
+    assert!(
+        stderr.contains("could not be observed"),
+        "the refusal did not name the cause: {stderr}"
+    );
+}
+
 // Trace: TC-020, FR-006-AC-3, SUITE-003
 #[test]
 fn the_sealed_records_impact_snapshot_is_the_quire_export() {
@@ -1070,6 +1122,53 @@ fn no_local_evidence_framework_remains_and_the_frozen_schemas_are_referenced_by_
         assert!(
             !makefile.contains(gone),
             "the Makefile still carries the {gone} self-attestation target"
+        );
+    }
+
+    // And `ci` still names the work it claims to run. Dropping a prerequisite
+    // from a composite removes a whole enforcement layer while every remaining
+    // check stays green, which is a false green nothing else here would catch.
+    //
+    // The graph is expanded with `make -n` and read for the COMMANDS, not for
+    // target names. `cargo test`, `cargo clippy`, `cargo fmt` and the MSRV
+    // toolchain invocation are named specifically: checking only for the
+    // producer scripts would prove nothing, because `assurance-inputs` supplies
+    // those whether or not `test` is still a prerequisite of `ci`.
+    let expansion = Command::new("make")
+        .args(["-n", "ci"])
+        .current_dir(&root)
+        .output()
+        .expect("make -n ci failed");
+    let graph = String::from_utf8_lossy(&expansion.stdout).into_owned();
+    assert!(
+        expansion.status.success(),
+        "make -n ci did not expand: {}",
+        String::from_utf8_lossy(&expansion.stderr)
+    );
+    for required in [
+        "cargo test --all-targets --all-features",
+        "cargo clippy --all-targets --all-features",
+        "cargo fmt --all -- --check",
+        "cargo deny check licenses",
+        "rustup run 1.75.0 cargo check --locked",
+        "scripts/assurance_chain.py",
+        "scripts/check_shared_pins.py",
+        "scripts/legacy_evidence_view.py",
+        "scripts/rust_test_census.py",
+        "quire validate",
+        "quire coverage",
+        "check_unsafe_comments.sh",
+        "sha256sum --check",
+        "example reference_conformance",
+        "example r2u2_differential",
+        "example cli_conformance",
+        "RUSTDOCFLAGS=-Dwarnings",
+    ] {
+        assert!(
+            graph.contains(required),
+            "`make ci` no longer runs `{required}`; a composite that loses a \
+             prerequisite loses an enforcement layer while everything else stays \
+             green. Expansion was:\n{graph}"
         );
     }
 }
