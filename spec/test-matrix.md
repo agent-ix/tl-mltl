@@ -18,7 +18,7 @@ relationships:
 | FR-003 | FR-003-AC-1 through FR-003-AC-3 | TC-008 through TC-010 | ✅ covered |
 | FR-004 | FR-004-AC-1 through FR-004-AC-3 | TC-011 through TC-013 | ✅ covered |
 | FR-005 | FR-005-AC-1 through FR-005-AC-3 | TC-014 through TC-016 | ✅ covered |
-| FR-006 | FR-006-AC-1 through FR-006-AC-7 | TC-018 through TC-024 | ✅ covered |
+| FR-006 | FR-006-AC-1, FR-006-AC-2, FR-006-AC-3, FR-006-AC-5, FR-006-AC-6, FR-006-AC-7 | TC-018, TC-019, TC-020, TC-022, TC-023, TC-024 | ✅ covered |
 
 ## Stakeholder Requirement Coverage
 
@@ -32,8 +32,8 @@ relationships:
 | Non-Functional Req | Verification Method | Evidence/Test Cases | Status |
 |---|---|---|---|
 | NFR-001 | deterministic and resource-limit tests | TC-003, TC-004, TC-006, TC-013 | ✅ covered |
-| NFR-002 | schema-negative tests and compatibility-mapping inspection | TC-012, TC-014, TC-017, TC-021 | ✅ covered |
-| NFR-003 | producer-boundary, state-vocabulary, and mutation-probe tests | TC-019, TC-021, TC-022 | ✅ covered |
+| NFR-002 | schema-negative tests and compiled-test census | TC-012, TC-014, TC-016, TC-017 | ✅ covered |
+| NFR-003 | producer-boundary, state-vocabulary, and mutation-probe tests | TC-019, TC-022 | ✅ covered |
 
 ## Test Case Summary
 
@@ -59,7 +59,6 @@ relationships:
 | TC-018 | Classify every shared pin through the packaged compatibility matrix and refuse a mirror reference | Integration | P0 | FR-006-AC-1 | ✅ implemented |
 | TC-019 | Reach Quoin without Quoin, Quire, or any gate executing a producer or the external monitor | Integration | P0 | FR-006-AC-2, NFR-003-AC-1, NFR-003-AC-2 | ✅ implemented |
 | TC-020 | Bind the sealed record's impact snapshot to a Quire export that names every requirement | Integration | P0 | FR-006-AC-3 | ✅ implemented |
-| TC-021 | Read retained evidence through the shared mapping without moving a byte | Integration | P0 | FR-006-AC-4, NFR-002-AC-2, NFR-003-AC-4 | ✅ implemented |
 | TC-022 | Demonstrate twelve verification outcomes, each paired with an accepted positive control, and refuse a control naming a scenario that does not exist | Integration | P0 | FR-006-AC-5, NFR-003-AC-3 | ✅ implemented |
 | TC-023 | Keep the R2U2 differential a comparison: three classifications, four external states, counts from the corpus manifests, and survival into the retained bytes | Integration | P0 | FR-006-AC-6, StR-002-VC-1, StR-002-VC-2 | ✅ implemented |
-| TC-024 | Leave no local evidence framework and no live reference to the two frozen evidence schemas | Integration | P0 | FR-006-AC-7 | ✅ implemented |
+| TC-024 | Leave no local evidence framework, no retained legacy evidence, and no live reference to the deleted reader, fixtures, or schemas | Integration | P0 | FR-006-AC-7 | ✅ implemented |

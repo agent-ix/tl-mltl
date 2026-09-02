@@ -5,8 +5,8 @@ no verdict, and no store.
 
 | File | What it is |
 |---|---|
-| `pins.json` | The Engineering Assurance release this repository adopts, and the digests of the artifacts it reads from that release. Component versions are deliberately not restated: the packaged compatibility matrix is their authority. |
-| `change-assurance.json` | The author's statement about the change under issue #13, in the shape Quoin's FR-063 record requires. |
+| `pins.json` | The Engineering Assurance release this repository adopts, and the artifacts it reads from that release. Component versions are deliberately not restated: the packaged compatibility matrix is their authority. |
+| `change-assurance.json` | The author's statement about the change under issue #16, in the shape Quoin's FR-063 record requires. |
 
 ## How the pieces relate
 
@@ -16,11 +16,10 @@ make assurance-inputs        the ONLY target that runs a producer
    +-> target/assurance/*    structured results, written by domain tools
           |
           +-> scripts/assurance_chain.py        reads those bytes, seals through quoin
-          +-> scripts/legacy_evidence_view.py   reads evidence/ through the pinned mapping
           +-> scripts/check_shared_pins.py      classifies the toolchain through the matrix
 ```
 
-Four rules make this different from what it replaced.
+Three rules make this different from what it replaced.
 
 **The driver never produces, and enforces that on itself.** If an input is
 absent, the chain says so and names `make assurance-inputs`. It does not run the
@@ -51,22 +50,17 @@ A gate that re-ran the external monitor would be producing the thing it is
 supposed to be checking, and the differential would stop being a comparison
 between two independent implementations.
 
-**A refusal is a result.** This repository's six retained envelopes are
-`quire.derivation-evidence/v1`, which the pinned PGM-01 mapping does not cover,
-so it answers `incompatible` for every one of them. That answer was measured here
-rather than inherited from a sibling — the same question has five different
-answers across this campaign — and it is reported as it stands. It is not a
-pass, it is not a defect of those records, and it is not a reason to write a
-local mapper, which is precisely what this migration removed. Filed upstream as
-`agent-ix/engineering-assurance#21`.
-
 ## What is not here
 
 No evidence envelope, manifest, anchor verifier, retention store, audit store,
-tool lock, failure-propagation policer, or aggregate verdict. Retained bytes
-under `evidence/` are immutable, and Git history plus pull-request review are the
-integrity boundary for them. `evidence/ANCHORS` and `evidence/RETRACTIONS.json`
-survive as retained bytes; nothing interprets them any more.
+tool lock, failure-propagation policer, or aggregate verdict — and, since issue
+#16, no retained legacy evidence and no reader for it. The repository owner
+released the preservation constraint for the pre-stable phase on 2026-09-02
+(`agent-ix/engineering-assurance#7`), so `evidence/`, `schemas/`, the
+compatibility view and the `PROOF-legacy-compatibility` obligation were deleted
+rather than carried. Nothing was rewritten to look like it still verifies; the
+records and every claim that argued from them are simply gone. The constraint
+re-applies unchanged at the move toward stable releases.
 
 `Makefile` is orchestration and is not a trust root. What that costs is measured
 and recorded in `change-assurance.json` under

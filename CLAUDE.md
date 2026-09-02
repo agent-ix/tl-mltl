@@ -22,7 +22,7 @@ make msrv             # check all targets and features with Rust 1.75
 make rustdoc          # build warning-free public docs
 make assurance-env    # create the pinned shared-assurance interpreter
 make assurance-inputs # run the producers and write their structured results
-make assurance        # pins + compat-view + assurance-chain
+make assurance        # pins + assurance-chain
 make ci               # complete local gate
 ```
 
@@ -73,7 +73,7 @@ Adding `.IGNORE:` to the `Makefile` makes recipes report success without running
 and nothing here notices. Measured in this repository: with a syntax error in
 `src/lib.rs`, `make -k ci` exits 2 and 10 of the 14 `ci` prerequisites do not
 complete; with `.IGNORE:` added, all 10 report success and `make ci` exits 0. The structural
-backstop — Quoin binding each retained input by digest — covers only the seven
+backstop — Quoin binding each retained input by digest — covers only the six
 producers that feed the chain. Tracked as `agent-ix/tl-mltl#14`.
 
 ## Safety scaffolding
@@ -100,9 +100,7 @@ src/main.rs            # JSON command CLI
 examples/              # the three domain producers
 tests/                 # reference, corpus, differential, CLI, and assurance tests
 corpus/                # pinned shared and R2U2 differential records
-evidence/              # immutable retained records; nothing writes here
-schemas/               # two frozen evidence schemas; nothing validates against them
 assurance/             # what this repository declares; no evidence, no verdict
 spec/                  # requirements artifacts (from /spec-create-spec)
-scripts/               # the pin classifier, the compatibility view, the chain driver
+scripts/               # the pin classifier, the test census, the chain driver
 ```

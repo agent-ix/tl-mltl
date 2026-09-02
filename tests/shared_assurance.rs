@@ -212,8 +212,8 @@ fn the_chain_reaches_quoin_without_quoin_or_quire_executing_a_producer() {
         .expect("attested_results");
     assert_eq!(
         attested.len(),
-        7,
-        "seven proof obligations are declared; {} were attested",
+        6,
+        "six proof obligations are declared; {} were attested",
         attested.len()
     );
     for (proof, result) in attested {
@@ -378,7 +378,7 @@ fn the_chain_never_executes_a_producer_and_the_probe_can_prove_it() {
     // file. A driver that can produce its own inputs can produce a green run out
     // of nothing, and this is the direct measurement of that — it covers `quire
     // coverage`, which cannot be PATH-shimmed for the reason given above, and it
-    // covers the other six producers by name rather than by absence of evidence.
+    // covers the other five producers by name rather than by absence of evidence.
     let assurance = root().join("target/assurance");
     let inputs = [
         "reference-conformance.jsonl",
@@ -386,7 +386,6 @@ fn the_chain_never_executes_a_producer_and_the_probe_can_prove_it() {
         "cli-conformance.jsonl",
         "test-census.json",
         "quire-static-export.json",
-        "legacy-compatibility.json",
         "msrv.jsonl",
     ];
     for name in inputs {
@@ -610,17 +609,18 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 68 is every row Quire mints from `spec/`: 35 acceptance criteria, 24
-    // test-matrix rows and 9 suite-registry rows. Naming the population matters
+    // 64 is every row Quire mints from `spec/`: 33 acceptance criteria, 23
+    // test-matrix rows and 8 suite-registry rows. Naming the population matters
     // — "matrix rows" would have been wrong, since the test matrix contributes
-    // 24 of them.
+    // 23 of them. It was 35 + 24 + 9 before FR-006-AC-4, NFR-003-AC-4, TC-021
+    // and SUITE-007 were deleted with the retained evidence they measured.
     assert_eq!(
-        totals["total"], 68,
-        "the declared-row population changed: {totals}. It is 35 acceptance \
-         criteria + 24 test-matrix rows + 9 suite-registry rows."
+        totals["total"], 64,
+        "the declared-row population changed: {totals}. It is 33 acceptance \
+         criteria + 23 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
-        totals["backed"], 66,
+        totals["backed"], 62,
         "backed-row count changed: {totals}. Exactly two rows are unbacked on \
          purpose — SUITE-001 (`make ci`, the composite that contains every other \
          suite) and SUITE-002 (the `quire validate` half of `make spec`, which \
@@ -639,99 +639,6 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
         report["attested_results"]["PROOF-quire-static-export"], "passed",
         "the Quire export was attested as {}",
         report["attested_results"]["PROOF-quire-static-export"]
-    );
-}
-
-fn walk(directory: &Path) -> u64 {
-    let mut count = 0;
-    for entry in fs::read_dir(directory).expect("evidence directory") {
-        let path = entry.expect("directory entry").path();
-        if path.is_dir() {
-            count += walk(&path);
-        } else {
-            count += 1;
-        }
-    }
-    count
-}
-
-// Trace: TC-021, FR-006-AC-4, NFR-002-AC-2, NFR-003-AC-4, SUITE-007
-#[test]
-fn retained_evidence_is_read_through_the_shared_mapping_without_moving_a_byte() {
-    let python = assurance_python();
-    let census = json_gate(&python, &["scripts/legacy_evidence_view.py", "--json"]);
-
-    // Two different claims, kept apart. The first is that this run wrote nothing;
-    // the second is that the retained bytes are the bytes that were committed.
-    // Only Git can answer the second, and it is asked rather than assumed.
-    assert!(census["evidence_bytes_moved_during_this_run"]
-        .as_array()
-        .unwrap()
-        .is_empty());
-    assert!(
-        census["uncommitted_evidence_changes"]
-            .as_array()
-            .unwrap()
-            .is_empty(),
-        "retained evidence differs from what was committed: {}",
-        census["uncommitted_evidence_changes"]
-    );
-    assert!(census["misattributed_records"]
-        .as_array()
-        .unwrap()
-        .is_empty());
-    assert_eq!(census["matched"], true);
-
-    let files = census["evidence_files_read"].as_u64().unwrap();
-    let on_disk = walk(&root().join("evidence"));
-    assert_eq!(
-        files, on_disk,
-        "the compatibility view read {files} evidence files but {on_disk} are present"
-    );
-    assert_eq!(
-        on_disk, 283,
-        "this repository retains 283 evidence files; if a byte moved under \
-         evidence/ that is the migration's one hard prohibition"
-    );
-
-    let retained = &census["retained"];
-    assert_eq!(
-        retained["count"].as_u64().unwrap(),
-        6,
-        "this repository retains six evidence records"
-    );
-    // The honest answer for this repository, measured here rather than inherited.
-    // Its retained family is quire.derivation-evidence/v1, which the pinned
-    // mapping does not cover, so every envelope is refused. That refusal is
-    // reported as it stands and is not converted into a pass. Filed as
-    // agent-ix/engineering-assurance#21.
-    assert_eq!(
-        retained["outcomes"],
-        serde_json::json!(["incompatible"]),
-        "the retained-evidence outcome changed; if the shared mapping gained a \
-         derivation-evidence reader this assertion should be updated deliberately"
-    );
-    assert_eq!(
-        retained["declared_schema_versions"],
-        serde_json::json!(["quire.derivation-evidence/v1"])
-    );
-
-    // The mapping must be seen to accept, or a refusal proves nothing.
-    let accepted = census["accepted_positive_controls"].as_array().unwrap();
-    assert!(
-        !accepted.is_empty(),
-        "no positive control was accepted; a mapping only ever seen refusing is \
-         indistinguishable from a step that never worked"
-    );
-
-    let (code, stdout, stderr) = run(
-        &python,
-        &["scripts/legacy_evidence_view.py", "--mutation-probes"],
-    );
-    assert_eq!(
-        code, 0,
-        "a load-bearing compatibility check was removed and the census did not \
-         notice\n{stdout}\n{stderr}"
     );
 }
 
@@ -772,31 +679,19 @@ fn all_twelve_verification_outcomes_are_demonstrated_and_paired_with_controls() 
         ("tampered", "refuse-an-edited-receipt"),
     ];
 
-    let python = assurance_python();
     let report = chain_report();
-    let census = json_gate(&python, &["scripts/legacy_evidence_view.py", "--json"]);
 
-    // Only MEASURED outcomes count. The chain's `states_demonstrated` is already
-    // built from cases that ran and matched. The compatibility lane contributes
-    // the outcome the mapping actually returned and the states it actually
-    // mapped — never the case's `kind`, which is a free-text label in
-    // expectations.json. Counting the label meant a state could stop being
-    // demonstrated while this test stayed green, which is the exact failure mode
-    // this test exists to rule out.
-    let mut demonstrated: BTreeSet<String> = report["states_demonstrated"]
+    // Only MEASURED outcomes count. The chain's `states_demonstrated` is built
+    // from cases that ran and matched — never from a free-text label typed next
+    // to an assertion, which would let a state stop being demonstrated while
+    // this test stayed green. That is the exact failure mode this test exists to
+    // rule out.
+    let demonstrated: BTreeSet<String> = report["states_demonstrated"]
         .as_array()
         .unwrap()
         .iter()
         .map(|value| value.as_str().unwrap().to_owned())
         .collect();
-    for case in census["cases"].as_array().unwrap() {
-        if case["matched"] != serde_json::Value::Bool(true) {
-            continue;
-        }
-        for state in case["mapped_states"].as_array().unwrap() {
-            demonstrated.insert(state.as_str().unwrap().to_owned());
-        }
-    }
 
     let missing: Vec<&str> = REQUIRED
         .iter()
@@ -855,25 +750,6 @@ fn all_twelve_verification_outcomes_are_demonstrated_and_paired_with_controls() 
              demonstrate was not produced by anything: {probe:#}"
         );
     }
-
-    // The compatibility lane's own six-state vocabulary, measured the same way:
-    // the census reports which states it observed and which it did not.
-    assert!(
-        census["undemonstrated_states"]
-            .as_array()
-            .unwrap()
-            .is_empty(),
-        "the compatibility mapping's state vocabulary is not fully demonstrated: {}",
-        census["undemonstrated_states"]
-    );
-    assert!(
-        census["undemonstrated_outcomes"]
-            .as_array()
-            .unwrap()
-            .is_empty(),
-        "the compatibility mapping's outcome vocabulary is not fully demonstrated: {}",
-        census["undemonstrated_outcomes"]
-    );
 
     // Every negative names the positive control that proves the step it refuses
     // is a step that works.
@@ -1078,11 +954,12 @@ fn collect_sources(directory: &Path, into: &mut Vec<PathBuf>) {
             .file_name()
             .and_then(|value| value.to_str())
             .unwrap_or("");
-        // Four exclusions, and they are exactly the ones `schemas/README.md`
-        // names: Git's own store, build output, the assurance interpreter, and
-        // the retained evidence, whose bytes are immutable and do name the
-        // schemas.
-        if matches!(name, ".git" | "target" | ".venv-assurance" | "evidence") {
+        // Three exclusions: Git's own store, build output, and the assurance
+        // interpreter. Everything a reader could hide in is walked, including
+        // `build.rs` and the workflow, because an adversarial review put a
+        // reference in `build.rs` — which runs on every cargo invocation — and
+        // an earlier census that walked named directories did not see it.
+        if matches!(name, ".git" | "target" | ".venv-assurance") {
             continue;
         }
         if path.is_dir() {
@@ -1101,7 +978,7 @@ fn collect_sources(directory: &Path, into: &mut Vec<PathBuf>) {
 
 // Trace: TC-024, FR-006-AC-7
 #[test]
-fn no_local_evidence_framework_remains_and_the_frozen_schemas_are_referenced_by_nothing() {
+fn no_local_evidence_framework_remains() {
     let root = root();
 
     // The generic machinery is gone, by name.
@@ -1121,6 +998,15 @@ fn no_local_evidence_framework_remains_and_the_frozen_schemas_are_referenced_by_
         "scripts/test_tool_identity.py",
         "tools.lock",
         "tests/evidence_contract.rs",
+        // Released for the pre-stable phase by the owner decision recorded in
+        // agent-ix/engineering-assurance#7 and deleted under
+        // agent-ix/tl-mltl#16. The reader, its fixtures, the two frozen schemas
+        // and the retained records themselves go together: a tree that still
+        // holds any one of them has not made the deletion it claims to have.
+        "evidence",
+        "schemas",
+        "scripts/legacy_evidence_view.py",
+        "tests/fixtures/legacy-compat",
     ] {
         assert!(
             !root.join(removed).exists(),
@@ -1128,108 +1014,20 @@ fn no_local_evidence_framework_remains_and_the_frozen_schemas_are_referenced_by_
         );
     }
 
-    // The two evidence schemas are frozen, not deleted. They are NOT in the same
-    // position and schemas/README.md says so: the manifest schema's current
-    // bytes are exactly what all six retained envelopes name, and the input
-    // schema's are not — the records name two earlier revisions of it. All three
-    // digests are pinned so neither the freeze nor the divergence can move
-    // silently.
-    let frozen = [
-        (
-            "schemas/tl-mltl-evidence-input-v1.schema.json",
-            "7b7e4725bc05d1aafdda7af1586449dbaec6dae2e0893d204acf188347daff24",
-        ),
-        (
-            "schemas/tl-mltl-evidence-manifest-v1.schema.json",
-            "8744bfe233f10f2dd6fe3a9d2948d2424802eda0489e4874b79428e6bf73cca1",
-        ),
-    ];
-    for (path, expected) in frozen {
-        let file = root.join(path);
-        assert!(
-            file.is_file(),
-            "{path} was deleted; it is frozen, not removed"
-        );
-        assert_eq!(
-            digest_of(&file),
-            expected,
-            "{path} changed; a frozen schema is immutable"
-        );
-    }
-
-    // What the six retained envelopes actually name, read out of the immutable
-    // bytes rather than restated. The manifest digest has to be the current
-    // file; the input digests have to be the two the records carry, and neither
-    // may become the current file without a deliberate change here.
-    let mut input_digests: BTreeSet<String> = BTreeSet::new();
-    let mut output_digests: BTreeSet<String> = BTreeSet::new();
-    let mut envelopes = 0;
-    for entry in fs::read_dir(root.join("evidence")).expect("evidence directory") {
-        let envelope = entry
-            .expect("directory entry")
-            .path()
-            .join("evidence-envelope.json");
-        if !envelope.is_file() {
-            continue;
-        }
-        envelopes += 1;
-        let value: Value =
-            serde_json::from_slice(&fs::read(&envelope).unwrap()).expect("envelope is JSON");
-        for (key, into) in [
-            ("inputs", &mut input_digests),
-            ("outputs", &mut output_digests),
-        ] {
-            for item in value[key].as_array().into_iter().flatten() {
-                if let Some(digest) = item["schema"]["digest"]["value"].as_str() {
-                    into.insert(digest.to_owned());
-                }
-            }
-        }
-    }
-    assert_eq!(envelopes, 6, "six retained envelopes were expected");
-    assert_eq!(
-        output_digests,
-        BTreeSet::from([frozen[1].1.to_owned()]),
-        "the retained envelopes no longer name the frozen manifest schema's current bytes"
-    );
-    assert_eq!(
-        input_digests,
-        BTreeSet::from([
-            "808fd9f33720066e136188722daf0d4ce254fb846fd16f1e9073d1d3175138e2".to_owned(),
-            "d763369e194bc9b908b456f6da0f39266720cc4bb77a5102d21c62b51c0b2d3a".to_owned(),
-        ]),
-        "the input-schema digests the retained envelopes name changed"
-    );
-    assert!(
-        !input_digests.contains(frozen[0].1),
-        "the input schema on disk is now one of the digests the records name; that \
-         would be good news, but schemas/README.md documents the opposite and has to \
-         be corrected deliberately rather than by this assertion quietly passing"
-    );
-
-    // Nothing validates against them any more. The census walks recursively and
-    // covers the build and workflow files too, because a reintroduced validator
-    // one directory down, or a CI step, would otherwise not be caught. A census
-    // this small would be vacuous, so its size is asserted as well.
-    // The whole repository, recursively, minus four excluded trees. An
-    // adversarial review appended a frozen-schema reference to `build.rs` — a
-    // file that executes on every cargo invocation — and to `CLAUDE.md`, and
-    // the census saw neither, because it walked seven named directories and
-    // four named files while `schemas/README.md` claimed it walked everything.
-    // It now walks everything, and the README is true.
+    // And nothing may quietly reintroduce a reader for them. The census walks
+    // the whole tree — a reference one directory down, in `build.rs`, or in a CI
+    // step would otherwise not be caught — and a census this small would be
+    // vacuous, so its size is asserted too.
     let mut sources = Vec::new();
     collect_sources(&root, &mut sources);
-
     let mut inspected = 0;
     for path in &sources {
         inspected += 1;
         let Ok(source) = fs::read_to_string(path) else {
             continue;
         };
-        // Three files name the frozen schemas on purpose: this test pins their
-        // digests, schemas/README.md documents the freeze, and the
-        // change-assurance declaration states the preservation constraint.
-        // Everything else must not mention them at all.
+        // This test names the deleted machinery on purpose; so does the
+        // change-assurance declaration, which records what the release covered.
         let file_name = path
             .file_name()
             .and_then(|value| value.to_str())
@@ -1239,22 +1037,22 @@ fn no_local_evidence_framework_remains_and_the_frozen_schemas_are_referenced_by_
             .and_then(|value| value.file_name())
             .and_then(|value| value.to_str())
             .unwrap_or("");
-        let permitted = match file_name {
-            "shared_assurance.rs" => true,
-            "README.md" => parent == "schemas",
-            "change-assurance.json" => parent == "assurance",
-            // The frozen schemas carry their own `$id`. A file naming itself is
-            // not a reference to it.
-            other => parent == "schemas" && other.ends_with(".schema.json"),
-        };
-        for (schema, _) in frozen {
-            let name = Path::new(schema).file_name().unwrap().to_str().unwrap();
-            if permitted {
-                continue;
-            }
+        if file_name == "shared_assurance.rs"
+            || (file_name == "change-assurance.json" && parent == "assurance")
+            || parent == "reviews"
+            || parent == "tasks"
+            || parent.starts_with("PLAN-")
+        {
+            continue;
+        }
+        for name in [
+            "legacy_evidence_view",
+            "tl-mltl-evidence-input-v1.schema.json",
+            "tl-mltl-evidence-manifest-v1.schema.json",
+        ] {
             assert!(
                 !source.contains(name),
-                "{} references the frozen schema {name}; nothing may validate against it",
+                "{} references {name}, which was deleted with the retained evidence",
                 path.display()
             );
         }
@@ -1312,7 +1110,6 @@ fn no_local_evidence_framework_remains_and_the_frozen_schemas_are_referenced_by_
         "cargo check --locked --all-targets --all-features",
         "scripts/assurance_chain.py",
         "scripts/check_shared_pins.py",
-        "scripts/legacy_evidence_view.py",
         "scripts/rust_test_census.py",
         "quire validate",
         "quire coverage",

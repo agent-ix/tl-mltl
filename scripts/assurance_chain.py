@@ -18,8 +18,8 @@ It is not a verdict. It runs `quoin` and reports what `quoin` said. Where a
 scenario expects a refusal, the refusal is the expected result and the run is
 green because the tool refused, not because the tool agreed.
 
-It is not a retention store. Nothing is written under `evidence/`, nothing is
-committed, and the Quoin store it uses lives under `target/`, which is ignored.
+It is not a retention store. Nothing it produces is committed, and the Quoin
+store it uses lives under `target/`, which is ignored.
 
 Exit status: 0 when every scenario, control and probe matched, 1 when one did
 not, 2 on a usage or environment error — which is a different fact from a
@@ -60,7 +60,6 @@ INPUTS = {
     "PROOF-cli-conformance": ("cli-conformance.jsonl", "application/x-ndjson"),
     "PROOF-test-census": ("test-census.json", "application/json"),
     "PROOF-quire-static-export": ("quire-static-export.json", "application/json"),
-    "PROOF-legacy-compatibility": ("legacy-compatibility.json", "application/json"),
     "PROOF-msrv": ("msrv.jsonl", "application/x-ndjson"),
 }
 
@@ -367,8 +366,8 @@ class Chain:
         alternative is a sealed attestation naming a version nobody measured,
         and an attestation is only worth its weakest field.
 
-        Four identities are probed: the pinned MSRV cargo, quire, and the two
-        Python interpreters that run this repository's script producers. The
+        Three identities are probed: the pinned MSRV cargo, quire, and the
+        Python interpreter that runs this repository's one script producer. The
         three remaining identities are this repository's own compiled examples,
         and their version is the crate version from `Cargo.toml` — which is a
         real fact about the binary that produced the bytes, not a default, and
@@ -386,13 +385,10 @@ class Chain:
             "quire": lambda: semantic_version(
                 (self.environment.get("quire") or "").split(" ")[0] or None
             ),
-            # The two producers that are Python scripts are versioned by the
-            # interpreter that runs them, observed. An adversarial review found
-            # both being attested as the crate version, which is a fact about
-            # the Rust crate and says nothing about what actually ran them.
-            "tl-mltl/legacy_evidence_view": lambda: semantic_version(
-                tool_version([str(ROOT / ".venv-assurance/bin/python"), "--version"])
-            ),
+            # The producer that is a Python script is versioned by the
+            # interpreter that runs it, observed. An adversarial review found it
+            # being attested as the crate version, which is a fact about the
+            # Rust crate and says nothing about what actually ran it.
             "tl-mltl-test-census": lambda: semantic_version(
                 tool_version(["python3", "--version"])
             ),
@@ -668,9 +664,6 @@ def derive_result(proof_id: str, path: Path) -> str:
         return _rows_result(rows, path.name)
     if proof_id == "PROOF-test-census":
         return _rows_result(_load_json(raw, path)["entries"], path.name)
-    if proof_id == "PROOF-legacy-compatibility":
-        census = _load_json(raw, path)
-        return "passed" if census["matched"] else "failed"
     if proof_id == "PROOF-quire-static-export":
         export = _load_json(raw, path)
         # Quire's export is a static fact set, not a run, so it has no outcome

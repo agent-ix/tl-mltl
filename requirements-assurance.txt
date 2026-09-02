@@ -1,10 +1,10 @@
 # The shared assurance lane (FR-006). Install this in its OWN environment.
 #
 # It is deliberately separate from the system interpreter. Nothing in this
-# repository imports jsonschema once the local evidence machinery is gone — the
-# Draft 7 lane belonged to schemas/ and the collector, both of which this
-# migration retires — so there is no version conflict left to resolve. The
-# environment exists for a different reason: engineering-assurance is pinned as a
+# repository imports jsonschema: the Draft 7 lane belonged to the local evidence
+# schemas and the collector, both of which are gone, so there is no version
+# conflict left to resolve. The environment exists for a different reason:
+# engineering-assurance is pinned as a
 # git tag, and resolving a git dependency into the system interpreter would make
 # the pin depend on whatever else that interpreter happens to have.
 #
