@@ -65,6 +65,22 @@ fn head_revision() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_owned()
 }
 
+fn deleted_names_in<'a>(path: &Path, names: &'a [&'a str]) -> Vec<&'a str> {
+    // A file that cannot be read has not been scanned. Read bytes so a source
+    // with a valid non-UTF-8 encoding cannot disappear from the census merely
+    // because Rust strings require UTF-8.
+    let source = fs::read(path)
+        .unwrap_or_else(|error| panic!("the census could not read {}: {error}", path.display()));
+    names
+        .iter()
+        .copied()
+        .filter(|name| {
+            let needle = name.as_bytes();
+            source.windows(needle.len()).any(|window| window == needle)
+        })
+        .collect()
+}
+
 fn digest_of(path: &Path) -> String {
     let output = Command::new("sha256sum")
         .arg(path)
@@ -945,9 +961,12 @@ fn every_requirement_tagged_test_is_a_test_cargo_compiles_and_runs() {
 
 /// Collect every readable source file under `directory`, recursively.
 fn collect_sources(directory: &Path, into: &mut Vec<PathBuf>) {
-    let Ok(entries) = fs::read_dir(directory) else {
-        return;
-    };
+    let entries = fs::read_dir(directory).unwrap_or_else(|error| {
+        panic!(
+            "the census could not enumerate {}: {error}",
+            directory.display()
+        )
+    });
     for entry in entries {
         let path = entry.expect("directory entry").path();
         let name = path
@@ -1036,12 +1055,27 @@ fn no_local_evidence_framework_remains() {
     // vacuous, so its size is asserted too.
     let mut sources = Vec::new();
     collect_sources(&root, &mut sources);
+
+    // Exercise the same scanner used for repository files with a valid
+    // Latin-1 source that is not valid UTF-8. The previous `read_to_string;
+    // continue` path reported this exact shape clean.
+    let non_utf8_probe = root.join("target/removal-census-non-utf8-probe.py");
+    fs::write(
+        &non_utf8_probe,
+        b"# coding: latin-1\n# legacy_evidence_view \xff\n",
+    )
+    .expect("write the non-UTF-8 census probe");
+    let probe_matches = deleted_names_in(&non_utf8_probe, &DELETED_REFERENCES);
+    fs::remove_file(&non_utf8_probe).expect("remove the non-UTF-8 census probe");
+    assert_eq!(
+        probe_matches,
+        vec!["legacy_evidence_view"],
+        "the raw-byte census did not find a deleted name in a non-UTF-8 source"
+    );
     let mut inspected = 0;
     for path in &sources {
         inspected += 1;
-        let Ok(source) = fs::read_to_string(path) else {
-            continue;
-        };
+        let deleted_names = deleted_names_in(path, &DELETED_REFERENCES);
         // This test names the deleted machinery on purpose; so does the
         // change-assurance declaration, which records what the release covered.
         let file_name = path
@@ -1061,13 +1095,12 @@ fn no_local_evidence_framework_remains() {
         {
             continue;
         }
-        for name in DELETED_REFERENCES {
-            assert!(
-                !source.contains(name),
-                "{} references {name}, which was deleted with the retained evidence",
-                path.display()
-            );
-        }
+        assert!(
+            deleted_names.is_empty(),
+            "{} references {}, which was deleted with the retained evidence",
+            path.display(),
+            deleted_names.join(", ")
+        );
     }
     // Re-derived after the retained-evidence deletion and after adding the
     // extensionless Makefile: 109 files — 12 root, 17 corpus, 45 spec, 7 src,
