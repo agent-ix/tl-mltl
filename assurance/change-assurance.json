@@ -1,6 +1,6 @@
 {
   "schema_version": "tl-mltl.change-assurance-declaration/v1",
-  "purpose": "What this repository states about the change under issue #13, in the shape Quoin's FR-063 record requires. Quoin owns the record schema, its digest, and its retention; this file is the author's statement that gets sealed into one.",
+  "purpose": "What this repository states about the change under issue #16, in the shape Quoin's FR-063 record requires. Quoin owns the record schema, its digest, and its retention; this file is the author's statement that gets sealed into one.",
   "not_an_envelope": "Quoin's packaged change-assurance-record-v1, proof-attestation-v1, and verification-receipt-v1 schemas are the shapes. This file projects into the record body Quoin requires and derives nothing beyond the digests its own derived_fields names. It is not a local evidence envelope, it retains nothing, and it computes no verdict.",
   "derived_fields": [
     "subject.base_revision and impact_snapshot.revision come from the candidate revision the caller names.",
@@ -30,7 +30,7 @@
   "record": {
     "schema_version": 1,
     "record_type": "change_assurance",
-    "record_id": "tl-mltl/issue-13",
+    "record_id": "tl-mltl/issue-16",
     "revision": 1,
     "parent_digest": null,
     "subject": {
@@ -39,7 +39,6 @@
         "src",
         "corpus",
         "examples",
-        "schemas",
         "scripts",
         "spec",
         "tests",
@@ -88,11 +87,6 @@
           "source_ids": ["FR-006", "TM-001"]
         },
         {
-          "id": "FR-006-AC-4",
-          "statement": "Retained evidence bytes are read through the Engineering Assurance compatibility mapping and are not modified, and the mapping's answer is reported without collapsing it into pass or fail.",
-          "source_ids": ["FR-006", "NFR-002"]
-        },
-        {
           "id": "FR-006-AC-5",
           "statement": "Pass, fail, unavailable, unsupported, inconclusive, not-computed, malformed, partial, stale, suspect, vacuous, and tampered remain twelve distinguishable states across the intake path.",
           "source_ids": ["FR-006", "NFR-003"]
@@ -110,14 +104,9 @@
       ],
       "preservation_constraints": [
         {
-          "id": "PRESERVE-legacy-bytes",
-          "statement": "Every retained record byte is unchanged by this migration: evidence/ANCHORS, evidence/RETRACTIONS.json, all 6 record directories and all 6 .sha256 manifests, 282 of the 283 files under evidence/. The one file that changed is evidence/README.md, which is documentation rather than a record: it described a collector, an anchor verifier and a retraction registry that this change removes, and leaving it would have left a false document standing next to true bytes. The verifier is what was removed; the record is not. ANCHORS and RETRACTIONS.json are read as retained bytes and are no longer interpreted by anything.",
+          "id": "RELEASE-legacy-evidence",
+          "statement": "The preservation constraint that governed the migration is released for the pre-stable phase by the repository owner's decision of 2026-09-02, recorded in agent-ix/engineering-assurance#7 under 'Preservation constraint released for the pre-stable phase'. Under it, evidence/ (283 files, 842668 bytes, 6 records, all quire.derivation-evidence/v1 and all classified incompatible by the pinned mapping), scripts/legacy_evidence_view.py, the PROOF-legacy-compatibility obligation, the compat-view target, tests/fixtures/legacy-compat/ and schemas/ are deleted rather than carried forward. Nothing is rewritten, backdated or re-sealed: every claim that argued from the retained records is deleted with them and none is restated more weakly. The constraint re-applies unchanged at the move toward stable releases.",
           "source_ids": ["NFR-002", "FR-006"]
-        },
-        {
-          "id": "PRESERVE-frozen-schemas",
-          "statement": "schemas/tl-mltl-evidence-input-v1.schema.json and schemas/tl-mltl-evidence-manifest-v1.schema.json are frozen, not deleted, because the retained envelopes name those identities. The two files are not in the same position and schemas/README.md says so: all six envelopes name the manifest schema by the digest the current file has, and they name the input schema by two earlier digests (808fd9f3 in four records, d763369e in two), neither of which is the current file (7b7e4725) because it was edited twice after the last record was sealed. So the input schema's freeze preserves an identity the records name rather than the bytes they name; both revisions the records do name remain reachable in Git history. Nothing validates against either file any more and no script may reference them.",
-          "source_ids": ["NFR-002"]
         },
         {
           "id": "PRESERVE-reference-semantics",
@@ -207,18 +196,6 @@
           "configuration": "spec/test-matrix.md"
         },
         {
-          "proof_id": "PROOF-legacy-compatibility",
-          "statement": "All 6 retained evidence envelopes are read through the pinned Engineering Assurance mapping, their bytes are unchanged, and the mapping's answer for each is reported as it stands.",
-          "obligation_ids": ["FR-006-AC-4"],
-          "evidence_kind": "Static",
-          "command": {
-            "argv": [".venv-assurance/bin/python", "scripts/legacy_evidence_view.py", "--json"],
-            "working_directory": "."
-          },
-          "tool_identity": "tl-mltl/legacy_evidence_view",
-          "configuration": "tests/fixtures/legacy-compat/expectations.json"
-        },
-        {
           "proof_id": "PROOF-msrv",
           "statement": "The declared MSRV compiles every target and feature of this crate at this candidate revision, against the locked dependency graph, and reports it in cargo's own JSON message stream.",
           "obligation_ids": ["FR-006-AC-2"],
@@ -239,12 +216,6 @@
           "owner": "agent-ix/engineering-assurance"
         },
         {
-          "id": "UNKNOWN-derivation-evidence-not-mapped",
-          "statement": "map_pgm01_bytes at the pinned release covers quire.pgm01-evidence v1 and v2. This repository's 6 retained envelopes are quire.derivation-evidence/v1, so the mapping refuses them as an unknown PGM-01 schema version. That refusal is measured here rather than inherited from a sibling, and is reported as the compatibility result; no local mapper was written to make it read as a pass. Filed as agent-ix/engineering-assurance#21.",
-          "disposition": "open",
-          "owner": "agent-ix/engineering-assurance"
-        },
-        {
           "id": "UNKNOWN-human-decision-absent",
           "statement": "No ix-flow decision event exists for this change. Only the repository owner may create one, and none was synthesized, so the receipt is expected to read incomplete with a missing decision rather than complete.",
           "disposition": "open",
@@ -252,7 +223,13 @@
         },
         {
           "id": "UNKNOWN-make-failure-propagation-guard-removed",
-          "statement": "scripts/check_failure_propagation.py and the Makefile parse-time guard block that policed Make's own execution controls are removed with the collector they protected. The class they guarded is real and was measured in this repository, not assumed: with a syntax error introduced into src/lib.rs, `make -k ci` exits 2 and 10 of the 14 `ci` prerequisites do not complete (fmt-check, lint, test, conformance, differential, cli-conformance, test-census, msrv, rustdoc, assurance) while 4 still do (check-corpus, deny, audit-unsafe, spec); adding a single `.IGNORE:` line makes all 10 report success and `make ci` exits 0, with every recipe error ignored including the chain's own exit-2 refusal, and nothing in the tree notices. What replaces the guard is structural rather than another guard — Quoin binds each retained input by digest and the chain derives every attested result from the producer's own bytes, so a producer that did not run yields an absent or empty input the chain names and refuses. That covers the seven producers re-run inside `assurance-inputs`. It does not cover fmt-check, lint, check-corpus, deny, audit-unsafe, rustdoc, or the `quire validate` half of spec, which feed no input and are simply neutered; and `.IGNORE:` at the top of the file also suppresses the chain's own refusal, so the structural backstop does not close the class either. This is a genuine reduction in local detection and it is recorded rather than claimed away. Filed as agent-ix/tl-mltl#14.",
+          "statement": "scripts/check_failure_propagation.py and the Makefile parse-time guard block that policed Make's own execution controls are removed with the collector they protected. The class they guarded is real and was measured in this repository, not assumed: with a syntax error introduced into src/lib.rs, `make -k ci` exits 2 and 10 of the 14 `ci` prerequisites do not complete (fmt-check, lint, test, conformance, differential, cli-conformance, test-census, msrv, rustdoc, assurance) while 4 still do (check-corpus, deny, audit-unsafe, spec); adding a single `.IGNORE:` line makes all 10 report success and `make ci` exits 0, with every recipe error ignored including the chain's own exit-2 refusal, and nothing in the tree notices. What replaces the guard is structural rather than another guard — Quoin binds each retained input by digest and the chain derives every attested result from the producer's own bytes, so a producer that did not run yields an absent or empty input the chain names and refuses. That covers the six producers re-run inside `assurance-inputs`. It does not cover fmt-check, lint, check-corpus, deny, audit-unsafe, rustdoc, or the `quire validate` half of spec, which feed no input and are simply neutered; and `.IGNORE:` at the top of the file also suppresses the chain's own refusal, so the structural backstop does not close the class either. This is a genuine reduction in local detection and it is recorded rather than claimed away. Filed as agent-ix/tl-mltl#14.",
+          "disposition": "open",
+          "owner": "agent-ix/tl-mltl"
+        },
+        {
+          "id": "UNKNOWN-consumed-artifact-digests-now-vacuous",
+          "statement": "scripts/legacy_evidence_view.py was the only consumer of an artifact shipped inside the pinned engineering-assurance distribution: verification_semantics.py, schemas/pgm01-compatibility-view-v1.schema.json and the two PGM-01 positive-control fixtures. With it deleted, this repository reads exactly one file from that distribution, compatibility-matrix.json, which deliberately carries no local digest because pinning its bytes here would make this repository a second acceptance authority. assurance/pins.json therefore now declares no digest-bearing consumed artifact, and check_shared_pins.artifact_digest_mismatches has an empty population: it still works and would still catch a changed digest, but it currently checks nothing. That is a real reduction and it is recorded rather than papered over by keeping digests for files nobody reads.",
           "disposition": "open",
           "owner": "agent-ix/tl-mltl"
         },
@@ -265,7 +242,7 @@
       ]
     },
     "review_workflow": {
-      "run_id": "tl-mltl-issue-13",
+      "run_id": "tl-mltl-issue-16",
       "decision_event_kind": "change_assurance.review_decided"
     }
   }

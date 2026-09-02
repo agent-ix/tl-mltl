@@ -25,7 +25,7 @@
 # The structural backstop only goes so far. Quoin binds each retained input by
 # digest and the chain derives every attested result from the producer's own
 # bytes, so a producer that did not run yields an absent or empty input that the
-# chain names and refuses. That covers the seven proofs re-run inside
+# chain names and refuses. That covers the six proofs re-run inside
 # `assurance-inputs`. It does not cover fmt-check, lint, check-corpus, deny,
 # audit-unsafe, rustdoc, or the `quire validate` half of spec: those feed no
 # input and are simply neutered. And under `.IGNORE:` the chain's own refusal is
@@ -55,7 +55,6 @@ DIFFERENTIAL_RESULT := $(ASSURANCE_DIR)/r2u2-differential.jsonl
 CLI_RESULT := $(ASSURANCE_DIR)/cli-conformance.jsonl
 CENSUS_RESULT := $(ASSURANCE_DIR)/test-census.json
 QUIRE_EXPORT := $(ASSURANCE_DIR)/quire-static-export.json
-COMPAT_RESULT := $(ASSURANCE_DIR)/legacy-compatibility.json
 MSRV_RESULT := $(ASSURANCE_DIR)/msrv.jsonl
 REVISION ?= $(shell git rev-parse HEAD)
 
@@ -81,9 +80,8 @@ help:
 	@echo "  make assurance-env    - Create the pinned shared-assurance interpreter"
 	@echo "  make assurance-inputs - Write the structured results the assurance chain reads"
 	@echo "  make pins             - Classify the toolchain through the shared matrix"
-	@echo "  make compat-view      - Read retained evidence through the shared mapping"
 	@echo "  make assurance-chain  - Seal, retain, and verify through Quoin"
-	@echo "  make assurance        - pins + compat-view + assurance-chain"
+	@echo "  make assurance        - pins + assurance-chain"
 	@echo "  make ci               - All CI gates locally (hosted CI is manual-only)"
 
 # =============================================================================
@@ -209,7 +207,6 @@ assurance-inputs: assurance-env
 		--requests tests/fixtures/cli-requests/manifest.json > $(CLI_RESULT)
 	$(PYTHON) scripts/rust_test_census.py --json > $(CENSUS_RESULT)
 	$(QUIRE) coverage --scope . --json > $(QUIRE_EXPORT)
-	$(ASSURANCE_PYTHON) scripts/legacy_evidence_view.py --json > $(COMPAT_RESULT)
 	rustup run 1.75.0 $(CARGO) check --locked --all-targets --all-features \
 		--message-format=json > $(MSRV_RESULT)
 
@@ -217,17 +214,12 @@ assurance-inputs: assurance-env
 pins: assurance-env
 	$(ASSURANCE_PYTHON) scripts/check_shared_pins.py
 
-.PHONY: compat-view
-compat-view: assurance-env
-	$(ASSURANCE_PYTHON) scripts/legacy_evidence_view.py
-	$(ASSURANCE_PYTHON) scripts/legacy_evidence_view.py --mutation-probes
-
 .PHONY: assurance-chain
 assurance-chain: assurance-inputs
 	$(PYTHON) scripts/assurance_chain.py --candidate-revision $(REVISION)
 
 .PHONY: assurance
-assurance: pins compat-view assurance-chain
+assurance: pins assurance-chain
 
 # An operator target, not a CI gate. It writes into this repository's own Quoin
 # evidence store, which is a reviewed change to spec/evidence/ rather than

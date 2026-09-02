@@ -32,23 +32,19 @@ qualification support even when a Boolean result happens to match.
 |---|---|---|---|
 | Unversioned exchanged document kinds | 0 | 0 | Test |
 | Omitted material provenance identities | 0 | 0 | Inspection |
-| Retained evidence bytes modified | 0 | 0 | Test |
 | Requirement-tagged tests Cargo does not compile and run | 0 | 0 | Test |
 
 ## Verification
 
-Schema-negative tests reject unknown identities. Retained evidence is read
-through the compatibility mapping packaged with the pinned Engineering Assurance
-release, never through a local mapper, and the read is measured to have moved no
-byte. The compiled Rust test census re-derives which requirement-tagged tests
-Cargo actually runs.
+Schema-negative tests reject unknown identities. The compiled Rust test census
+re-derives which requirement-tagged tests Cargo actually runs.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |---|---|---|
 | NFR-002-AC-1 | Unknown schema/profile versions and omitted material identities are rejected. | Test (TC-012, TC-014) |
-| NFR-002-AC-2 | Exchanged and retained records name exact tl-syntax, corpus, external-tool, dependency, and output identities without recording an automated release decision, and the retained records are read without being modified. | Test (TC-016, TC-021) |
+| NFR-002-AC-2 | Exchanged records name exact tl-syntax, corpus, external-tool, dependency, and output identities without recording an automated release decision. | Test (TC-016) |
 | NFR-002-AC-3 | Every requirement-tagged Rust test is a test Cargo actually compiles and runs, and no compiled requirement-tagged test is ignored or configured out, so a matrix row cannot be backed by a tag above a test that never executes. | Test (TC-017) |
 
 ## Dependencies
