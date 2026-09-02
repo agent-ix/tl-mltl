@@ -16,7 +16,9 @@ tracking tag in a test Cargo compiles and runs, and the two rows that are
 deliberately unbacked are named. This document records what is covered, what is
 deliberately not, and what a reader should not mistake for coverage.
 
-Coverage at the migration head, measured with `quire coverage --scope . --json`:
+Coverage at the OPENING head `7fc9e3b`, measured with
+`quire coverage --scope . --json`. SR-008 carries the final figures; these moved
+when the adversarial review's findings were fixed and three tests were added.
 
 | Figure | Value | Population |
 |---|---|---|
