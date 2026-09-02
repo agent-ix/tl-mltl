@@ -1,42 +1,56 @@
 # =============================================================================
 # TL MLTL Makefile
 # =============================================================================
+#
+# Native orchestration. Every target calls the toolchain that owns the job:
+# cargo for the crate, the reference-conformance replay and the R2U2
+# differential replay for the semantics, quire for static export, quoin for
+# evidence. Nothing here computes a verdict, attests to its own correctness, or
+# retains evidence of its own.
+#
+# This file is not a trust root and no longer tries to be one. The parse-time
+# guards that used to police Make's own execution controls — MAKEFLAGS,
+# PYTHONOPTIMIZE, the rustup and loader overrides, CARGO_TARGET_DIR, the
+# CARGO/PYTHON/QUIRE/SHA256SUM/BASH origin checks, and the static
+# check_failure_propagation.py inspection — went with the collector they were
+# protecting.
+#
+# Read this before trusting a green `make ci`: adding a single `.IGNORE:` line
+# to this file makes 12 of the 14 `ci` prerequisites report success without
+# running, and `make ci` goes from exit 2 to exit 0. Nothing here notices. The
+# structural backstop only goes so far — Quoin binds each retained input by
+# digest and the chain derives every attested result from the producer's own
+# bytes, so a producer that did not run yields an absent or empty input that the
+# chain names and refuses. That covers the work re-run inside `assurance-inputs`
+# (conformance, differential, cli-conformance, test-census, spec's coverage
+# half, msrv, and the compatibility view). It does not cover fmt-check, lint,
+# check-corpus, deny, audit-unsafe, rustdoc, or the `quire validate` half of
+# spec: those feed no input and are simply neutered. Measured in this repository
+# and tracked as agent-ix/tl-mltl#14.
 
-ifneq ($(filter ci ci-for-evidence,$(MAKECMDGOALS)),)
-ifneq ($(strip $(MAKEFLAGS)),)
-$(error local CI refuses non-empty MAKEFLAGS)
-endif
-ifneq ($(strip $(PYTHONOPTIMIZE)),)
-$(error local CI refuses optimized Python policy execution)
-endif
-ifneq ($(strip $(RUSTUP_TOOLCHAIN)$(RUSTUP_HOME)$(CARGO_HOME)$(RUSTC)$(RUSTDOC)$(RUSTC_WRAPPER)$(RUSTC_WORKSPACE_WRAPPER)$(RUSTFLAGS)$(CARGO_ENCODED_RUSTFLAGS)$(RUSTDOCFLAGS)$(LD_PRELOAD)$(LD_LIBRARY_PATH)$(PYTHONPATH)),)
-$(error local CI refuses ambient compiler, loader, or Python-path overrides)
-endif
-ifneq ($(strip $(CARGO_TARGET_DIR)),)
-ifneq ($(CARGO_TARGET_DIR),$(CURDIR)/.qualification-target)
-$(error local CI refuses an unqualified CARGO_TARGET_DIR)
-endif
-endif
-ifneq ($(origin CARGO),undefined)
-$(error local CI refuses a CARGO override)
-endif
-ifneq ($(origin PYTHON),undefined)
-$(error local CI refuses a PYTHON override)
-endif
-ifneq ($(origin QUIRE),undefined)
-$(error local CI refuses a QUIRE override)
-endif
-ifneq ($(origin SHA256SUM),undefined)
-$(error local CI refuses a SHA256SUM override)
-endif
-ifneq ($(origin BASH),undefined)
-$(error local CI refuses a BASH override)
-endif
-tl_ci_static_status := $(shell /usr/bin/env -u PYTHONOPTIMIZE MAKEFLAGS= /usr/bin/python3 scripts/check_failure_propagation.py --makefile '$(firstword $(MAKEFILE_LIST))' --static-only >/dev/null; echo $$?)
-ifneq ($(tl_ci_static_status),0)
-$(error local CI refuses unsafe Make recipe controls)
-endif
-endif
+CARGO ?= cargo
+PYTHON ?= python3
+QUIRE ?= quire
+QUOIN ?= quoin
+
+# The shared-assurance lane runs in its own interpreter. Nothing in this
+# repository imports jsonschema once the local evidence machinery is gone, so
+# there is no version conflict left to resolve; the environment exists because
+# engineering-assurance is pinned as a git tag, and resolving a git dependency
+# into the system interpreter would make the pin depend on whatever else that
+# interpreter happens to have.
+ASSURANCE_VENV ?= .venv-assurance
+ASSURANCE_PYTHON ?= $(ASSURANCE_VENV)/bin/python
+
+ASSURANCE_DIR := target/assurance
+CONFORMANCE_RESULT := $(ASSURANCE_DIR)/reference-conformance.jsonl
+DIFFERENTIAL_RESULT := $(ASSURANCE_DIR)/r2u2-differential.jsonl
+CLI_RESULT := $(ASSURANCE_DIR)/cli-conformance.jsonl
+CENSUS_RESULT := $(ASSURANCE_DIR)/test-census.json
+QUIRE_EXPORT := $(ASSURANCE_DIR)/quire-static-export.json
+COMPAT_RESULT := $(ASSURANCE_DIR)/legacy-compatibility.json
+MSRV_RESULT := $(ASSURANCE_DIR)/msrv.jsonl
+REVISION ?= $(shell git rev-parse HEAD)
 
 .PHONY: help
 help:
@@ -44,19 +58,26 @@ help:
 	@echo "  make fmt              - Format with rustfmt"
 	@echo "  make fmt-check        - Verify formatting (CI gate)"
 	@echo "  make lint             - Clippy with -D warnings"
-	@echo "  make test             - cargo test"
-	@echo "  make check-failure-propagation - prove required command failures reach CI"
-	@echo "  make build            - Release build"
-	@echo "  make clean            - cargo clean"
+	@echo "  make test             - cargo test plus the shared-assurance tests"
+	@echo "  make check-corpus     - Verify shared and R2U2 corpus bytes"
+	@echo "  make conformance      - Replay the shared corpus through the evaluator"
+	@echo "  make differential     - Replay the retained R2U2 exchange"
+	@echo "  make cli-conformance  - Drive the built CLI over its declared requests"
+	@echo "  make test-census      - Bind requirement-tagged tests to compiled tests"
 	@echo "  make deny             - cargo deny check licenses and sources"
 	@echo "  make audit-unsafe     - Enforce // SAFETY: comments on unsafe blocks"
-	@echo "  make check-corpus     - Verify shared and R2U2 corpus bytes"
-	@echo "  make verify-evidence  - Verify every retained evidence SHA-256 manifest"
-	@echo "  make spec             - Validate and cover specification artifacts"
+	@echo "  make spec             - Validate specification and coverage with Quire"
+	@echo "  make msrv             - Check all targets and features with Rust 1.75"
 	@echo "  make rustdoc          - Build warning-free public documentation"
-	@echo "  make evidence-tool    - Syntax-check evidence tooling and schemas"
-	@echo "  make ci-for-evidence  - Candidate gates before evidence can self-anchor"
-	@echo "  make ci               - All CI gates locally (fmt-check + lint + test + deny + audit-unsafe)"
+	@echo "  make build            - Release build"
+	@echo "  make clean            - cargo clean and drop the assurance environment"
+	@echo "  make assurance-env    - Create the pinned shared-assurance interpreter"
+	@echo "  make assurance-inputs - Run the producers and write their structured results"
+	@echo "  make pins             - Classify the toolchain through the shared matrix"
+	@echo "  make compat-view      - Read retained evidence through the shared mapping"
+	@echo "  make assurance-chain  - Seal, retain, and verify through Quoin"
+	@echo "  make assurance        - pins + compat-view + assurance-chain"
+	@echo "  make ci               - All CI gates locally (hosted CI is manual-only)"
 
 # =============================================================================
 # Format / Lint / Test
@@ -64,72 +85,63 @@ help:
 
 .PHONY: fmt
 fmt:
-	cargo fmt --all
+	$(CARGO) fmt --all
 
 .PHONY: fmt-check
 fmt-check:
-	cargo fmt --all -- --check
-	@/usr/bin/printf 'fmt-check gate passed\n'
+	$(CARGO) fmt --all -- --check
 
 .PHONY: lint
 lint:
-	cargo clippy --all-targets --all-features -- -D warnings
-	@/usr/bin/printf 'lint gate passed\n'
+	$(CARGO) clippy --all-targets --all-features -- -D warnings
 
+# The traced tests invoke the assurance gates, so the producers must already have
+# run. They are a prerequisite rather than something a test creates for itself: a
+# test that can produce its own inputs can produce a green run out of nothing.
 .PHONY: test
-test:
-	cargo test --all-targets --all-features
-	@/usr/bin/printf 'Rust test gate passed\n'
+test: assurance-inputs
+	$(CARGO) test --all-targets --all-features
 
-.PHONY: rust-test-census
-rust-test-census:
-	/usr/bin/python3 scripts/rust_test_census.py
-	@/usr/bin/printf 'rust-test-census gate passed\n'
-
-.PHONY: check-failure-propagation
-check-failure-propagation:
-	/usr/bin/python3 scripts/check_failure_propagation.py
-
-.PHONY: check-tool-identities
-check-tool-identities:
-	/usr/bin/python3 scripts/tool_identity.py --verify-live
-	@/usr/bin/printf 'qualified tool identities passed\n'
+# =============================================================================
+# MLTL domain
+# =============================================================================
 
 .PHONY: check-corpus
 check-corpus:
 	sha256sum --check corpus/tl-syntax-v1.sha256
 	cd corpus/r2u2-v4.2 && sha256sum --check SHA256SUMS
-	@/usr/bin/printf 'corpus-integrity gate passed\n'
 
-.PHONY: verify-evidence
-verify-evidence:
-	/usr/bin/bash scripts/verify_evidence.sh
-	@/usr/bin/printf 'verify-evidence gate passed\n'
+.PHONY: conformance
+conformance:
+	$(CARGO) run --quiet --example reference_conformance -- \
+		--manifest corpus/tl-syntax-v1/manifest.json
 
-.PHONY: spec
-spec:
-	quire validate --scope . 'spec/**/*.md'
-	quire coverage --scope . --strict
-	@/usr/bin/printf 'spec gate passed\n'
+.PHONY: differential
+differential:
+	$(CARGO) run --quiet --example r2u2_differential -- \
+		--manifest corpus/r2u2-v4.2/manifest.json
 
-.PHONY: rustdoc
-rustdoc:
-	RUSTDOCFLAGS=-Dwarnings cargo doc --no-deps --all-features
-	@/usr/bin/printf 'rustdoc gate passed\n'
+# The example drives the CLI binary, so the binary has to exist. It is built
+# here rather than located by the example, because an example that can build its
+# own subject can report a green run against a stale one.
+.PHONY: cli-conformance
+cli-conformance:
+	$(CARGO) build --quiet --bin tl-mltl
+	$(CARGO) run --quiet --example cli_conformance -- \
+		--requests tests/fixtures/cli-requests/manifest.json
 
-.PHONY: evidence-tool
-evidence-tool:
-	/usr/bin/python3 -m compileall -q scripts
-	/usr/bin/python3 scripts/run_policy_tests.py
-	@/usr/bin/printf 'evidence-tool gate passed\n'
+.PHONY: test-census
+test-census:
+	$(PYTHON) scripts/rust_test_census.py
 
 .PHONY: build
 build:
-	cargo build --release
+	$(CARGO) build --release
 
 .PHONY: clean
 clean:
-	cargo clean
+	$(CARGO) clean
+	rm -rf $(ASSURANCE_VENV)
 
 # =============================================================================
 # Supply chain & safety
@@ -137,26 +149,96 @@ clean:
 
 .PHONY: deny
 deny:
-	cargo deny check licenses
-	cargo deny check sources
-	@/usr/bin/printf 'deny gate passed\n'
-
-.PHONY: cargo-audit
-cargo-audit:
-	cargo audit
+	$(CARGO) deny check licenses
+	$(CARGO) deny check sources
 
 .PHONY: audit-unsafe
 audit-unsafe:
-	/usr/bin/bash scripts/check_unsafe_comments.sh
-	@/usr/bin/printf 'audit-unsafe gate passed\n'
+	bash scripts/check_unsafe_comments.sh
+
+.PHONY: spec
+spec:
+	$(QUIRE) validate --scope . 'spec/**/*.md'
+	$(QUIRE) coverage --scope . --strict
+
+.PHONY: msrv
+msrv:
+	rustup run 1.75.0 $(CARGO) check --locked --all-targets --all-features
+
+.PHONY: rustdoc
+rustdoc:
+	RUSTDOCFLAGS=-Dwarnings $(CARGO) doc --no-deps --all-features
+
+# =============================================================================
+# Shared assurance
+# =============================================================================
+
+# Rebuilt when the pin changes. Without this prerequisite, editing the pinned
+# release never rebuilds the environment and the toolchain keeps whatever it
+# already had.
+$(ASSURANCE_PYTHON): requirements-assurance.txt
+	rm -rf $(ASSURANCE_VENV)
+	$(PYTHON) -m venv $(ASSURANCE_VENV)
+	$(ASSURANCE_VENV)/bin/pip install --quiet --disable-pip-version-check \
+		-r requirements-assurance.txt
+
+.PHONY: assurance-env
+assurance-env: $(ASSURANCE_PYTHON)
+
+# The only target that runs a producer. Everything downstream consumes these
+# files and refuses to create them.
+.PHONY: assurance-inputs
+assurance-inputs: assurance-env
+	mkdir -p $(ASSURANCE_DIR)
+	$(CARGO) run --quiet --example reference_conformance -- \
+		--manifest corpus/tl-syntax-v1/manifest.json > $(CONFORMANCE_RESULT)
+	$(CARGO) run --quiet --example r2u2_differential -- \
+		--manifest corpus/r2u2-v4.2/manifest.json > $(DIFFERENTIAL_RESULT)
+	$(CARGO) build --quiet --bin tl-mltl
+	$(CARGO) run --quiet --example cli_conformance -- \
+		--requests tests/fixtures/cli-requests/manifest.json > $(CLI_RESULT)
+	$(PYTHON) scripts/rust_test_census.py --json > $(CENSUS_RESULT)
+	$(QUIRE) coverage --scope . --json > $(QUIRE_EXPORT)
+	$(ASSURANCE_PYTHON) scripts/legacy_evidence_view.py --json > $(COMPAT_RESULT)
+	rustup run 1.75.0 $(CARGO) check --locked --all-targets --all-features \
+		--message-format=json > $(MSRV_RESULT)
+
+.PHONY: pins
+pins: assurance-env
+	$(ASSURANCE_PYTHON) scripts/check_shared_pins.py
+
+.PHONY: compat-view
+compat-view: assurance-env
+	$(ASSURANCE_PYTHON) scripts/legacy_evidence_view.py
+	$(ASSURANCE_PYTHON) scripts/legacy_evidence_view.py --mutation-probes
+
+.PHONY: assurance-chain
+assurance-chain: assurance-inputs
+	$(PYTHON) scripts/assurance_chain.py --candidate-revision $(REVISION)
+
+.PHONY: assurance
+assurance: pins compat-view assurance-chain
+
+# An operator target, not a CI gate. It writes into this repository's own Quoin
+# evidence store, which is a reviewed change to spec/evidence/ rather than
+# something a gate should do on every run.
+.PHONY: assurance-record
+assurance-record: assurance-inputs
+	$(PYTHON) scripts/assurance_chain.py --adapt $(DIFFERENTIAL_RESULT) \
+		> $(ASSURANCE_DIR)/entries.json
+	$(QUOIN) evidence record \
+		--repo . \
+		--suite SUITE-001 \
+		--commit $(REVISION) \
+		--tool "tl-mltl-r2u2-differential 0.1.0" \
+		--adapter entries \
+		--kind Integration \
+		--results $(ASSURANCE_DIR)/entries.json
 
 # =============================================================================
 # Composite
 # =============================================================================
 
-.PHONY: ci ci-for-evidence
-ci-for-evidence: fmt-check lint rust-test-census test check-corpus deny audit-unsafe evidence-tool spec rustdoc check-failure-propagation check-tool-identities
-	@/usr/bin/printf 'candidate CI gate passed\n'
-
-ci: fmt-check lint rust-test-census test check-corpus deny audit-unsafe evidence-tool spec rustdoc verify-evidence check-failure-propagation
-	@/usr/bin/printf 'full local CI gate passed\n'
+.PHONY: ci
+ci: fmt-check lint test check-corpus conformance differential cli-conformance \
+	test-census deny audit-unsafe spec msrv rustdoc assurance

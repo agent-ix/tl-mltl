@@ -1,4 +1,5 @@
 /target
+.venv-assurance/
 /.qualification-target/
 __pycache__/
 *.pyc

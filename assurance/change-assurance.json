@@ -1,0 +1,272 @@
+{
+  "schema_version": "tl-mltl.change-assurance-declaration/v1",
+  "purpose": "What this repository states about the change under issue #13, in the shape Quoin's FR-063 record requires. Quoin owns the record schema, its digest, and its retention; this file is the author's statement that gets sealed into one.",
+  "not_an_envelope": "Quoin's packaged change-assurance-record-v1, proof-attestation-v1, and verification-receipt-v1 schemas are the shapes. This file projects into the record body Quoin requires and derives nothing beyond the digests its own derived_fields names. It is not a local evidence envelope, it retains nothing, and it computes no verdict.",
+  "derived_fields": [
+    "subject.base_revision and impact_snapshot.revision come from the candidate revision the caller names.",
+    "source_connections[].revision is that same candidate revision; source_connections[].digest is read from the bytes at the declared path in `sources`.",
+    "proof_obligations[].configuration_digest is read from the bytes at that proof's declared `configuration` path.",
+    "impact_snapshot.digest is read from the bytes of the Quire static export.",
+    "record.digest is computed and written by quoin at seal time; this file never states it.",
+    "Nothing else is filled in, defaulted, or discovered. A field this file does not state is a validation failure at seal time, which is the behaviour that makes the record a statement rather than a guess."
+  ],
+  "sources": {
+    "FR-001": "spec/requirements/FR-001-closed-evaluation.md",
+    "FR-002": "spec/requirements/FR-002-horizon-analysis.md",
+    "FR-003": "spec/requirements/FR-003-prefix-evaluation.md",
+    "FR-004": "spec/requirements/FR-004-monitor-mapping.md",
+    "FR-005": "spec/requirements/FR-005-cli-differential-evidence.md",
+    "FR-006": "spec/requirements/FR-006-shared-assurance-intake.md",
+    "NFR-002": "spec/requirements/NFR-002-governance-boundary.md",
+    "NFR-003": "spec/requirements/NFR-003-qualification-integrity.md",
+    "StR-002": "spec/requirements/StR-002-monitor-interoperability.md",
+    "TM-001": "spec/test-matrix.md",
+    "SUR-001": "spec/evidence/suites.md",
+    "shared-corpus-manifest": "corpus/tl-syntax-v1/manifest.json",
+    "r2u2-corpus-manifest": "corpus/r2u2-v4.2/manifest.json",
+    "cli-request-manifest": "tests/fixtures/cli-requests/manifest.json",
+    "assurance-pins": "assurance/pins.json"
+  },
+  "record": {
+    "schema_version": 1,
+    "record_type": "change_assurance",
+    "record_id": "tl-mltl/issue-13",
+    "revision": 1,
+    "parent_digest": null,
+    "subject": {
+      "repository": "agent-ix/tl-mltl",
+      "scope": [
+        "src",
+        "corpus",
+        "examples",
+        "schemas",
+        "scripts",
+        "spec",
+        "tests",
+        "assurance",
+        "Makefile"
+      ]
+    },
+    "source_connections": [
+      { "source_id": "FR-001", "kind": "requirement" },
+      { "source_id": "FR-002", "kind": "requirement" },
+      { "source_id": "FR-003", "kind": "requirement" },
+      { "source_id": "FR-004", "kind": "requirement" },
+      { "source_id": "FR-005", "kind": "requirement" },
+      { "source_id": "FR-006", "kind": "requirement" },
+      { "source_id": "NFR-002", "kind": "requirement" },
+      { "source_id": "NFR-003", "kind": "requirement" },
+      { "source_id": "StR-002", "kind": "requirement" },
+      { "source_id": "TM-001", "kind": "test" },
+      { "source_id": "SUR-001", "kind": "test" },
+      { "source_id": "shared-corpus-manifest", "kind": "architecture" },
+      { "source_id": "r2u2-corpus-manifest", "kind": "architecture" },
+      { "source_id": "cli-request-manifest", "kind": "test" },
+      { "source_id": "assurance-pins", "kind": "other" }
+    ],
+    "impact_snapshot": {
+      "identity": "quire-static-export",
+      "completeness": "complete",
+      "truncated": false,
+      "gaps": []
+    },
+    "definition": {
+      "requirements": [
+        {
+          "id": "FR-006-AC-1",
+          "statement": "The adopted component versions are classified by the packaged Engineering Assurance compatibility matrix, not by a local restatement of it.",
+          "source_ids": ["FR-006", "assurance-pins"]
+        },
+        {
+          "id": "FR-006-AC-2",
+          "statement": "Native evaluation, horizon, prefix, monitor-mapping, differential and CLI results are produced by domain tools in a declared structured format and transcribed by Quoin without Quoin executing the producer, and without any gate executing the external monitor.",
+          "source_ids": ["FR-006", "FR-001", "FR-002", "FR-003", "FR-004", "FR-005"]
+        },
+        {
+          "id": "FR-006-AC-3",
+          "statement": "Static specification, obligation, and coverage facts come from a Quire export, and Quire does not execute a producer.",
+          "source_ids": ["FR-006", "TM-001"]
+        },
+        {
+          "id": "FR-006-AC-4",
+          "statement": "Retained evidence bytes are read through the Engineering Assurance compatibility mapping and are not modified, and the mapping's answer is reported without collapsing it into pass or fail.",
+          "source_ids": ["FR-006", "NFR-002"]
+        },
+        {
+          "id": "FR-006-AC-5",
+          "statement": "Pass, fail, unavailable, unsupported, inconclusive, not-computed, malformed, partial, stale, suspect, vacuous, and tampered remain twelve distinguishable states across the intake path.",
+          "source_ids": ["FR-006", "NFR-003"]
+        },
+        {
+          "id": "FR-006-AC-6",
+          "statement": "An R2U2 differential result is never reduced to a boolean. Agreement, mismatch and non-conclusive remain three distinct comparison classifications; conclusive, pending, unsupported and tool-error remain four distinct external-monitor states; the reference truth value and verdict time are retained separately from the external value and verdict time; and a case the corpus manifest declares outside the adapter's profile is reported unsupported rather than compared.",
+          "source_ids": ["FR-006", "FR-004", "FR-005", "StR-002", "r2u2-corpus-manifest"]
+        },
+        {
+          "id": "FR-006-AC-7",
+          "statement": "No repository-local generic runner, evidence envelope, manifest, identity framework, retention store, audit store, anchor verifier, failure-propagation policer, or aggregate verdict remains in the execution path.",
+          "source_ids": ["FR-006", "NFR-003"]
+        }
+      ],
+      "preservation_constraints": [
+        {
+          "id": "PRESERVE-legacy-bytes",
+          "statement": "Every retained record byte is unchanged by this migration: evidence/ANCHORS, evidence/RETRACTIONS.json, all 6 record directories and all 6 .sha256 manifests, 282 of the 283 files under evidence/. The one file that changed is evidence/README.md, which is documentation rather than a record: it described a collector, an anchor verifier and a retraction registry that this change removes, and leaving it would have left a false document standing next to true bytes. The verifier is what was removed; the record is not. ANCHORS and RETRACTIONS.json are read as retained bytes and are no longer interpreted by anything.",
+          "source_ids": ["NFR-002", "FR-006"]
+        },
+        {
+          "id": "PRESERVE-frozen-schemas",
+          "statement": "schemas/tl-mltl-evidence-input-v1.schema.json and schemas/tl-mltl-evidence-manifest-v1.schema.json are frozen, not deleted, because the retained envelopes name those identities. The two files are not in the same position and schemas/README.md says so: all six envelopes name the manifest schema by the digest the current file has, and they name the input schema by two earlier digests (808fd9f3 in four records, d763369e in two), neither of which is the current file (7b7e4725) because it was edited twice after the last record was sealed. So the input schema's freeze preserves an identity the records name rather than the bytes they name; both revisions the records do name remain reachable in Git history. Nothing validates against either file any more and no script may reference them.",
+          "source_ids": ["NFR-002"]
+        },
+        {
+          "id": "PRESERVE-reference-semantics",
+          "statement": "Bounded closed-trace evaluation, checked horizon and required-buffer analysis, pending-aware open-prefix verdicts, profile refusal, work and recursion limits, the shared temporal corpus and its malformed fixtures remain owned and executed by this repository.",
+          "source_ids": ["FR-001", "FR-002", "FR-003"]
+        },
+        {
+          "id": "PRESERVE-r2u2-interoperability",
+          "statement": "The retained R2U2 4.2 exchange — its stdout, spec binary, signal map, trace, C2PO source, and both tool identities with their SHA-256 digests — remains checked in, checksum-verified, and replayed through the deterministic C2PO mapping and the comparison layer at every candidate revision. The differential result stays a comparison, not a boolean.",
+          "source_ids": ["FR-004", "FR-005", "StR-002", "r2u2-corpus-manifest"]
+        },
+        {
+          "id": "PRESERVE-corpus-basis",
+          "statement": "corpus/tl-syntax-v1 stays a byte-identical copy of the shared temporal corpus at tl-syntax 740182f1, verified by its own SHA256SUMS. The compiled dependency moved to 953ee825 on tl-syntax main; the retained corpus bytes did not move with it, and the two revisions are separate declared facts.",
+          "source_ids": ["NFR-002", "shared-corpus-manifest"]
+        },
+        {
+          "id": "PRESERVE-no-external-execution",
+          "statement": "Neither Quoin, nor Quire, nor any assurance gate executes R2U2 or C2PO. The external monitor was run once out of band and its exact exchanged artifacts are retained; every later claim is a replay against those bytes.",
+          "source_ids": ["FR-006", "StR-002", "NFR-003"]
+        },
+        {
+          "id": "PRESERVE-manual-ci",
+          "statement": "Hosted CI remains workflow_dispatch only and is not dispatched by this change.",
+          "source_ids": ["NFR-003"]
+        }
+      ],
+      "proof_obligations": [
+        {
+          "proof_id": "PROOF-reference-conformance",
+          "statement": "Every fixture in the retained shared temporal corpus replays through the real crate at this candidate revision and produces the manifest's declared horizon and closed-trace verdict, or is rejected at the declared stage naming the declared cause.",
+          "obligation_ids": ["FR-006-AC-2"],
+          "evidence_kind": "Integration",
+          "command": {
+            "argv": ["cargo", "run", "--quiet", "--example", "reference_conformance", "--", "--manifest", "corpus/tl-syntax-v1/manifest.json"],
+            "working_directory": "."
+          },
+          "tool_identity": "tl-mltl-reference-conformance",
+          "configuration": "corpus/tl-syntax-v1/manifest.json"
+        },
+        {
+          "proof_id": "PROOF-r2u2-differential",
+          "statement": "The retained R2U2 4.2 exchange replays through the C2PO mapping and the comparison layer at this candidate revision: every supported case agrees on truth value and verdict time, the same record moved one instant later is a mismatch, every non-conclusive external state stays non-conclusive and separately named, an empty open prefix is pending exactly when the formula's own lookahead requires it, and the declared unsupported case is reported unsupported rather than compared. R2U2 is not executed.",
+          "obligation_ids": ["FR-006-AC-2", "FR-006-AC-6"],
+          "evidence_kind": "Integration",
+          "command": {
+            "argv": ["cargo", "run", "--quiet", "--example", "r2u2_differential", "--", "--manifest", "corpus/r2u2-v4.2/manifest.json"],
+            "working_directory": "."
+          },
+          "tool_identity": "tl-mltl-r2u2-differential",
+          "configuration": "corpus/r2u2-v4.2/manifest.json"
+        },
+        {
+          "proof_id": "PROOF-cli-conformance",
+          "statement": "The built CLI, driven over its declared request documents, produces byte-identical output across two runs, exits with the declared status, carries the declared fields on every accepted request, and refuses each declared bad request for a cause that identifies that request and no other.",
+          "obligation_ids": ["FR-006-AC-2"],
+          "evidence_kind": "Integration",
+          "command": {
+            "argv": ["cargo", "run", "--quiet", "--example", "cli_conformance", "--", "--requests", "tests/fixtures/cli-requests/manifest.json"],
+            "working_directory": "."
+          },
+          "tool_identity": "tl-mltl-cli-conformance",
+          "configuration": "tests/fixtures/cli-requests/manifest.json"
+        },
+        {
+          "proof_id": "PROOF-test-census",
+          "statement": "Every requirement-tagged Rust test in the source tree is a test Cargo actually compiles and runs, and no compiled requirement-tagged test is ignored or configured out.",
+          "obligation_ids": ["FR-006-AC-2"],
+          "evidence_kind": "Static",
+          "command": {
+            "argv": ["python3", "scripts/rust_test_census.py", "--json"],
+            "working_directory": "."
+          },
+          "tool_identity": "tl-mltl-test-census",
+          "configuration": "spec/test-matrix.md"
+        },
+        {
+          "proof_id": "PROOF-quire-static-export",
+          "statement": "The authoritative static specification, obligation, and coverage facts for this revision are the Quire export, which executes no producer.",
+          "obligation_ids": ["FR-006-AC-3"],
+          "evidence_kind": "Static",
+          "command": {
+            "argv": ["quire", "coverage", "--scope", ".", "--json"],
+            "working_directory": "."
+          },
+          "tool_identity": "quire",
+          "configuration": "spec/test-matrix.md"
+        },
+        {
+          "proof_id": "PROOF-legacy-compatibility",
+          "statement": "All 6 retained evidence envelopes are read through the pinned Engineering Assurance mapping, their bytes are unchanged, and the mapping's answer for each is reported as it stands.",
+          "obligation_ids": ["FR-006-AC-4"],
+          "evidence_kind": "Static",
+          "command": {
+            "argv": [".venv-assurance/bin/python", "scripts/legacy_evidence_view.py", "--json"],
+            "working_directory": "."
+          },
+          "tool_identity": "tl-mltl/legacy_evidence_view",
+          "configuration": "tests/fixtures/legacy-compat/expectations.json"
+        },
+        {
+          "proof_id": "PROOF-msrv",
+          "statement": "The declared MSRV compiles every target and feature of this crate at this candidate revision, against the locked dependency graph, and reports it in cargo's own JSON message stream.",
+          "obligation_ids": ["FR-006-AC-2"],
+          "evidence_kind": "Static",
+          "command": {
+            "argv": ["rustup", "run", "1.75.0", "cargo", "check", "--locked", "--all-targets", "--all-features", "--message-format=json"],
+            "working_directory": "."
+          },
+          "tool_identity": "cargo",
+          "configuration": "rust-toolchain.toml"
+        }
+      ],
+      "unknowns": [
+        {
+          "id": "UNKNOWN-ea-acceptance-not-in-a-release",
+          "statement": "engineering-assurance v0.2.0 records accepted.state = pending_human_acceptance and ships no human_acceptance_recorded predicate; the human acceptance exists only on main. This repository reports the state the release records and does not gate on it. Filed as agent-ix/engineering-assurance#20.",
+          "disposition": "open",
+          "owner": "agent-ix/engineering-assurance"
+        },
+        {
+          "id": "UNKNOWN-derivation-evidence-not-mapped",
+          "statement": "map_pgm01_bytes at the pinned release covers quire.pgm01-evidence v1 and v2. This repository's 6 retained envelopes are quire.derivation-evidence/v1, so the mapping refuses them as an unknown PGM-01 schema version. That refusal is measured here rather than inherited from a sibling, and is reported as the compatibility result; no local mapper was written to make it read as a pass. Filed as agent-ix/engineering-assurance#21.",
+          "disposition": "open",
+          "owner": "agent-ix/engineering-assurance"
+        },
+        {
+          "id": "UNKNOWN-human-decision-absent",
+          "statement": "No ix-flow decision event exists for this change. Only the repository owner may create one, and none was synthesized, so the receipt is expected to read incomplete with a missing decision rather than complete.",
+          "disposition": "open",
+          "owner": "@kreneskyp"
+        },
+        {
+          "id": "UNKNOWN-make-failure-propagation-guard-removed",
+          "statement": "scripts/check_failure_propagation.py and the Makefile parse-time guard block that policed Make's own execution controls are removed with the collector they protected. The class they guarded is real and was measured in this repository, not assumed: with every gate's command made to fail, 10 of the 14 `ci` prerequisites fail and `make ci` exits 2; adding a single `.IGNORE:` line makes all 10 report success and `make ci` exits 0, and nothing in the tree notices. What replaces the guard is structural rather than another guard — Quoin binds each retained input by digest and the chain derives every attested result from the producer's own bytes, so a producer that did not run yields an absent or empty input the chain names and refuses. That covers the seven producers re-run inside `assurance-inputs`. It does not cover fmt-check, lint, check-corpus, deny, audit-unsafe, rustdoc, or the `quire validate` half of spec, which feed no input and are simply neutered; and `.IGNORE:` at the top of the file also suppresses the chain's own refusal, so the structural backstop does not close the class either. This is a genuine reduction in local detection and it is recorded rather than claimed away. Filed as agent-ix/tl-mltl#14.",
+          "disposition": "open",
+          "owner": "agent-ix/tl-mltl"
+        },
+        {
+          "id": "UNKNOWN-external-monitor-not-re-executed",
+          "statement": "R2U2 4.2 and C2PO 4.1.0 were executed once, out of band, and their exact exchanged artifacts are retained and pinned by SHA-256. No gate re-executes them, deliberately: a gate that ran the external monitor would be producing the thing it checks. The consequence is that this repository's external-compatibility claim is a claim about a retained exchange at one external revision, not a continuously re-verified one, and a change in R2U2 behaviour after 4.2-release would not be observed here.",
+          "disposition": "open",
+          "owner": "agent-ix/tl-mltl"
+        }
+      ]
+    },
+    "review_workflow": {
+      "run_id": "tl-mltl-issue-13",
+      "decision_event_kind": "change_assurance.review_decided"
+    }
+  }
+}

@@ -1,45 +1,54 @@
 # Retained evidence
 
-`RETRACTIONS.json` binds each legacy disposition to the record's exact source
-revision and outer-manifest digest. Those records remain checksum-verifiable for
-audit but must not support an active qualification claim; the legacy disposition
-cannot be applied to qualification-v2 evidence. New active records use the
-`tl-mltl.evidence-qualification/v2` profile, a clean-room environment, and the
-exact executable identities in `tools.lock`. The collector independently
-resolves and hashes all 23 mandatory executables; the retained observations are
-compared with the lock at the record's source revision.
+**These bytes are immutable and nothing in this repository writes them.**
 
-The lock is deliberately scoped to the qualification host. `make ci-for-evidence`
-checks those live identities immediately before collection. The collector
-deletes and recreates the ignored repository-local `.qualification-target`
-cache before those candidate gates. Ordinary `make ci` validates retained
-identities against the record's exact source revision but does not require
-another operator to reproduce this host's absolute paths. An active record is
-accepted only while its source revision remains reachable from a local branch,
-remote-tracking branch, or tag; a squash merge must therefore retain an
-appropriate ref.
+Six records, 283 files, unchanged by the shared-assurance migration. They were
+produced by a repository-local evidence collector that the migration removed;
+what went away is the verifier, not the record.
 
-Run `bash scripts/collect_evidence.sh` from a clean repository root. Each run
-creates a revision-and-UTC-time-scoped directory and refuses overwrite. It
-retains separate stdout/stderr, exit codes, tool/source identities, limitations,
-canonical `quire.derivation-evidence/v1`, and an external SHA-256 file.
+## What still reads them
 
-`evidence/ANCHORS` binds every retained outer manifest. `make verify-evidence`
-first checks those committed anchors, requires every retained manifest to have
-one, and then checks its contents and re-derives the post-seal summary, including
-the complete positive-output census and parameter digest. It fails unless at
-least one reachable, non-retracted qualification-v2 record has an overall
-passing result; the current all-retracted archive therefore remains blocked.
+`scripts/legacy_evidence_view.py` opens every file here for reading, digests the
+whole tree before and after the run, and fails if one byte moved. Read-only is a
+claim, so it is measured. Whether the retained bytes are the bytes that were
+*committed* is a separate and stronger claim, and Git is asked rather than a
+second local manifest being invented.
 
-Set `PGM01_SCHEMA` to the merged PGM-01 Draft 7 schema and `PGM01_VALIDATOR` to
-its exact validator. Missing external gates are recorded as unavailable, never
-as successful. The input record pins tl-syntax, both corpora, R2U2/C2PO source
-and executable identities, dependency lockfile, schemas, and PGM-01.
+Every envelope is interpreted by
+`engineering_assurance.verification_semantics.map_pgm01_bytes` from the pinned
+release. This repository implements no mapping of its own.
 
-The collector architecture is adapted under MIT OR Apache-2.0 from the
+All six declare `quire.derivation-evidence/v1`, which is a schema family the
+PGM-01 program governed but did not define, so the mapping answers
+`incompatible` with the reason `unknown PGM-01 schema version` for every one of
+them. That is the mapping declining to interpret a shape it has never seen. It is
+reported as it stands: not a pass, not a defect of these records, and not a
+licence to write a local mapper. Filed upstream as
+`agent-ix/engineering-assurance#21`.
+
+## What no longer reads them
+
+`evidence/ANCHORS` and `evidence/RETRACTIONS.json` are retained bytes like any
+others. Nothing interprets them any more — `verify_evidence.sh`,
+`finalize_collection.py` and `evidence_profile.py` went with the rest of the
+local framework. The dispositions `RETRACTIONS.json` records still stand as
+history: none of the six records supports an active qualification claim, and
+`spec/assurance/AA-001.md` says so in its own voice rather than by delegating to
+a registry a script parses.
+
+There is no collector. `scripts/collect_evidence.sh`, `tools.lock`, the
+host-scoped executable census, the envelope builder and the manifest verifier are
+gone. New assurance for a candidate revision is produced by
+`make assurance-inputs` and sealed through Quoin by
+`scripts/assurance_chain.py`, into a store under `target/`, which is ignored.
+Nothing writes here.
+
+## Provenance of the removed collector
+
+The collector architecture was adapted under MIT OR Apache-2.0 from the
 same-program tl-syntax collector at revision
-`740182f13b84858008d6f176f75136737d405c1b`. It is tailored to tl-mltl's
-semantic, resource, CLI, corpus, and external differential gates.
+`740182f13b84858008d6f176f75136737d405c1b`. That attribution is kept because the
+records it produced are kept.
 
 Evidence informs the open human source-release decision. It does not approve,
 publish, validate, accredit, or qualify a consuming monitor or project.
