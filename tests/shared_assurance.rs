@@ -966,11 +966,16 @@ fn collect_sources(directory: &Path, into: &mut Vec<PathBuf>) {
             collect_sources(&path, into);
             continue;
         }
+        // The Makefile is extensionless but is where the deleted compat-view
+        // target lived. GitHub also accepts the four-letter `.yaml` workflow
+        // spelling, so neither surface may fall out of the source census.
         let extension = path.extension().and_then(|value| value.to_str());
-        if matches!(
-            extension,
-            Some("py" | "sh" | "rs" | "txt" | "toml" | "yml" | "md" | "json")
-        ) {
+        if name == "Makefile"
+            || matches!(
+                extension,
+                Some("py" | "sh" | "rs" | "txt" | "toml" | "yml" | "yaml" | "md" | "json")
+            )
+        {
             into.push(path);
         }
     }
@@ -980,6 +985,17 @@ fn collect_sources(directory: &Path, into: &mut Vec<PathBuf>) {
 #[test]
 fn no_local_evidence_framework_remains() {
     let root = root();
+    const DELETED_REFERENCES: [&str; 9] = [
+        "check-failure-propagation",
+        "check-tool-identities",
+        "ci-for-evidence",
+        "verify-evidence",
+        "evidence-tool",
+        "legacy_evidence_view",
+        "compat-view",
+        "tl-mltl-evidence-input-v1.schema.json",
+        "tl-mltl-evidence-manifest-v1.schema.json",
+    ];
 
     // The generic machinery is gone, by name.
     for removed in [
@@ -1045,11 +1061,7 @@ fn no_local_evidence_framework_remains() {
         {
             continue;
         }
-        for name in [
-            "legacy_evidence_view",
-            "tl-mltl-evidence-input-v1.schema.json",
-            "tl-mltl-evidence-manifest-v1.schema.json",
-        ] {
+        for name in DELETED_REFERENCES {
             assert!(
                 !source.contains(name),
                 "{} references {name}, which was deleted with the retained evidence",
@@ -1057,24 +1069,27 @@ fn no_local_evidence_framework_remains() {
             );
         }
     }
+    // Re-derived after the retained-evidence deletion and after adding the
+    // extensionless Makefile: 109 files — 12 root, 17 corpus, 45 spec, 7 src,
+    // 5 scripts, 15 tests, 3 assurance, 3 examples, 1 workflow and 1 agent rule.
+    // `tests` is the largest ordinary implementation area below the corpus and
+    // specification records; losing all 15 would leave 94, so the floor is 95.
+    // Losing either larger area is red as well. Smaller intentional deletions
+    // retain headroom but require this derivation to be revisited before they
+    // can make the census vacuous.
     assert!(
-        inspected > 30,
-        "the source census is unexpectedly small ({inspected}) to make this claim"
+        inspected >= 95,
+        "the source census inspected {inspected} files, below the derived floor \
+         of 95 (post-deletion population 109 minus all 15 tests is 94)"
     );
 
     // The Makefile is orchestration, not a trust root, and carries no gate that
     // polices its own execution.
     let makefile = fs::read_to_string(root.join("Makefile")).unwrap();
-    for gone in [
-        "check-failure-propagation",
-        "check-tool-identities",
-        "ci-for-evidence",
-        "verify-evidence",
-        "evidence-tool",
-    ] {
+    for gone in DELETED_REFERENCES {
         assert!(
             !makefile.contains(gone),
-            "the Makefile still carries the {gone} self-attestation target"
+            "the Makefile still carries the deleted {gone} evidence reference"
         );
     }
 
