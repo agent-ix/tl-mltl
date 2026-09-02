@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "tl-mltl.cli-requests/v1",
+  "purpose": "Every request document the CLI conformance producer drives the built tl-mltl binary over, and what each one is declared to do. The producer reads this file; it invents no case and skips none, and a case whose expectation this file does not state is refused rather than defaulted.",
+  "discrimination": "An accepted request is judged by its exit status and by the fields its structured output carries, both of which are machine facts. A refused request has no structured output — the CLI writes a plain message to stderr and exits 2 — so the exit status is the primary fact and `stderrMarker` is the only discriminator between five different refusals. That is stated here rather than left implicit: without it, an unknown schema, an unknown profile, an unknown field, a missing trace and a profile/trace mismatch would all read as the same refusal, and a CLI that refused everything for one reason would look correct. Each marker names something only its own case can produce, and the producer emits a `marker-discrimination` row asserting that no case's marker appears in any other case's stderr — a marker that matches more than one refusal is a discriminator that discriminates nothing.",
+  "determinism": "Every case is run twice and the two stdout byte strings must be identical. FR-005 requires deterministic machine output for identical input bytes, and a determinism claim that is never re-run is a claim nothing measured.",
+  "cases": [
+    {
+      "id": "evaluate-closed-accepted",
+      "request": "evaluate-closed.json",
+      "expectedExit": 0,
+      "requiredFields": ["schemaVersion", "formulaId", "traceId", "verdict", "verdictTime", "traceClosed"],
+      "traceIds": ["FR-005-AC-1", "NFR-001-AC-1", "TC-014"],
+      "why": "A closed-trace evaluation over a closed trace document, which is the CLI's primary path."
+    },
+    {
+      "id": "analyze-accepted",
+      "request": "analyze.json",
+      "expectedExit": 0,
+      "requiredFields": ["schemaVersion", "formulaId", "lookahead", "propagationDelay", "requiredBuffer", "unit"],
+      "traceIds": ["FR-005-AC-1", "FR-002-AC-3", "TC-014"],
+      "why": "Horizon analysis through the CLI, carrying the three resource values and their shared unit."
+    },
+    {
+      "id": "map-c2po-accepted",
+      "request": "map-c2po.json",
+      "expectedExit": 0,
+      "requiredFields": ["schemaVersion", "adapterVersion", "sourceRevision", "syntaxRevision", "expression", "inputSha256", "outputSha256", "limitation"],
+      "traceIds": ["FR-005-AC-1", "FR-004-AC-3", "TC-014"],
+      "why": "The C2PO adapter manifest through the CLI, carrying the exact source, dependency, input and output identities that make an external exchange attributable."
+    },
+    {
+      "id": "unknown-command-schema-refused",
+      "request": "unknown-command-schema.json",
+      "expectedExit": 2,
+      "stderrMarker": "`tl-mltl.command/v2`",
+      "traceIds": ["FR-005-AC-1", "NFR-002-AC-1", "TC-014"],
+      "why": "An unknown command schema identity is refused at the wire boundary rather than interpreted as v1."
+    },
+    {
+      "id": "unknown-formula-profile-refused",
+      "request": "unknown-formula-profile.json",
+      "expectedExit": 2,
+      "stderrMarker": "`mltl.online-prefix/v2`",
+      "traceIds": ["FR-005-AC-1", "NFR-002-AC-1", "TC-012", "TC-014"],
+      "why": "An unknown semantic profile is refused. The profile is what fixes the meaning of every verdict below it, so guessing one is not available."
+    },
+    {
+      "id": "unknown-request-field-refused",
+      "request": "unknown-request-field.json",
+      "expectedExit": 2,
+      "stderrMarker": "unknown field `verdictOverride`",
+      "traceIds": ["FR-005-AC-1", "NFR-002-AC-1", "TC-014"],
+      "why": "An unrecognised request field is refused rather than ignored. A field the CLI silently drops is a caller instruction that never happened."
+    },
+    {
+      "id": "evaluate-without-trace-refused",
+      "request": "evaluate-without-trace.json",
+      "expectedExit": 2,
+      "stderrMarker": "evaluate operation requires trace",
+      "traceIds": ["FR-005-AC-1", "TC-014"],
+      "why": "Evaluation with no trace document is refused rather than evaluated over an empty one."
+    },
+    {
+      "id": "closed-formula-open-trace-refused",
+      "request": "closed-formula-open-trace.json",
+      "expectedExit": 2,
+      "stderrMarker": "closed-trace formula requires a closed trace document",
+      "traceIds": ["FR-005-AC-1", "FR-003-AC-2", "TC-014"],
+      "why": "A closed-trace formula handed an open prefix is refused. Closed and open are different semantics, not a default and an option."
+    }
+  ]
+}

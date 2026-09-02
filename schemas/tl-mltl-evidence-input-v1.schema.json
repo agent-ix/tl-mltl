@@ -7,6 +7,7 @@
   "additionalProperties": false,
   "required": [
     "schemaVersion",
+    "qualificationProfile",
     "sourceRevision",
     "sourceState",
     "commands",
@@ -18,8 +19,9 @@
   ],
   "properties": {
     "schemaVersion": {"const": "tl-mltl.evidence-input/v1"},
+    "qualificationProfile": {"const": "tl-mltl.evidence-qualification/v2"},
     "sourceRevision": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
-    "sourceState": {"enum": ["clean", "modified"]},
+    "sourceState": {"const": "clean"},
     "commands": {
       "type": "array",
       "minItems": 1,
@@ -28,13 +30,43 @@
     "tools": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["cargo", "jsonschema", "python", "quire", "rustc"],
+      "required": ["cargo", "jsonschema", "python", "quire", "rustc", "identities"],
       "properties": {
         "cargo": {"type": "string", "minLength": 1},
         "jsonschema": {"type": "string", "minLength": 1},
         "python": {"type": "string", "minLength": 1},
         "quire": {"type": "string", "minLength": 1},
-        "rustc": {"type": "string", "minLength": 1}
+        "rustc": {"type": "string", "minLength": 1},
+        "identities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bash", "basename", "cargo", "cut", "date", "dirname", "env", "find", "git", "grep", "make", "mkdir", "mktemp", "mv", "printf", "python3", "quire", "rm", "rmdir", "rustc", "sha256sum", "sort", "xargs"],
+          "properties": {
+            "bash": {"$ref": "#/definitions/toolIdentity"},
+            "basename": {"$ref": "#/definitions/toolIdentity"},
+            "cargo": {"$ref": "#/definitions/toolIdentity"},
+            "cut": {"$ref": "#/definitions/toolIdentity"},
+            "date": {"$ref": "#/definitions/toolIdentity"},
+            "dirname": {"$ref": "#/definitions/toolIdentity"},
+            "env": {"$ref": "#/definitions/toolIdentity"},
+            "find": {"$ref": "#/definitions/toolIdentity"},
+            "git": {"$ref": "#/definitions/toolIdentity"},
+            "grep": {"$ref": "#/definitions/toolIdentity"},
+            "make": {"$ref": "#/definitions/toolIdentity"},
+            "mkdir": {"$ref": "#/definitions/toolIdentity"},
+            "mktemp": {"$ref": "#/definitions/toolIdentity"},
+            "mv": {"$ref": "#/definitions/toolIdentity"},
+            "printf": {"$ref": "#/definitions/toolIdentity"},
+            "python3": {"$ref": "#/definitions/toolIdentity"},
+            "quire": {"$ref": "#/definitions/toolIdentity"},
+            "rm": {"$ref": "#/definitions/toolIdentity"},
+            "rmdir": {"$ref": "#/definitions/toolIdentity"},
+            "rustc": {"$ref": "#/definitions/toolIdentity"},
+            "sha256sum": {"$ref": "#/definitions/toolIdentity"},
+            "sort": {"$ref": "#/definitions/toolIdentity"},
+            "xargs": {"$ref": "#/definitions/toolIdentity"}
+          }
+        }
       }
     },
     "pgm01": {
@@ -95,6 +127,15 @@
       "properties": {
         "algorithm": {"const": "sha256"},
         "value": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "toolIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^/"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
       }
     },
     "schemaIdentity": {

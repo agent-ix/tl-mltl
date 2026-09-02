@@ -10,8 +10,12 @@ make ci
 make spec
 ```
 
-The library consumes validated `tl-syntax` formulas pinned to exact development
-revision `740182f13b84858008d6f176f75136737d405c1b`. `evaluate_closed` implements
+The library consumes validated `tl-syntax` formulas pinned to exact revision
+`953ee825e5060335b4c79682f5f41a78c5a1bfae` on that repository's `main`. The
+retained shared temporal corpus under `corpus/tl-syntax-v1` is a byte-identical
+copy taken at the earlier revision `740182f13b84858008d6f176f75136737d405c1b`
+and is deliberately not restamped; `TL_SYNTAX_REVISION` and
+`TL_SYNTAX_CORPUS_BASIS` are two separate constants for that reason. `evaluate_closed` implements
 the declared all-false-after-closure profile at time zero, while
 `evaluate_closed_at` selects another verdict time. `evaluate_prefix` and
 `evaluate_prefix_at` preserve unknown future observations as `pending`.

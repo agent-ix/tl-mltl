@@ -89,8 +89,13 @@ fn cli_is_deterministic_and_rejects_unknown_command_schema() {
     let revision = manifest["sourceRevision"].as_str().unwrap();
     assert_eq!(revision, env!("TL_MLTL_SOURCE_REVISION"));
     assert_eq!(manifest["sourceState"], env!("TL_MLTL_SOURCE_STATE"));
+    // The compiled dependency identity, not the corpus basis. `tl_mltl` exposes
+    // both as separate constants precisely so a reader cannot mistake one for
+    // the other, and the mapping manifest carries the compiled one.
+    assert_eq!(manifest["syntaxRevision"], tl_mltl::TL_SYNTAX_REVISION);
     assert_eq!(
-        manifest["syntaxRevision"],
-        "740182f13b84858008d6f176f75136737d405c1b"
+        tl_mltl::TL_SYNTAX_REVISION,
+        "953ee825e5060335b4c79682f5f41a78c5a1bfae"
     );
+    assert_ne!(tl_mltl::TL_SYNTAX_REVISION, tl_mltl::TL_SYNTAX_CORPUS_BASIS);
 }

@@ -11,9 +11,30 @@ type: SuiteRegistry
 | ID | Name | Command | Tool | Evidence Kind |
 |---|---|---|---|---|
 | SUITE-001 | Complete repository CI | `make ci` | GNU Make and Cargo | Integration |
-| SUITE-002 | Specification validation | `make spec` | quire 0.31.0 | Analysis |
-| SUITE-003 | Requirement coverage | `quire coverage --scope . --strict` | quire 0.31.0 | Analysis |
-| SUITE-004 | Shared temporal corpus | `cargo test --test shared_corpus` | Rust test harness | Integration |
-| SUITE-005 | CLI and schema conformance | `cargo test --test cli` | Rust test harness | Integration |
-| SUITE-006 | Monitor differential corpus | `cargo test --test differential` | Rust test harness | Integration |
-| SUITE-007 | PGM-01 evidence envelope | exact merged schema and validator | Python Draft 7 | Analysis |
+| SUITE-002 | Specification validation | `quire validate --scope . 'spec/**/*.md'` | quire-cli 0.31.0 | Analysis |
+| SUITE-003 | Requirement coverage export | `quire coverage --scope . --json` | quire-cli 0.31.0 | Analysis |
+| SUITE-004 | Shared temporal corpus replay | `cargo run --example reference_conformance -- --manifest corpus/tl-syntax-v1/manifest.json` | tl-mltl reference conformance producer | Integration |
+| SUITE-005 | CLI conformance | `cargo run --example cli_conformance -- --requests tests/fixtures/cli-requests/manifest.json` | tl-mltl CLI conformance producer | Integration |
+| SUITE-006 | R2U2 differential replay | `cargo run --example r2u2_differential -- --manifest corpus/r2u2-v4.2/manifest.json` | tl-mltl R2U2 differential producer | Integration |
+| SUITE-007 | Legacy evidence compatibility view | `.venv-assurance/bin/python scripts/legacy_evidence_view.py` | engineering-assurance 0.2.0 | Analysis |
+| SUITE-008 | Compiled Rust test census | `python3 scripts/rust_test_census.py` | tl-mltl test census | Static |
+| SUITE-009 | Shared pin classification | `.venv-assurance/bin/python scripts/check_shared_pins.py` | engineering-assurance 0.2.0 | Analysis |
+
+## What backs these rows, and what does not
+
+Seven of the nine rows are bound by a test that invokes that suite's own
+command. `SUITE-001` and `SUITE-002` are deliberately unbacked.
+
+That is a reduction from the previous registry, where all seven rows were backed
+by **one** test — a single `// Trace:` comment in `tests/evidence_contract.rs`
+naming `SUITE-001` through `SUITE-007` at once. A row backed by a test that does
+not run its command is a row that reports coverage and measures nothing, so
+losing four such bindings and gaining seven real ones is an improvement even
+though the headline fraction moves.
+
+`SUITE-001` is `make ci`, the composite that contains every other suite. Nothing
+binds it because a test that ran `make ci` would be a test the composite runs,
+which recurses. `SUITE-002` is the `quire validate` half of `make spec`; it
+writes no structured result the chain reads, and it is one of the gates named in
+`NFR-003` as unprotected by the structural backstop. Both are stated here rather
+than bound by a tag that would make the registry look complete.

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "tl-mltl.command/v1",
+  "operation": "map_c2po",
+  "formulaId": "cli-map-c2po-v1",
+  "formula": {
+    "schema_version": "tl-syntax.formula/v1",
+    "semantic_profile": "mltl.online-prefix/v1",
+    "root": 2,
+    "nodes": [
+      {"kind": "proposition", "proposition": 0},
+      {"kind": "proposition", "proposition": 1},
+      {"kind": "until", "interval": {"start": 1, "end": 2}, "left": 0, "right": 1}
+    ]
+  },
+  "trace": null
+}

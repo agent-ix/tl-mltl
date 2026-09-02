@@ -1,4 +1,7 @@
 /target
+.venv-assurance/
+__pycache__/
+*.pyc
 Cargo.lock.bak
 *.swp
 .DS_Store
