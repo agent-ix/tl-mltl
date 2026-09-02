@@ -1150,7 +1150,11 @@ fn no_local_evidence_framework_remains_and_the_frozen_schemas_are_referenced_by_
         "cargo clippy --all-targets --all-features",
         "cargo fmt --all -- --check",
         "cargo deny check licenses",
-        "rustup run 1.75.0 cargo check --locked",
+        // Split, because `$(CARGO)` expands to an absolute rustup path when
+        // `make` runs under `cargo test` — which is exactly the environment
+        // this assertion runs in.
+        "rustup run 1.75.0",
+        "cargo check --locked --all-targets --all-features",
         "scripts/assurance_chain.py",
         "scripts/check_shared_pins.py",
         "scripts/legacy_evidence_view.py",
