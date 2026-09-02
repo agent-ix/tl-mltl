@@ -256,10 +256,21 @@ fn the_chain_reaches_quoin_without_quoin_or_quire_executing_a_producer() {
 /// cargo. That is still a version observation. Anything without a version flag
 /// — `cargo build`, `cargo run`, `rustup run … check` — is logged and fails the
 /// test, which is what keeps it able to fail.
+///
+/// `provenance` is answered for the same reason: it is how the driver observes
+/// Quire's version, because `quire provenance` reports the CLI and engine
+/// identity as JSON and `quire --version` reports only the CLI. Answering it
+/// lets `quire` be shimmed at all, which matters — `quire coverage` is a
+/// producer and would otherwise be invisible to this test. That gap was real
+/// until an injected `quire coverage` in the driver went undetected here.
 fn producer_shims(directory: &Path, names: &[&str]) -> PathBuf {
+    // Removed and recreated, not merely topped up. `target/` survives between
+    // runs, so a shim written by an earlier version of this test would still be
+    // on the shimmed PATH and would silently change what is being measured —
+    // which is exactly what happened while this test was being written.
+    let _ = fs::remove_dir_all(directory);
     fs::create_dir_all(directory).unwrap();
     let log = directory.join("invocations.log");
-    let _ = fs::remove_file(&log);
     for name in names {
         let path = directory.join(name);
         fs::write(
@@ -269,6 +280,8 @@ fn producer_shims(directory: &Path, names: &[&str]) -> PathBuf {
                  for argument in \"$@\"; do\n\
                  case \"$argument\" in\n\
                  --version|-V) echo \"{name} 9.9.9 (shim)\"; exit 0 ;;\n\
+                 provenance) echo '{{\"cli\":{{\"version\":\"9.9.9\"}},\
+                 \"engine\":{{\"version\":\"9.9.9\"}}}}'; exit 0 ;;\n\
                  esac\n\
                  done\n\
                  echo \"$0 $@\" >> {}\n\
@@ -306,9 +319,26 @@ fn run_chain_with_path(shims: &Path) -> std::process::Output {
 fn the_chain_never_executes_a_producer_and_the_probe_can_prove_it() {
     // Two runs, because one proves nothing.
     //
-    // Run A replaces every producer — cargo, rustup, rustc, and the external
-    // monitor and its compiler — with a stub that logs and fails. The chain must
-    // finish, and the log must be empty: not one producer was invoked.
+    // Run A replaces every producer — cargo, rustup, rustc, quire, and the
+    // external monitor and its compiler — with a stub that logs and fails. The
+    // chain must finish, and the log must be empty: not one producer was
+    // invoked.
+    //
+    // `quire` is deliberately NOT in this list, and the reason is worth stating
+    // because the obvious reading is that it was forgotten.
+    //
+    // `quire coverage` is a producer of one of the seven inputs, so a PATH shim
+    // looks like the right instrument. It is not: `quoin evidence record`
+    // invokes `quire coverage` itself, inside the store it is writing to. That
+    // is Quoin using the static exporter, which is exactly what the architecture
+    // says Quire is for, and a PATH shim cannot tell it apart from the driver
+    // regenerating its own input. Shimming `quire` makes run A fail on a clean
+    // tree — measured, not assumed.
+    //
+    // The property is instead tested directly, and more strongly, by run C
+    // below: every declared input is moved aside in turn and the driver is
+    // required to refuse rather than recreate it. That covers `quire coverage`
+    // and the other six producers by name.
     //
     // Run B is the control. It stubs `quoin`, which the chain is supposed to run,
     // and requires the chain to fail and the log to be non-empty. Without it, an
@@ -342,6 +372,61 @@ fn the_chain_never_executes_a_producer_and_the_probe_can_prove_it() {
         !control.status.success(),
         "the chain succeeded with quoin stubbed out, so it is not actually using it"
     );
+
+    // Run C. Every declared input, one at a time: move it aside, run the driver,
+    // and require it to refuse with exit 2 naming the target that writes the
+    // file. A driver that can produce its own inputs can produce a green run out
+    // of nothing, and this is the direct measurement of that — it covers `quire
+    // coverage`, which cannot be PATH-shimmed for the reason given above, and it
+    // covers the other six producers by name rather than by absence of evidence.
+    let assurance = root().join("target/assurance");
+    let inputs = [
+        "reference-conformance.jsonl",
+        "r2u2-differential.jsonl",
+        "cli-conformance.jsonl",
+        "test-census.json",
+        "quire-static-export.json",
+        "legacy-compatibility.json",
+        "msrv.jsonl",
+    ];
+    for name in inputs {
+        let present = assurance.join(name);
+        assert!(
+            present.is_file(),
+            "{name} is absent before the probe even starts; run `make assurance-inputs`"
+        );
+        let stashed = assurance.join(format!("{name}.stashed-by-test"));
+        fs::rename(&present, &stashed).unwrap();
+        let revision = head_revision();
+        let output = Command::new("python3")
+            .args([
+                "scripts/assurance_chain.py",
+                "--candidate-revision",
+                &revision,
+            ])
+            .current_dir(root())
+            .output()
+            .expect("failed to run the assurance chain");
+        fs::rename(&stashed, &present).unwrap();
+        let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+        assert_eq!(
+            output.status.code(),
+            Some(2),
+            "with {name} absent the driver exited {:?}; a driver that carries on \
+             without a producer's output is a driver that can report a result nobody \
+             produced\n{stderr}",
+            output.status.code()
+        );
+        assert!(
+            stderr.contains("make assurance-inputs"),
+            "the refusal for an absent {name} did not name the target that writes \
+             it: {stderr}"
+        );
+        assert!(
+            present.is_file(),
+            "the driver recreated {name} instead of refusing; it is a producer"
+        );
+    }
 }
 
 // Trace: TC-020, FR-006-AC-3, SUITE-003
