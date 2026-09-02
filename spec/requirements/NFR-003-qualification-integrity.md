@@ -33,10 +33,13 @@ removed with the local evidence framework they belonged to.
 That is a real reduction in local detection, and its extent is stated rather
 than minimised. It was measured in this repository, not inherited from a sibling.
 
-With every gate's command made to fail — a syntax error introduced into
-`src/lib.rs` — 10 of the 14 `ci` prerequisites fail and `make ci` exits 2.
-Adding a single `.IGNORE:` line to the `Makefile` makes all 10 report success
-and `make ci` exits 0. Nothing in this repository inspects Make's own execution
+With a syntax error introduced into `src/lib.rs`, `make -k ci` exits 2 and 10
+of the 14 `ci` prerequisites do not complete: `fmt-check`, `lint`, `test`,
+`conformance`, `differential`, `cli-conformance`, `test-census`, `msrv`,
+`rustdoc` and `assurance`. Four still complete: `check-corpus`, `deny`,
+`audit-unsafe` and `spec`. Adding a single `.IGNORE:` line to the `Makefile`
+makes all 10 report success and `make ci` exits 0; the run log records 16
+individual recipe errors, every one of them ignored. Nothing in this repository inspects Make's own execution
 controls to notice, because the parse-time guard block and
 `scripts/check_failure_propagation.py` that used to do so were removed with the
 collector they were protecting.

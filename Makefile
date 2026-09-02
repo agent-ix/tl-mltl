@@ -15,18 +15,25 @@
 # check_failure_propagation.py inspection — went with the collector they were
 # protecting.
 #
-# Read this before trusting a green `make ci`: adding a single `.IGNORE:` line
-# to this file makes 12 of the 14 `ci` prerequisites report success without
-# running, and `make ci` goes from exit 2 to exit 0. Nothing here notices. The
-# structural backstop only goes so far — Quoin binds each retained input by
+# Read this before trusting a green `make ci`. Measured in this repository, not
+# assumed: with a syntax error introduced into src/lib.rs, `make -k ci` exits 2
+# and 10 of the 14 `ci` prerequisites do not complete — fmt-check, lint, test,
+# conformance, differential, cli-conformance, test-census, msrv, rustdoc and
+# assurance. Adding a single `.IGNORE:` line to this file makes all 10 report
+# success and `make ci` exits 0. Nothing here notices.
+#
+# The structural backstop only goes so far. Quoin binds each retained input by
 # digest and the chain derives every attested result from the producer's own
 # bytes, so a producer that did not run yields an absent or empty input that the
-# chain names and refuses. That covers the work re-run inside `assurance-inputs`
-# (conformance, differential, cli-conformance, test-census, spec's coverage
-# half, msrv, and the compatibility view). It does not cover fmt-check, lint,
-# check-corpus, deny, audit-unsafe, rustdoc, or the `quire validate` half of
-# spec: those feed no input and are simply neutered. Measured in this repository
-# and tracked as agent-ix/tl-mltl#14.
+# chain names and refuses. That covers the seven proofs re-run inside
+# `assurance-inputs`. It does not cover fmt-check, lint, check-corpus, deny,
+# audit-unsafe, rustdoc, or the `quire validate` half of spec: those feed no
+# input and are simply neutered. And under `.IGNORE:` the chain's own refusal is
+# suppressed too — the measurement above recorded `assurance-chain` exiting 2 and
+# being ignored — so the backstop narrows the class rather than closing it.
+#
+# Tracked as agent-ix/tl-mltl#14. Do not read the structural replacement as a
+# fix for this.
 
 CARGO ?= cargo
 PYTHON ?= python3

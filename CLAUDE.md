@@ -62,8 +62,8 @@ as a git tag.
 
 Adding `.IGNORE:` to the `Makefile` makes recipes report success without running,
 and nothing here notices. Measured in this repository: with a syntax error in
-`src/lib.rs`, 10 of the 14 `ci` prerequisites fail and `make ci` exits 2; with
-`.IGNORE:` added, all 10 report success and `make ci` exits 0. The structural
+`src/lib.rs`, `make -k ci` exits 2 and 10 of the 14 `ci` prerequisites do not
+complete; with `.IGNORE:` added, all 10 report success and `make ci` exits 0. The structural
 backstop — Quoin binding each retained input by digest — covers only the seven
 producers that feed the chain. Tracked as `agent-ix/tl-mltl#14`.
 

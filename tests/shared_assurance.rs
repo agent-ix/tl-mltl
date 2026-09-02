@@ -384,11 +384,13 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     let totals = &parsed["totals"];
     assert_eq!(totals["total"], 68, "matrix row count changed: {totals}");
     assert_eq!(
-        totals["backed"], 63,
-        "backed-row count changed: {totals}. Five rows are unbacked on purpose — \
-         SUITE-001 and SUITE-002 in spec/evidence/suites.md, which say why, and the \
-         three MRS-001 scope rows. If that number moved, update the registry \
-         deliberately rather than adjusting this assertion."
+        totals["backed"], 66,
+        "backed-row count changed: {totals}. Exactly two rows are unbacked on \
+         purpose — SUITE-001 (`make ci`, the composite that contains every other \
+         suite) and SUITE-002 (the `quire validate` half of `make spec`, which \
+         writes no structured result) — and spec/evidence/suites.md says why. If \
+         that number moved, update the registry deliberately rather than \
+         adjusting this assertion."
     );
     assert!(
         parsed["status_lies"].as_array().unwrap().is_empty(),
