@@ -13,7 +13,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::OnceLock;
+use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use serde_json::Value;
 
@@ -181,6 +181,13 @@ fn digest_of(path: &Path) -> String {
 /// The chain is expensive and several tests read it. It runs once per test
 /// binary, and every reader sees the same run rather than a different one.
 static CHAIN: OnceLock<Value> = OnceLock::new();
+static ASSURANCE_INPUTS: Mutex<()> = Mutex::new(());
+
+fn assurance_inputs_guard() -> MutexGuard<'static, ()> {
+    ASSURANCE_INPUTS
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
 
 fn chain_report() -> &'static Value {
     CHAIN.get_or_init(|| {
@@ -286,6 +293,7 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
 // Trace: TC-019, FR-006-AC-2, NFR-003-AC-1, SUITE-004, SUITE-005, SUITE-006
 #[test]
 fn the_chain_reaches_quoin_without_quoin_or_quire_executing_a_producer() {
+    let _inputs = assurance_inputs_guard();
     let report = chain_report();
     assert_eq!(report["matched"], true, "{report:#}");
 
@@ -418,6 +426,7 @@ fn run_chain_with_path(shims: &Path) -> std::process::Output {
 // Trace: TC-019, FR-006-AC-2, NFR-003-AC-2
 #[test]
 fn the_chain_never_executes_a_producer_and_the_probe_can_prove_it() {
+    let _inputs = assurance_inputs_guard();
     // Two runs, because one proves nothing.
     //
     // Run A replaces every producer — cargo, rustup, rustc, quire, and the
@@ -532,6 +541,7 @@ fn the_chain_never_executes_a_producer_and_the_probe_can_prove_it() {
 // Trace: TC-019, FR-006-AC-2, NFR-003-AC-1
 #[test]
 fn an_unobservable_tool_version_is_refused_rather_than_defaulted() {
+    let _inputs = assurance_inputs_guard();
     // A sealed attestation names the version of the tool that produced the bytes.
     // A version nobody measured, filled in with a plausible-looking default, is
     // worse than an absent one: a reader cannot tell it apart from a real
@@ -584,6 +594,7 @@ fn an_unobservable_tool_version_is_refused_rather_than_defaulted() {
 // Trace: TC-019, FR-006-AC-2, NFR-003-AC-2
 #[test]
 fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() {
+    let _inputs = assurance_inputs_guard();
     // The PATH-shim runs cannot establish this and an adversarial review showed
     // exactly why: `quoin evidence record` runs `quire coverage` itself, so
     // `quire` cannot be shimmed; and a driver that ran `quire coverage` and
@@ -617,7 +628,16 @@ fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() 
     }
 
     let scratch = root().join("target/execution-boundary-probe");
-    let _ = fs::remove_dir_all(&scratch);
+    // A failed probe retains its scratch for diagnosis. The next run must
+    // remove that exact owned tree or fail with the cleanup cause, rather than
+    // turning stale links into a misleading EEXIST later in setup.
+    match fs::remove_dir_all(&scratch) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => {
+            panic!("failed to clear the previous execution-boundary scratch: {error}")
+        }
+    }
     fs::create_dir_all(scratch.join("scripts")).unwrap();
     let driver = fs::read_to_string(root().join("scripts/assurance_chain.py")).unwrap();
     let marker = "def run_chain(candidate_revision: str, workspace: Path) -> dict[str, Any]:\n";
@@ -646,6 +666,16 @@ fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() 
             .unwrap_or_else(|error| panic!("failed to link {name} into the probe: {error}"));
     }
     let scratch_target = scratch.join("target");
+    // Check ownership before creating anything under target. If `target` drops
+    // out of the skip set, this is the first reactor and no self-referential
+    // link can be created through the repository target.
+    match fs::symlink_metadata(&scratch_target) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Ok(_) => panic!(
+            "the execution-boundary probe must own target/ rather than inherit a root-entry link"
+        ),
+        Err(error) => panic!("could not establish scratch target ownership: {error}"),
+    }
     fs::create_dir_all(&scratch_target).expect("create isolated probe target");
     std::os::unix::fs::symlink(
         root().join("target/assurance"),
@@ -678,6 +708,26 @@ fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() 
         stderr.contains("quire"),
         "the refusal did not name the argv it refused: {stderr}"
     );
+
+    // Restore the original driver in the same isolated fixture. Exit 0 proves
+    // the injected child, rather than scratch construction, caused the refusal.
+    fs::write(scratch.join("scripts/assurance_chain.py"), &driver).unwrap();
+    let bypassed = Command::new("python3")
+        .args([
+            "scripts/assurance_chain.py",
+            "--candidate-revision",
+            &revision,
+        ])
+        .current_dir(&scratch)
+        .output()
+        .expect("failed to run the unmutated chain in the execution-boundary scratch");
+    assert_eq!(
+        bypassed.status.code(),
+        Some(0),
+        "the execution-boundary scratch is invalid without the injected child:\n{}\n{}",
+        String::from_utf8_lossy(&bypassed.stdout),
+        String::from_utf8_lossy(&bypassed.stderr)
+    );
     fs::remove_file(scratch_target.join("assurance")).expect("unlink shared assurance inputs");
     for entry in fs::read_dir(&scratch).expect("read execution-boundary scratch") {
         let path = entry.expect("scratch entry").path();
@@ -695,6 +745,7 @@ fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() 
 // Trace: TC-020, FR-006-AC-3, SUITE-003
 #[test]
 fn the_sealed_records_impact_snapshot_is_the_quire_export() {
+    let _inputs = assurance_inputs_guard();
     let report = chain_report();
     let export = root().join(report["quire_export"].as_str().expect("quire_export"));
     let bytes =
@@ -766,6 +817,7 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
 // Trace: TC-022, FR-006-AC-5, NFR-003-AC-3
 #[test]
 fn all_twelve_verification_outcomes_are_demonstrated_and_paired_with_controls() {
+    let _inputs = assurance_inputs_guard();
     // The twelve states this migration must keep distinguishable, and the gate
     // that owns each. A state nobody demonstrates is a state nobody would notice
     // the loss of.
@@ -899,6 +951,7 @@ fn all_twelve_verification_outcomes_are_demonstrated_and_paired_with_controls() 
 // Trace: TC-023, FR-006-AC-6, StR-002-VC-1, StR-002-VC-2, SUITE-006
 #[test]
 fn the_r2u2_differential_is_a_comparison_and_never_a_boolean() {
+    let _inputs = assurance_inputs_guard();
     let report = chain_report();
 
     // The counts come from the two corpus manifests, so a producer that stopped
@@ -1434,6 +1487,7 @@ fn no_local_evidence_framework_remains() {
 // Trace: TC-022, FR-006-AC-5, NFR-003-AC-3
 #[test]
 fn a_control_naming_a_scenario_that_does_not_exist_is_refused() {
+    let _inputs = assurance_inputs_guard();
     // NFR-003-AC-3 claims this guard is checked. The driver has it; nothing
     // exercised it, which is the same shape of gap the guard itself is there to
     // catch.
@@ -1442,7 +1496,11 @@ fn a_control_naming_a_scenario_that_does_not_exist_is_refused() {
     // renamed. Renaming the scenario as well would leave the pairing consistent
     // and prove nothing.
     let scratch = root().join("target/dangling-probe");
-    let _ = fs::remove_dir_all(&scratch);
+    match fs::remove_dir_all(&scratch) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("failed to clear the previous dangling-probe scratch: {error}"),
+    }
     fs::create_dir_all(scratch.join("scripts")).unwrap();
     let driver = fs::read_to_string(root().join("scripts/assurance_chain.py")).unwrap();
 
@@ -1480,6 +1538,13 @@ fn a_control_naming_a_scenario_that_does_not_exist_is_refused() {
         std::os::unix::fs::symlink(&path, scratch.join(&name))
             .unwrap_or_else(|error| panic!("failed to link {name} into the probe: {error}"));
     }
+    match fs::symlink_metadata(&scratch_target) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Ok(_) => panic!(
+            "the dangling-scenario probe must own target/ rather than inherit a root-entry link"
+        ),
+        Err(error) => panic!("could not establish scratch target ownership: {error}"),
+    }
     fs::create_dir_all(&scratch_target).expect("create isolated probe target");
     std::os::unix::fs::symlink(
         root().join("target/assurance"),
@@ -1516,11 +1581,12 @@ fn a_control_naming_a_scenario_that_does_not_exist_is_refused() {
     );
     let scratch_store = fs::canonicalize(scratch_target.join("assurance-store"))
         .expect("the mutated driver created its isolated Quoin store");
-    let real_store = fs::canonicalize(root().join("target/assurance-store"))
-        .expect("canonical real Quoin store");
-    assert_ne!(
-        scratch_store, real_store,
-        "the dangling-scenario probe resolved its Quoin store into the real tree"
+    let real_store = fs::canonicalize(root().join("target"))
+        .expect("canonical repository target directory")
+        .join("assurance-store");
+    assert!(
+        !scratch_store.starts_with(&real_store),
+        "the dangling-scenario probe placed its Quoin store in the real store: {scratch_store:?}"
     );
 
     fs::write(scratch.join("scripts/assurance_chain.py"), &driver).unwrap();
@@ -1541,6 +1607,9 @@ fn a_control_naming_a_scenario_that_does_not_exist_is_refused() {
         String::from_utf8_lossy(&bypassed.stderr)
     );
 
+    // `remove_dir_all` does not follow directory symlinks, but explicitly
+    // unlinking every shared input keeps that safety boundary visible and stops
+    // a future walk-and-delete replacement reaching repository inputs.
     fs::remove_file(scratch_target.join("assurance")).expect("unlink shared assurance inputs");
     for entry in fs::read_dir(&scratch).expect("read dangling-probe scratch") {
         let path = entry.expect("scratch entry").path();
