@@ -1128,26 +1128,34 @@ fn no_local_evidence_framework_remains() {
         "verify-evidence",
         "evidence-tool",
         "legacy_evidence_view",
-        "compat-view:",
+        "compat-view",
         "COMPAT_RESULT",
         "tl-mltl-evidence-input-v1.schema.json",
         "tl-mltl-evidence-manifest-v1.schema.json",
     ];
-    const EXPECTED_DELETED_REFERENCES: [&str; 10] = [
-        "check-failure-propagation",
-        "check-tool-identities",
-        "ci-for-evidence",
-        "verify-evidence",
-        "evidence-tool",
-        "legacy_evidence_view",
-        "compat-view:",
-        "COMPAT_RESULT",
-        "tl-mltl-evidence-input-v1.schema.json",
-        "tl-mltl-evidence-manifest-v1.schema.json",
-    ];
+    // The expected sets come from the change declaration rather than an
+    // adjacent copy of the implementation literals. This keeps the authorial
+    // statement and the executable census separately reviewable.
+    let declaration: Value = serde_json::from_slice(
+        &fs::read(root.join("assurance/change-assurance.json"))
+            .expect("read change-assurance declaration for census controls"),
+    )
+    .expect("change-assurance declaration is JSON");
+    let expected_deleted_references: Vec<&str> = declaration["census_controls"]
+        ["deleted_reference_needles"]
+        .as_array()
+        .expect("census_controls.deleted_reference_needles is an array")
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .expect("every deleted-reference needle is a string")
+        })
+        .collect();
     assert_eq!(
-        DELETED_REFERENCES, EXPECTED_DELETED_REFERENCES,
-        "the deleted-reference needle set changed without changing its independent control"
+        DELETED_REFERENCES.as_slice(),
+        expected_deleted_references,
+        "the executable deleted-reference needles differ from the change declaration"
     );
 
     // The generic machinery is gone, by name.
@@ -1200,14 +1208,36 @@ fn no_local_evidence_framework_remains() {
         );
     }
     let (tracked_all, tracked, scanned) = census_paths(&root, denied);
+    assert!(
+        !scanned.iter().any(|path| path
+            .split('/')
+            .any(|component| component.contains("legacy-compat"))),
+        "a renamed legacy-compatibility fixture path remains in the repository"
+    );
+    let proof_obligations = declaration["record"]["definition"]["proof_obligations"]
+        .as_array()
+        .expect("record.definition.proof_obligations is an array");
+    assert!(
+        !proof_obligations
+            .iter()
+            .any(|proof| { proof["proof_id"].as_str() == Some("PROOF-legacy-compatibility") }),
+        "the deleted legacy-compatibility proof obligation remains in the declaration"
+    );
     let observed_denied: BTreeSet<String> = tracked_all
         .iter()
         .filter(|entry| denied(entry))
         .cloned()
         .collect();
-    let expected_denied: BTreeSet<String> = ["Cargo.lock", "LICENSE-APACHE", "LICENSE-MIT"]
-        .into_iter()
-        .map(str::to_owned)
+    let expected_denied: BTreeSet<String> = declaration["census_controls"]["denied_paths"]
+        .as_array()
+        .expect("census_controls.denied_paths is an array")
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .expect("every census denied path is a string")
+                .to_owned()
+        })
         .collect();
     assert_eq!(
         observed_denied, expected_denied,
@@ -1247,13 +1277,22 @@ fn no_local_evidence_framework_remains() {
     let _ = fs::remove_dir_all(&fixture);
     fs::create_dir_all(fixture.join(".github/workflows")).expect("create census fixture");
     let initialized = Command::new("git")
-        .args(["init", "--quiet"])
+        .args(["init", "--quiet", "--template="])
         .current_dir(&fixture)
         .status()
         .expect("initialize census fixture repository");
     assert!(
         initialized.success(),
         "could not initialize census fixture repository"
+    );
+    let isolated_excludes = Command::new("git")
+        .args(["config", "core.excludesFile", "/dev/null"])
+        .current_dir(&fixture)
+        .status()
+        .expect("isolate census fixture from global Git excludes");
+    assert!(
+        isolated_excludes.success(),
+        "could not isolate the census fixture from global Git excludes"
     );
     let make_probe = fixture.join("GNUmakefile");
     fs::write(&make_probe, ".PHONY: compat-view\ncompat-view:\n\t@true\n")
@@ -1267,7 +1306,7 @@ fn no_local_evidence_framework_remains() {
     let make_matches = census_matches(&fixture, &make_probe, &DELETED_REFERENCES);
 
     let byte_probe = fixture.join("all-deleted-names.bin");
-    let mut probe_bytes = EXPECTED_DELETED_REFERENCES.join("\n").into_bytes();
+    let mut probe_bytes = expected_deleted_references.join("\n").into_bytes();
     probe_bytes.push(0xff);
     fs::write(&byte_probe, probe_bytes).expect("write raw-byte census control");
     let byte_matches = census_matches(&fixture, &byte_probe, &DELETED_REFERENCES);
@@ -1299,11 +1338,11 @@ fn no_local_evidence_framework_remains() {
     );
     assert_eq!(
         make_matches,
-        vec!["compat-view:"],
+        vec!["compat-view"],
         "a preferred GNUmakefile can restore the deleted target without the census naming it"
     );
     assert_eq!(
-        byte_matches, EXPECTED_DELETED_REFERENCES,
+        byte_matches, expected_deleted_references,
         "the raw-byte census did not exercise every deleted reference"
     );
     assert!(

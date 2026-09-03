@@ -10,6 +10,21 @@
     "record.digest is computed and written by quoin at seal time; this file never states it.",
     "Nothing else is filled in, defaulted, or discovered. A field this file does not state is a validation failure at seal time, which is the behaviour that makes the record a statement rather than a guess."
   ],
+  "census_controls": {
+    "denied_paths": ["Cargo.lock", "LICENSE-APACHE", "LICENSE-MIT"],
+    "deleted_reference_needles": [
+      "check-failure-propagation",
+      "check-tool-identities",
+      "ci-for-evidence",
+      "verify-evidence",
+      "evidence-tool",
+      "legacy_evidence_view",
+      "compat-view",
+      "COMPAT_RESULT",
+      "tl-mltl-evidence-input-v1.schema.json",
+      "tl-mltl-evidence-manifest-v1.schema.json"
+    ]
+  },
   "sources": {
     "FR-001": "spec/requirements/FR-001-closed-evaluation.md",
     "FR-002": "spec/requirements/FR-002-horizon-analysis.md",
@@ -98,7 +113,7 @@
         },
         {
           "id": "FR-006-AC-7",
-        "statement": "No repository-local generic runner, evidence envelope, manifest, identity framework, retention store, audit store, anchor verifier, failure-propagation policer, compatibility view, or aggregate verdict remains in the execution path. TC-024 enumerates tracked and untracked-not-ignored repository paths through Git, independently constrains its exact denials, tracked areas and declaration exemptions, scans raw bytes, and retains controls that make preferred makefiles, non-UTF-8 content, unreadable paths and enumeration failure observable.",
+          "statement": "No repository-local generic runner, evidence envelope, manifest, identity framework, retention store, audit store, anchor verifier, failure-propagation policer, compatibility view, or aggregate verdict remains in the execution path. TC-024 enumerates tracked and untracked-not-ignored repository paths through Git, compares its exact denial and deleted-reference sets with this declaration, constrains tracked areas and declaration exemptions, scans raw bytes, rejects renamed legacy-compatibility fixture paths and obligations, and retains controls that make preferred makefiles, non-UTF-8 content, unreadable paths and enumeration failure observable.",
           "source_ids": ["FR-006", "NFR-003"]
         }
       ],
