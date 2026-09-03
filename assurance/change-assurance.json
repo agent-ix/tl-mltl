@@ -1,6 +1,6 @@
 {
   "schema_version": "tl-mltl.change-assurance-declaration/v1",
-  "purpose": "What this repository states about the change under issue #16, in the shape Quoin's FR-063 record requires. Quoin owns the record schema, its digest, and its retention; this file is the author's statement that gets sealed into one.",
+  "purpose": "What this repository states about the change under issue #16, in the shape Quoin's FR-063 record requires. Quoin owns the record schema, its digest, and its retention; this file is the author's statement whose record projection gets sealed into one. The top-level census_controls block is an unsealed authorial cross-check consumed by TC-024, not part of that record projection.",
   "not_an_envelope": "Quoin's packaged change-assurance-record-v1, proof-attestation-v1, and verification-receipt-v1 schemas are the shapes. This file projects into the record body Quoin requires and derives nothing beyond the digests its own derived_fields names. It is not a local evidence envelope, it retains nothing, and it computes no verdict.",
   "derived_fields": [
     "subject.base_revision and impact_snapshot.revision come from the candidate revision the caller names.",

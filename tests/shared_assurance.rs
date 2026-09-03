@@ -182,14 +182,18 @@ fn digest_of(path: &Path) -> String {
 /// binary, and every reader sees the same run rather than a different one.
 static CHAIN: OnceLock<Value> = OnceLock::new();
 static ASSURANCE_INPUTS: Mutex<()> = Mutex::new(());
+type AssuranceInputsGuard = MutexGuard<'static, ()>;
 
-fn assurance_inputs_guard() -> MutexGuard<'static, ()> {
-    ASSURANCE_INPUTS
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
+fn assurance_inputs_guard() -> AssuranceInputsGuard {
+    ASSURANCE_INPUTS.lock().unwrap_or_else(|poisoned| {
+        panic!(
+            "shared assurance inputs may have been left mutated by a panicking test; \
+             re-run `make assurance-inputs`: {poisoned}"
+        )
+    })
 }
 
-fn chain_report() -> &'static Value {
+fn chain_report(_inputs: &AssuranceInputsGuard) -> &'static Value {
     CHAIN.get_or_init(|| {
         // The chain runs under the system interpreter: it only shells out to
         // quoin and never imports engineering-assurance.
@@ -211,6 +215,7 @@ fn chain_report() -> &'static Value {
 // Trace: TC-018, FR-006-AC-1
 #[test]
 fn every_shared_pin_is_classified_by_the_packaged_matrix() {
+    let _inputs = assurance_inputs_guard();
     let python = assurance_python();
     let report = json_gate(&python, &["scripts/check_shared_pins.py", "--json"]);
 
@@ -293,8 +298,8 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
 // Trace: TC-019, FR-006-AC-2, NFR-003-AC-1, SUITE-004, SUITE-005, SUITE-006
 #[test]
 fn the_chain_reaches_quoin_without_quoin_or_quire_executing_a_producer() {
-    let _inputs = assurance_inputs_guard();
-    let report = chain_report();
+    let inputs = assurance_inputs_guard();
+    let report = chain_report(&inputs);
     assert_eq!(report["matched"], true, "{report:#}");
 
     for group in ["scenarios", "controls", "adapter_probes"] {
@@ -372,12 +377,16 @@ fn the_chain_reaches_quoin_without_quoin_or_quire_executing_a_producer() {
 /// lets `quire` be shimmed at all, which matters — `quire coverage` is a
 /// producer and would otherwise be invisible to this test. That gap was real
 /// until an injected `quire coverage` in the driver went undetected here.
-fn producer_shims(directory: &Path, names: &[&str]) -> PathBuf {
+fn producer_shims(_inputs: &AssuranceInputsGuard, directory: &Path, names: &[&str]) -> PathBuf {
     // Removed and recreated, not merely topped up. `target/` survives between
     // runs, so a shim written by an earlier version of this test would still be
     // on the shimmed PATH and would silently change what is being measured —
     // which is exactly what happened while this test was being written.
-    let _ = fs::remove_dir_all(directory);
+    match fs::remove_dir_all(directory) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("failed to clear stale producer shims: {error}"),
+    }
     fs::create_dir_all(directory).unwrap();
     let log = directory.join("invocations.log");
     for name in names {
@@ -408,7 +417,7 @@ fn producer_shims(directory: &Path, names: &[&str]) -> PathBuf {
     log
 }
 
-fn run_chain_with_path(shims: &Path) -> std::process::Output {
+fn run_chain_with_path(_inputs: &AssuranceInputsGuard, shims: &Path) -> std::process::Output {
     let inherited = std::env::var("PATH").unwrap_or_default();
     let revision = head_revision();
     Command::new("python3")
@@ -423,10 +432,27 @@ fn run_chain_with_path(shims: &Path) -> std::process::Output {
         .expect("failed to run the assurance chain")
 }
 
+fn assert_probe_store_isolated(_inputs: &AssuranceInputsGuard, scratch_target: &Path, probe: &str) {
+    let scratch_store = fs::canonicalize(scratch_target.join("assurance-store"))
+        .unwrap_or_else(|error| panic!("{probe} did not create its Quoin store: {error}"));
+    let unresolved_real_store = fs::canonicalize(root().join("target"))
+        .expect("canonical repository target directory")
+        .join("assurance-store");
+    let real_store = match fs::canonicalize(&unresolved_real_store) {
+        Ok(path) => path,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => unresolved_real_store,
+        Err(error) => panic!("could not resolve the repository Quoin store: {error}"),
+    };
+    assert!(
+        !scratch_store.starts_with(&real_store),
+        "{probe} placed its Quoin store in the repository store: {scratch_store:?}"
+    );
+}
+
 // Trace: TC-019, FR-006-AC-2, NFR-003-AC-2
 #[test]
 fn the_chain_never_executes_a_producer_and_the_probe_can_prove_it() {
-    let _inputs = assurance_inputs_guard();
+    let inputs = assurance_inputs_guard();
     // Two runs, because one proves nothing.
     //
     // Run A replaces every producer — cargo, rustup, rustc, quire, and the
@@ -455,8 +481,12 @@ fn the_chain_never_executes_a_producer_and_the_probe_can_prove_it() {
     // empty log in run A would be equally consistent with PATH never being
     // consulted at all.
     let producers = root().join("target/producer-shims");
-    let producer_log = producer_shims(&producers, &["cargo", "rustup", "rustc", "r2u2", "c2po"]);
-    let output = run_chain_with_path(&producers);
+    let producer_log = producer_shims(
+        &inputs,
+        &producers,
+        &["cargo", "rustup", "rustc", "r2u2", "c2po"],
+    );
+    let output = run_chain_with_path(&inputs, &producers);
     let logged = fs::read_to_string(&producer_log).unwrap_or_default();
     assert!(
         output.status.success(),
@@ -470,8 +500,8 @@ fn the_chain_never_executes_a_producer_and_the_probe_can_prove_it() {
     );
 
     let tools = root().join("target/tool-shims");
-    let tool_log = producer_shims(&tools, &["quoin"]);
-    let control = run_chain_with_path(&tools);
+    let tool_log = producer_shims(&inputs, &tools, &["quoin"]);
+    let control = run_chain_with_path(&inputs, &tools);
     let tool_logged = fs::read_to_string(&tool_log).unwrap_or_default();
     assert!(
         !tool_logged.trim().is_empty(),
@@ -594,7 +624,7 @@ fn an_unobservable_tool_version_is_refused_rather_than_defaulted() {
 // Trace: TC-019, FR-006-AC-2, NFR-003-AC-2
 #[test]
 fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() {
-    let _inputs = assurance_inputs_guard();
+    let inputs = assurance_inputs_guard();
     // The PATH-shim runs cannot establish this and an adversarial review showed
     // exactly why: `quoin evidence record` runs `quire coverage` itself, so
     // `quire` cannot be shimmed; and a driver that ran `quire coverage` and
@@ -604,7 +634,7 @@ fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() 
     // So the boundary is enforced inside the driver by an audit hook, and here
     // it is exercised: a copy of the driver with the review's exact injection
     // must exit 2 and name the argv it refused.
-    let report = chain_report();
+    let report = chain_report(&inputs);
     let children = report["child_processes"]
         .as_array()
         .expect("child_processes");
@@ -693,6 +723,7 @@ fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() 
         .current_dir(&scratch)
         .output()
         .expect("failed to run the injected chain");
+    assert_probe_store_isolated(&inputs, &scratch_target, "the execution-boundary probe");
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert_eq!(
         output.status.code(),
@@ -728,6 +759,9 @@ fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() 
         String::from_utf8_lossy(&bypassed.stdout),
         String::from_utf8_lossy(&bypassed.stderr)
     );
+    // `remove_dir_all` does not follow directory symlinks, but explicitly
+    // unlinking every shared input keeps that safety boundary visible and stops
+    // a future walk-and-delete replacement reaching repository inputs.
     fs::remove_file(scratch_target.join("assurance")).expect("unlink shared assurance inputs");
     for entry in fs::read_dir(&scratch).expect("read execution-boundary scratch") {
         let path = entry.expect("scratch entry").path();
@@ -745,8 +779,8 @@ fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() 
 // Trace: TC-020, FR-006-AC-3, SUITE-003
 #[test]
 fn the_sealed_records_impact_snapshot_is_the_quire_export() {
-    let _inputs = assurance_inputs_guard();
-    let report = chain_report();
+    let inputs = assurance_inputs_guard();
+    let report = chain_report(&inputs);
     let export = root().join(report["quire_export"].as_str().expect("quire_export"));
     let bytes =
         fs::read(&export).unwrap_or_else(|error| panic!("{} is absent: {error}", export.display()));
@@ -817,7 +851,7 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
 // Trace: TC-022, FR-006-AC-5, NFR-003-AC-3
 #[test]
 fn all_twelve_verification_outcomes_are_demonstrated_and_paired_with_controls() {
-    let _inputs = assurance_inputs_guard();
+    let inputs = assurance_inputs_guard();
     // The twelve states this migration must keep distinguishable, and the gate
     // that owns each. A state nobody demonstrates is a state nobody would notice
     // the loss of.
@@ -852,7 +886,7 @@ fn all_twelve_verification_outcomes_are_demonstrated_and_paired_with_controls() 
         ("tampered", "refuse-an-edited-receipt"),
     ];
 
-    let report = chain_report();
+    let report = chain_report(&inputs);
 
     // Only MEASURED outcomes count. The chain's `states_demonstrated` is built
     // from cases that ran and matched — never from a free-text label typed next
@@ -951,8 +985,8 @@ fn all_twelve_verification_outcomes_are_demonstrated_and_paired_with_controls() 
 // Trace: TC-023, FR-006-AC-6, StR-002-VC-1, StR-002-VC-2, SUITE-006
 #[test]
 fn the_r2u2_differential_is_a_comparison_and_never_a_boolean() {
-    let _inputs = assurance_inputs_guard();
-    let report = chain_report();
+    let inputs = assurance_inputs_guard();
+    let report = chain_report(&inputs);
 
     // The counts come from the two corpus manifests, so a producer that stopped
     // reporting a state cannot also move the number it is checked against.
@@ -1218,10 +1252,10 @@ fn no_local_evidence_framework_remains() {
         .as_array()
         .expect("record.definition.proof_obligations is an array");
     assert!(
-        !proof_obligations
-            .iter()
-            .any(|proof| { proof["proof_id"].as_str() == Some("PROOF-legacy-compatibility") }),
-        "the deleted legacy-compatibility proof obligation remains in the declaration"
+        !proof_obligations.iter().any(|proof| proof["proof_id"]
+            .as_str()
+            .is_some_and(|proof_id| proof_id.contains("legacy-compat"))),
+        "a renamed legacy-compatibility proof obligation remains in the declaration"
     );
     let observed_denied: BTreeSet<String> = tracked_all
         .iter()
@@ -1274,16 +1308,62 @@ fn no_local_evidence_framework_remains() {
     // preferred `GNUmakefile` can be exercised without changing which makefile a
     // concurrent command in this checkout selects.
     let fixture = root.join("target/removal-census-fixture");
-    let _ = fs::remove_dir_all(&fixture);
+    match fs::remove_dir_all(&fixture) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("failed to clear the previous census fixture: {error}"),
+    }
+    let template = root.join("target/removal-census-template");
+    match fs::remove_dir_all(&template) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("failed to clear the previous census template: {error}"),
+    }
+    fs::create_dir_all(template.join("info")).expect("create hostile Git template control");
+    fs::write(template.join("info/exclude"), "GNUmakefile\n")
+        .expect("write hostile Git template exclude control");
     fs::create_dir_all(fixture.join(".github/workflows")).expect("create census fixture");
     let initialized = Command::new("git")
         .args(["init", "--quiet", "--template="])
+        .env("GIT_TEMPLATE_DIR", &template)
         .current_dir(&fixture)
         .status()
         .expect("initialize census fixture repository");
     assert!(
         initialized.success(),
         "could not initialize census fixture repository"
+    );
+    assert!(
+        !fixture.join(".git/info/exclude").exists(),
+        "the empty-template override inherited a hostile Git template exclude"
+    );
+    let make_probe = fixture.join("GNUmakefile");
+    fs::write(&make_probe, ".PHONY: compat-view\n").expect("write GNUmakefile census control");
+    fs::write(
+        fixture.join(".github/workflows/probe.yaml"),
+        "name: census-control\n",
+    )
+    .expect("write yaml census control");
+
+    // Exercise the global-excludes boundary before overriding it. The first
+    // enumeration must miss GNUmakefile for the staged reason; the second must
+    // see it after this fixture's local configuration selects /dev/null.
+    let fixture_excludes = fixture.join("fixture-global-excludes");
+    fs::write(&fixture_excludes, "GNUmakefile\n").expect("write fixture excludes control");
+    let inherited_excludes = Command::new("git")
+        .args(["config", "core.excludesFile"])
+        .arg(&fixture_excludes)
+        .current_dir(&fixture)
+        .status()
+        .expect("stage census fixture global excludes");
+    assert!(
+        inherited_excludes.success(),
+        "could not stage the census fixture global excludes"
+    );
+    let (_, _, excluded_scanned) = census_paths(&fixture, |_| false);
+    assert!(
+        !excluded_scanned.contains("GNUmakefile"),
+        "the staged global excludes did not hide GNUmakefile: {excluded_scanned:?}"
     );
     let isolated_excludes = Command::new("git")
         .args(["config", "core.excludesFile", "/dev/null"])
@@ -1294,14 +1374,6 @@ fn no_local_evidence_framework_remains() {
         isolated_excludes.success(),
         "could not isolate the census fixture from global Git excludes"
     );
-    let make_probe = fixture.join("GNUmakefile");
-    fs::write(&make_probe, ".PHONY: compat-view\ncompat-view:\n\t@true\n")
-        .expect("write GNUmakefile census control");
-    fs::write(
-        fixture.join(".github/workflows/probe.yaml"),
-        "name: census-control\n",
-    )
-    .expect("write yaml census control");
     let (_, _, fixture_scanned) = census_paths(&fixture, |_| false);
     let make_matches = census_matches(&fixture, &make_probe, &DELETED_REFERENCES);
 
@@ -1329,6 +1401,7 @@ fn no_local_evidence_framework_remains() {
     let unenumerable = panic_message(unenumerable);
     fs::remove_dir_all(&non_repository).expect("remove non-repository control");
     fs::remove_dir_all(&fixture).expect("remove census fixture repository");
+    fs::remove_dir_all(&template).expect("remove hostile Git template control");
 
     assert!(
         fixture_scanned.contains("GNUmakefile")
@@ -1618,15 +1691,7 @@ fn a_control_naming_a_scenario_that_does_not_exist_is_refused() {
         stderr.contains("name a scenario that does not exist"),
         "the refusal did not name the cause: {stderr}"
     );
-    let scratch_store = fs::canonicalize(scratch_target.join("assurance-store"))
-        .expect("the mutated driver created its isolated Quoin store");
-    let real_store = fs::canonicalize(root().join("target"))
-        .expect("canonical repository target directory")
-        .join("assurance-store");
-    assert!(
-        !scratch_store.starts_with(&real_store),
-        "the dangling-scenario probe placed its Quoin store in the real store: {scratch_store:?}"
-    );
+    assert_probe_store_isolated(&_inputs, &scratch_target, "the dangling-scenario probe");
 
     fs::write(scratch.join("scripts/assurance_chain.py"), &driver).unwrap();
     let bypassed = Command::new("python3")
@@ -1666,6 +1731,7 @@ fn a_control_naming_a_scenario_that_does_not_exist_is_refused() {
 // Trace: TC-018, FR-006-AC-1, SUITE-009
 #[test]
 fn the_mirror_scan_refuses_a_registry_reference_in_a_real_file() {
+    let _inputs = assurance_inputs_guard();
     // The structural branch of `mirror_references` (pins.json) already has a
     // control. The file-scan branch did not: it was never observed to fire, so
     // it was indistinguishable from a loop over files that never match.
