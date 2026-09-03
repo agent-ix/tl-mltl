@@ -65,6 +65,107 @@ fn head_revision() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_owned()
 }
 
+fn deleted_names_in<'a>(path: &Path, names: &'a [&'a str]) -> Vec<&'a str> {
+    // A file that cannot be read has not been scanned. Read bytes so a source
+    // with a valid non-UTF-8 encoding cannot disappear from the census merely
+    // because Rust strings require UTF-8.
+    let source = fs::read(path)
+        .unwrap_or_else(|error| panic!("the census could not read {}: {error}", path.display()));
+    names
+        .iter()
+        .copied()
+        .filter(|name| {
+            let needle = name.as_bytes();
+            source.windows(needle.len()).any(|window| window == needle)
+        })
+        .collect()
+}
+
+fn git_files(root: &Path, arguments: &[&str]) -> Vec<String> {
+    let output = Command::new("git")
+        .args(arguments)
+        .current_dir(root)
+        .output()
+        .expect("git ls-files failed");
+    assert!(
+        output.status.success(),
+        "git ls-files {arguments:?} exited non-zero; the census cannot enumerate \
+         the repository and reporting it clean would be vacuous: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout)
+        .split('\0')
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
+fn census_paths<F>(root: &Path, denied: F) -> (Vec<String>, Vec<String>, BTreeSet<String>)
+where
+    F: Fn(&str) -> bool,
+{
+    let tracked_all = git_files(root, &["ls-files", "-z"]);
+    let tracked: Vec<String> = tracked_all
+        .iter()
+        .filter(|entry| !denied(entry))
+        .cloned()
+        .collect();
+    let mut scanned: BTreeSet<String> = tracked.iter().cloned().collect();
+
+    // A path reported by `--others` cannot also be one of the tracked paths in
+    // the exact deny set. Applying `denied` here created a second, uncontrolled
+    // exemption site: one line could name an untracked reintroduction before the
+    // file existed and make it invisible forever.
+    for entry in git_files(root, &["ls-files", "-z", "--others", "--exclude-standard"]) {
+        scanned.insert(entry);
+    }
+    (tracked_all, tracked, scanned)
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CensusExemption {
+    ExactDeclaration,
+    HistoricalProse,
+}
+
+fn census_exemption(relative: &str) -> Option<CensusExemption> {
+    if matches!(
+        relative,
+        "tests/shared_assurance.rs" | "assurance/change-assurance.json"
+    ) {
+        return Some(CensusExemption::ExactDeclaration);
+    }
+    if relative.ends_with(".md")
+        && (relative.starts_with("spec/reviews/") || relative.starts_with("spec/plans/"))
+    {
+        return Some(CensusExemption::HistoricalProse);
+    }
+    None
+}
+
+fn census_matches<'a>(root: &Path, path: &Path, names: &'a [&'a str]) -> Vec<&'a str> {
+    let relative = path
+        .strip_prefix(root)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .replace('\\', "/");
+    if census_exemption(&relative).is_some() {
+        Vec::new()
+    } else {
+        deleted_names_in(path, names)
+    }
+}
+
+fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(message) = payload.downcast_ref::<String>() {
+        message.clone()
+    } else if let Some(message) = payload.downcast_ref::<&str>() {
+        (*message).to_owned()
+    } else {
+        "non-string panic".to_owned()
+    }
+}
+
 fn digest_of(path: &Path) -> String {
     let output = Command::new("sha256sum")
         .arg(path)
@@ -538,11 +639,19 @@ fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() 
             .and_then(|v| v.to_str())
             .unwrap_or("")
             .to_owned();
-        if name == "scripts" || name == ".git" {
+        if name == "scripts" || name == ".git" || name == "target" {
             continue;
         }
-        let _ = std::os::unix::fs::symlink(&path, scratch.join(&name));
+        std::os::unix::fs::symlink(&path, scratch.join(&name))
+            .unwrap_or_else(|error| panic!("failed to link {name} into the probe: {error}"));
     }
+    let scratch_target = scratch.join("target");
+    fs::create_dir_all(&scratch_target).expect("create isolated probe target");
+    std::os::unix::fs::symlink(
+        root().join("target/assurance"),
+        scratch_target.join("assurance"),
+    )
+    .expect("share assurance inputs with the isolated probe");
 
     let revision = head_revision();
     let output = Command::new("python3")
@@ -569,6 +678,18 @@ fn the_driver_refuses_to_start_any_child_that_is_not_quoin_or_a_version_probe() 
         stderr.contains("quire"),
         "the refusal did not name the argv it refused: {stderr}"
     );
+    fs::remove_file(scratch_target.join("assurance")).expect("unlink shared assurance inputs");
+    for entry in fs::read_dir(&scratch).expect("read execution-boundary scratch") {
+        let path = entry.expect("scratch entry").path();
+        if fs::symlink_metadata(&path)
+            .expect("scratch entry metadata")
+            .file_type()
+            .is_symlink()
+        {
+            fs::remove_file(path).expect("unlink execution-boundary repository input");
+        }
+    }
+    fs::remove_dir_all(&scratch).expect("remove execution-boundary scratch");
 }
 
 // Trace: TC-020, FR-006-AC-3, SUITE-003
@@ -943,43 +1064,38 @@ fn every_requirement_tagged_test_is_a_test_cargo_compiles_and_runs() {
     );
 }
 
-/// Collect every readable source file under `directory`, recursively.
-fn collect_sources(directory: &Path, into: &mut Vec<PathBuf>) {
-    let Ok(entries) = fs::read_dir(directory) else {
-        return;
-    };
-    for entry in entries {
-        let path = entry.expect("directory entry").path();
-        let name = path
-            .file_name()
-            .and_then(|value| value.to_str())
-            .unwrap_or("");
-        // Three exclusions: Git's own store, build output, and the assurance
-        // interpreter. Everything a reader could hide in is walked, including
-        // `build.rs` and the workflow, because an adversarial review put a
-        // reference in `build.rs` — which runs on every cargo invocation — and
-        // an earlier census that walked named directories did not see it.
-        if matches!(name, ".git" | "target" | ".venv-assurance") {
-            continue;
-        }
-        if path.is_dir() {
-            collect_sources(&path, into);
-            continue;
-        }
-        let extension = path.extension().and_then(|value| value.to_str());
-        if matches!(
-            extension,
-            Some("py" | "sh" | "rs" | "txt" | "toml" | "yml" | "md" | "json")
-        ) {
-            into.push(path);
-        }
-    }
-}
-
 // Trace: TC-024, FR-006-AC-7
 #[test]
 fn no_local_evidence_framework_remains() {
     let root = root();
+    const DELETED_REFERENCES: [&str; 10] = [
+        "check-failure-propagation",
+        "check-tool-identities",
+        "ci-for-evidence",
+        "verify-evidence",
+        "evidence-tool",
+        "legacy_evidence_view",
+        "compat-view:",
+        "COMPAT_RESULT",
+        "tl-mltl-evidence-input-v1.schema.json",
+        "tl-mltl-evidence-manifest-v1.schema.json",
+    ];
+    const EXPECTED_DELETED_REFERENCES: [&str; 10] = [
+        "check-failure-propagation",
+        "check-tool-identities",
+        "ci-for-evidence",
+        "verify-evidence",
+        "evidence-tool",
+        "legacy_evidence_view",
+        "compat-view:",
+        "COMPAT_RESULT",
+        "tl-mltl-evidence-input-v1.schema.json",
+        "tl-mltl-evidence-manifest-v1.schema.json",
+    ];
+    assert_eq!(
+        DELETED_REFERENCES, EXPECTED_DELETED_REFERENCES,
+        "the deleted-reference needle set changed without changing its independent control"
+    );
 
     // The generic machinery is gone, by name.
     for removed in [
@@ -1014,69 +1130,251 @@ fn no_local_evidence_framework_remains() {
         );
     }
 
-    // And nothing may quietly reintroduce a reader for them. The census walks
-    // the whole tree — a reference one directory down, in `build.rs`, or in a CI
-    // step would otherwise not be caught — and a census this small would be
-    // vacuous, so its size is asserted too.
-    let mut sources = Vec::new();
-    collect_sources(&root, &mut sources);
-    let mut inspected = 0;
+    // Enumerate the repository by Git identity, not by an extension allow-list.
+    // The scan covers tracked and untracked-not-ignored paths; population and
+    // area controls are tracked-only so local scratch files cannot pad them.
+    let denied = |path: &str| matches!(path, "Cargo.lock" | "LICENSE-APACHE" | "LICENSE-MIT");
+    for included in [
+        "GNUmakefile",
+        "makefile",
+        "compat.mk",
+        ".github/workflows/probe.yaml",
+        "scripts/LICENSE_scanner.py",
+    ] {
+        assert!(
+            !denied(included),
+            "the exact deny predicate widened to hide {included}"
+        );
+    }
+    let (tracked_all, tracked, scanned) = census_paths(&root, denied);
+    let observed_denied: BTreeSet<String> = tracked_all
+        .iter()
+        .filter(|entry| denied(entry))
+        .cloned()
+        .collect();
+    let expected_denied: BTreeSet<String> = ["Cargo.lock", "LICENSE-APACHE", "LICENSE-MIT"]
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
+    assert_eq!(
+        observed_denied, expected_denied,
+        "the census deny-list no longer excludes exactly the three named lock or licence files"
+    );
+
+    let area_of = |path: &str| match path.split_once('/') {
+        Some((head, _)) => head.to_owned(),
+        None => "<root>".to_owned(),
+    };
+    let observed_areas: BTreeSet<String> = tracked_all.iter().map(|entry| area_of(entry)).collect();
+    let expected_areas: BTreeSet<String> = [
+        "<root>",
+        ".agent",
+        ".github",
+        "assurance",
+        "corpus",
+        "examples",
+        "scripts",
+        "spec",
+        "src",
+        "tests",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect();
+    assert_eq!(
+        observed_areas, expected_areas,
+        "the tracked area set changed; a new or missing area must be classified deliberately"
+    );
+
+    // Retained controls use the same enumeration, exemption and byte-scanning
+    // functions as the real census. The fixture is its own Git repository, so a
+    // preferred `GNUmakefile` can be exercised without changing which makefile a
+    // concurrent command in this checkout selects.
+    let fixture = root.join("target/removal-census-fixture");
+    let _ = fs::remove_dir_all(&fixture);
+    fs::create_dir_all(fixture.join(".github/workflows")).expect("create census fixture");
+    let initialized = Command::new("git")
+        .args(["init", "--quiet"])
+        .current_dir(&fixture)
+        .status()
+        .expect("initialize census fixture repository");
+    assert!(
+        initialized.success(),
+        "could not initialize census fixture repository"
+    );
+    let make_probe = fixture.join("GNUmakefile");
+    fs::write(&make_probe, ".PHONY: compat-view\ncompat-view:\n\t@true\n")
+        .expect("write GNUmakefile census control");
+    fs::write(
+        fixture.join(".github/workflows/probe.yaml"),
+        "name: census-control\n",
+    )
+    .expect("write yaml census control");
+    let (_, _, fixture_scanned) = census_paths(&fixture, |_| false);
+    let make_matches = census_matches(&fixture, &make_probe, &DELETED_REFERENCES);
+
+    let byte_probe = fixture.join("all-deleted-names.bin");
+    let mut probe_bytes = EXPECTED_DELETED_REFERENCES.join("\n").into_bytes();
+    probe_bytes.push(0xff);
+    fs::write(&byte_probe, probe_bytes).expect("write raw-byte census control");
+    let byte_matches = census_matches(&fixture, &byte_probe, &DELETED_REFERENCES);
+
+    let missing = fixture.join("cannot-be-read.py");
+    let unreadable = std::panic::catch_unwind(|| {
+        let _ = census_matches(&fixture, &missing, &DELETED_REFERENCES);
+    })
+    .expect_err("an unreadable census path did not fail closed");
+    let unreadable = panic_message(unreadable);
+
+    let non_repository =
+        std::env::temp_dir().join(format!("tl-mltl-census-nonrepo-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&non_repository);
+    fs::create_dir_all(&non_repository).expect("create non-repository control");
+    let unenumerable = std::panic::catch_unwind(|| {
+        let _ = git_files(&non_repository, &["ls-files", "-z"]);
+    })
+    .expect_err("an unenumerable repository did not fail closed");
+    let unenumerable = panic_message(unenumerable);
+    fs::remove_dir_all(&non_repository).expect("remove non-repository control");
+    fs::remove_dir_all(&fixture).expect("remove census fixture repository");
+
+    assert!(
+        fixture_scanned.contains("GNUmakefile")
+            && fixture_scanned.contains(".github/workflows/probe.yaml"),
+        "the real Git enumeration omitted an extensionless makefile or .yaml workflow: \
+         {fixture_scanned:?}"
+    );
+    assert_eq!(
+        make_matches,
+        vec!["compat-view:"],
+        "a preferred GNUmakefile can restore the deleted target without the census naming it"
+    );
+    assert_eq!(
+        byte_matches, EXPECTED_DELETED_REFERENCES,
+        "the raw-byte census did not exercise every deleted reference"
+    );
+    assert!(
+        unreadable.contains("the census could not read")
+            && unreadable.contains("cannot-be-read.py"),
+        "the unreadable-file control failed for the wrong reason: {unreadable}"
+    );
+    assert!(
+        unenumerable.contains("the census cannot enumerate the repository"),
+        "the enumeration control failed for the wrong reason: {unenumerable}"
+    );
+
+    // The two exemption classes are narrow and tested through the same helper
+    // the real scan calls. A `.py` under tasks or a `.md` under `src/reviews`
+    // must never inherit the historical-prose exemption.
+    assert_eq!(
+        census_exemption("tests/shared_assurance.rs"),
+        Some(CensusExemption::ExactDeclaration)
+    );
+    assert_eq!(
+        census_exemption("assurance/change-assurance.json"),
+        Some(CensusExemption::ExactDeclaration)
+    );
+    assert_eq!(
+        census_exemption("spec/reviews/SR-011.md"),
+        Some(CensusExemption::HistoricalProse)
+    );
+    assert_eq!(
+        census_exemption("spec/plans/PLAN-002/tasks/Task-004.md"),
+        Some(CensusExemption::HistoricalProse)
+    );
+    for not_exempt in [
+        "spec/plans/PLAN-002/tasks/legacy_evidence_view.py",
+        "src/reviews/reader.md",
+        "spec/reviews/reader.rs",
+        "Makefile",
+    ] {
+        assert_eq!(
+            census_exemption(not_exempt),
+            None,
+            "the census exemption widened to hide {not_exempt}"
+        );
+    }
+
+    let observed_exact_exemptions: BTreeSet<String> = scanned
+        .iter()
+        .filter(|relative| census_exemption(relative) == Some(CensusExemption::ExactDeclaration))
+        .cloned()
+        .collect();
+    let expected_exact_exemptions: BTreeSet<String> = [
+        "assurance/change-assurance.json",
+        "tests/shared_assurance.rs",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect();
+    assert_eq!(
+        observed_exact_exemptions, expected_exact_exemptions,
+        "the exact census exemption set widened or lost one of its declarations"
+    );
+
+    let sources: Vec<PathBuf> = scanned.iter().map(|entry| root.join(entry)).collect();
     for path in &sources {
-        inspected += 1;
-        let Ok(source) = fs::read_to_string(path) else {
-            continue;
-        };
-        // This test names the deleted machinery on purpose; so does the
-        // change-assurance declaration, which records what the release covered.
-        let file_name = path
-            .file_name()
-            .and_then(|value| value.to_str())
-            .unwrap_or("");
-        let parent = path
-            .parent()
-            .and_then(|value| value.file_name())
-            .and_then(|value| value.to_str())
-            .unwrap_or("");
-        if file_name == "shared_assurance.rs"
-            || (file_name == "change-assurance.json" && parent == "assurance")
-            || parent == "reviews"
-            || parent == "tasks"
-            || parent.starts_with("PLAN-")
-        {
+        let deleted_names = census_matches(&root, path, &DELETED_REFERENCES);
+        assert!(
+            deleted_names.is_empty(),
+            "{} references {}, which was deleted with the retained evidence",
+            path.display(),
+            deleted_names.join(", ")
+        );
+    }
+
+    // Final population after this review artifact is tracked: 121 scanned files
+    // from 124 tracked paths minus the three exact denials. `tests` contains 15;
+    // losing that whole area leaves 106, so the derived floor is 107. The area
+    // equality above is the finer control for one-file areas.
+    let inspected = tracked.len();
+    assert!(
+        inspected >= 107,
+        "the source census inspected {inspected} tracked files, below the derived \
+         floor of 107 (population 121 minus all 15 tests is 106)"
+    );
+
+    // The Makefile is orchestration, not a trust root. Pin the disclosure text,
+    // reject the live special targets it warns about, and require one literal
+    // `ci` declaration. This is deliberately not a replacement for issue #14's
+    // full execution-control qualification work.
+    let makefile = fs::read_to_string(root.join("Makefile")).unwrap();
+    assert!(
+        makefile.contains("Adding a single `.IGNORE:` line to this file makes all 10 report")
+            && makefile.contains("success and `make ci` exits 0. Nothing here notices."),
+        "the Makefile no longer states the measured execution-control limitation"
+    );
+    for line in makefile.lines() {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with('#') || trimmed.is_empty() {
             continue;
         }
-        for name in [
-            "legacy_evidence_view",
-            "tl-mltl-evidence-input-v1.schema.json",
-            "tl-mltl-evidence-manifest-v1.schema.json",
+        for forbidden in [
+            ".IGNORE:",
+            ".SILENT:",
+            ".ONESHELL:",
+            "SHELL",
+            ".SHELLFLAGS",
+            "MAKEFLAGS",
         ] {
             assert!(
-                !source.contains(name),
-                "{} references {name}, which was deleted with the retained evidence",
-                path.display()
+                !trimmed.starts_with(forbidden),
+                "the Makefile activates `{forbidden}` even though its disclosure says the \
+                 execution-control class is unpoliced: {trimmed}"
             );
         }
     }
-    assert!(
-        inspected > 30,
-        "the source census is unexpectedly small ({inspected}) to make this claim"
+    let ci_declarations = makefile
+        .lines()
+        .filter(|line| {
+            let trimmed = line.trim_start();
+            !trimmed.starts_with('#') && (trimmed.starts_with("ci:") || trimmed.starts_with("ci::"))
+        })
+        .count();
+    assert_eq!(
+        ci_declarations, 1,
+        "the Makefile must carry exactly one literal ci declaration"
     );
-
-    // The Makefile is orchestration, not a trust root, and carries no gate that
-    // polices its own execution.
-    let makefile = fs::read_to_string(root.join("Makefile")).unwrap();
-    for gone in [
-        "check-failure-propagation",
-        "check-tool-identities",
-        "ci-for-evidence",
-        "verify-evidence",
-        "evidence-tool",
-    ] {
-        assert!(
-            !makefile.contains(gone),
-            "the Makefile still carries the {gone} self-attestation target"
-        );
-    }
 
     // And `ci` still names the work it claims to run. Dropping a prerequisite
     // from a composite removes a whole enforcement layer while every remaining
@@ -1163,9 +1461,12 @@ fn a_control_naming_a_scenario_that_does_not_exist_is_refused() {
     fs::write(scratch.join("scripts/assurance_chain.py"), &mutated).unwrap();
 
     // Everything else the driver reads comes from the real tree. Every root
-    // entry except `scripts` is symlinked, rather than an enumerated list, so
+    // entry except `scripts` and `target` is symlinked, rather than an enumerated list, so
     // that a driver which starts reading a new directory does not turn this
-    // probe into one that fails for an unrelated reason.
+    // probe into one that fails for an unrelated reason. The scratch owns
+    // `target/assurance-store` and shares only the already-produced assurance
+    // inputs; symlinking all of `target` coupled this probe to the real store.
+    let scratch_target = scratch.join("target");
     for entry in fs::read_dir(root()).expect("repository root") {
         let path = entry.expect("directory entry").path();
         let name = path
@@ -1173,11 +1474,25 @@ fn a_control_naming_a_scenario_that_does_not_exist_is_refused() {
             .and_then(|v| v.to_str())
             .unwrap_or("")
             .to_owned();
-        if name == "scripts" || name == ".git" {
+        if name == "scripts" || name == ".git" || name == "target" {
             continue;
         }
-        let _ = std::os::unix::fs::symlink(&path, scratch.join(&name));
+        std::os::unix::fs::symlink(&path, scratch.join(&name))
+            .unwrap_or_else(|error| panic!("failed to link {name} into the probe: {error}"));
     }
+    fs::create_dir_all(&scratch_target).expect("create isolated probe target");
+    std::os::unix::fs::symlink(
+        root().join("target/assurance"),
+        scratch_target.join("assurance"),
+    )
+    .expect("share assurance inputs with the isolated probe");
+    assert!(
+        !fs::symlink_metadata(&scratch_target)
+            .expect("scratch target metadata")
+            .file_type()
+            .is_symlink(),
+        "the dangling-scenario probe must own target/ so its Quoin store is isolated"
+    );
 
     let revision = head_revision();
     let output = Command::new("python3")
@@ -1199,6 +1514,45 @@ fn a_control_naming_a_scenario_that_does_not_exist_is_refused() {
         stderr.contains("name a scenario that does not exist"),
         "the refusal did not name the cause: {stderr}"
     );
+    let scratch_store = fs::canonicalize(scratch_target.join("assurance-store"))
+        .expect("the mutated driver created its isolated Quoin store");
+    let real_store = fs::canonicalize(root().join("target/assurance-store"))
+        .expect("canonical real Quoin store");
+    assert_ne!(
+        scratch_store, real_store,
+        "the dangling-scenario probe resolved its Quoin store into the real tree"
+    );
+
+    fs::write(scratch.join("scripts/assurance_chain.py"), &driver).unwrap();
+    let bypassed = Command::new("python3")
+        .args([
+            "scripts/assurance_chain.py",
+            "--candidate-revision",
+            &revision,
+        ])
+        .current_dir(&scratch)
+        .output()
+        .expect("failed to run the unmutated chain in the isolated scratch");
+    assert_eq!(
+        bypassed.status.code(),
+        Some(0),
+        "the isolated scratch is not a valid environment for the unmutated chain:\n{}\n{}",
+        String::from_utf8_lossy(&bypassed.stdout),
+        String::from_utf8_lossy(&bypassed.stderr)
+    );
+
+    fs::remove_file(scratch_target.join("assurance")).expect("unlink shared assurance inputs");
+    for entry in fs::read_dir(&scratch).expect("read dangling-probe scratch") {
+        let path = entry.expect("scratch entry").path();
+        if fs::symlink_metadata(&path)
+            .expect("scratch entry metadata")
+            .file_type()
+            .is_symlink()
+        {
+            fs::remove_file(path).expect("unlink dangling-probe repository input");
+        }
+    }
+    fs::remove_dir_all(&scratch).expect("remove dangling-probe scratch");
 }
 
 // Trace: TC-018, FR-006-AC-1, SUITE-009

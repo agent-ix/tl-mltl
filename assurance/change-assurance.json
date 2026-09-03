@@ -98,7 +98,7 @@
         },
         {
           "id": "FR-006-AC-7",
-          "statement": "No repository-local generic runner, evidence envelope, manifest, identity framework, retention store, audit store, anchor verifier, failure-propagation policer, or aggregate verdict remains in the execution path.",
+        "statement": "No repository-local generic runner, evidence envelope, manifest, identity framework, retention store, audit store, anchor verifier, failure-propagation policer, compatibility view, or aggregate verdict remains in the execution path. TC-024 enumerates tracked and untracked-not-ignored repository paths through Git, independently constrains its exact denials, tracked areas and declaration exemptions, scans raw bytes, and retains controls that make preferred makefiles, non-UTF-8 content, unreadable paths and enumeration failure observable.",
           "source_ids": ["FR-006", "NFR-003"]
         }
       ],
