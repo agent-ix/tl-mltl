@@ -9,3 +9,6 @@ description: "Contents of the tl-mltl post-merge review-residual plan bundle."
 
 - [Plan overview](./plan.md)
 - [Update log](./log.md)
+
+This bounded residual-closure bundle records its five small work items directly
+in the plan and log; it intentionally has no separate `tasks/` artifacts.

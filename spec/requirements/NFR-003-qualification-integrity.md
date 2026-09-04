@@ -89,9 +89,12 @@ log required to be empty, and a control that stubs the tool the chain does use
 and requires the chain to fail — because an empty log and an unconsulted `PATH`
 are otherwise the same observation. Mutation probes remove one load-bearing
 check at a time and require the corresponding gate to go red. Tests that read or
-temporarily mutate shared assurance inputs serialize through a guard required by
-the stateful helper APIs; a poisoned guard is a distinct failure because a
-panicking predecessor may have left those inputs mutated.
+temporarily mutate shared assurance inputs serialize through a private guard
+token whose only constructor locks the process-global input mutex. Every helper
+that reads or temporarily mutates those inputs requires that token, including
+the shared-pin reader and the requirements-file mutation probe; a poisoned guard
+is a distinct failure because a panicking predecessor may have left those inputs
+mutated.
 
 ## Acceptance Criteria
 

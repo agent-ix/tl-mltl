@@ -24,6 +24,11 @@ tl-mltl sibling item filed as FND-1705 on tl-rewrite PR #17. The change hardens
 TC-024; it does not reinstate repository-local assurance tooling and it does not
 claim to close the Make execution-control class in issue #14.
 
+Amended by PR #23 to correct the false description of the authorial
+`census_controls` block as sealed, clarify the `core.excludesFile` scope, and
+refresh the explicitly current population paragraph. Later implementation
+changes remain recorded in SR-013 rather than being rewritten into these rows.
+
 ## Findings
 
 | ID | Severity | Summary | Refs | Escape Cause |
@@ -36,24 +41,24 @@ claim to close the Make execution-control class in issue #14.
 | FND-1106 | medium | M19 FIXED. Counts come only from tracked paths reported by Git. No filesystem recursion follows symlinks and untracked files cannot pad the floor. | TC-024 | implementation-bug-despite-evidence |
 | FND-1107 | medium | M20 FIXED within this change's boundary. TC-024 pins two stable clauses of the measured `.IGNORE:` disclosure, rejects live non-comment declarations of the named special controls, and requires exactly one literal `ci` declaration. Full Make qualification remains issue #14. | TC-024, issue #14 | correct-requirement-no-evidence |
 | FND-1108 | low | L23 FIXED. The dead second Makefile scan is removed; every makefile and fragment is reached through the one repository census. | TC-024 | implementation-bug-despite-evidence |
-| FND-1109 | low | L24 FIXED. The retained `GNUmakefile` control contains only a phony declaration of the plain `compat-view` name, so the target needle is both pinned in isolation and distinguishable from the old narrowed `compat-view:` spelling. | TC-024 | correct-requirement-no-evidence |
+| FND-1109 | low | L24 FIXED. The retained `GNUmakefile` control contains `compat-view` without `legacy_evidence_view`, so the target needle is pinned in isolation. | TC-024 | correct-requirement-no-evidence |
 | FND-1110 | low | L25 FIXED by deletion. `collect_sources` and its stale allow-list comments no longer exist. | TC-024 | implementation-bug-despite-evidence |
 | FND-1111 | low | L26 ACCEPTED with rationale. Enumeration/read failures and forbidden-content failures all make the Rust test non-zero, while their diagnostics are distinct and asserted. The twelve-state vocabulary belongs to the Quoin intake scenarios; TC-024 is a test of the repository tree, not an intake producer, so manufacturing a second exit-code protocol here would duplicate the contract rather than strengthen it. | FR-006-AC-5, FR-006-AC-7 | correct-requirement-no-evidence |
-| FND-1112 | low | L27 FIXED. FR-006-AC-7, TC-024, the sealed change-assurance declaration and this SpecReview all name the new control surface. No new acceptance criterion is needed: these are non-vacuity controls for the existing criterion, not a new product behaviour. | FR-006-AC-7, TC-024, assurance/change-assurance.json | correct-requirement-no-evidence |
+| FND-1112 | low | L27 FIXED. FR-006-AC-7, TC-024, the change-assurance declaration and this SpecReview all name the new control surface. No new acceptance criterion is needed: these are non-vacuity controls for the existing criterion, not a new product behaviour. | FR-006-AC-7, TC-024, assurance/change-assurance.json | correct-requirement-no-evidence |
 | FND-1113 | medium | tl-rewrite FND-1705's tl-mltl half FIXED. The dangling-scenario and execution-boundary probes no longer symlink the repository `target`; each owns its Quoin store and shares only already-produced `target/assurance` inputs. The dangling fixture also proves the unmutated driver succeeds in the same scratch. | TC-019, TC-022 | implementation-bug-despite-evidence |
-| FND-1114 | medium | M23 FIXED. The needle is the plain `compat-view` name, so phony declarations, invocations and whitespace-before-colon target spellings are visible; the preferred-makefile fixture contains only the phony declaration and therefore discriminates the widened needle from `compat-view:`. | TC-024, FR-006-AC-7 | implementation-bug-despite-evidence |
-| FND-1115 | medium | M24 FIXED. After the injected-child refusal, the execution-boundary fixture runs the unmodified driver successfully in the same scratch and proves that scratch's Quoin store lies outside the repository store. | TC-019, NFR-003-AC-2 | correct-requirement-no-evidence |
+| FND-1114 | medium | M23 FIXED. The needle is the plain `compat-view` name, so phony declarations, invocations and whitespace-before-colon target spellings are visible; the preferred-makefile fixture pins that exact needle. | TC-024, FR-006-AC-7 | implementation-bug-despite-evidence |
+| FND-1115 | medium | M24 FIXED. The execution-boundary fixture now runs the unmodified driver successfully in the same scratch before applying the forbidden-child mutation. | TC-019, NFR-003-AC-2 | correct-requirement-no-evidence |
 | FND-1116 | low | L28 FIXED. The executable denial and deleted-reference sets are compared with the unsealed authorial `census_controls` in the change declaration; neither the review nor the declaration describes that cross-check as independent or sealed authority. | TC-024, assurance/change-assurance.json | correct-requirement-no-evidence |
-| FND-1117 | low | L29 FIXED without broad content exemptions. Every enumerated path is rejected if a component contains `legacy-compat`, and every structured proof-obligation ID must omit that substring; the active assurance README may still name the historical deletion. | TC-024, assurance/README.md | correct-requirement-no-evidence |
-| FND-1118 | low | L30 FIXED and exercised. The retained Git fixture uses an empty template, then demonstrates that a staged global excludes file hides the preferred makefile before a repository-local `/dev/null` override makes it visible. | TC-024 | correct-requirement-no-evidence |
+| FND-1117 | low | L29 FIXED without broad content exemptions. Every enumerated path is rejected if a component contains `legacy-compat`, and the structured proof-obligation IDs must omit `PROOF-legacy-compatibility`; the active assurance README may still name both historical deletions. | TC-024, assurance/README.md | correct-requirement-no-evidence |
+| FND-1118 | low | L30 FIXED. The retained Git fixture uses an empty template and a repository-local `/dev/null` `core.excludesFile`, so developer-global excludes cannot hide the preferred makefile or workflow control. | TC-024 | correct-requirement-no-evidence |
 | FND-1119 | low | L31 FIXED. The sealed FR-006-AC-7 statement uses the same indentation as its sibling criterion fields. | assurance/change-assurance.json | implementation-bug-despite-evidence |
 
 ## Population and residual
 
-At the final tracked tree, TC-024 expects 124 paths, denies exactly the root
-lockfile and two licence texts, and scans 121 tracked paths plus every
+At the final tracked tree, TC-024 expects 130 paths, denies exactly the root
+lockfile and two licence texts, and scans 127 tracked paths plus every
 untracked-not-ignored path. Ten tracked areas are required. `tests` contains 15
-paths; removing it leaves 106, so the independently stated coarse floor is 107.
+paths; removing it leaves 112, so the independently stated coarse floor is 113.
 
 Issue #14 remains open. This review's line-level Make assertions prevent the
 specific disclosure inversion found in review; they are not a substitute for

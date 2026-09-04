@@ -22,7 +22,7 @@ the static validator, as documented in the suite registry.
 
 | Plan item | Status | Evidence |
 |---|---|---|
-| Guard coverage and poison handling | done | Ten guarded shared-state tests; guard-token parameters on every shared-state helper; poison is a named panic |
+| Guard coverage and poison handling | done | Ten shared-state tests use the private guard token; two tests are deliberately unguarded because they touch neither shared input; poison is a named panic |
 | Symmetric scratch isolation | done | Both probes call `assert_probe_store_isolated`; existing real leaf canonicalized, absent leaf handled, other errors fail closed |
 | Census falsifiability | done | Phony-only plain-name fixture; hostile template mutation; staged excludes miss/override; substring proof-ID rejection |
 | Specification and retained record | done | NFR-003-AC-2, TC-019, declaration purpose and SR-011 agree with the implementation |
