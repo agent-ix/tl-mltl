@@ -58,6 +58,20 @@ existing context-free APIs or v1 wire bytes.
   identity and native outcome so context mutation cannot preserve the result
   identity.
 
+## Digest allocation
+
+- Existing content-digest meanings are not overloaded. A formula digest still
+  identifies formula content, a trace digest identifies trace content, and a
+  mapping expression digest identifies the exact UTF-8 expression bytes.
+- A separate contextual `requestSha256` is the domain-separated digest over the
+  complete operation input described above. A separate `resultSha256` binds
+  that request identity to the native outcome fields, excluding only the digest
+  field itself. Differential `comparisonSha256` binds the complete serialized
+  reference and external records plus the comparison classification and detail.
+- Digest domain separators name the operation and v2 schema so an equal JSON
+  shape from evaluation, horizon, mapping, or comparison cannot be substituted
+  across report families.
+
 ## C2PO mapping behavior
 
 - A contextual C2PO mapping renders each proposition with the exact name of its
