@@ -24,12 +24,17 @@ tl-mltl sibling item filed as FND-1705 on tl-rewrite PR #17. The change hardens
 TC-024; it does not reinstate repository-local assurance tooling and it does not
 claim to close the Make execution-control class in issue #14.
 
+Amended by PR #23 to correct the false description of the authorial
+`census_controls` block as sealed and refresh the explicitly current population
+paragraph. Later implementation
+changes remain recorded in SR-013 rather than being rewritten into these rows.
+
 ## Findings
 
 | ID | Severity | Summary | Refs | Escape Cause |
 |---|---|---|---|---|
 | FND-1101 | high | H10 FIXED. The extension allow-list is deleted. Git enumeration includes `GNUmakefile`, `makefile`, included `.mk` fragments, extensionless paths and `.yaml`; a retained fixture presents a preferred `GNUmakefile` containing the plain `compat-view` name and requires that exact path and name to be observed. | TC-024 | implementation-bug-despite-evidence |
-| FND-1102 | high | H11 FIXED. Tracked and untracked-not-ignored paths come from the same `git ls-files` helper. The executable three-path denial set is compared with the sealed declaration; the ten-area set remains an explicit tree control. | TC-024, FR-006-AC-7 | implementation-bug-despite-evidence |
+| FND-1102 | high | H11 FIXED. Tracked and untracked-not-ignored paths come from the same `git ls-files` helper. The executable three-path denial set is compared with the declaration's unsealed authorial `census_controls`; the ten-area set remains an explicit tree control. | TC-024, FR-006-AC-7 | implementation-bug-despite-evidence |
 | FND-1103 | medium | M16 FIXED. A temporary Git fixture drives the production enumerator over a preferred makefile and `.yaml`; the production exemption-plus-byte scanner sees every deleted needle after a non-UTF-8 byte; missing-file and non-repository failures are caught and checked by diagnostic. | TC-024 | correct-requirement-no-evidence |
 | FND-1104 | medium | M17 FIXED. Area equality catches one-file areas; the tracked-only floor is a second, coarser control. | TC-024 | correct-requirement-no-evidence |
 | FND-1105 | medium | M18 FIXED. Exemptions are anchored repository-relative paths: two exact declarations, plus `.md` only under `spec/reviews/` or `spec/plans/`. Positive and hostile path fixtures exercise the same classifier and the observed exact set must equal the two expected paths. | TC-024 | implementation-bug-despite-evidence |
@@ -39,21 +44,22 @@ claim to close the Make execution-control class in issue #14.
 | FND-1109 | low | L24 FIXED. The retained `GNUmakefile` control contains `compat-view` without `legacy_evidence_view`, so the target needle is pinned in isolation. | TC-024 | correct-requirement-no-evidence |
 | FND-1110 | low | L25 FIXED by deletion. `collect_sources` and its stale allow-list comments no longer exist. | TC-024 | implementation-bug-despite-evidence |
 | FND-1111 | low | L26 ACCEPTED with rationale. Enumeration/read failures and forbidden-content failures all make the Rust test non-zero, while their diagnostics are distinct and asserted. The twelve-state vocabulary belongs to the Quoin intake scenarios; TC-024 is a test of the repository tree, not an intake producer, so manufacturing a second exit-code protocol here would duplicate the contract rather than strengthen it. | FR-006-AC-5, FR-006-AC-7 | correct-requirement-no-evidence |
-| FND-1112 | low | L27 FIXED. FR-006-AC-7, TC-024, the sealed change-assurance declaration and this SpecReview all name the new control surface. No new acceptance criterion is needed: these are non-vacuity controls for the existing criterion, not a new product behaviour. | FR-006-AC-7, TC-024, assurance/change-assurance.json | correct-requirement-no-evidence |
+| FND-1112 | low | L27 FIXED. FR-006-AC-7, TC-024, the change-assurance declaration and this SpecReview all name the new control surface. No new acceptance criterion is needed: these are non-vacuity controls for the existing criterion, not a new product behaviour. | FR-006-AC-7, TC-024, assurance/change-assurance.json | correct-requirement-no-evidence |
 | FND-1113 | medium | tl-rewrite FND-1705's tl-mltl half FIXED. The dangling-scenario and execution-boundary probes no longer symlink the repository `target`; each owns its Quoin store and shares only already-produced `target/assurance` inputs. The dangling fixture also proves the unmutated driver succeeds in the same scratch. | TC-019, TC-022 | implementation-bug-despite-evidence |
 | FND-1114 | medium | M23 FIXED. The needle is the plain `compat-view` name, so phony declarations, invocations and whitespace-before-colon target spellings are visible; the preferred-makefile fixture pins that exact needle. | TC-024, FR-006-AC-7 | implementation-bug-despite-evidence |
 | FND-1115 | medium | M24 FIXED. The execution-boundary fixture now runs the unmodified driver successfully in the same scratch before applying the forbidden-child mutation. | TC-019, NFR-003-AC-2 | correct-requirement-no-evidence |
-| FND-1116 | low | L28 FIXED. The executable denial and deleted-reference sets are compared with `census_controls` in the change declaration; the review no longer describes adjacent copied constants as independent authority. | TC-024, assurance/change-assurance.json | correct-requirement-no-evidence |
+| FND-1116 | low | L28 FIXED. The executable denial and deleted-reference sets are compared with the unsealed authorial `census_controls` in the change declaration; neither the review nor the declaration describes that cross-check as independent or sealed authority. | TC-024, assurance/change-assurance.json | correct-requirement-no-evidence |
 | FND-1117 | low | L29 FIXED without broad content exemptions. Every enumerated path is rejected if a component contains `legacy-compat`, and the structured proof-obligation IDs must omit `PROOF-legacy-compatibility`; the active assurance README may still name both historical deletions. | TC-024, assurance/README.md | correct-requirement-no-evidence |
 | FND-1118 | low | L30 FIXED. The retained Git fixture uses an empty template and a repository-local `/dev/null` `core.excludesFile`, so developer-global excludes cannot hide the preferred makefile or workflow control. | TC-024 | correct-requirement-no-evidence |
 | FND-1119 | low | L31 FIXED. The sealed FR-006-AC-7 statement uses the same indentation as its sibling criterion fields. | assurance/change-assurance.json | implementation-bug-despite-evidence |
 
 ## Population and residual
 
-At the final tracked tree, TC-024 expects 124 paths, denies exactly the root
-lockfile and two licence texts, and scans 121 tracked paths plus every
-untracked-not-ignored path. Ten tracked areas are required. `tests` contains 15
-paths; removing it leaves 106, so the independently stated coarse floor is 107.
+At the PR #23 amendment head, Git enumerated 130 tracked paths. TC-024 denies
+exactly the root lockfile and two licence texts and asserts the remaining 127
+tracked paths exactly, so population growth or shrinkage requires deliberate
+review. It also scans every untracked-not-ignored path and requires ten tracked
+areas.
 
 Issue #14 remains open. This review's line-level Make assertions prevent the
 specific disclosure inversion found in review; they are not a substitute for

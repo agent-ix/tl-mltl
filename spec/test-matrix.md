@@ -33,7 +33,7 @@ relationships:
 |---|---|---|---|
 | NFR-001 | deterministic and resource-limit tests | TC-003, TC-004, TC-006, TC-013 | ✅ covered |
 | NFR-002 | schema-negative tests and compiled-test census | TC-012, TC-014, TC-016, TC-017 | ✅ covered |
-| NFR-003 | producer-boundary, state-vocabulary, and mutation-probe tests | TC-019, TC-022 | ✅ covered |
+| NFR-003 | producer-boundary, shared-input serialization, state-vocabulary, and mutation-probe tests | TC-018, TC-019, TC-022 | ✅ covered |
 
 ## Test Case Summary
 
@@ -56,9 +56,9 @@ relationships:
 | TC-015 | Compare supported and non-conclusive differential cases | Integration | P0 | FR-005-AC-2, StR-001-VC-2 | ✅ implemented |
 | TC-016 | Verify retained differential inputs and non-conclusive cases are complete | Integration | P0 | FR-005-AC-3, NFR-002-AC-2 | ✅ implemented |
 | TC-017 | Bind every requirement-tagged Rust test to a test Cargo compiles and runs, with none ignored or configured out | Integration | P0 | NFR-002-AC-3 | ✅ implemented |
-| TC-018 | Classify every shared pin through the packaged compatibility matrix and refuse a mirror reference | Integration | P0 | FR-006-AC-1 | ✅ implemented |
-| TC-019 | Reach Quoin without Quoin, Quire, or any gate executing a producer or the external monitor | Integration | P0 | FR-006-AC-2, NFR-003-AC-1, NFR-003-AC-2 | ✅ implemented |
+| TC-018 | Classify every shared pin through the packaged compatibility matrix and refuse a mirror reference, with shared-input access serialized through the required guard | Integration | P0 | FR-006-AC-1, NFR-003-AC-1 | ✅ implemented |
+| TC-019 | Reach Quoin without Quoin, Quire, or any gate executing a producer or the external monitor; require shared-input access through a serialized guard, and pair the injected-child refusal with an unmodified-driver run whose owned Quoin store is outside the repository store | Integration | P0 | FR-006-AC-2, NFR-003-AC-1, NFR-003-AC-2 | ✅ implemented |
 | TC-020 | Bind the sealed record's impact snapshot to a Quire export that names every requirement | Integration | P0 | FR-006-AC-3 | ✅ implemented |
 | TC-022 | Demonstrate twelve verification outcomes, each paired with an accepted positive control, and refuse a control naming a scenario that does not exist | Integration | P0 | FR-006-AC-5, NFR-003-AC-3 | ✅ implemented |
 | TC-023 | Keep the R2U2 differential a comparison: three classifications, four external states, counts from the corpus manifests, and survival into the retained bytes | Integration | P0 | FR-006-AC-6, StR-002-VC-1, StR-002-VC-2 | ✅ implemented |
-| TC-024 | Leave no local evidence framework or retained legacy evidence; enumerate every tracked and untracked-not-ignored repository path through Git, compare exact denial and deleted-reference sets with the change declaration, constrain area and declaration-exemption sets, reject renamed legacy-compatibility paths and obligations, scan raw bytes, and retain negative controls for globally ignored preferred makefiles, the plain compatibility-target name, non-UTF-8 content, unreadable paths, and enumeration failure | Integration | P0 | FR-006-AC-7 | ✅ implemented |
+| TC-024 | Leave no local evidence framework or retained legacy evidence; enumerate every tracked and untracked-not-ignored repository path through Git, compare exact denial and deleted-reference sets with the change declaration, constrain area and declaration-exemption sets, reject renamed legacy-compatibility paths and obligations, scan raw bytes, and retain negative controls for hostile Git templates, ignored preferred makefiles, the plain compatibility-target name, non-UTF-8 content, unreadable paths, and enumeration failure | Integration | P0 | FR-006-AC-7 | ✅ implemented |
