@@ -11,10 +11,11 @@ relationships:
 
 ## Statement
 
-Every exchanged record shall use an explicit v1 schema, exact source and corpus
-pins, contribution provenance, and canonical PGM-01 evidence boundaries. Agent
-results shall remain distinct from human approval and consuming-project
-validation.
+Every exchanged record shall use an explicit supported schema, exact source and
+corpus pins, contribution provenance, and canonical PGM-01 evidence boundaries.
+Contextual records shall preserve the exact shared signal and caller-context
+identities without claiming their truth. Agent results shall remain distinct
+from human approval and consuming-project validation.
 
 ## Scope
 
@@ -46,6 +47,7 @@ re-derives which requirement-tagged tests Cargo actually runs.
 | NFR-002-AC-1 | Unknown schema/profile versions and omitted material identities are rejected. | Test (TC-012, TC-014) |
 | NFR-002-AC-2 | Exchanged records name exact tl-syntax, corpus, external-tool, dependency, and output identities without recording an automated release decision. | Test (TC-016) |
 | NFR-002-AC-3 | Every requirement-tagged Rust test is a test Cargo actually compiles and runs, and no compiled requirement-tagged test is ignored or configured out, so a matrix row cannot be backed by a tag above a test that never executes. | Test (TC-017) |
+| NFR-002-AC-4 | Every contextual native record names the exact participating tl-mltl and tl-syntax revisions, complete shared catalog identity, and exact optional requirement context without claiming that tl-mltl validated the caller's provenance or a consuming monitor. | Test (TC-025, TC-028, TC-031) |
 
 ## Dependencies
 
