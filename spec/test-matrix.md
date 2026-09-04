@@ -33,7 +33,7 @@ relationships:
 |---|---|---|---|
 | NFR-001 | deterministic and resource-limit tests | TC-003, TC-004, TC-006, TC-013 | ✅ covered |
 | NFR-002 | schema-negative tests and compiled-test census | TC-012, TC-014, TC-016, TC-017 | ✅ covered |
-| NFR-003 | producer-boundary, state-vocabulary, and mutation-probe tests | TC-019, TC-022 | ✅ covered |
+| NFR-003 | producer-boundary, shared-input serialization, state-vocabulary, and mutation-probe tests | TC-018, TC-019, TC-022 | ✅ covered |
 
 ## Test Case Summary
 

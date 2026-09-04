@@ -16,3 +16,10 @@ description: "Chronological changes to the tl-mltl review-residual plan bundle."
   23/23 Test Matrix rows and 31/31 Rust symbols; the complete local
   `make ci CARGO_TARGET_DIR=target/cargo-review` gate passed. Hosted CI was not
   dispatched.
+- **2026-09-04** - Round-two review remediation serialized the repository census,
+  replaced its fragile lower bound with exact population equality, made the four
+  predicate fixtures diagnostic, closed the last swallowed cleanup, and aligned
+  the NFR/test-matrix/review records with the implemented guard and census. The
+  focused census and complete local
+  `make ci CARGO_TARGET_DIR=target/cargo-review` gate passed with the serialized
+  shared-assurance binary at 12/12; hosted CI was not dispatched.

@@ -1180,8 +1180,10 @@ fn every_requirement_tagged_test_is_a_test_cargo_compiles_and_runs() {
 // Trace: TC-024, FR-006-AC-7
 #[test]
 fn no_local_evidence_framework_remains() {
-    // Deliberately unguarded: this repository census neither reads nor mutates
-    // `target/assurance` or `requirements-assurance.txt`.
+    // The census reads every tracked non-exempt file, including
+    // `requirements-assurance.txt`; serialize it with the probe that temporarily
+    // rewrites that shared input.
+    let _inputs = assurance_inputs_guard();
     let root = root();
     const DELETED_REFERENCES: [&str; 10] = [
         "check-failure-propagation",
@@ -1274,10 +1276,14 @@ fn no_local_evidence_framework_remains() {
         !scanned.iter().any(|path| path_has_legacy_compat(path)),
         "a renamed legacy-compatibility fixture path remains in the repository"
     );
-    assert!(!path_has_legacy_compat("spec/current/review.md"));
-    assert!(path_has_legacy_compat(
-        "tests/fixtures/legacy-compat-v2/input.json"
-    ));
+    assert!(
+        !path_has_legacy_compat("spec/current/review.md"),
+        "the clean path fixture was classified as legacy compatibility"
+    );
+    assert!(
+        path_has_legacy_compat("tests/fixtures/legacy-compat-v2/input.json"),
+        "the hostile path fixture was not classified as legacy compatibility"
+    );
     let proof_obligations = declaration["record"]["definition"]["proof_obligations"]
         .as_array()
         .expect("record.definition.proof_obligations is an array");
@@ -1294,8 +1300,14 @@ fn no_local_evidence_framework_remains() {
         {"proof_id": "PROOF-legacy-compat-v2"}
     ]);
     let proof_fixture = proof_fixture.as_array().expect("proof fixture is an array");
-    assert!(!proof_has_legacy_compat(&proof_fixture[0]));
-    assert!(proof_has_legacy_compat(&proof_fixture[1]));
+    assert!(
+        !proof_has_legacy_compat(&proof_fixture[0]),
+        "the clean proof fixture was classified as legacy compatibility"
+    );
+    assert!(
+        proof_has_legacy_compat(&proof_fixture[1]),
+        "the hostile proof fixture was not classified as legacy compatibility"
+    );
     let observed_denied: BTreeSet<String> = tracked_all
         .iter()
         .filter(|entry| denied(entry))
@@ -1432,7 +1444,11 @@ fn no_local_evidence_framework_remains() {
 
     let non_repository =
         std::env::temp_dir().join(format!("tl-mltl-census-nonrepo-{}", std::process::id()));
-    let _ = fs::remove_dir_all(&non_repository);
+    match fs::remove_dir_all(&non_repository) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("failed to clear the non-repository control: {error}"),
+    }
     fs::create_dir_all(&non_repository).expect("create non-repository control");
     let unenumerable = std::panic::catch_unwind(|| {
         let _ = git_files(&non_repository, &["ls-files", "-z"]);
@@ -1529,14 +1545,14 @@ fn no_local_evidence_framework_remains() {
     }
 
     // Final population after this review artifact is tracked: 127 scanned files
-    // from 130 tracked paths minus the three exact denials. `tests` contains 15;
-    // losing that whole area leaves 112, so the derived floor is 113. The area
-    // equality above is the finer control for one-file areas.
+    // from 130 tracked paths minus the three exact denials. Exact equality makes
+    // either growth or shrinkage require a deliberate census review instead of
+    // silently consuming the margin of a hand-maintained lower bound.
     let inspected = tracked.len();
-    assert!(
-        inspected >= 113,
-        "the source census inspected {inspected} tracked files, below the derived \
-         floor of 113 (population 127 minus all 15 tests is 112)"
+    assert_eq!(
+        inspected, 127,
+        "the source census population changed from the reviewed 127 tracked files \
+         ({inspected} observed); review the census scope and update this control deliberately"
     );
 
     // The Makefile is orchestration, not a trust root. Pin the disclosure text,

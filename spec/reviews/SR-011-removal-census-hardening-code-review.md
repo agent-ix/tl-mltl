@@ -25,8 +25,8 @@ TC-024; it does not reinstate repository-local assurance tooling and it does not
 claim to close the Make execution-control class in issue #14.
 
 Amended by PR #23 to correct the false description of the authorial
-`census_controls` block as sealed, clarify the `core.excludesFile` scope, and
-refresh the explicitly current population paragraph. Later implementation
+`census_controls` block as sealed and refresh the explicitly current population
+paragraph. Later implementation
 changes remain recorded in SR-013 rather than being rewritten into these rows.
 
 ## Findings
@@ -55,10 +55,11 @@ changes remain recorded in SR-013 rather than being rewritten into these rows.
 
 ## Population and residual
 
-At the final tracked tree, TC-024 expects 130 paths, denies exactly the root
-lockfile and two licence texts, and scans 127 tracked paths plus every
-untracked-not-ignored path. Ten tracked areas are required. `tests` contains 15
-paths; removing it leaves 112, so the independently stated coarse floor is 113.
+At the PR #23 amendment head, Git enumerated 130 tracked paths. TC-024 denies
+exactly the root lockfile and two licence texts and asserts the remaining 127
+tracked paths exactly, so population growth or shrinkage requires deliberate
+review. It also scans every untracked-not-ignored path and requires ten tracked
+areas.
 
 Issue #14 remains open. This review's line-level Make assertions prevent the
 specific disclosure inversion found in review; they are not a substitute for
