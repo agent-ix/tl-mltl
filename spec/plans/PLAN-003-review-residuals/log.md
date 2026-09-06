@@ -23,3 +23,13 @@ description: "Chronological changes to the tl-mltl review-residual plan bundle."
   focused census and complete local
   `make ci CARGO_TARGET_DIR=target/cargo-review` gate passed with the serialized
   shared-assurance binary at 12/12; hosted CI was not dispatched.
+- **2026-09-06** - PR #23's final review left one medium and six low follow-ups.
+  Issue #20 implemented the six repository-local items: the census byte path
+  now requires the private guard token, exact per-area counts reject a
+  compensating swap, population checks precede guard acquisition, traceability
+  includes TC-024, and the historical NFR-002-AC-3 reuse remains explicitly
+  disclosed. Removing the real census token failed compilation at all five
+  token uses; the focused census passed; `make spec` remained 62/64 overall,
+  23/23 Test Matrix rows and 31/31 Rust symbols; and the normal-parallel
+  shared-assurance binary passed 12/12. M23R3-04 stays on #14 as the common Make
+  execution-control concern. Hosted CI remains undispatched.

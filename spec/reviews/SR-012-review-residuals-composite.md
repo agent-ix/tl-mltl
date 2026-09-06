@@ -30,3 +30,17 @@ No deleted stable acceptance-criterion identity is reused.
 
 READY. The plan closes the observed mechanisms inside existing requirement
 boundaries and explicitly excludes the common Make-qualification work in #14.
+
+## 2026-09-06 amendment — final PR #23 review
+
+The independent merge review found one medium and six low residuals after the
+original review set. Existing FR-006-AC-7 and NFR-003-AC-1 remain the correct
+owners: the former is narrowed from an area-name set to exact per-area
+cardinalities, and the latter gains reciprocal TC-024 verification for its
+shared-input read. No new product requirement or assurance mechanism is needed.
+
+The review also proved that current `NFR-002-AC-3` reused a pre-migration
+identifier. Renumbering it again would create a second break. The requirement
+therefore records the pre-stable reuse explicitly and preserves the meaning of
+historical references; this is an accepted identity-history gap, not a claim
+that FND-1204 never occurred.
