@@ -9,7 +9,7 @@
 //! A missing prerequisite is a failure here, never a skip. A gate that stands
 //! down when its dependency is absent reports the same green as one that ran.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -65,7 +65,11 @@ fn head_revision() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_owned()
 }
 
-fn deleted_names_in<'a>(path: &Path, names: &'a [&'a str]) -> Vec<&'a str> {
+fn deleted_names_in<'a>(
+    _inputs: &AssuranceInputsGuard,
+    path: &Path,
+    names: &'a [&'a str],
+) -> Vec<&'a str> {
     // A file that cannot be read has not been scanned. Read bytes so a source
     // with a valid non-UTF-8 encoding cannot disappear from the census merely
     // because Rust strings require UTF-8.
@@ -100,7 +104,7 @@ fn git_files(root: &Path, arguments: &[&str]) -> Vec<String> {
         .collect()
 }
 
-fn census_paths<F>(root: &Path, denied: F) -> (Vec<String>, Vec<String>, BTreeSet<String>)
+fn census_paths<F>(root: &Path, denied: F) -> (Vec<String>, Vec<String>)
 where
     F: Fn(&str) -> bool,
 {
@@ -110,8 +114,11 @@ where
         .filter(|entry| !denied(entry))
         .cloned()
         .collect();
-    let mut scanned: BTreeSet<String> = tracked.iter().cloned().collect();
+    (tracked_all, tracked)
+}
 
+fn scanned_paths(root: &Path, tracked: &[String]) -> BTreeSet<String> {
+    let mut scanned: BTreeSet<String> = tracked.iter().cloned().collect();
     // A path reported by `--others` cannot also be one of the tracked paths in
     // the exact deny set. Applying `denied` here created a second, uncontrolled
     // exemption site: one line could name an untracked reintroduction before the
@@ -119,7 +126,7 @@ where
     for entry in git_files(root, &["ls-files", "-z", "--others", "--exclude-standard"]) {
         scanned.insert(entry);
     }
-    (tracked_all, tracked, scanned)
+    scanned
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -154,7 +161,12 @@ fn proof_has_legacy_compat(proof: &Value) -> bool {
         .is_some_and(|proof_id| proof_id.contains("legacy-compat"))
 }
 
-fn census_matches<'a>(root: &Path, path: &Path, names: &'a [&'a str]) -> Vec<&'a str> {
+fn census_matches<'a>(
+    inputs: &AssuranceInputsGuard,
+    root: &Path,
+    path: &Path,
+    names: &'a [&'a str],
+) -> Vec<&'a str> {
     let relative = path
         .strip_prefix(root)
         .unwrap_or(path)
@@ -163,8 +175,21 @@ fn census_matches<'a>(root: &Path, path: &Path, names: &'a [&'a str]) -> Vec<&'a
     if census_exemption(&relative).is_some() {
         Vec::new()
     } else {
-        deleted_names_in(path, names)
+        deleted_names_in(inputs, path, names)
     }
+}
+
+fn area_cardinalities(paths: impl IntoIterator<Item = impl AsRef<str>>) -> BTreeMap<String, usize> {
+    let mut counts = BTreeMap::new();
+    for path in paths {
+        let path = path.as_ref();
+        let area = path
+            .split_once('/')
+            .map_or("<root>", |(head, _)| head)
+            .to_owned();
+        *counts.entry(area).or_insert(0) += 1;
+    }
+    counts
 }
 
 fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {
@@ -243,7 +268,7 @@ fn chain_report(_inputs: &AssuranceInputsGuard) -> &'static Value {
     })
 }
 
-// Trace: TC-018, FR-006-AC-1
+// Trace: TC-018, FR-006-AC-1, NFR-003-AC-1
 #[test]
 fn every_shared_pin_is_classified_by_the_packaged_matrix() {
     let inputs = assurance_inputs_guard();
@@ -1177,13 +1202,9 @@ fn every_requirement_tagged_test_is_a_test_cargo_compiles_and_runs() {
     );
 }
 
-// Trace: TC-024, FR-006-AC-7
+// Trace: TC-024, FR-006-AC-7, NFR-003-AC-1
 #[test]
 fn no_local_evidence_framework_remains() {
-    // The census reads every tracked non-exempt file, including
-    // `requirements-assurance.txt`; serialize it with the probe that temporarily
-    // rewrites that shared input.
-    let _inputs = assurance_inputs_guard();
     let root = root();
     const DELETED_REFERENCES: [&str; 10] = [
         "check-failure-propagation",
@@ -1271,11 +1292,7 @@ fn no_local_evidence_framework_remains() {
             "the exact deny predicate widened to hide {included}"
         );
     }
-    let (tracked_all, tracked, scanned) = census_paths(&root, denied);
-    assert!(
-        !scanned.iter().any(|path| path_has_legacy_compat(path)),
-        "a renamed legacy-compatibility fixture path remains in the repository"
-    );
+    let (tracked_all, tracked) = census_paths(&root, denied);
     assert!(
         !path_has_legacy_compat("spec/current/review.md"),
         "the clean path fixture was classified as legacy compatibility"
@@ -1329,42 +1346,89 @@ fn no_local_evidence_framework_remains() {
         "the census deny-list no longer excludes exactly the three named lock or licence files"
     );
 
-    let area_of = |path: &str| match path.split_once('/') {
-        Some((head, _)) => head.to_owned(),
-        None => "<root>".to_owned(),
-    };
-    let observed_areas: BTreeSet<String> = tracked_all.iter().map(|entry| area_of(entry)).collect();
-    let expected_areas: BTreeSet<String> = [
-        "<root>",
-        ".agent",
-        ".github",
-        "assurance",
-        "corpus",
-        "examples",
-        "scripts",
-        "spec",
-        "src",
-        "tests",
+    let observed_areas = area_cardinalities(&tracked);
+    let expected_areas: BTreeMap<String, usize> = [
+        ("<root>", 13),
+        (".agent", 1),
+        (".github", 2),
+        ("assurance", 3),
+        ("corpus", 25),
+        ("examples", 3),
+        ("scripts", 5),
+        ("spec", 53),
+        ("src", 7),
+        ("tests", 15),
     ]
     .into_iter()
-    .map(str::to_owned)
+    .map(|(area, count)| (area.to_owned(), count))
     .collect();
     assert_eq!(
         observed_areas, expected_areas,
-        "the tracked area set changed; a new or missing area must be classified deliberately"
+        "the tracked per-area population changed; a new, missing, or moved path must be \
+         classified deliberately"
+    );
+
+    // A total-only equality is blind to a compensating cross-area swap. Drive
+    // that exact mutation against the cardinality helper so this control is
+    // known to distinguish it while the total remains unchanged.
+    let mut compensated = tracked.clone();
+    let removed = compensated
+        .iter()
+        .position(|path| path.starts_with("tests/"))
+        .expect("tracked test path for compensating-swap control");
+    compensated.remove(removed);
+    compensated.push("spec/compensating-swap-control.md".to_owned());
+    assert_eq!(
+        compensated.len(),
+        tracked.len(),
+        "the compensating-swap control did not preserve the total population"
+    );
+    assert_ne!(
+        area_cardinalities(&compensated),
+        expected_areas,
+        "a cross-area file swap preserved both the total and the per-area control"
+    );
+
+    // Final population after the PR #23 review artifacts were tracked: 127
+    // scanned files from 130 tracked paths minus the three exact denials.
+    // Check it before taking the shared-input lock: ordinary reviewed source
+    // growth must report its own census error without poisoning a mutex whose
+    // recovery message is specifically about interrupted input mutation.
+    let inspected = tracked.len();
+    assert_eq!(
+        inspected, 127,
+        "the source census population changed from the reviewed 127 tracked files \
+         ({inspected} observed); review the census scope and update this control deliberately"
+    );
+
+    // The byte census reads every tracked non-exempt file, including
+    // `requirements-assurance.txt`; serialize that access with the probe that
+    // temporarily rewrites the same shared input. Passing the private token to
+    // the byte-scanning helpers makes this acquisition compile-time load-bearing.
+    let inputs = assurance_inputs_guard();
+    let scanned = scanned_paths(&root, &tracked);
+    assert!(
+        !scanned.iter().any(|path| path_has_legacy_compat(path)),
+        "a renamed legacy-compatibility fixture path remains in the repository"
     );
 
     // Retained controls use the same enumeration, exemption and byte-scanning
     // functions as the real census. The fixture is its own Git repository, so a
     // preferred `GNUmakefile` can be exercised without changing which makefile a
     // concurrent command in this checkout selects.
-    let fixture = root.join("target/removal-census-fixture");
+    let fixture = std::env::temp_dir().join(format!(
+        "tl-mltl-removal-census-fixture-{}",
+        std::process::id()
+    ));
     match fs::remove_dir_all(&fixture) {
         Ok(()) => {}
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(error) => panic!("failed to clear the previous census fixture: {error}"),
     }
-    let template = root.join("target/removal-census-template");
+    let template = std::env::temp_dir().join(format!(
+        "tl-mltl-removal-census-template-{}",
+        std::process::id()
+    ));
     match fs::remove_dir_all(&template) {
         Ok(()) => {}
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
@@ -1412,7 +1476,8 @@ fn no_local_evidence_framework_remains() {
         inherited_excludes.success(),
         "could not stage the census fixture core.excludesFile"
     );
-    let (_, _, excluded_scanned) = census_paths(&fixture, |_| false);
+    let (_, fixture_tracked) = census_paths(&fixture, |_| false);
+    let excluded_scanned = scanned_paths(&fixture, &fixture_tracked);
     assert!(
         !excluded_scanned.contains("GNUmakefile"),
         "the staged core.excludesFile did not hide GNUmakefile: {excluded_scanned:?}"
@@ -1426,18 +1491,19 @@ fn no_local_evidence_framework_remains() {
         isolated_excludes.success(),
         "could not isolate the census fixture from global Git excludes"
     );
-    let (_, _, fixture_scanned) = census_paths(&fixture, |_| false);
-    let make_matches = census_matches(&fixture, &make_probe, &DELETED_REFERENCES);
+    let (_, fixture_tracked) = census_paths(&fixture, |_| false);
+    let fixture_scanned = scanned_paths(&fixture, &fixture_tracked);
+    let make_matches = census_matches(&inputs, &fixture, &make_probe, &DELETED_REFERENCES);
 
     let byte_probe = fixture.join("all-deleted-names.bin");
     let mut probe_bytes = expected_deleted_references.join("\n").into_bytes();
     probe_bytes.push(0xff);
     fs::write(&byte_probe, probe_bytes).expect("write raw-byte census control");
-    let byte_matches = census_matches(&fixture, &byte_probe, &DELETED_REFERENCES);
+    let byte_matches = census_matches(&inputs, &fixture, &byte_probe, &DELETED_REFERENCES);
 
     let missing = fixture.join("cannot-be-read.py");
     let unreadable = std::panic::catch_unwind(|| {
-        let _ = census_matches(&fixture, &missing, &DELETED_REFERENCES);
+        let _ = census_matches(&inputs, &fixture, &missing, &DELETED_REFERENCES);
     })
     .expect_err("an unreadable census path did not fail closed");
     let unreadable = panic_message(unreadable);
@@ -1535,7 +1601,7 @@ fn no_local_evidence_framework_remains() {
 
     let sources: Vec<PathBuf> = scanned.iter().map(|entry| root.join(entry)).collect();
     for path in &sources {
-        let deleted_names = census_matches(&root, path, &DELETED_REFERENCES);
+        let deleted_names = census_matches(&inputs, &root, path, &DELETED_REFERENCES);
         assert!(
             deleted_names.is_empty(),
             "{} references {}, which was deleted with the retained evidence",
@@ -1543,17 +1609,7 @@ fn no_local_evidence_framework_remains() {
             deleted_names.join(", ")
         );
     }
-
-    // Final population after this review artifact is tracked: 127 scanned files
-    // from 130 tracked paths minus the three exact denials. Exact equality makes
-    // either growth or shrinkage require a deliberate census review instead of
-    // silently consuming the margin of a hand-maintained lower bound.
-    let inspected = tracked.len();
-    assert_eq!(
-        inspected, 127,
-        "the source census population changed from the reviewed 127 tracked files \
-         ({inspected} observed); review the census scope and update this control deliberately"
-    );
+    drop(inputs);
 
     // The Makefile is orchestration, not a trust root. Pin the disclosure text,
     // reject the live special targets it warns about, and require one literal
@@ -1795,7 +1851,7 @@ fn mirror_scan_with_staged_requirement(_inputs: &AssuranceInputsGuard) -> (i32, 
     )
 }
 
-// Trace: TC-018, FR-006-AC-1, SUITE-009
+// Trace: TC-018, FR-006-AC-1, NFR-003-AC-1, SUITE-009
 #[test]
 fn the_mirror_scan_refuses_a_registry_reference_in_a_real_file() {
     let inputs = assurance_inputs_guard();

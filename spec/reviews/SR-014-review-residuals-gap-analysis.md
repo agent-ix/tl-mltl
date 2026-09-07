@@ -22,7 +22,7 @@ the static validator, as documented in the suite registry.
 
 | Plan item | Status | Evidence |
 |---|---|---|
-| Guard coverage and poison handling | done | Eleven shared-state tests use the private guard token; the Rust-test census alone is unguarded because it touches neither shared input; poison is a named panic |
+| Guard coverage and poison handling | done | Eleven shared-state tests reach token-taking helpers; the Rust-test census alone is unguarded because it touches neither shared input; poison is a named panic and routine population checks run before guard acquisition |
 | Symmetric scratch isolation | done | Both probes call `assert_probe_store_isolated`; existing real leaf canonicalized, absent leaf handled, other errors fail closed |
 | Census falsifiability | done | Phony-only plain-name fixture; hostile template mutation; staged excludes miss/override; substring proof-ID rejection |
 | Specification and retained record | done | NFR-003-AC-2, TC-019, declaration purpose and SR-011 agree with the implementation |
@@ -56,3 +56,18 @@ recorded on the PR before landing.
 
 READY FOR INDEPENDENT REVIEW. No local issue-#20 item is knowingly unimplemented;
 the remaining gaps have explicit owners outside this change's boundary.
+
+## 2026-09-06 post-merge gap-analysis amendment
+
+The final PR #23 review was reapplied to merged `main` before this follow-up.
+M23R3-01, -02, -03, -05 and -06 now have direct implementation and declared
+owners. M23R3-07 remains visible as an accepted historical identity reuse in
+NFR-002. M23R3-04 remains an explicit shared Make-qualification deferral on
+tl-mltl#14 and Engineering Assurance #11.
+
+No new generic runner, evidence schema, envelope, collector, parser, identity
+registry, retention layer, or Quire/Quoin execution role was introduced. The
+census still derives its population from Git; the new map only partitions those
+same tracked paths by first component. Shared-input serialization still uses the
+existing private mutex; the new parameters make its already-required ownership
+visible to the compiler. Hosted CI remains manual-dispatch only and was not run.

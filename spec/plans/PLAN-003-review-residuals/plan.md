@@ -30,6 +30,11 @@ without adding a repository-local evidence framework or Make parser.
    serialization boundary and actual execution order are declared.
 5. Run the focused shared-assurance target, specification validation and the
    complete local `make ci` gate before review.
+6. Close the final PR #23 review residuals by making the census guard token
+   compile-time load-bearing, binding exact tracked per-area cardinalities,
+   keeping routine population assertions outside the mutex lifetime, repairing
+   NFR-003 trace reciprocity, and disclosing the pre-existing NFR-002 identifier
+   reuse without renumbering it again.
 
 ## Scope
 
