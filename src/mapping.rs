@@ -106,7 +106,7 @@ pub enum ContextualMappingSchemaVersion {
 }
 
 /// Flat v2 mapping manifest carrying shared catalog and caller context identity.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ContextualMappingManifest {
     /// Closed v2 wire identity.
@@ -144,6 +144,25 @@ pub struct ContextualMappingManifest {
     /// Qualification boundary statement.
     pub limitation: String,
 }
+
+deserialize_contextual_record!(ContextualMappingManifest {
+    schema_version: ContextualMappingSchemaVersion,
+    adapter_version: String,
+    source_revision: String,
+    source_state: String,
+    syntax_revision: String,
+    signal_catalog_sha256: String,
+    request_sha256: String,
+    result_sha256: String,
+    formula_id: String,
+    semantic_profile: String,
+    input_sha256: String,
+    expression: String,
+    output_sha256: String,
+    proposition_ids: Vec<u32>,
+    external_tool: Option<ToolIdentity>,
+    limitation: String,
+});
 
 /// Mapping failure with no partial executable output.
 #[derive(Clone, Debug, Eq, PartialEq)]

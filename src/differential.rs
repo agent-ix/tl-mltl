@@ -65,7 +65,7 @@ pub enum ContextualExternalVerdictSchemaVersion {
 }
 
 /// External outcome with the exact context it claims to have consumed.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ContextualExternalVerdict {
     /// Closed v2 wire identity.
@@ -89,6 +89,18 @@ pub struct ContextualExternalVerdict {
     /// Stable unsupported/error explanation where applicable.
     pub detail: Option<String>,
 }
+
+deserialize_contextual_record!(ContextualExternalVerdict {
+    schema_version: ContextualExternalVerdictSchemaVersion,
+    tool: ToolIdentity,
+    formula_id: String,
+    trace_id: String,
+    signal_catalog_sha256: String,
+    status: ExternalStatus,
+    value: Option<bool>,
+    verdict_time: Option<u64>,
+    detail: Option<String>,
+});
 
 /// Differential comparison classification.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -125,7 +137,7 @@ pub enum ContextualDifferentialSchemaVersion {
 }
 
 /// Flat v2 differential record retaining the supplied external claim.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ContextualDifferentialReport {
     /// Closed v2 wire identity.
@@ -156,6 +168,20 @@ pub struct ContextualDifferentialReport {
     /// Deterministic explanation.
     pub detail: String,
 }
+
+deserialize_contextual_record!(ContextualDifferentialReport {
+    schema_version: ContextualDifferentialSchemaVersion,
+    formula_id: String,
+    trace_id: String,
+    signal_catalog_sha256: String,
+    status: ContextualComparisonStatus,
+    reference_verdict: TruthValue,
+    reference_verdict_time: u64,
+    reference: ContextualEvaluationReport,
+    external: ContextualExternalVerdict,
+    comparison_sha256: String,
+    detail: String,
+});
 
 /// A contextual comparison record could not be serialized for its identity.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -435,7 +461,7 @@ mod tests {
         report_wire
             .as_object_mut()
             .unwrap()
-            .remove("signalCatalogSha256");
+            .remove("requirementContext");
         assert!(
             serde_json::from_value::<super::ContextualDifferentialReport>(report_wire).is_err()
         );

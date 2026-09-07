@@ -1462,8 +1462,10 @@ fn no_local_evidence_framework_remains() {
         ("examples", 3),
         ("scripts", 5),
         ("spec", 64),
-        ("src", 7),
-        ("tests", 15),
+        // Context-bound wire decoding is a new source module; TC-030 adds the
+        // producer-to-intake control alongside the existing shared checks.
+        ("src", 8),
+        ("tests", 16),
     ]
     .into_iter()
     .map(|(area, count)| (area.to_owned(), count))
@@ -1495,15 +1497,15 @@ fn no_local_evidence_framework_remains() {
         "a cross-area file swap preserved both the total and the per-area control"
     );
 
-    // Final population after the PR #23 review artifacts were tracked: 127
-    // scanned files from 130 tracked paths minus the three exact denials.
+    // Contextual wire decoding and its producer-intake control bring the
+    // reviewed population to 140 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 138,
-        "the source census population changed from the reviewed 138 tracked files \
+        inspected, 140,
+        "the source census population changed from the reviewed 140 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

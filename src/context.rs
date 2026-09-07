@@ -9,6 +9,50 @@ use tl_syntax::{
     Formula, FormulaBindingError, PropositionId, RequirementContextDocument, SignalCatalogDocument,
 };
 
+/// A context field that accepts an explicit JSON null but never a missing key.
+pub(crate) struct RequiredContext(pub Option<RequirementContextDocument>);
+
+impl<'de> serde::Deserialize<'de> for RequiredContext {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct ContextVisitor;
+        impl<'de> serde::de::Visitor<'de> for ContextVisitor {
+            type Value = RequiredContext;
+
+            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                formatter.write_str("an explicit requirement context object or null")
+            }
+
+            fn visit_none<E>(self) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(RequiredContext(None))
+            }
+
+            fn visit_unit<E>(self) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(RequiredContext(None))
+            }
+
+            fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                <RequirementContextDocument as serde::Deserialize>::deserialize(
+                    serde::de::value::MapAccessDeserializer::new(map),
+                )
+                .map(|value| RequiredContext(Some(value)))
+            }
+        }
+        deserializer.deserialize_any(ContextVisitor)
+    }
+}
+
 /// A contextual operation could not establish a complete formula binding.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ContextualBindingError {

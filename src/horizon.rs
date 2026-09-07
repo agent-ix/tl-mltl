@@ -56,7 +56,7 @@ pub enum ContextualHorizonSchemaVersion {
 }
 
 /// Flat v2 horizon report carrying shared catalog and caller context identity.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ContextualHorizonReport {
     /// Closed v2 wire identity.
@@ -90,6 +90,23 @@ pub struct ContextualHorizonReport {
     /// Unit shared by all three resource values.
     pub unit: String,
 }
+
+deserialize_contextual_record!(ContextualHorizonReport {
+    schema_version: ContextualHorizonSchemaVersion,
+    source_revision: String,
+    syntax_revision: String,
+    signal_catalog_sha256: String,
+    request_sha256: String,
+    result_sha256: String,
+    formula_id: String,
+    formula_root: u32,
+    semantic_profile: String,
+    corpus_revision: String,
+    lookahead: u64,
+    propagation_delay: u64,
+    required_buffer: u64,
+    unit: String,
+});
 
 /// Failure from context-bound horizon analysis.
 #[derive(Clone, Debug, Eq, PartialEq)]

@@ -126,7 +126,7 @@ pub enum ContextualEvaluationSchemaVersion {
 }
 
 /// Flat v2 evaluation report carrying shared catalog and caller context identity.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ContextualEvaluationReport {
     /// Closed v2 wire identity.
@@ -166,6 +166,26 @@ pub struct ContextualEvaluationReport {
     /// Referenced proposition identities in sorted order.
     pub proposition_ids: Vec<u32>,
 }
+
+deserialize_contextual_record!(ContextualEvaluationReport {
+    schema_version: ContextualEvaluationSchemaVersion,
+    source_revision: String,
+    syntax_revision: String,
+    signal_catalog_sha256: String,
+    request_sha256: String,
+    result_sha256: String,
+    formula_id: String,
+    formula_root: u32,
+    semantic_profile: String,
+    trace_id: String,
+    trace_length: u64,
+    trace_closed: bool,
+    verdict: TruthValue,
+    verdict_time: u64,
+    observed_through: Option<u64>,
+    horizon: u64,
+    proposition_ids: Vec<u32>,
+});
 
 /// Failure from a context-bound evaluation.
 #[derive(Clone, Debug, Eq, PartialEq)]

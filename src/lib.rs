@@ -4,6 +4,29 @@
 //! Closed traces use an all-false valuation after the declared end; open
 //! prefixes preserve unknown future observations as [`TruthValue::Pending`].
 
+macro_rules! deserialize_contextual_record {
+    ($record:ident { $($field:ident: $field_type:ty),+ $(,)? }) => {
+        impl<'de> serde::Deserialize<'de> for $record {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                #[derive(serde::Deserialize)]
+                #[serde(rename_all = "camelCase", deny_unknown_fields)]
+                struct Wire {
+                    $( $field: $field_type, )+
+                    requirement_context: crate::context::RequiredContext,
+                }
+                let wire = Wire::deserialize(deserializer)?;
+                Ok(Self {
+                    $( $field: wire.$field, )+
+                    requirement_context: wire.requirement_context.0,
+                })
+            }
+        }
+    };
+}
+
 mod context;
 mod differential;
 mod evaluate;
