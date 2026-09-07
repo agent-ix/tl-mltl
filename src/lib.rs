@@ -24,7 +24,10 @@ pub use evaluate::{
     ContextualEvaluationReport, ContextualEvaluationSchemaVersion, EvaluationError,
     EvaluationLimits, EvaluationReport, TruthValue,
 };
-pub use horizon::{analyze_horizon, HorizonError, HorizonReport};
+pub use horizon::{
+    analyze_horizon, analyze_horizon_with_context, ContextualHorizonError, ContextualHorizonReport,
+    ContextualHorizonSchemaVersion, HorizonError, HorizonReport,
+};
 pub use mapping::{
     map_to_c2po, MappingError, MappingManifest, MappingSourceIdentity, MappingSourceState,
 };

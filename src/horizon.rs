@@ -1,9 +1,12 @@
 use core::fmt;
 
 use serde::{Deserialize, Serialize};
-use tl_syntax::{Formula, NodeId, NodeKind};
+use tl_syntax::{Formula, NodeId, NodeKind, RequirementContextDocument, SignalCatalogDocument};
 
-use crate::TL_SYNTAX_CORPUS_REVISION;
+use crate::{
+    context::{bind_formula, catalog_sha256, contextual_request_sha256, contextual_result_sha256},
+    ContextualBindingError, TL_SYNTAX_CORPUS_REVISION, TL_SYNTAX_REVISION,
+};
 
 /// Versioned, identity-bearing horizon and buffer result.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -28,6 +31,76 @@ pub struct HorizonReport {
     /// Unit shared by all three resource values.
     pub unit: String,
 }
+
+/// Closed schema identity for a context-bound horizon record.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum ContextualHorizonSchemaVersion {
+    /// Context-bound horizon report.
+    #[serde(rename = "tl-mltl.horizon/v2")]
+    V2,
+}
+
+/// Flat v2 horizon report carrying shared catalog and caller context identity.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ContextualHorizonReport {
+    /// Closed v2 wire identity.
+    pub schema_version: ContextualHorizonSchemaVersion,
+    /// Exact tl-mltl source revision compiled into this result.
+    pub source_revision: String,
+    /// Exact shared tl-syntax dependency revision.
+    pub syntax_revision: String,
+    /// SHA-256 identity of the complete shared catalog.
+    pub signal_catalog_sha256: String,
+    /// Exact caller context, or deliberate absence encoded as null.
+    pub requirement_context: Option<RequirementContextDocument>,
+    /// Domain-separated complete request identity.
+    pub request_sha256: String,
+    /// Domain-separated result identity excluding only this field itself.
+    pub result_sha256: String,
+    /// Caller-provided stable formula identity.
+    pub formula_id: String,
+    /// Root node identity within the formula document.
+    pub formula_root: u32,
+    /// Exact semantic-profile wire identity.
+    pub semantic_profile: String,
+    /// Shared corpus revision used by downstream conformance.
+    pub corpus_revision: String,
+    /// Maximum future offset needed at evaluation time zero.
+    pub lookahead: u64,
+    /// Worst-case delay before a complete observation window decides the formula.
+    pub propagation_delay: u64,
+    /// Number of discrete observation slots in that window.
+    pub required_buffer: u64,
+    /// Unit shared by all three resource values.
+    pub unit: String,
+}
+
+/// Failure from context-bound horizon analysis.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ContextualHorizonError {
+    /// The shared catalog does not bind the formula.
+    Binding(ContextualBindingError),
+    /// Existing horizon analysis refused the operation.
+    Horizon(HorizonError),
+    /// The deterministic identity could not be serialized.
+    Identity(String),
+}
+
+impl fmt::Display for ContextualHorizonError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Binding(error) => error.fmt(formatter),
+            Self::Horizon(error) => error.fmt(formatter),
+            Self::Identity(error) => write!(
+                formatter,
+                "contextual identity serialization failed: {error}"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for ContextualHorizonError {}
 
 /// Checked horizon-analysis failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -140,4 +213,122 @@ pub fn analyze_horizon(
         required_buffer,
         unit: "discrete-instants".to_owned(),
     })
+}
+
+/// Computes horizon analysis after binding every proposition through the exact
+/// caller-supplied shared catalog.
+pub fn analyze_horizon_with_context(
+    formula: Formula<'_>,
+    formula_id: impl Into<String>,
+    signal_catalog: &SignalCatalogDocument,
+    requirement_context: Option<&RequirementContextDocument>,
+) -> Result<ContextualHorizonReport, ContextualHorizonError> {
+    bind_formula(formula, signal_catalog).map_err(ContextualHorizonError::Binding)?;
+    let formula_id = formula_id.into();
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Request<'a> {
+        formula_id: &'a str,
+        formula_root: u32,
+        semantic_profile: &'a str,
+        formula_nodes: &'a [tl_syntax::Node],
+        source_revision: &'a str,
+        syntax_revision: &'a str,
+    }
+    let request = Request {
+        formula_id: &formula_id,
+        formula_root: formula.root().0,
+        semantic_profile: formula.profile().as_str(),
+        formula_nodes: formula.nodes(),
+        source_revision: env!("TL_MLTL_SOURCE_REVISION"),
+        syntax_revision: TL_SYNTAX_REVISION,
+    };
+    let request_sha256 = contextual_request_sha256(
+        "tl-mltl.contextual-horizon/v2/request",
+        &request,
+        signal_catalog,
+        requirement_context,
+    )
+    .map_err(|error| ContextualHorizonError::Identity(error.to_string()))?;
+    let report =
+        analyze_horizon(formula, formula_id.clone()).map_err(ContextualHorizonError::Horizon)?;
+    let mut contextual = ContextualHorizonReport {
+        schema_version: ContextualHorizonSchemaVersion::V2,
+        source_revision: env!("TL_MLTL_SOURCE_REVISION").to_owned(),
+        syntax_revision: TL_SYNTAX_REVISION.to_owned(),
+        signal_catalog_sha256: catalog_sha256(signal_catalog)
+            .map_err(|error| ContextualHorizonError::Identity(error.to_string()))?,
+        requirement_context: requirement_context.cloned(),
+        request_sha256,
+        result_sha256: String::new(),
+        formula_id: report.formula_id,
+        formula_root: report.formula_root,
+        semantic_profile: report.semantic_profile,
+        corpus_revision: report.corpus_revision,
+        lookahead: report.lookahead,
+        propagation_delay: report.propagation_delay,
+        required_buffer: report.required_buffer,
+        unit: report.unit,
+    };
+    contextual.result_sha256 =
+        contextual_result_sha256("tl-mltl.contextual-horizon/v2/result", &contextual)
+            .map_err(|error| ContextualHorizonError::Identity(error.to_string()))?;
+    Ok(contextual)
+}
+
+#[cfg(test)]
+mod tests {
+    use tl_syntax::{
+        FormulaDocument, Node, NodeId, NodeKind, OwnedSignalDeclaration, PropositionBinding,
+        RequirementContextDocument, SemanticProfile, SignalCatalogDocument, SignalDomain, SignalId,
+        SourceSpan,
+    };
+
+    use super::{
+        analyze_horizon_with_context, ContextualHorizonReport, ContextualHorizonSchemaVersion,
+    };
+
+    #[test]
+    fn contextual_horizon_binds_context_and_rejects_missing_wire_identity() {
+        let document = FormulaDocument::new(
+            SemanticProfile::ClosedTraceV1,
+            NodeId(0),
+            vec![Node::new(NodeKind::Proposition {
+                proposition: tl_syntax::PropositionId(7),
+            })],
+        )
+        .unwrap();
+        let catalog = SignalCatalogDocument::new(
+            vec![OwnedSignalDeclaration::new(
+                SignalId(1),
+                "request_ready".to_owned(),
+                SignalDomain::Boolean,
+            )],
+            vec![PropositionBinding::new(
+                tl_syntax::PropositionId(7),
+                SignalId(1),
+            )],
+        )
+        .unwrap();
+        let context = RequirementContextDocument::new(
+            "agent-ix/tl-mltl/FR-007".to_owned(),
+            "1".to_owned(),
+            "AC-1".to_owned(),
+            "contextual-horizon".to_owned(),
+            SourceSpan::new(0, 1).unwrap(),
+        )
+        .unwrap();
+        let report = analyze_horizon_with_context(
+            document.validate().unwrap(),
+            "formula",
+            &catalog,
+            Some(&context),
+        )
+        .unwrap();
+        assert_eq!(report.schema_version, ContextualHorizonSchemaVersion::V2);
+        assert_eq!(report.requirement_context, Some(context));
+        let mut wire = serde_json::to_value(report).unwrap();
+        wire.as_object_mut().unwrap().remove("requestSha256");
+        assert!(serde_json::from_value::<ContextualHorizonReport>(wire).is_err());
+    }
 }
