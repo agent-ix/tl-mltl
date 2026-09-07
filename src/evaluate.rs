@@ -2,9 +2,16 @@ use core::fmt;
 use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
-use tl_syntax::{Formula, NodeId, NodeKind, PropositionId, SemanticProfile};
+use tl_syntax::{
+    Formula, NodeId, NodeKind, PropositionId, RequirementContextDocument, SemanticProfile,
+    SignalCatalogDocument,
+};
 
-use crate::{horizon::lookahead, HorizonError, MAX_RECURSION_DEPTH};
+use crate::{
+    context::{bind_formula, catalog_sha256, contextual_request_sha256, contextual_result_sha256},
+    horizon::lookahead,
+    ContextualBindingError, HorizonError, MAX_RECURSION_DEPTH, TL_SYNTAX_REVISION,
+};
 
 /// Three-valued result for closed and open-prefix evaluation.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -94,6 +101,82 @@ pub struct EvaluationReport {
     /// Referenced proposition identities in sorted order.
     pub proposition_ids: Vec<u32>,
 }
+
+/// Closed schema identity for a context-bound evaluation record.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum ContextualEvaluationSchemaVersion {
+    /// Context-bound evaluation report.
+    #[serde(rename = "tl-mltl.evaluation/v2")]
+    V2,
+}
+
+/// Flat v2 evaluation report carrying shared catalog and caller context identity.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ContextualEvaluationReport {
+    /// Closed v2 wire identity.
+    pub schema_version: ContextualEvaluationSchemaVersion,
+    /// Exact tl-mltl source revision compiled into this result.
+    pub source_revision: String,
+    /// Exact shared tl-syntax dependency revision.
+    pub syntax_revision: String,
+    /// SHA-256 of the complete shared signal catalog document.
+    pub signal_catalog_sha256: String,
+    /// Exact caller context, or deliberate absence encoded as null.
+    pub requirement_context: Option<RequirementContextDocument>,
+    /// Domain-separated identity of the complete operation request.
+    pub request_sha256: String,
+    /// Domain-separated identity of this result excluding this field itself.
+    pub result_sha256: String,
+    /// Caller-provided formula identity.
+    pub formula_id: String,
+    /// Root node identity.
+    pub formula_root: u32,
+    /// Exact semantic-profile identity.
+    pub semantic_profile: String,
+    /// Caller-provided trace identity.
+    pub trace_id: String,
+    /// Number of observed instants.
+    pub trace_length: u64,
+    /// Whether the supplied trace was declared closed.
+    pub trace_closed: bool,
+    /// Boolean or pending result.
+    pub verdict: TruthValue,
+    /// Caller-selected formula-time index represented by this verdict.
+    pub verdict_time: u64,
+    /// Last observation index available, or `None` when the trace is empty.
+    pub observed_through: Option<u64>,
+    /// Static worst-case decision horizon.
+    pub horizon: u64,
+    /// Referenced proposition identities in sorted order.
+    pub proposition_ids: Vec<u32>,
+}
+
+/// Failure from a context-bound evaluation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ContextualEvaluationError {
+    /// The shared catalog does not bind the formula.
+    Binding(ContextualBindingError),
+    /// Existing evaluation semantics refused the operation.
+    Evaluation(EvaluationError),
+    /// The deterministic identity could not be serialized.
+    Identity(String),
+}
+
+impl fmt::Display for ContextualEvaluationError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Binding(error) => error.fmt(formatter),
+            Self::Evaluation(error) => error.fmt(formatter),
+            Self::Identity(error) => write!(
+                formatter,
+                "contextual identity serialization failed: {error}"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for ContextualEvaluationError {}
 
 /// Evaluation failure that never contains a fallback Boolean verdict.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -479,6 +562,84 @@ pub fn evaluate_closed(
     evaluate_closed_at(formula, formula_id, trace, trace_id, 0, limits)
 }
 
+/// Evaluates a complete trace after binding every formula proposition through
+/// the exact caller-supplied shared catalog.
+pub fn evaluate_closed_with_context(
+    formula: Formula<'_>,
+    formula_id: impl Into<String>,
+    trace: &[Vec<PropositionId>],
+    trace_id: impl Into<String>,
+    limits: EvaluationLimits,
+    signal_catalog: &SignalCatalogDocument,
+    requirement_context: Option<&RequirementContextDocument>,
+) -> Result<ContextualEvaluationReport, ContextualEvaluationError> {
+    bind_formula(formula, signal_catalog).map_err(ContextualEvaluationError::Binding)?;
+    let formula_id = formula_id.into();
+    let trace_id = trace_id.into();
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Request<'a> {
+        formula_id: &'a str,
+        formula_root: u32,
+        semantic_profile: &'a str,
+        formula_nodes: &'a [tl_syntax::Node],
+        trace: &'a [Vec<PropositionId>],
+        trace_id: &'a str,
+        limits: [u64; 3],
+        source_revision: &'a str,
+        syntax_revision: &'a str,
+    }
+    let request = Request {
+        formula_id: &formula_id,
+        formula_root: formula.root().0,
+        semantic_profile: formula.profile().as_str(),
+        formula_nodes: formula.nodes(),
+        trace,
+        trace_id: &trace_id,
+        limits: [
+            limits.max_node_evaluations,
+            limits.max_temporal_span,
+            u64::from(limits.max_recursion_depth),
+        ],
+        source_revision: env!("TL_MLTL_SOURCE_REVISION"),
+        syntax_revision: TL_SYNTAX_REVISION,
+    };
+    let request_sha256 = contextual_request_sha256(
+        "tl-mltl.contextual-evaluation/v2/request",
+        &request,
+        signal_catalog,
+        requirement_context,
+    )
+    .map_err(|error| ContextualEvaluationError::Identity(error.to_string()))?;
+    let report = evaluate_closed(formula, formula_id.clone(), trace, trace_id.clone(), limits)
+        .map_err(ContextualEvaluationError::Evaluation)?;
+    let mut contextual = ContextualEvaluationReport {
+        schema_version: ContextualEvaluationSchemaVersion::V2,
+        source_revision: env!("TL_MLTL_SOURCE_REVISION").to_owned(),
+        syntax_revision: TL_SYNTAX_REVISION.to_owned(),
+        signal_catalog_sha256: catalog_sha256(signal_catalog)
+            .map_err(|error| ContextualEvaluationError::Identity(error.to_string()))?,
+        requirement_context: requirement_context.cloned(),
+        request_sha256,
+        result_sha256: String::new(),
+        formula_id: report.formula_id,
+        formula_root: report.formula_root,
+        semantic_profile: report.semantic_profile,
+        trace_id: report.trace_id,
+        trace_length: report.trace_length,
+        trace_closed: report.trace_closed,
+        verdict: report.verdict,
+        verdict_time: report.verdict_time,
+        observed_through: report.observed_through,
+        horizon: report.horizon,
+        proposition_ids: report.proposition_ids,
+    };
+    contextual.result_sha256 =
+        contextual_result_sha256("tl-mltl.contextual-evaluation/v2/result", &contextual)
+            .map_err(|error| ContextualEvaluationError::Identity(error.to_string()))?;
+    Ok(contextual)
+}
+
 /// Evaluates a complete trace at `verdict_time` under `mltl.closed-trace/v1`.
 pub fn evaluate_closed_at(
     formula: Formula<'_>,
@@ -544,4 +705,101 @@ pub fn evaluate_prefix_at(
         verdict_time,
         limits,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use tl_syntax::{
+        FormulaDocument, Node, NodeId, NodeKind, OwnedSignalDeclaration, PropositionBinding,
+        RequirementContextDocument, SemanticProfile, SignalCatalogDocument, SignalDomain, SignalId,
+        SourceSpan,
+    };
+
+    use super::{
+        evaluate_closed_with_context, ContextualEvaluationSchemaVersion, EvaluationLimits,
+    };
+
+    fn formula() -> FormulaDocument {
+        FormulaDocument::new(
+            SemanticProfile::ClosedTraceV1,
+            NodeId(0),
+            vec![Node::new(NodeKind::Proposition {
+                proposition: tl_syntax::PropositionId(7),
+            })],
+        )
+        .unwrap()
+    }
+
+    fn catalog() -> SignalCatalogDocument {
+        SignalCatalogDocument::new(
+            vec![OwnedSignalDeclaration::new(
+                SignalId(1),
+                "request_ready".to_owned(),
+                SignalDomain::Boolean,
+            )],
+            vec![PropositionBinding::new(
+                tl_syntax::PropositionId(7),
+                SignalId(1),
+            )],
+        )
+        .unwrap()
+    }
+
+    fn context(revision: &str) -> RequirementContextDocument {
+        RequirementContextDocument::new(
+            "agent-ix/tl-mltl/FR-007".to_owned(),
+            revision.to_owned(),
+            "AC-1".to_owned(),
+            "contextual-evaluation".to_owned(),
+            SourceSpan::new(0, 1).unwrap(),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn contextual_evaluation_preserves_shared_context_and_binds_its_identity() {
+        let document = formula();
+        let first = evaluate_closed_with_context(
+            document.validate().unwrap(),
+            "formula",
+            &[vec![tl_syntax::PropositionId(7)]],
+            "trace",
+            EvaluationLimits::default(),
+            &catalog(),
+            Some(&context("1")),
+        )
+        .unwrap();
+        let second = evaluate_closed_with_context(
+            document.validate().unwrap(),
+            "formula",
+            &[vec![tl_syntax::PropositionId(7)]],
+            "trace",
+            EvaluationLimits::default(),
+            &catalog(),
+            Some(&context("2")),
+        )
+        .unwrap();
+        assert_eq!(first.schema_version, ContextualEvaluationSchemaVersion::V2);
+        assert_eq!(first.requirement_context, Some(context("1")));
+        assert_ne!(first.request_sha256, second.request_sha256);
+        assert_ne!(first.result_sha256, second.result_sha256);
+    }
+
+    #[test]
+    fn contextual_evaluation_wire_is_closed_and_requires_contextual_fields() {
+        let document = formula();
+        let report = evaluate_closed_with_context(
+            document.validate().unwrap(),
+            "formula",
+            &[vec![tl_syntax::PropositionId(7)]],
+            "trace",
+            EvaluationLimits::default(),
+            &catalog(),
+            None,
+        )
+        .unwrap();
+        let mut value = serde_json::to_value(report).unwrap();
+        value.as_object_mut().unwrap().remove("signalCatalogSha256");
+        assert!(serde_json::from_value::<super::ContextualEvaluationReport>(value).is_err());
+    }
 }

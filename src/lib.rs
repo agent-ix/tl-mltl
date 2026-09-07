@@ -19,8 +19,10 @@ pub use differential::{
     ToolIdentity,
 };
 pub use evaluate::{
-    evaluate_closed, evaluate_closed_at, evaluate_prefix, evaluate_prefix_at, EvaluationError,
-    EvaluationLimits, EvaluationReport, TruthValue,
+    evaluate_closed, evaluate_closed_at, evaluate_closed_with_context, evaluate_prefix,
+    evaluate_prefix_at, ContextualEvaluationError, ContextualEvaluationReport,
+    ContextualEvaluationSchemaVersion, EvaluationError, EvaluationLimits, EvaluationReport,
+    TruthValue,
 };
 pub use horizon::{analyze_horizon, HorizonError, HorizonReport};
 pub use mapping::{
