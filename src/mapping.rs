@@ -633,6 +633,32 @@ mod tests {
 
     // Trace: TC-026, FR-007-AC-2, StR-003-VC-2
     #[test]
+    fn contextual_public_mapping_refusal_has_no_manifest() {
+        let document = formula();
+        let result = map_to_c2po_with_context(
+            document.validate().unwrap(),
+            "formula",
+            b"p7",
+            MappingSourceIdentity {
+                revision: "source".to_owned(),
+                state: MappingSourceState::Clean,
+            },
+            None,
+            8,
+            &catalog("G"),
+            None,
+        );
+        assert!(matches!(
+            result,
+            Err(MappingError::UnsupportedSignalName {
+                signal: SignalId(1),
+                ref name,
+            }) if name == "G"
+        ));
+    }
+
+    // Trace: TC-026, FR-007-AC-2, StR-003-VC-2
+    #[test]
     fn contextual_mapping_covers_each_lexical_and_reserved_name_refusal() {
         let document = formula();
         let formula = document.validate().unwrap();
