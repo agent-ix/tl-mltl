@@ -99,6 +99,18 @@ pub(crate) fn contextual_request_sha256<T: Serialize>(
     )
 }
 
+/// Returns a result identity without recursively including its own digest field.
+pub(crate) fn contextual_result_sha256<T: Serialize>(
+    domain: &str,
+    report: &T,
+) -> Result<String, serde_json::Error> {
+    let mut value = serde_json::to_value(report)?;
+    if let Some(object) = value.as_object_mut() {
+        object.remove("resultSha256");
+    }
+    domain_sha256(domain, &value)
+}
+
 fn sha256_json<T: Serialize>(value: &T) -> Result<String, serde_json::Error> {
     Ok(hex(Sha256::digest(serde_json::to_vec(value)?)))
 }
@@ -120,8 +132,8 @@ mod tests {
     };
 
     use super::{
-        bind_formula, catalog_sha256, contextual_request_sha256, domain_sha256,
-        ContextualBindingError,
+        bind_formula, catalog_sha256, contextual_request_sha256, contextual_result_sha256,
+        domain_sha256, ContextualBindingError,
     };
 
     fn formula(proposition: u32) -> FormulaDocument {
@@ -203,5 +215,21 @@ mod tests {
         )
         .unwrap();
         assert_ne!(absent, present);
+    }
+
+    #[test]
+    fn result_identity_ignores_only_its_own_field() {
+        let first = serde_json::json!({"resultSha256": "old", "outcome": true});
+        let second = serde_json::json!({"resultSha256": "new", "outcome": true});
+        let changed = serde_json::json!({"resultSha256": "old", "outcome": false});
+        let first = contextual_result_sha256("tl-mltl.contextual-evaluation/v2", &first).unwrap();
+        assert_eq!(
+            first,
+            contextual_result_sha256("tl-mltl.contextual-evaluation/v2", &second).unwrap()
+        );
+        assert_ne!(
+            first,
+            contextual_result_sha256("tl-mltl.contextual-evaluation/v2", &changed).unwrap()
+        );
     }
 }
