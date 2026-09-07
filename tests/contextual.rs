@@ -1,8 +1,10 @@
 use tl_mltl::{
-    analyze_horizon_with_context, compare_external_with_context, evaluate_prefix_with_context,
-    map_to_c2po_with_context, ContextualComparisonStatus, ContextualExternalVerdict,
-    ContextualExternalVerdictSchemaVersion, EvaluationLimits, ExternalStatus,
-    MappingSourceIdentity, MappingSourceState, ToolIdentity,
+    analyze_horizon, analyze_horizon_with_context, compare_external, compare_external_with_context,
+    evaluate_prefix, evaluate_prefix_with_context, map_to_c2po, map_to_c2po_with_context,
+    ComparisonStatus, ContextualComparisonStatus, ContextualExternalVerdict,
+    ContextualExternalVerdictSchemaVersion, DifferentialReport, EvaluationLimits, EvaluationReport,
+    ExternalStatus, ExternalVerdict, HorizonReport, MappingManifest, MappingSourceIdentity,
+    MappingSourceState, ToolIdentity,
 };
 use tl_syntax::{
     Formula, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration, PropositionBinding,
@@ -69,6 +71,67 @@ fn tool() -> ToolIdentity {
         executable_sha256: "a".repeat(64),
         configuration_sha256: "b".repeat(64),
     }
+}
+
+fn assert_stable_v1_wire<T>(record: T, v2_schema: &str)
+where
+    T: serde::Serialize + serde::de::DeserializeOwned + Eq + core::fmt::Debug,
+{
+    let bytes = serde_json::to_vec(&record).unwrap();
+    assert_eq!(serde_json::to_vec(&record).unwrap(), bytes);
+    assert_eq!(serde_json::from_slice::<T>(&bytes).unwrap(), record);
+
+    let mut relabeled: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    relabeled["schemaVersion"] = serde_json::json!(v2_schema);
+    assert!(serde_json::from_value::<T>(relabeled).is_err());
+}
+
+// Trace: TC-029, FR-007-AC-5, NFR-001-AC-1
+#[test]
+fn legacy_records_round_trip_as_exact_v1_wires_and_refuse_v2_labels() {
+    let nodes = overlay_nodes();
+    let formula = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(3), &nodes).unwrap();
+    let trace = vec![vec![PropositionId(7)], vec![PropositionId(8)]];
+    let evaluation = evaluate_prefix(
+        formula,
+        "overlay-response",
+        &trace,
+        "overlay-trace",
+        false,
+        EvaluationLimits::default(),
+    )
+    .unwrap();
+    let horizon = analyze_horizon(formula, "overlay-response").unwrap();
+    let mapping = map_to_c2po(
+        formula,
+        "overlay-response",
+        b"overlay-response",
+        MappingSourceIdentity {
+            revision: "fixture".to_owned(),
+            state: MappingSourceState::Clean,
+        },
+        None,
+        100,
+    )
+    .unwrap();
+    let external = ExternalVerdict {
+        schema_version: "tl-mltl.external-verdict/v1".to_owned(),
+        tool: tool(),
+        formula_id: evaluation.formula_id.clone(),
+        trace_id: evaluation.trace_id.clone(),
+        status: ExternalStatus::Conclusive,
+        value: Some(true),
+        verdict_time: Some(evaluation.verdict_time),
+        detail: None,
+    };
+    let differential = compare_external(&evaluation, external.clone());
+    assert_eq!(differential.status, ComparisonStatus::Agreement);
+
+    assert_stable_v1_wire::<EvaluationReport>(evaluation, "tl-mltl.evaluation/v2");
+    assert_stable_v1_wire::<HorizonReport>(horizon, "tl-mltl.horizon/v2");
+    assert_stable_v1_wire::<MappingManifest>(mapping, "tl-mltl.monitor-mapping/v2");
+    assert_stable_v1_wire::<ExternalVerdict>(external, "tl-mltl.external-verdict/v2");
+    assert_stable_v1_wire::<DifferentialReport>(differential, "tl-mltl.differential/v2");
 }
 
 // Trace: TC-031, FR-007-AC-7, StR-003-VC-1, NFR-002-AC-4
