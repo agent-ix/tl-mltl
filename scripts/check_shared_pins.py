@@ -168,6 +168,10 @@ def upstream_pin_mismatches(pins: dict[str, Any]) -> list[str]:
         "src/lib.rs ": f'TL_SYNTAX_CORPUS_BASIS: &str = "{corpus}"',
         "README.md": f"`{compiled}`",
         "corpus/README.md": f"`{compiled}`",
+        # One file records both facts: the compiled dependency is current, while
+        # the retained corpus remains an older, independently verified copy.
+        # Keep both needles so neither fact can silently overwrite the other.
+        "corpus/README.md ": f"`{corpus}`",
         "assurance/change-assurance.json": f"The compiled dependency moved to {compiled[:8]}",
     }
     for name, needle in checks.items():

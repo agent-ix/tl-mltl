@@ -354,8 +354,15 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
     // an author-maintained explanation. Each stale compiled-pin spelling is
     // independently refused by the same guard that checks Cargo and the wire
     // constant.
-    let scratch = root().join("target/stale-current-pin-probe");
-    let _ = fs::remove_dir_all(&scratch);
+    let scratch = std::env::temp_dir().join(format!(
+        "tl-mltl-stale-current-pin-probe-{}",
+        std::process::id()
+    ));
+    match fs::remove_dir_all(&scratch) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("failed to clear stale current-pin probe: {error}"),
+    }
     fs::create_dir_all(&scratch).unwrap();
     for name in [
         "README.md",
@@ -389,6 +396,33 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
             "the pin guard did not reject a stale compiled revision in {name}: {:?}",
             problems
         );
+    }
+    let corpus_readme = scratch.join("corpus/README.md");
+    fs::copy(root().join("corpus/README.md"), &corpus_readme).unwrap();
+    let corpus_basis = fs::read_to_string(&corpus_readme)
+        .unwrap()
+        .replace("740182f1", "6ad7499f");
+    fs::write(&corpus_readme, corpus_basis).unwrap();
+    let (code, stdout, stderr) = run(
+        &python,
+        &[
+            "-c",
+            "import json,sys;from pathlib import Path;sys.path.insert(0,'scripts');import check_shared_pins as m;m.ROOT=Path(sys.argv[1]);pins=json.load(open('assurance/pins.json'));print(json.dumps(m.upstream_pin_mismatches(pins)))",
+            scratch.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(code, 0, "the corpus-basis probe failed: {stderr}");
+    let problems: Vec<String> = serde_json::from_str(stdout.trim()).unwrap();
+    assert!(
+        problems
+            .iter()
+            .any(|problem| problem == "corpus/README.md: does not name the expected revision"),
+        "the pin guard did not reject a corpus README that conflates the retained basis with the compiled revision: {problems:?}"
+    );
+    match fs::remove_dir_all(&scratch) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("failed to remove stale current-pin probe: {error}"),
     }
 }
 
