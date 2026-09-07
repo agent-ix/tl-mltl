@@ -3,9 +3,15 @@ use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tl_syntax::{Formula, NodeId, NodeKind, SemanticProfile};
+use tl_syntax::{
+    Formula, NodeId, NodeKind, PropositionId, SemanticProfile, SignalCatalog,
+    SignalCatalogDocument, SignalId,
+};
 
-use crate::{ToolIdentity, MAX_RECURSION_DEPTH, TL_SYNTAX_REVISION};
+use crate::{
+    context::bind_formula, ContextualBindingError, ToolIdentity, MAX_RECURSION_DEPTH,
+    TL_SYNTAX_REVISION,
+};
 
 /// Named source identity embedded in a mapping manifest.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -79,6 +85,10 @@ pub struct MappingManifest {
 /// Mapping failure with no partial executable output.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MappingError {
+    /// The shared catalog does not bind the formula.
+    Binding(ContextualBindingError),
+    /// The caller-supplied catalog document no longer validates.
+    InvalidCatalog(String),
     /// R2U2/C2PO mapping is defined only for online-prefix semantics.
     UnsupportedProfile {
         /// Actual profile.
@@ -96,11 +106,20 @@ pub enum MappingError {
         /// Fixed nesting boundary.
         limit: u32,
     },
+    /// A shared Boolean signal name is not valid C2PO input syntax.
+    UnsupportedSignalName {
+        /// Shared signal identity.
+        signal: SignalId,
+        /// Exact shared signal name.
+        name: String,
+    },
 }
 
 impl fmt::Display for MappingError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Binding(error) => error.fmt(formatter),
+            Self::InvalidCatalog(error) => write!(formatter, "invalid signal catalog: {error}"),
             Self::UnsupportedProfile { actual } => write!(
                 formatter,
                 "R2U2/C2PO mapping requires {}, found {actual}",
@@ -119,19 +138,25 @@ impl fmt::Display for MappingError {
             Self::RecursionDepthExceeded { limit } => {
                 write!(formatter, "mapping exceeded recursion-depth limit {limit}")
             }
+            Self::UnsupportedSignalName { signal, name } => write!(
+                formatter,
+                "signal {} name {name:?} is not a supported C2PO input identifier",
+                signal.0
+            ),
         }
     }
 }
 
 impl std::error::Error for MappingError {}
 
-struct Renderer<'a> {
-    formula: Formula<'a>,
+struct Renderer<'formula, 'catalog> {
+    formula: Formula<'formula>,
+    catalog: Option<SignalCatalog<'catalog>>,
     visits: u64,
     limit: u64,
 }
 
-impl Renderer<'_> {
+impl Renderer<'_, '_> {
     fn render(&mut self, node: NodeId, depth: u32) -> Result<String, MappingError> {
         if depth > MAX_RECURSION_DEPTH {
             return Err(MappingError::RecursionDepthExceeded {
@@ -159,7 +184,7 @@ impl Renderer<'_> {
         match kind {
             NodeKind::False => Ok("false".to_owned()),
             NodeKind::True => Ok("true".to_owned()),
-            NodeKind::Proposition { proposition } => Ok(format!("p{}", proposition.0)),
+            NodeKind::Proposition { proposition } => self.proposition(proposition),
             NodeKind::Not { operand } => Ok(format!("(!{})", self.render(operand, child_depth)?)),
             NodeKind::And { left, right } => self.binary("&&", left, right, child_depth),
             NodeKind::Or { left, right } => self.binary("||", left, right, child_depth),
@@ -204,6 +229,23 @@ impl Renderer<'_> {
         }
     }
 
+    fn proposition(&self, proposition: PropositionId) -> Result<String, MappingError> {
+        let Some(catalog) = self.catalog else {
+            return Ok(format!("p{}", proposition.0));
+        };
+        let signal = catalog
+            .signal_for_proposition(proposition)
+            .ok_or(MappingError::InvalidNodeReference(NodeId(proposition.0)))?;
+        let name = signal.name();
+        if !is_c2po_identifier(name) {
+            return Err(MappingError::UnsupportedSignalName {
+                signal: signal.id(),
+                name: name.to_owned(),
+            });
+        }
+        Ok(name.to_owned())
+    }
+
     fn binary(
         &mut self,
         operator: &str,
@@ -235,6 +277,68 @@ impl Renderer<'_> {
     }
 }
 
+fn is_c2po_identifier(value: &str) -> bool {
+    let mut bytes = value.bytes();
+    let Some(first) = bytes.next() else {
+        return false;
+    };
+    if !(first.is_ascii_alphabetic() || first == b'_') {
+        return false;
+    }
+    if !bytes.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_') {
+        return false;
+    }
+    !matches!(
+        value,
+        "STRUCT"
+            | "ENUM"
+            | "INPUT"
+            | "DEFINE"
+            | "FTSPEC"
+            | "PTSPEC"
+            | "foreach"
+            | "forsome"
+            | "forexactly"
+            | "foratleast"
+            | "foratmost"
+            | "TAU"
+            | "pow"
+            | "sqrt"
+            | "abs"
+            | "xor"
+            | "prev"
+            | "G"
+            | "F"
+            | "H"
+            | "O"
+            | "U"
+            | "R"
+            | "S"
+            | "T"
+            | "M"
+            | "true"
+            | "false"
+    )
+}
+
+pub(crate) fn render_contextual_expression(
+    formula: Formula<'_>,
+    catalog_document: &SignalCatalogDocument,
+    work_limit: u64,
+) -> Result<String, MappingError> {
+    bind_formula(formula, catalog_document).map_err(MappingError::Binding)?;
+    let catalog = catalog_document
+        .validate()
+        .map_err(|error| MappingError::InvalidCatalog(error.to_string()))?;
+    let mut renderer = Renderer {
+        formula,
+        catalog: Some(catalog),
+        visits: 0,
+        limit: work_limit,
+    };
+    renderer.render(formula.root(), 0)
+}
+
 fn sha256_hex(bytes: &[u8]) -> String {
     Sha256::digest(bytes)
         .iter()
@@ -260,6 +364,7 @@ pub fn map_to_c2po(
     }
     let mut renderer = Renderer {
         formula,
+        catalog: None,
         visits: 0,
         limit: work_limit,
     };
@@ -291,4 +396,66 @@ pub fn map_to_c2po(
             "mapping evidence does not establish external monitor timing, memory, or qualification"
                 .to_owned(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use tl_syntax::{
+        FormulaDocument, Node, NodeId, NodeKind, OwnedSignalDeclaration, PropositionBinding,
+        SemanticProfile, SignalCatalogDocument, SignalDomain, SignalId,
+    };
+
+    use super::{render_contextual_expression, MappingError};
+
+    fn formula() -> FormulaDocument {
+        FormulaDocument::new(
+            SemanticProfile::OnlinePrefixV1,
+            NodeId(0),
+            vec![Node::new(NodeKind::Proposition {
+                proposition: tl_syntax::PropositionId(7),
+            })],
+        )
+        .unwrap()
+    }
+
+    fn catalog(name: &str) -> SignalCatalogDocument {
+        SignalCatalogDocument::new(
+            vec![OwnedSignalDeclaration::new(
+                SignalId(1),
+                name.to_owned(),
+                SignalDomain::Boolean,
+            )],
+            vec![PropositionBinding::new(
+                tl_syntax::PropositionId(7),
+                SignalId(1),
+            )],
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn contextual_mapping_renders_the_exact_shared_signal_name() {
+        let document = formula();
+        assert_eq!(
+            render_contextual_expression(
+                document.validate().unwrap(),
+                &catalog("request_ready"),
+                8
+            )
+            .unwrap(),
+            "request_ready"
+        );
+    }
+
+    #[test]
+    fn contextual_mapping_refuses_reserved_names_without_an_expression() {
+        let document = formula();
+        assert!(matches!(
+            render_contextual_expression(document.validate().unwrap(), &catalog("G"), 8),
+            Err(MappingError::UnsupportedSignalName {
+                signal: SignalId(1),
+                ..
+            })
+        ));
+    }
 }
