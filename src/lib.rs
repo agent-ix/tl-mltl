@@ -20,9 +20,9 @@ pub use differential::{
 };
 pub use evaluate::{
     evaluate_closed, evaluate_closed_at, evaluate_closed_with_context, evaluate_prefix,
-    evaluate_prefix_at, ContextualEvaluationError, ContextualEvaluationReport,
-    ContextualEvaluationSchemaVersion, EvaluationError, EvaluationLimits, EvaluationReport,
-    TruthValue,
+    evaluate_prefix_at, evaluate_prefix_with_context, ContextualEvaluationError,
+    ContextualEvaluationReport, ContextualEvaluationSchemaVersion, EvaluationError,
+    EvaluationLimits, EvaluationReport, TruthValue,
 };
 pub use horizon::{analyze_horizon, HorizonError, HorizonReport};
 pub use mapping::{

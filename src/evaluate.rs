@@ -680,6 +680,96 @@ pub fn evaluate_prefix(
     evaluate_prefix_at(formula, formula_id, trace, trace_id, closed, 0, limits)
 }
 
+/// Evaluates a prefix after binding every formula proposition through the exact
+/// caller-supplied shared catalog.
+pub fn evaluate_prefix_with_context(
+    formula: Formula<'_>,
+    formula_id: impl Into<String>,
+    trace: &[Vec<PropositionId>],
+    trace_id: impl Into<String>,
+    closed: bool,
+    limits: EvaluationLimits,
+    signal_catalog: &SignalCatalogDocument,
+    requirement_context: Option<&RequirementContextDocument>,
+) -> Result<ContextualEvaluationReport, ContextualEvaluationError> {
+    bind_formula(formula, signal_catalog).map_err(ContextualEvaluationError::Binding)?;
+    let formula_id = formula_id.into();
+    let trace_id = trace_id.into();
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Request<'a> {
+        formula_id: &'a str,
+        formula_root: u32,
+        semantic_profile: &'a str,
+        formula_nodes: &'a [tl_syntax::Node],
+        trace: &'a [Vec<PropositionId>],
+        trace_id: &'a str,
+        closed: bool,
+        limits: [u64; 3],
+        source_revision: &'a str,
+        syntax_revision: &'a str,
+    }
+    let request = Request {
+        formula_id: &formula_id,
+        formula_root: formula.root().0,
+        semantic_profile: formula.profile().as_str(),
+        formula_nodes: formula.nodes(),
+        trace,
+        trace_id: &trace_id,
+        closed,
+        limits: [
+            limits.max_node_evaluations,
+            limits.max_temporal_span,
+            u64::from(limits.max_recursion_depth),
+        ],
+        source_revision: env!("TL_MLTL_SOURCE_REVISION"),
+        syntax_revision: TL_SYNTAX_REVISION,
+    };
+    let request_sha256 = contextual_request_sha256(
+        "tl-mltl.contextual-prefix-evaluation/v2/request",
+        &request,
+        signal_catalog,
+        requirement_context,
+    )
+    .map_err(|error| ContextualEvaluationError::Identity(error.to_string()))?;
+    let report = evaluate_prefix(
+        formula,
+        formula_id.clone(),
+        trace,
+        trace_id.clone(),
+        closed,
+        limits,
+    )
+    .map_err(ContextualEvaluationError::Evaluation)?;
+    let mut contextual = ContextualEvaluationReport {
+        schema_version: ContextualEvaluationSchemaVersion::V2,
+        source_revision: env!("TL_MLTL_SOURCE_REVISION").to_owned(),
+        syntax_revision: TL_SYNTAX_REVISION.to_owned(),
+        signal_catalog_sha256: catalog_sha256(signal_catalog)
+            .map_err(|error| ContextualEvaluationError::Identity(error.to_string()))?,
+        requirement_context: requirement_context.cloned(),
+        request_sha256,
+        result_sha256: String::new(),
+        formula_id: report.formula_id,
+        formula_root: report.formula_root,
+        semantic_profile: report.semantic_profile,
+        trace_id: report.trace_id,
+        trace_length: report.trace_length,
+        trace_closed: report.trace_closed,
+        verdict: report.verdict,
+        verdict_time: report.verdict_time,
+        observed_through: report.observed_through,
+        horizon: report.horizon,
+        proposition_ids: report.proposition_ids,
+    };
+    contextual.result_sha256 = contextual_result_sha256(
+        "tl-mltl.contextual-prefix-evaluation/v2/result",
+        &contextual,
+    )
+    .map_err(|error| ContextualEvaluationError::Identity(error.to_string()))?;
+    Ok(contextual)
+}
+
 /// Evaluates an open or closed prefix at `verdict_time`.
 pub fn evaluate_prefix_at(
     formula: Formula<'_>,
@@ -716,7 +806,8 @@ mod tests {
     };
 
     use super::{
-        evaluate_closed_with_context, ContextualEvaluationSchemaVersion, EvaluationLimits,
+        evaluate_closed_with_context, evaluate_prefix_with_context,
+        ContextualEvaluationSchemaVersion, EvaluationLimits,
     };
 
     fn formula() -> FormulaDocument {
@@ -801,5 +892,41 @@ mod tests {
         let mut value = serde_json::to_value(report).unwrap();
         value.as_object_mut().unwrap().remove("signalCatalogSha256");
         assert!(serde_json::from_value::<super::ContextualEvaluationReport>(value).is_err());
+    }
+
+    #[test]
+    fn contextual_prefix_binds_closedness_and_retains_explicit_absence() {
+        let document = FormulaDocument::new(
+            SemanticProfile::OnlinePrefixV1,
+            NodeId(0),
+            vec![Node::new(NodeKind::Proposition {
+                proposition: tl_syntax::PropositionId(7),
+            })],
+        )
+        .unwrap();
+        let open = evaluate_prefix_with_context(
+            document.validate().unwrap(),
+            "formula",
+            &[],
+            "trace",
+            false,
+            EvaluationLimits::default(),
+            &catalog(),
+            None,
+        )
+        .unwrap();
+        let closed = evaluate_prefix_with_context(
+            document.validate().unwrap(),
+            "formula",
+            &[],
+            "trace",
+            true,
+            EvaluationLimits::default(),
+            &catalog(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(open.requirement_context, None);
+        assert_ne!(open.request_sha256, closed.request_sha256);
     }
 }
