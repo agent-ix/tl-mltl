@@ -38,6 +38,7 @@ pub enum ExternalStatus {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ExternalVerdict {
     /// Wire identity.
+    #[serde(deserialize_with = "deserialize_external_verdict_v1_schema")]
     pub schema_version: String,
     /// External tool identity.
     pub tool: ToolIdentity,
@@ -143,6 +144,11 @@ pub struct ContextualDifferentialReport {
     pub reference_verdict: TruthValue,
     /// Reference verdict time.
     pub reference_verdict_time: u64,
+    /// Complete contextual reference result used for this comparison.
+    ///
+    /// This keeps source/dependency revisions and both native identities inside
+    /// the comparison digest rather than reconstructing a partial identity.
+    pub reference: ContextualEvaluationReport,
     /// Complete contextual external outcome.
     pub external: ContextualExternalVerdict,
     /// Domain-separated comparison identity excluding only this field itself.
@@ -172,6 +178,7 @@ impl std::error::Error for ContextualComparisonError {}
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DifferentialReport {
     /// Wire identity.
+    #[serde(deserialize_with = "deserialize_differential_v1_schema")]
     pub schema_version: String,
     /// Formula identity.
     pub formula_id: String,
@@ -187,6 +194,34 @@ pub struct DifferentialReport {
     pub external: ExternalVerdict,
     /// Deterministic explanation.
     pub detail: String,
+}
+
+fn deserialize_external_verdict_v1_schema<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    deserialize_v1_schema(deserializer, "tl-mltl.external-verdict/v1")
+}
+
+fn deserialize_differential_v1_schema<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    deserialize_v1_schema(deserializer, "tl-mltl.differential/v1")
+}
+
+fn deserialize_v1_schema<'de, D>(deserializer: D, expected: &str) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let schema_version = String::deserialize(deserializer)?;
+    if schema_version == expected {
+        Ok(schema_version)
+    } else {
+        Err(serde::de::Error::custom(format!(
+            "expected {expected}, found {schema_version}"
+        )))
+    }
 }
 
 /// Compares an external result without executing or impersonating its engine.
@@ -284,6 +319,7 @@ pub fn compare_external_with_context(
         status,
         reference_verdict: reference.verdict,
         reference_verdict_time: reference.verdict_time,
+        reference: reference.clone(),
         external,
         comparison_sha256: String::new(),
         detail,
@@ -345,11 +381,63 @@ mod tests {
         }
     }
 
-    // Trace: TC-027, TC-028, FR-007-AC-3, FR-007-AC-4
+    // Trace: TC-027, TC-028, FR-007-AC-3, FR-007-AC-4, StR-003-VC-2
     #[test]
     fn contextual_comparison_refuses_identity_mismatch_before_truth_comparison() {
         let report = compare_external_with_context(&reference(), external("other")).unwrap();
         assert_eq!(report.status, ContextualComparisonStatus::IdentityMismatch);
         assert!(!report.comparison_sha256.is_empty());
+    }
+
+    // Trace: TC-027, TC-028, FR-007-AC-3, FR-007-AC-4, StR-003-VC-2
+    #[test]
+    fn contextual_comparison_keeps_semantic_and_nonconclusive_outcomes_distinct() {
+        let mut semantic_mismatch = external("catalog");
+        semantic_mismatch.value = Some(false);
+        let mismatch = compare_external_with_context(&reference(), semantic_mismatch).unwrap();
+        assert_eq!(mismatch.status, ContextualComparisonStatus::Mismatch);
+
+        let mut pending = external("catalog");
+        pending.status = ExternalStatus::Pending;
+        pending.value = None;
+        pending.verdict_time = None;
+        let nonconclusive = compare_external_with_context(&reference(), pending).unwrap();
+        assert_eq!(
+            nonconclusive.status,
+            ContextualComparisonStatus::NonConclusive
+        );
+        assert_ne!(mismatch.comparison_sha256, nonconclusive.comparison_sha256);
+    }
+
+    // Trace: TC-027, TC-028, FR-007-AC-3, FR-007-AC-4, StR-003-VC-1
+    #[test]
+    fn contextual_comparison_digest_binds_the_complete_reference_identity() {
+        let first = compare_external_with_context(&reference(), external("catalog")).unwrap();
+        let mut revised_reference = reference();
+        revised_reference.source_revision = "another-source".to_owned();
+        let revised =
+            compare_external_with_context(&revised_reference, external("catalog")).unwrap();
+        assert_eq!(first.status, ContextualComparisonStatus::Agreement);
+        assert_eq!(revised.status, ContextualComparisonStatus::Agreement);
+        assert_ne!(first.comparison_sha256, revised.comparison_sha256);
+    }
+
+    // Trace: TC-027, TC-029, FR-007-AC-3, FR-007-AC-5
+    #[test]
+    fn contextual_external_and_differential_wires_are_strictly_v2() {
+        let external = external("catalog");
+        let mut external_wire = serde_json::to_value(&external).unwrap();
+        external_wire["schemaVersion"] = serde_json::json!("tl-mltl.external-verdict/v1");
+        assert!(serde_json::from_value::<ContextualExternalVerdict>(external_wire).is_err());
+
+        let report = compare_external_with_context(&reference(), external).unwrap();
+        let mut report_wire = serde_json::to_value(report).unwrap();
+        report_wire
+            .as_object_mut()
+            .unwrap()
+            .remove("signalCatalogSha256");
+        assert!(
+            serde_json::from_value::<super::ContextualDifferentialReport>(report_wire).is_err()
+        );
     }
 }

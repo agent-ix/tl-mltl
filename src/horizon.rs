@@ -13,6 +13,7 @@ use crate::{
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct HorizonReport {
     /// Wire identity.
+    #[serde(deserialize_with = "deserialize_horizon_v1_schema")]
     pub schema_version: String,
     /// Caller-provided stable formula identity.
     pub formula_id: String,
@@ -30,6 +31,20 @@ pub struct HorizonReport {
     pub required_buffer: u64,
     /// Unit shared by all three resource values.
     pub unit: String,
+}
+
+fn deserialize_horizon_v1_schema<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let schema_version = String::deserialize(deserializer)?;
+    if schema_version == "tl-mltl.horizon/v1" {
+        Ok(schema_version)
+    } else {
+        Err(serde::de::Error::custom(format!(
+            "expected tl-mltl.horizon/v1, found {schema_version}"
+        )))
+    }
 }
 
 /// Closed schema identity for a context-bound horizon record.

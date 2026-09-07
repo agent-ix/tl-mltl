@@ -55,6 +55,7 @@ impl MappingSourceState {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct MappingManifest {
     /// Wire identity.
+    #[serde(deserialize_with = "deserialize_mapping_v1_schema")]
     pub schema_version: String,
     /// Adapter implementation identity.
     pub adapter_version: String,
@@ -80,6 +81,20 @@ pub struct MappingManifest {
     pub external_tool: Option<ToolIdentity>,
     /// Qualification boundary statement.
     pub limitation: String,
+}
+
+fn deserialize_mapping_v1_schema<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let schema_version = String::deserialize(deserializer)?;
+    if schema_version == "tl-mltl.monitor-mapping/v1" {
+        Ok(schema_version)
+    } else {
+        Err(serde::de::Error::custom(format!(
+            "expected tl-mltl.monitor-mapping/v1, found {schema_version}"
+        )))
+    }
 }
 
 /// Closed schema identity for a context-bound mapping manifest.
@@ -569,7 +584,7 @@ mod tests {
         .unwrap()
     }
 
-    // Trace: TC-026, FR-007-AC-2
+    // Trace: TC-026, FR-007-AC-2, StR-003-VC-2
     #[test]
     fn contextual_mapping_renders_the_exact_shared_signal_name() {
         let document = formula();
@@ -584,7 +599,7 @@ mod tests {
         );
     }
 
-    // Trace: TC-026, FR-007-AC-2
+    // Trace: TC-026, FR-007-AC-2, StR-003-VC-2
     #[test]
     fn contextual_mapping_refuses_reserved_names_without_an_expression() {
         let document = formula();
@@ -594,6 +609,82 @@ mod tests {
                 signal: SignalId(1),
                 ..
             })
+        ));
+    }
+
+    // Trace: TC-026, FR-007-AC-2, StR-003-VC-2
+    #[test]
+    fn contextual_mapping_covers_each_lexical_and_reserved_name_refusal() {
+        let document = formula();
+        let formula = document.validate().unwrap();
+        for name in [
+            "7signal",
+            "signal-name",
+            "signal name",
+            "signal!",
+            "naïve",
+            "\nname",
+            "STRUCT",
+            "ENUM",
+            "INPUT",
+            "DEFINE",
+            "FTSPEC",
+            "PTSPEC",
+            "foreach",
+            "forsome",
+            "forexactly",
+            "foratleast",
+            "foratmost",
+            "TAU",
+            "pow",
+            "sqrt",
+            "abs",
+            "xor",
+            "prev",
+            "G",
+            "F",
+            "H",
+            "O",
+            "U",
+            "R",
+            "S",
+            "T",
+            "M",
+            "true",
+            "false",
+        ] {
+            assert!(
+                matches!(
+                    render_contextual_expression(formula, &catalog(name), 8),
+                    Err(MappingError::UnsupportedSignalName { .. })
+                ),
+                "{name:?} must not produce C2PO output"
+            );
+        }
+        for name in ["_signal", "signal_7", "Signal7"] {
+            assert_eq!(
+                render_contextual_expression(formula, &catalog(name), 8).unwrap(),
+                name
+            );
+        }
+    }
+
+    // Trace: TC-026, FR-007-AC-2, StR-003-VC-2
+    #[test]
+    fn contextual_mapping_refuses_an_unresolved_proposition_before_rendering() {
+        let document = formula();
+        let unresolved = SignalCatalogDocument::new(
+            vec![OwnedSignalDeclaration::new(
+                SignalId(1),
+                "request_ready".to_owned(),
+                SignalDomain::Boolean,
+            )],
+            vec![],
+        )
+        .unwrap();
+        assert!(matches!(
+            render_contextual_expression(document.validate().unwrap(), &unresolved, 8),
+            Err(MappingError::Binding(_))
         ));
     }
 

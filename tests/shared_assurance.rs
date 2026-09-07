@@ -268,6 +268,36 @@ fn chain_report(_inputs: &AssuranceInputsGuard) -> &'static Value {
     })
 }
 
+// Trace: TC-030, FR-007-AC-6
+#[test]
+fn contextual_native_result_reaches_existing_quoin_intake() {
+    let inputs = assurance_inputs_guard();
+    let rows = fs::read_to_string(root().join("target/assurance/reference-conformance.jsonl"))
+        .expect("reference-conformance producer output is absent; run make assurance-inputs");
+    let row = rows
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("producer JSONL row"))
+        .find(|row| row["symbol"] == "short-trace-future-v1/closed")
+        .expect("contextual producer row");
+    let native = &row["detail"]["contextualNative"];
+    assert_eq!(native["schemaVersion"], "tl-mltl.evaluation/v2");
+    assert_eq!(
+        native["requirementContext"]["requirement_id"],
+        "agent-ix/tl-mltl/FR-007"
+    );
+    assert!(native["signalCatalogSha256"].as_str().is_some());
+    assert!(native["requestSha256"].as_str().is_some());
+    assert!(native["resultSha256"].as_str().is_some());
+
+    // The existing chain seals the exact producer file digest; it reads this
+    // already-produced row and does not invoke the producer itself.
+    let report = chain_report(&inputs);
+    assert_eq!(
+        report["attested_results"]["PROOF-reference-conformance"],
+        "passed"
+    );
+}
+
 // Trace: TC-018, FR-006-AC-1, NFR-003-AC-1
 #[test]
 fn every_shared_pin_is_classified_by_the_packaged_matrix() {
