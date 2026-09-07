@@ -15,8 +15,10 @@ pub(crate) const MAX_RECURSION_DEPTH: u32 = 512;
 
 pub use context::ContextualBindingError;
 pub use differential::{
-    compare_external, ComparisonStatus, DifferentialReport, ExternalStatus, ExternalVerdict,
-    ToolIdentity,
+    compare_external, compare_external_with_context, ComparisonStatus, ContextualComparisonError,
+    ContextualComparisonStatus, ContextualDifferentialReport, ContextualDifferentialSchemaVersion,
+    ContextualExternalVerdict, ContextualExternalVerdictSchemaVersion, DifferentialReport,
+    ExternalStatus, ExternalVerdict, ToolIdentity,
 };
 pub use evaluate::{
     evaluate_closed, evaluate_closed_at, evaluate_closed_with_context, evaluate_prefix,
