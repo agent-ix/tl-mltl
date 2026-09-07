@@ -32,6 +32,10 @@ fn overlay_nodes() -> Vec<Node> {
 }
 
 fn catalog() -> SignalCatalogDocument {
+    catalog_with_response_name("response_within_2_cycles")
+}
+
+fn catalog_with_response_name(response_name: &str) -> SignalCatalogDocument {
     SignalCatalogDocument::new(
         vec![
             OwnedSignalDeclaration::new(
@@ -41,7 +45,7 @@ fn catalog() -> SignalCatalogDocument {
             ),
             OwnedSignalDeclaration::new(
                 SignalId(11),
-                "response_within_2_cycles".to_owned(),
+                response_name.to_owned(),
                 SignalDomain::Boolean,
             ),
         ],
@@ -132,6 +136,118 @@ fn legacy_records_round_trip_as_exact_v1_wires_and_refuse_v2_labels() {
     assert_stable_v1_wire::<MappingManifest>(mapping, "tl-mltl.monitor-mapping/v2");
     assert_stable_v1_wire::<ExternalVerdict>(external, "tl-mltl.external-verdict/v2");
     assert_stable_v1_wire::<DifferentialReport>(differential, "tl-mltl.differential/v2");
+}
+
+// Trace: TC-028, FR-007-AC-4, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4
+#[test]
+fn contextual_identities_change_for_independent_operation_inputs() {
+    let nodes = overlay_nodes();
+    let formula = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(3), &nodes).unwrap();
+    let trace = vec![vec![PropositionId(7)], vec![PropositionId(8)]];
+    let context = context();
+    let limits = EvaluationLimits::default();
+    let evaluation = evaluate_prefix_with_context(
+        formula,
+        "overlay-response",
+        &trace,
+        "overlay-trace",
+        false,
+        limits,
+        &catalog(),
+        Some(&context),
+    )
+    .unwrap();
+    let catalog_changed = evaluate_prefix_with_context(
+        formula,
+        "overlay-response",
+        &trace,
+        "overlay-trace",
+        false,
+        limits,
+        &catalog_with_response_name("response_in_window"),
+        Some(&context),
+    )
+    .unwrap();
+    let trace_changed = evaluate_prefix_with_context(
+        formula,
+        "overlay-response",
+        &[vec![PropositionId(7)]],
+        "overlay-trace",
+        false,
+        limits,
+        &catalog(),
+        Some(&context),
+    )
+    .unwrap();
+    let limit_changed = evaluate_prefix_with_context(
+        formula,
+        "overlay-response",
+        &trace,
+        "overlay-trace",
+        false,
+        EvaluationLimits {
+            max_node_evaluations: 101,
+            ..limits
+        },
+        &catalog(),
+        Some(&context),
+    )
+    .unwrap();
+    assert_ne!(evaluation.request_sha256, catalog_changed.request_sha256);
+    assert_ne!(evaluation.result_sha256, catalog_changed.result_sha256);
+    assert_ne!(evaluation.request_sha256, trace_changed.request_sha256);
+    assert_ne!(evaluation.result_sha256, trace_changed.result_sha256);
+    assert_ne!(evaluation.request_sha256, limit_changed.request_sha256);
+    assert_ne!(evaluation.result_sha256, limit_changed.result_sha256);
+
+    let mapping = map_to_c2po_with_context(
+        formula,
+        "overlay-response",
+        b"overlay-response",
+        MappingSourceIdentity {
+            revision: "fixture-a".to_owned(),
+            state: MappingSourceState::Clean,
+        },
+        Some(tool()),
+        100,
+        &catalog(),
+        Some(&context),
+    )
+    .unwrap();
+    let mapping_changed = map_to_c2po_with_context(
+        formula,
+        "overlay-response",
+        b"overlay-response",
+        MappingSourceIdentity {
+            revision: "fixture-b".to_owned(),
+            state: MappingSourceState::Clean,
+        },
+        Some(tool()),
+        100,
+        &catalog(),
+        Some(&context),
+    )
+    .unwrap();
+    assert_ne!(mapping.request_sha256, mapping_changed.request_sha256);
+    assert_ne!(mapping.result_sha256, mapping_changed.result_sha256);
+
+    let external = ContextualExternalVerdict {
+        schema_version: ContextualExternalVerdictSchemaVersion::V2,
+        tool: tool(),
+        formula_id: evaluation.formula_id.clone(),
+        trace_id: evaluation.trace_id.clone(),
+        signal_catalog_sha256: evaluation.signal_catalog_sha256.clone(),
+        requirement_context: Some(context.clone()),
+        status: ExternalStatus::Conclusive,
+        value: Some(true),
+        verdict_time: Some(evaluation.verdict_time),
+        detail: None,
+    };
+    let first = compare_external_with_context(&evaluation, external.clone()).unwrap();
+    let mut changed_tool = external;
+    changed_tool.tool.configuration_sha256 = "c".repeat(64);
+    let changed = compare_external_with_context(&evaluation, changed_tool).unwrap();
+    assert_ne!(first.comparison_sha256, changed.comparison_sha256);
 }
 
 // Trace: TC-031, FR-007-AC-7, StR-003-VC-1, NFR-002-AC-4
