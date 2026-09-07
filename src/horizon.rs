@@ -322,7 +322,7 @@ mod tests {
 
     // Trace: TC-025, TC-029, FR-007-AC-1, FR-007-AC-5
     #[test]
-    fn contextual_horizon_binds_context_and_rejects_missing_wire_identity() {
+    fn contextual_horizon_binds_context_and_rejects_missing_request_identity() {
         let document = FormulaDocument::new(
             SemanticProfile::ClosedTraceV1,
             NodeId(0),

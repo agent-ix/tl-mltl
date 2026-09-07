@@ -981,7 +981,7 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
          criteria + 30 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
-        totals["backed"], 62,
+        totals["backed"], 79,
         "backed-row count changed: {totals}. Exactly two rows are unbacked on \
          purpose — SUITE-001 (`make ci`, the composite that contains every other \
          suite) and SUITE-002 (the `quire validate` half of `make spec`, which \
@@ -1462,8 +1462,9 @@ fn no_local_evidence_framework_remains() {
         ("examples", 3),
         ("scripts", 5),
         ("spec", 64),
-        // Context-bound wire decoding is a new source module; TC-030 adds the
-        // producer-to-intake control alongside the existing shared checks.
+        // Context-bound wire decoding adds src/context.rs; the #57-shaped
+        // fixture adds tests/contextual.rs. TC-030 itself extends an existing
+        // shared-assurance test file.
         ("src", 8),
         ("tests", 16),
     ]

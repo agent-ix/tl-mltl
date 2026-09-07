@@ -914,7 +914,7 @@ mod tests {
 
     // Trace: TC-029, FR-007-AC-5
     #[test]
-    fn contextual_evaluation_wire_is_closed_and_requires_contextual_fields() {
+    fn contextual_evaluation_wire_requires_explicit_context_presence() {
         let document = formula();
         let report = evaluate_closed_with_context(
             document.validate().unwrap(),
@@ -927,7 +927,7 @@ mod tests {
         )
         .unwrap();
         let mut value = serde_json::to_value(report).unwrap();
-        value.as_object_mut().unwrap().remove("signalCatalogSha256");
+        value.as_object_mut().unwrap().remove("requirementContext");
         assert!(serde_json::from_value::<super::ContextualEvaluationReport>(value).is_err());
     }
 

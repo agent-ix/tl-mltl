@@ -735,7 +735,7 @@ mod tests {
 
     // Trace: TC-028, TC-029, FR-007-AC-4, FR-007-AC-5
     #[test]
-    fn contextual_mapping_emits_a_closed_v2_manifest() {
+    fn contextual_mapping_emits_a_closed_v2_manifest_with_required_catalog_identity() {
         let document = formula();
         let report = map_to_c2po_with_context(
             document.validate().unwrap(),
