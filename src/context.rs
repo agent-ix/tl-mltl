@@ -5,7 +5,9 @@
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use tl_syntax::{Formula, FormulaBindingError, PropositionId, SignalCatalogDocument};
+use tl_syntax::{
+    Formula, FormulaBindingError, PropositionId, RequirementContextDocument, SignalCatalogDocument,
+};
 
 /// A contextual operation could not establish a complete formula binding.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -73,6 +75,30 @@ pub(crate) fn domain_sha256<T: Serialize>(
     Ok(hex(digest.finalize()))
 }
 
+/// Returns an operation request identity bound to complete shared inputs.
+pub(crate) fn contextual_request_sha256<T: Serialize>(
+    domain: &str,
+    operation: &T,
+    catalog_document: &SignalCatalogDocument,
+    requirement_context: Option<&RequirementContextDocument>,
+) -> Result<String, serde_json::Error> {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Request<'a, T> {
+        operation: &'a T,
+        signal_catalog: &'a SignalCatalogDocument,
+        requirement_context: Option<&'a RequirementContextDocument>,
+    }
+    domain_sha256(
+        domain,
+        &Request {
+            operation,
+            signal_catalog: catalog_document,
+            requirement_context,
+        },
+    )
+}
+
 fn sha256_json<T: Serialize>(value: &T) -> Result<String, serde_json::Error> {
     Ok(hex(Sha256::digest(serde_json::to_vec(value)?)))
 }
@@ -89,10 +115,14 @@ fn hex(bytes: impl AsRef<[u8]>) -> String {
 mod tests {
     use tl_syntax::{
         FormulaDocument, Node, NodeId, NodeKind, OwnedSignalDeclaration, PropositionBinding,
-        SemanticProfile, SignalCatalogDocument, SignalDomain, SignalId,
+        RequirementContextDocument, SemanticProfile, SignalCatalogDocument, SignalDomain, SignalId,
+        SourceSpan,
     };
 
-    use super::{bind_formula, catalog_sha256, domain_sha256, ContextualBindingError};
+    use super::{
+        bind_formula, catalog_sha256, contextual_request_sha256, domain_sha256,
+        ContextualBindingError,
+    };
 
     fn formula(proposition: u32) -> FormulaDocument {
         FormulaDocument::new(
@@ -144,5 +174,34 @@ mod tests {
             domain_sha256("tl-mltl.contextual-evaluation/v2", &first).unwrap(),
             domain_sha256("tl-mltl.contextual-horizon/v2", &first).unwrap(),
         );
+    }
+
+    #[test]
+    fn request_identity_binds_context_presence_and_value() {
+        let catalog = catalog(7, "request_ready");
+        let context = RequirementContextDocument::new(
+            "agent-ix/tl-mltl/FR-007".to_owned(),
+            "1".to_owned(),
+            "AC-1".to_owned(),
+            "contextual-request".to_owned(),
+            SourceSpan::new(4, 9).unwrap(),
+        )
+        .unwrap();
+        let operation = serde_json::json!({"formulaId": "request"});
+        let absent = contextual_request_sha256(
+            "tl-mltl.contextual-evaluation/v2",
+            &operation,
+            &catalog,
+            None,
+        )
+        .unwrap();
+        let present = contextual_request_sha256(
+            "tl-mltl.contextual-evaluation/v2",
+            &operation,
+            &catalog,
+            Some(&context),
+        )
+        .unwrap();
+        assert_ne!(absent, present);
     }
 }
