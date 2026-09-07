@@ -886,8 +886,8 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     let parsed: Value = serde_json::from_slice(&bytes).expect("the Quire export is JSON");
     let text = String::from_utf8_lossy(&bytes);
     for requirement in [
-        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "NFR-001", "NFR-002",
-        "NFR-003", "StR-001", "StR-002",
+        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "NFR-001", "NFR-002",
+        "NFR-003", "StR-001", "StR-002", "StR-003",
     ] {
         assert!(
             text.contains(requirement),
@@ -905,15 +905,16 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 64 is every row Quire mints from `spec/`: 33 acceptance criteria, 23
+    // 81 is every row Quire mints from `spec/`: 43 acceptance criteria, 30
     // test-matrix rows and 8 suite-registry rows. Naming the population matters
     // — "matrix rows" would have been wrong, since the test matrix contributes
-    // 23 of them. It was 35 + 24 + 9 before FR-006-AC-4, NFR-003-AC-4, TC-021
-    // and SUITE-007 were deleted with the retained evidence they measured.
+    // 30 of them. This assertion deliberately tracks the current specification,
+    // rather than preserving an obsolete population after a shared requirement
+    // expansion.
     assert_eq!(
-        totals["total"], 64,
-        "the declared-row population changed: {totals}. It is 33 acceptance \
-         criteria + 23 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 81,
+        "the declared-row population changed: {totals}. It is 43 acceptance \
+         criteria + 30 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
         totals["backed"], 62,
