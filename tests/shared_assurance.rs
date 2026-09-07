@@ -349,6 +349,47 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         problems.iter().any(|item| item.contains("same string")),
         "collapsing the compiled revision and the corpus basis was not detected: {problems:?}"
     );
+
+    // The current-facing prose is part of the dependency identity, not merely
+    // an author-maintained explanation. Each stale compiled-pin spelling is
+    // independently refused by the same guard that checks Cargo and the wire
+    // constant.
+    let scratch = root().join("target/stale-current-pin-probe");
+    let _ = fs::remove_dir_all(&scratch);
+    fs::create_dir_all(&scratch).unwrap();
+    for name in [
+        "README.md",
+        "corpus/README.md",
+        "assurance/change-assurance.json",
+    ] {
+        let source = root().join(name);
+        let candidate = scratch.join(name);
+        fs::create_dir_all(candidate.parent().unwrap()).unwrap();
+        fs::copy(&source, &candidate).unwrap();
+        let stale = fs::read_to_string(&candidate)
+            .unwrap()
+            .replace(
+                "6ad7499f2ccc179bb33b2590666399c6632a7e3c",
+                "953ee825e5060335b4c79682f5f41a78c5a1bfae",
+            )
+            .replace("6ad7499f", "953ee825");
+        fs::write(&candidate, stale).unwrap();
+        let (code, stdout, stderr) = run(
+            &python,
+            &[
+                "-c",
+                "import json,sys;from pathlib import Path;sys.path.insert(0,'scripts');import check_shared_pins as m;m.ROOT=Path(sys.argv[1]);pins=json.load(open('assurance/pins.json'));print(json.dumps(m.upstream_pin_mismatches(pins)))",
+                scratch.to_str().unwrap(),
+            ],
+        );
+        assert_eq!(code, 0, "the stale-current-pin probe failed: {stderr}");
+        let problems: Vec<String> = serde_json::from_str(stdout.trim()).unwrap();
+        assert!(
+            problems.iter().any(|problem| problem.starts_with(name)),
+            "the pin guard did not reject a stale compiled revision in {name}: {:?}",
+            problems
+        );
+    }
 }
 
 // Trace: TC-019, FR-006-AC-2, NFR-003-AC-1, SUITE-004, SUITE-005, SUITE-006

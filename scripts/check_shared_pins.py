@@ -143,9 +143,8 @@ def upstream_pin_mismatches(pins: dict[str, Any]) -> list[str]:
     Two different revisions, and conflating them is the mistake this guards.
 
     The COMPILED revision is what Cargo resolves and what the C2PO mapping
-    manifest reports as `syntaxRevision`. The migration moved it off an open
-    pull request's branch and onto tl-syntax `main`. Three files name it and
-    they must agree: a lockfile that drifted from `Cargo.toml`, or a
+    manifest reports as `syntaxRevision`. Every current-facing record that
+    names it must agree: a lockfile that drifted from `Cargo.toml`, or a
     `TL_SYNTAX_REVISION` constant that still names the old pin, would make the
     crate report a dependency identity it is not actually built from.
 
@@ -167,7 +166,9 @@ def upstream_pin_mismatches(pins: dict[str, Any]) -> list[str]:
         # confusion this function exists to prevent. An adversarial review found
         # only the compiled revision being checked here.
         "src/lib.rs ": f'TL_SYNTAX_CORPUS_BASIS: &str = "{corpus}"',
-        "corpus/README.md": f"`{corpus}`",
+        "README.md": f"`{compiled}`",
+        "corpus/README.md": f"`{compiled}`",
+        "assurance/change-assurance.json": f"The compiled dependency moved to {compiled[:8]}",
     }
     for name, needle in checks.items():
         path = ROOT / name.strip()
@@ -176,6 +177,12 @@ def upstream_pin_mismatches(pins: dict[str, Any]) -> list[str]:
             continue
         if needle not in path.read_text(encoding="utf-8"):
             problems.append(f"{name.strip()}: does not name the expected revision")
+    current_records = ("README.md", "corpus/README.md", "assurance/change-assurance.json")
+    for superseded in pins["upstream_dependency"].get("superseded_compiled_revisions", []):
+        for name in current_records:
+            path = ROOT / name
+            if path.is_file() and superseded in path.read_text(encoding="utf-8"):
+                problems.append(f"{name}: still names superseded compiled revision {superseded}")
     if compiled == corpus:
         problems.append(
             "the compiled revision and the corpus basis are the same string; they are "
