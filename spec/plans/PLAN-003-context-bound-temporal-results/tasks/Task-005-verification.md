@@ -2,7 +2,7 @@
 id: Task-005
 title: Worked fixture, shared intake, and closing review
 type: Task
-status: not_started
+status: in_progress
 track: Verification
 priority: P0
 relationships:
