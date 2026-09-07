@@ -847,6 +847,7 @@ mod tests {
         .unwrap()
     }
 
+    // Trace: TC-025, TC-028, FR-007-AC-1, FR-007-AC-4
     #[test]
     fn contextual_evaluation_preserves_shared_context_and_binds_its_identity() {
         let document = formula();
@@ -876,6 +877,7 @@ mod tests {
         assert_ne!(first.result_sha256, second.result_sha256);
     }
 
+    // Trace: TC-029, FR-007-AC-5
     #[test]
     fn contextual_evaluation_wire_is_closed_and_requires_contextual_fields() {
         let document = formula();
@@ -894,6 +896,7 @@ mod tests {
         assert!(serde_json::from_value::<super::ContextualEvaluationReport>(value).is_err());
     }
 
+    // Trace: TC-025, TC-028, FR-007-AC-1, FR-007-AC-4
     #[test]
     fn contextual_prefix_binds_closedness_and_retains_explicit_absence() {
         let document = FormulaDocument::new(

@@ -162,6 +162,7 @@ mod tests {
         .unwrap()
     }
 
+    // Trace: TC-025, FR-007-AC-1
     #[test]
     fn binding_refuses_the_exact_missing_proposition_before_work() {
         let document = formula(7);
@@ -174,6 +175,7 @@ mod tests {
         );
     }
 
+    // Trace: TC-028, FR-007-AC-4
     #[test]
     fn catalog_and_domain_identities_detect_distinct_inputs() {
         let first = catalog(7, "request_ready");
@@ -188,6 +190,7 @@ mod tests {
         );
     }
 
+    // Trace: TC-028, FR-007-AC-4
     #[test]
     fn request_identity_binds_context_presence_and_value() {
         let catalog = catalog(7, "request_ready");
@@ -217,6 +220,7 @@ mod tests {
         assert_ne!(absent, present);
     }
 
+    // Trace: TC-028, FR-007-AC-4
     #[test]
     fn result_identity_ignores_only_its_own_field() {
         let first = serde_json::json!({"resultSha256": "old", "outcome": true});

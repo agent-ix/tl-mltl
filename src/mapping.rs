@@ -569,6 +569,7 @@ mod tests {
         .unwrap()
     }
 
+    // Trace: TC-026, FR-007-AC-2
     #[test]
     fn contextual_mapping_renders_the_exact_shared_signal_name() {
         let document = formula();
@@ -583,6 +584,7 @@ mod tests {
         );
     }
 
+    // Trace: TC-026, FR-007-AC-2
     #[test]
     fn contextual_mapping_refuses_reserved_names_without_an_expression() {
         let document = formula();
@@ -595,6 +597,7 @@ mod tests {
         ));
     }
 
+    // Trace: TC-028, TC-029, FR-007-AC-4, FR-007-AC-5
     #[test]
     fn contextual_mapping_emits_a_closed_v2_manifest() {
         let document = formula();

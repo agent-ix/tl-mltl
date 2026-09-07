@@ -345,6 +345,7 @@ mod tests {
         }
     }
 
+    // Trace: TC-027, TC-028, FR-007-AC-3, FR-007-AC-4
     #[test]
     fn contextual_comparison_refuses_identity_mismatch_before_truth_comparison() {
         let report = compare_external_with_context(&reference(), external("other")).unwrap();
