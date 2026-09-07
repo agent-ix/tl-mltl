@@ -2,7 +2,7 @@
 id: Task-002
 title: Shared dependencies and contextual wire forms
 type: Task
-status: blocked
+status: in_progress
 track: Core
 priority: P0
 relationships:
@@ -30,9 +30,9 @@ All v2 positive/negative construction and serde controls pass, v1 snapshots are
 still exact, and the dependency/provenance check confirms the compiled pin and
 published revision constant agree.
 
-## Blocker
+## Prerequisites
 
-The contextual wire forms remain blocked on tl-rewrite#21. The shared syntax
-pin is a separate prerequisite once tl-syntax#15 lands, so tl-rewrite and
-tl-mltl do not resolve incompatible syntax types. No copied type or temporary
+The reviewed shared syntax revision is compiled at `6ad7499`, and tl-rewrite
+#21 landed as tl-rewrite main `1ccab45`. Contextual wire implementation may now
+proceed against those reachable revisions. No copied type or temporary
 implementation workaround is permitted.

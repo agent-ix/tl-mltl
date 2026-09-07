@@ -4,6 +4,7 @@
 //! Closed traces use an all-false valuation after the declared end; open
 //! prefixes preserve unknown future observations as [`TruthValue::Pending`].
 
+mod context;
 mod differential;
 mod evaluate;
 mod horizon;
@@ -12,6 +13,7 @@ mod wire;
 
 pub(crate) const MAX_RECURSION_DEPTH: u32 = 512;
 
+pub use context::ContextualBindingError;
 pub use differential::{
     compare_external, ComparisonStatus, DifferentialReport, ExternalStatus, ExternalVerdict,
     ToolIdentity,
