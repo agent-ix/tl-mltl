@@ -32,6 +32,7 @@ published revision constant agree.
 
 ## Blocker
 
-tl-syntax#15 and tl-rewrite#21 have reviewed published contracts but have not
-both landed. No temporary pin, copied type, or implementation workaround is
-permitted.
+The contextual wire forms remain blocked on tl-rewrite#21. The shared syntax
+pin is a separate prerequisite once tl-syntax#15 lands, so tl-rewrite and
+tl-mltl do not resolve incompatible syntax types. No copied type or temporary
+implementation workaround is permitted.

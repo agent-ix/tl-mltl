@@ -31,22 +31,21 @@ Specification begins from merged tl-mltl main revision
 `4aeb62cb5fefc924a3921b22ab9074569b5537e2`, isolated from PR #23 at
 `a2acc590b70cd3abea996a502f84e8f6f224a4e3`.
 
-Implementation is blocked until tl-syntax#15 and tl-rewrite#21 land on reviewed
-reachable revisions. The published pre-merge heads are specification inputs,
-not temporary Cargo pins. Once both land, this branch shall incorporate current
-main, repin tl-syntax to the exact reviewed revision, update
-`TL_SYNTAX_REVISION` and the lockfile together, and verify that all other
-consumers resolve the intended single syntax revision. tl-rewrite is a sequencing
-dependency only and cannot become a Cargo dependency because it already depends
-on tl-mltl.
+The contextual implementation is blocked until tl-syntax#15 and tl-rewrite#21
+land on reviewed reachable revisions. The syntax-pin prerequisite is earlier:
+after tl-syntax#15 lands, tl-mltl advances its Cargo pin, `TL_SYNTAX_REVISION`,
+and lockfile together so tl-rewrite and tl-mltl compile against one syntax type.
+This is not a contextual implementation workaround. tl-rewrite remains a
+sequencing dependency only and cannot become a Cargo dependency because it
+already depends on tl-mltl.
 
 ## Dependency DAG
 
 ```text
 tl-syntax#14 reviewed landing
   -> tl-syntax#15 reviewed landing
+  -> exact tl-syntax dependency/revision pin in tl-mltl
     -> tl-rewrite#21 implementation + reviewed landing
-      -> exact tl-syntax dependency/revision pin in tl-mltl
         -> v1 snapshots + closed contextual v2 report forms
           -> shared catalog/context digest and binding helpers
             -> contextual closed/prefix evaluation + horizon
@@ -135,8 +134,9 @@ manual-only and is not dispatched by this plan.
 
 ## Exit Criteria
 
-1. tl-syntax#15 and tl-rewrite#21 are reviewed and landed; Cargo resolves the
-   exact reviewed tl-syntax revision and no tl-rewrite dependency cycle exists.
+1. tl-syntax#15 is reviewed and landed before the shared syntax pin advances;
+   tl-rewrite#21 is reviewed and landed before contextual tl-mltl behavior.
+   Cargo resolves the exact reviewed tl-syntax revision with no type split.
 2. Every FR-007 and StR-003 criterion has a named executing trace symbol and all
    new matrix rows are marked implemented only after they run.
 3. Context-aware evaluation, horizon, mapping, external verdict, and comparison
