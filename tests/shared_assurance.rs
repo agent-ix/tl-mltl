@@ -104,7 +104,7 @@ fn git_files(root: &Path, arguments: &[&str]) -> Vec<String> {
         .collect()
 }
 
-fn census_paths<F>(root: &Path, denied: F) -> (Vec<String>, Vec<String>, BTreeSet<String>)
+fn census_paths<F>(root: &Path, denied: F) -> (Vec<String>, Vec<String>)
 where
     F: Fn(&str) -> bool,
 {
@@ -114,8 +114,11 @@ where
         .filter(|entry| !denied(entry))
         .cloned()
         .collect();
-    let mut scanned: BTreeSet<String> = tracked.iter().cloned().collect();
+    (tracked_all, tracked)
+}
 
+fn scanned_paths(root: &Path, tracked: &[String]) -> BTreeSet<String> {
+    let mut scanned: BTreeSet<String> = tracked.iter().cloned().collect();
     // A path reported by `--others` cannot also be one of the tracked paths in
     // the exact deny set. Applying `denied` here created a second, uncontrolled
     // exemption site: one line could name an untracked reintroduction before the
@@ -123,7 +126,7 @@ where
     for entry in git_files(root, &["ls-files", "-z", "--others", "--exclude-standard"]) {
         scanned.insert(entry);
     }
-    (tracked_all, tracked, scanned)
+    scanned
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1289,11 +1292,7 @@ fn no_local_evidence_framework_remains() {
             "the exact deny predicate widened to hide {included}"
         );
     }
-    let (tracked_all, tracked, scanned) = census_paths(&root, denied);
-    assert!(
-        !scanned.iter().any(|path| path_has_legacy_compat(path)),
-        "a renamed legacy-compatibility fixture path remains in the repository"
-    );
+    let (tracked_all, tracked) = census_paths(&root, denied);
     assert!(
         !path_has_legacy_compat("spec/current/review.md"),
         "the clean path fixture was classified as legacy compatibility"
@@ -1407,18 +1406,29 @@ fn no_local_evidence_framework_remains() {
     // temporarily rewrites the same shared input. Passing the private token to
     // the byte-scanning helpers makes this acquisition compile-time load-bearing.
     let inputs = assurance_inputs_guard();
+    let scanned = scanned_paths(&root, &tracked);
+    assert!(
+        !scanned.iter().any(|path| path_has_legacy_compat(path)),
+        "a renamed legacy-compatibility fixture path remains in the repository"
+    );
 
     // Retained controls use the same enumeration, exemption and byte-scanning
     // functions as the real census. The fixture is its own Git repository, so a
     // preferred `GNUmakefile` can be exercised without changing which makefile a
     // concurrent command in this checkout selects.
-    let fixture = root.join("target/removal-census-fixture");
+    let fixture = std::env::temp_dir().join(format!(
+        "tl-mltl-removal-census-fixture-{}",
+        std::process::id()
+    ));
     match fs::remove_dir_all(&fixture) {
         Ok(()) => {}
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(error) => panic!("failed to clear the previous census fixture: {error}"),
     }
-    let template = root.join("target/removal-census-template");
+    let template = std::env::temp_dir().join(format!(
+        "tl-mltl-removal-census-template-{}",
+        std::process::id()
+    ));
     match fs::remove_dir_all(&template) {
         Ok(()) => {}
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
@@ -1466,7 +1476,8 @@ fn no_local_evidence_framework_remains() {
         inherited_excludes.success(),
         "could not stage the census fixture core.excludesFile"
     );
-    let (_, _, excluded_scanned) = census_paths(&fixture, |_| false);
+    let (_, fixture_tracked) = census_paths(&fixture, |_| false);
+    let excluded_scanned = scanned_paths(&fixture, &fixture_tracked);
     assert!(
         !excluded_scanned.contains("GNUmakefile"),
         "the staged core.excludesFile did not hide GNUmakefile: {excluded_scanned:?}"
@@ -1480,7 +1491,8 @@ fn no_local_evidence_framework_remains() {
         isolated_excludes.success(),
         "could not isolate the census fixture from global Git excludes"
     );
-    let (_, _, fixture_scanned) = census_paths(&fixture, |_| false);
+    let (_, fixture_tracked) = census_paths(&fixture, |_| false);
+    let fixture_scanned = scanned_paths(&fixture, &fixture_tracked);
     let make_matches = census_matches(&inputs, &fixture, &make_probe, &DELETED_REFERENCES);
 
     let byte_probe = fixture.join("all-deleted-names.bin");
