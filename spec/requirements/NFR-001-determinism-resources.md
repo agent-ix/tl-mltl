@@ -15,8 +15,8 @@ temporal expansion.
 
 ## Scope
 
-All public library functions, CLI records, mapping manifests, and retained
-differential artifacts are in scope.
+All public library functions, CLI records, mapping manifests, context identities
+and digests, and retained differential artifacts are in scope.
 
 ## Rationale
 
@@ -39,9 +39,9 @@ operations and exercise checked arithmetic and configured work limits.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| NFR-001-AC-1 | Repeated evaluation, analysis, mapping, and serialization are byte-for-byte stable. | Test (TC-003, TC-013, TC-014) |
+| NFR-001-AC-1 | Repeated evaluation, analysis, mapping, context binding, digesting, comparison, and serialization are byte-for-byte stable. | Test (TC-003, TC-013, TC-014, TC-025, TC-028, TC-029) |
 | NFR-001-AC-2 | Overflow and work-limit exhaustion are explicit errors with no partial success claim. | Test (TC-004, TC-006) |
 
 ## Dependencies
 
-Constrains FR-001 through FR-005.
+Constrains FR-001 through FR-005 and FR-007.

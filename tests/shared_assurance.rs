@@ -349,6 +349,81 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         problems.iter().any(|item| item.contains("same string")),
         "collapsing the compiled revision and the corpus basis was not detected: {problems:?}"
     );
+
+    // The current-facing prose is part of the dependency identity, not merely
+    // an author-maintained explanation. Each stale compiled-pin spelling is
+    // independently refused by the same guard that checks Cargo and the wire
+    // constant.
+    let scratch = std::env::temp_dir().join(format!(
+        "tl-mltl-stale-current-pin-probe-{}",
+        std::process::id()
+    ));
+    match fs::remove_dir_all(&scratch) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("failed to clear stale current-pin probe: {error}"),
+    }
+    fs::create_dir_all(&scratch).unwrap();
+    for name in [
+        "README.md",
+        "corpus/README.md",
+        "assurance/change-assurance.json",
+    ] {
+        let source = root().join(name);
+        let candidate = scratch.join(name);
+        fs::create_dir_all(candidate.parent().unwrap()).unwrap();
+        fs::copy(&source, &candidate).unwrap();
+        let stale = fs::read_to_string(&candidate)
+            .unwrap()
+            .replace(
+                "6ad7499f2ccc179bb33b2590666399c6632a7e3c",
+                "953ee825e5060335b4c79682f5f41a78c5a1bfae",
+            )
+            .replace("6ad7499f", "953ee825");
+        fs::write(&candidate, stale).unwrap();
+        let (code, stdout, stderr) = run(
+            &python,
+            &[
+                "-c",
+                "import json,sys;from pathlib import Path;sys.path.insert(0,'scripts');import check_shared_pins as m;m.ROOT=Path(sys.argv[1]);pins=json.load(open('assurance/pins.json'));print(json.dumps(m.upstream_pin_mismatches(pins)))",
+                scratch.to_str().unwrap(),
+            ],
+        );
+        assert_eq!(code, 0, "the stale-current-pin probe failed: {stderr}");
+        let problems: Vec<String> = serde_json::from_str(stdout.trim()).unwrap();
+        assert!(
+            problems.iter().any(|problem| problem.starts_with(name)),
+            "the pin guard did not reject a stale compiled revision in {name}: {:?}",
+            problems
+        );
+    }
+    let corpus_readme = scratch.join("corpus/README.md");
+    fs::copy(root().join("corpus/README.md"), &corpus_readme).unwrap();
+    let corpus_basis = fs::read_to_string(&corpus_readme)
+        .unwrap()
+        .replace("740182f1", "6ad7499f");
+    fs::write(&corpus_readme, corpus_basis).unwrap();
+    let (code, stdout, stderr) = run(
+        &python,
+        &[
+            "-c",
+            "import json,sys;from pathlib import Path;sys.path.insert(0,'scripts');import check_shared_pins as m;m.ROOT=Path(sys.argv[1]);pins=json.load(open('assurance/pins.json'));print(json.dumps(m.upstream_pin_mismatches(pins)))",
+            scratch.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(code, 0, "the corpus-basis probe failed: {stderr}");
+    let problems: Vec<String> = serde_json::from_str(stdout.trim()).unwrap();
+    assert!(
+        problems
+            .iter()
+            .any(|problem| problem == "corpus/README.md: does not name the expected revision"),
+        "the pin guard did not reject a corpus README that conflates the retained basis with the compiled revision: {problems:?}"
+    );
+    match fs::remove_dir_all(&scratch) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("failed to remove stale current-pin probe: {error}"),
+    }
 }
 
 // Trace: TC-019, FR-006-AC-2, NFR-003-AC-1, SUITE-004, SUITE-005, SUITE-006
@@ -845,8 +920,8 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     let parsed: Value = serde_json::from_slice(&bytes).expect("the Quire export is JSON");
     let text = String::from_utf8_lossy(&bytes);
     for requirement in [
-        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "NFR-001", "NFR-002",
-        "NFR-003", "StR-001", "StR-002",
+        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "NFR-001", "NFR-002",
+        "NFR-003", "StR-001", "StR-002", "StR-003",
     ] {
         assert!(
             text.contains(requirement),
@@ -864,15 +939,16 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 64 is every row Quire mints from `spec/`: 33 acceptance criteria, 23
+    // 81 is every row Quire mints from `spec/`: 43 acceptance criteria, 30
     // test-matrix rows and 8 suite-registry rows. Naming the population matters
     // — "matrix rows" would have been wrong, since the test matrix contributes
-    // 23 of them. It was 35 + 24 + 9 before FR-006-AC-4, NFR-003-AC-4, TC-021
-    // and SUITE-007 were deleted with the retained evidence they measured.
+    // 30 of them. This assertion deliberately tracks the current specification,
+    // rather than preserving an obsolete population after a shared requirement
+    // expansion.
     assert_eq!(
-        totals["total"], 64,
-        "the declared-row population changed: {totals}. It is 33 acceptance \
-         criteria + 23 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 81,
+        "the declared-row population changed: {totals}. It is 43 acceptance \
+         criteria + 30 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
         totals["backed"], 62,
@@ -1355,7 +1431,7 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        ("spec", 53),
+        ("spec", 64),
         ("src", 7),
         ("tests", 15),
     ]
@@ -1396,8 +1472,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 127,
-        "the source census population changed from the reviewed 127 tracked files \
+        inspected, 138,
+        "the source census population changed from the reviewed 138 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

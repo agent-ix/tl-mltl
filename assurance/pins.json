@@ -25,8 +25,9 @@
   "upstream_dependency": {
     "component": "tl-syntax",
     "corpus_basis": "740182f13b84858008d6f176f75136737d405c1b",
-    "compiled_revision": "953ee825e5060335b4c79682f5f41a78c5a1bfae",
-    "why": "The old pin named a revision reachable only from tl-syntax's feat/tl-syntax-v0.1 branch, never from main. It has now merged, as tl-syntax PR #10 squashed to 953ee825 on main, so the compiled pin moves onto main. The corpus basis does not move: corpus/tl-syntax-v1 is a byte-identical retained copy of the shared corpus at 740182f1, its own SHA256SUMS is authoritative, and the formula bytes are unchanged between the two revisions. corpus/README.md carries both facts. Tracked as agent-ix/tl-syntax#8."
+    "compiled_revision": "6ad7499f2ccc179bb33b2590666399c6632a7e3c",
+    "superseded_compiled_revisions": ["953ee825e5060335b4c79682f5f41a78c5a1bfae"],
+    "why": "The old pin named a revision reachable only from tl-syntax's feat/tl-syntax-v0.1 branch, never from main. It moved to 953ee825 when tl-syntax PR #10 landed, and now advances to the reviewed tl-syntax #21 landing 6ad7499 so tl-mltl and tl-rewrite compile against one shared syntax type. The corpus basis does not move: corpus/tl-syntax-v1 is a byte-identical retained copy of the shared corpus at 740182f1, its own SHA256SUMS is authoritative."
   },
   "known_drift": [
     "engineering-assurance v0.2.0 packages compatibility-matrix.json with accepted.state = pending_human_acceptance and ships no human_acceptance_recorded predicate. Both landed on main after the tag and no v0.2.1 was cut. Filed as agent-ix/engineering-assurance#20. scripts/check_shared_pins.py reports the acceptance state the installed package records and gates only on the local toolchain, so an absent field is never read as an approval in either direction.",
