@@ -4,6 +4,30 @@
 //! Closed traces use an all-false valuation after the declared end; open
 //! prefixes preserve unknown future observations as [`TruthValue::Pending`].
 
+macro_rules! deserialize_contextual_record {
+    ($record:ident { $($field:ident: $field_type:ty),+ $(,)? }) => {
+        impl<'de> serde::Deserialize<'de> for $record {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                #[derive(serde::Deserialize)]
+                #[serde(rename_all = "camelCase", deny_unknown_fields)]
+                struct Wire {
+                    $( $field: $field_type, )+
+                    requirement_context: crate::context::RequiredContext,
+                }
+                let wire = Wire::deserialize(deserializer)?;
+                Ok(Self {
+                    $( $field: wire.$field, )+
+                    requirement_context: wire.requirement_context.0,
+                })
+            }
+        }
+    };
+}
+
+mod context;
 mod differential;
 mod evaluate;
 mod horizon;
@@ -12,17 +36,27 @@ mod wire;
 
 pub(crate) const MAX_RECURSION_DEPTH: u32 = 512;
 
+pub use context::ContextualBindingError;
 pub use differential::{
-    compare_external, ComparisonStatus, DifferentialReport, ExternalStatus, ExternalVerdict,
-    ToolIdentity,
+    compare_external, compare_external_with_context, ComparisonStatus, ContextualComparisonError,
+    ContextualComparisonStatus, ContextualDifferentialReport, ContextualDifferentialSchemaVersion,
+    ContextualExternalVerdict, ContextualExternalVerdictSchemaVersion, DifferentialReport,
+    ExternalStatus, ExternalVerdict, ToolIdentity,
 };
 pub use evaluate::{
-    evaluate_closed, evaluate_closed_at, evaluate_prefix, evaluate_prefix_at, EvaluationError,
+    evaluate_closed, evaluate_closed_at, evaluate_closed_with_context, evaluate_prefix,
+    evaluate_prefix_at, evaluate_prefix_with_context, ContextualEvaluationError,
+    ContextualEvaluationReport, ContextualEvaluationSchemaVersion, EvaluationError,
     EvaluationLimits, EvaluationReport, TruthValue,
 };
-pub use horizon::{analyze_horizon, HorizonError, HorizonReport};
+pub use horizon::{
+    analyze_horizon, analyze_horizon_with_context, ContextualHorizonError, ContextualHorizonReport,
+    ContextualHorizonSchemaVersion, HorizonError, HorizonReport,
+};
 pub use mapping::{
-    map_to_c2po, MappingError, MappingManifest, MappingSourceIdentity, MappingSourceState,
+    map_to_c2po, map_to_c2po_with_context, ContextualMappingManifest,
+    ContextualMappingSchemaVersion, MappingError, MappingManifest, MappingSourceIdentity,
+    MappingSourceState,
 };
 pub use wire::{
     CommandDocument, CommandSchemaVersion, Operation, TraceDocument, TraceSchemaVersion,

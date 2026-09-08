@@ -2,7 +2,7 @@
 id: Task-003
 title: Context-bound evaluation and horizon
 type: Task
-status: not_started
+status: in_progress
 track: Core
 priority: P0
 relationships:

@@ -268,6 +268,36 @@ fn chain_report(_inputs: &AssuranceInputsGuard) -> &'static Value {
     })
 }
 
+// Trace: TC-030, FR-007-AC-6
+#[test]
+fn contextual_native_result_reaches_existing_quoin_intake() {
+    let inputs = assurance_inputs_guard();
+    let rows = fs::read_to_string(root().join("target/assurance/reference-conformance.jsonl"))
+        .expect("reference-conformance producer output is absent; run make assurance-inputs");
+    let row = rows
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("producer JSONL row"))
+        .find(|row| row["symbol"] == "short-trace-future-v1/closed")
+        .expect("contextual producer row");
+    let native = &row["detail"]["contextualNative"];
+    assert_eq!(native["schemaVersion"], "tl-mltl.evaluation/v2");
+    assert_eq!(
+        native["requirementContext"]["requirement_id"],
+        "agent-ix/tl-mltl/FR-007"
+    );
+    assert!(native["signalCatalogSha256"].as_str().is_some());
+    assert!(native["requestSha256"].as_str().is_some());
+    assert!(native["resultSha256"].as_str().is_some());
+
+    // The existing chain seals the exact producer file digest; it reads this
+    // already-produced row and does not invoke the producer itself.
+    let report = chain_report(&inputs);
+    assert_eq!(
+        report["attested_results"]["PROOF-reference-conformance"],
+        "passed"
+    );
+}
+
 // Trace: TC-018, FR-006-AC-1, NFR-003-AC-1
 #[test]
 fn every_shared_pin_is_classified_by_the_packaged_matrix() {
@@ -951,7 +981,7 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
          criteria + 30 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
-        totals["backed"], 62,
+        totals["backed"], 79,
         "backed-row count changed: {totals}. Exactly two rows are unbacked on \
          purpose — SUITE-001 (`make ci`, the composite that contains every other \
          suite) and SUITE-002 (the `quire validate` half of `make spec`, which \
@@ -1432,8 +1462,11 @@ fn no_local_evidence_framework_remains() {
         ("examples", 3),
         ("scripts", 5),
         ("spec", 64),
-        ("src", 7),
-        ("tests", 15),
+        // Context-bound wire decoding adds src/context.rs; the #57-shaped
+        // fixture adds tests/contextual.rs. TC-030 itself extends an existing
+        // shared-assurance test file.
+        ("src", 8),
+        ("tests", 16),
     ]
     .into_iter()
     .map(|(area, count)| (area.to_owned(), count))
@@ -1465,15 +1498,15 @@ fn no_local_evidence_framework_remains() {
         "a cross-area file swap preserved both the total and the per-area control"
     );
 
-    // Final population after the PR #23 review artifacts were tracked: 127
-    // scanned files from 130 tracked paths minus the three exact denials.
+    // Contextual wire decoding and its producer-intake control bring the
+    // reviewed population to 140 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 138,
-        "the source census population changed from the reviewed 138 tracked files \
+        inspected, 140,
+        "the source census population changed from the reviewed 140 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
