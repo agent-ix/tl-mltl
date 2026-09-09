@@ -29,6 +29,15 @@ make ci               # complete local gate
 GitHub Actions is intentionally `workflow_dispatch`-only. Use local `make ci`
 while iterating and dispatch hosted CI only for a finalized revision.
 
+## Specification workflow
+
+All new or changed work must be specified before implementation: use `quoin
+write` to obtain the current artifact contracts, then update the relevant
+requirements, plans, tasks, matrix rows, and evidence links. Before requesting
+review, run `quoin review` over the affected scope and validate with Quire.
+Record selected analyses and findings; final Quoin acceptance remains a human
+decision and must not be advanced automatically.
+
 ## Shared assurance
 
 This repository is on the released Engineering Assurance / Quire / Quoin /
