@@ -1539,7 +1539,7 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        ("spec", 64),
+        ("spec", 75),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -1576,15 +1576,15 @@ fn no_local_evidence_framework_remains() {
         "a cross-area file swap preserved both the total and the per-area control"
     );
 
-    // Contextual wire decoding and its producer-intake control bring the
-    // reviewed population to 140 tracked paths.
+    // The merged review-ID controls and this full-corpus review bring the
+    // reviewed population to 151 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 140,
-        "the source census population changed from the reviewed 140 tracked files \
+        inspected, 151,
+        "the source census population changed from the reviewed 151 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
