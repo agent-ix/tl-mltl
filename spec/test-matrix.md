@@ -19,7 +19,7 @@ relationships:
 | FR-004 | FR-004-AC-1 through FR-004-AC-3 | TC-011 through TC-013 | ✅ covered |
 | FR-005 | FR-005-AC-1 through FR-005-AC-3 | TC-014 through TC-016 | ✅ covered |
 | FR-006 | FR-006-AC-1, FR-006-AC-2, FR-006-AC-3, FR-006-AC-5, FR-006-AC-6, FR-006-AC-7 | TC-018, TC-019, TC-020, TC-022, TC-023, TC-024 | ✅ covered |
-| FR-007 | FR-007-AC-1 through FR-007-AC-8 | TC-025 through TC-031, TC-034 | 🚧 planned |
+| FR-007 | FR-007-AC-1 through FR-007-AC-9 | TC-025 through TC-031, TC-034, TC-035 | 🚧 planned |
 
 ## Stakeholder Requirement Coverage
 
@@ -74,3 +74,4 @@ relationships:
 | TC-032 | Generate 512 bounded closed/prefix formula and trace inputs; closing the prefix agrees with closed evaluation | Property | P0 | FR-003-AC-2 | ✅ implemented |
 | TC-033 | Refuse an empty tracked SpecReview set and duplicate semantic YAML identities while naming each colliding path | Integration | P0 | NFR-002-AC-5 | ✅ implemented |
 | TC-034 | With all other inputs fixed, keep every contextual request and result identity invariant across absent, empty, and distinct valid diagnostic formula spans; retain those structural span differences and keep exact mapping formula bytes bound | Integration | P0 | FR-007-AC-8, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4 | 🚧 planned |
+| TC-035 | Refuse a structurally valid borrowed formula above the canonical tl-syntax document node limit with a typed contextual identity failure before operation work | Integration | P0 | FR-007-AC-9, NFR-002-AC-1 | 🚧 planned |

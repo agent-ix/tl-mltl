@@ -62,6 +62,10 @@ existing context-free APIs or v1 wire bytes.
   structural formula document but do not participate in request or result
   identity. A source span carried by the explicit requirement-context document
   remains part of that caller-supplied context and therefore remains bound.
+- Constructing that canonical view uses tl-syntax's bounded v1 formula-document
+  contract. A borrowed formula exceeding
+  \`MAX_FORMULA_DOCUMENT_NODES\` returns the contextual operation's typed identity
+  failure before request hashing or semantic, horizon, or mapping work.
 
 ## Digest allocation
 
@@ -159,6 +163,7 @@ its user documentation omits reserved `TAU` and `T`.
 | FR-007-AC-6 | Contextual native domain records traverse the existing producer-owned Quoin intake without Quoin, Quire, C2PO, or R2U2 executing a producer or monitor; no new generic runner, collector, evidence envelope, adapter framework, or retention path is added, and package license/publication settings remain unchanged. | Test (TC-030) |
 | FR-007-AC-7 | A fixture shaped like quire-contract-ir#57's bounded “overlay change accepted, response within N cycles” requirement uses named Boolean signals and one exact requirement revision/clause/anchor/span consistently across contextual evaluation, horizon, mapping, external verdict, and differential records, with no contract-IR or rewrite runtime dependency. | Test (TC-031) |
 | FR-007-AC-8 | With every other operation input held equal, contextual closed evaluation, prefix evaluation, horizon analysis, and mapping produce identical request and result identities for formula documents with the same schema, semantic profile, root, and node kinds whether diagnostic node source spans are absent or contain different valid offsets; structural formula documents retain those span differences, and mapping continues to bind its separately supplied exact formula bytes. | Test (TC-034) |
+| FR-007-AC-9 | A structurally valid borrowed formula with more than \`MAX_FORMULA_DOCUMENT_NODES\` nodes is refused as a typed contextual identity failure before request hashing or operation work. | Test (TC-035) |
 
 ## Dependencies
 
