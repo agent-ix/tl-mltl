@@ -1,15 +1,16 @@
 use tl_mltl::{
     analyze_horizon, analyze_horizon_with_context, compare_external, compare_external_with_context,
-    evaluate_prefix, evaluate_prefix_with_context, map_to_c2po, map_to_c2po_with_context,
-    ComparisonStatus, ContextualComparisonStatus, ContextualExternalVerdict,
-    ContextualExternalVerdictSchemaVersion, DifferentialReport, EvaluationLimits, EvaluationReport,
-    ExternalStatus, ExternalVerdict, HorizonReport, MappingManifest, MappingSourceIdentity,
+    evaluate_closed_with_context, evaluate_prefix, evaluate_prefix_with_context, map_to_c2po,
+    map_to_c2po_with_context, ComparisonStatus, ContextualComparisonStatus,
+    ContextualEvaluationError, ContextualExternalVerdict, ContextualExternalVerdictSchemaVersion,
+    ContextualHorizonError, DifferentialReport, EvaluationLimits, EvaluationReport, ExternalStatus,
+    ExternalVerdict, HorizonReport, MappingError, MappingManifest, MappingSourceIdentity,
     MappingSourceState, ToolIdentity,
 };
 use tl_syntax::{
-    Formula, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration, PropositionBinding,
-    PropositionId, RequirementContextDocument, SemanticProfile, SignalCatalogDocument,
-    SignalDomain, SignalId, SourceSpan,
+    Formula, FormulaDocument, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration,
+    PropositionBinding, PropositionId, RequirementContextDocument, SemanticProfile,
+    SignalCatalogDocument, SignalDomain, SignalId, SourceSpan, MAX_FORMULA_DOCUMENT_NODES,
 };
 
 fn overlay_nodes() -> Vec<Node> {
@@ -29,6 +30,17 @@ fn overlay_nodes() -> Vec<Node> {
             right: NodeId(2),
         }),
     ]
+}
+
+fn overlay_nodes_with_spans(spans: [Option<SourceSpan>; 4]) -> Vec<Node> {
+    overlay_nodes()
+        .into_iter()
+        .zip(spans)
+        .map(|(mut node, span)| {
+            node.span = span;
+            node
+        })
+        .collect()
 }
 
 fn catalog() -> SignalCatalogDocument {
@@ -305,4 +317,177 @@ fn overlay_response_context_flows_through_every_contextual_operation() {
     assert_eq!(mapping.requirement_context, Some(context));
     assert!(mapping.expression.contains("overlay_change_accepted"));
     assert!(mapping.expression.contains("response_within_2_cycles"));
+}
+
+#[derive(Debug, Eq, PartialEq)]
+struct ContextualFormulaIdentities {
+    closed_request: String,
+    closed_result: String,
+    prefix_request: String,
+    prefix_result: String,
+    horizon_request: String,
+    horizon_result: String,
+    mapping_request: String,
+    mapping_result: String,
+}
+
+fn contextual_formula_identities(nodes: &[Node]) -> ContextualFormulaIdentities {
+    let online = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(3), nodes).unwrap();
+    let closed = Formula::new(SemanticProfile::ClosedTraceV1, NodeId(3), nodes).unwrap();
+    let trace = vec![vec![PropositionId(7)], vec![PropositionId(8)], Vec::new()];
+    let catalog = catalog();
+    let context = context();
+    let limits = EvaluationLimits::default();
+
+    let closed = evaluate_closed_with_context(
+        closed,
+        "overlay-response",
+        &trace,
+        "overlay-trace",
+        limits,
+        &catalog,
+        Some(&context),
+    )
+    .unwrap();
+    let prefix = evaluate_prefix_with_context(
+        online,
+        "overlay-response",
+        &trace,
+        "overlay-trace",
+        false,
+        limits,
+        &catalog,
+        Some(&context),
+    )
+    .unwrap();
+    let horizon =
+        analyze_horizon_with_context(online, "overlay-response", &catalog, Some(&context)).unwrap();
+    let mapping = map_to_c2po_with_context(
+        online,
+        "overlay-response",
+        b"overlay-response",
+        MappingSourceIdentity {
+            revision: "fixture".to_owned(),
+            state: MappingSourceState::Clean,
+        },
+        None,
+        100,
+        &catalog,
+        Some(&context),
+    )
+    .unwrap();
+
+    ContextualFormulaIdentities {
+        closed_request: closed.request_sha256,
+        closed_result: closed.result_sha256,
+        prefix_request: prefix.request_sha256,
+        prefix_result: prefix.result_sha256,
+        horizon_request: horizon.request_sha256,
+        horizon_result: horizon.result_sha256,
+        mapping_request: mapping.request_sha256,
+        mapping_result: mapping.result_sha256,
+    }
+}
+
+// Trace: TC-034, FR-007-AC-8, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4
+#[test]
+fn diagnostic_formula_spans_do_not_change_contextual_identities() {
+    let variants = [
+        overlay_nodes(),
+        overlay_nodes_with_spans([
+            Some(SourceSpan::new(0, 0).unwrap()),
+            Some(SourceSpan::new(0, 0).unwrap()),
+            Some(SourceSpan::new(0, 0).unwrap()),
+            Some(SourceSpan::new(0, 0).unwrap()),
+        ]),
+        overlay_nodes_with_spans([
+            Some(SourceSpan::new(2, 4).unwrap()),
+            Some(SourceSpan::new(11, 13).unwrap()),
+            Some(SourceSpan::new(10, 17).unwrap()),
+            Some(SourceSpan::new(1, 18).unwrap()),
+        ]),
+    ];
+    let documents = variants
+        .iter()
+        .map(|nodes| {
+            FormulaDocument::new(SemanticProfile::OnlinePrefixV1, NodeId(3), nodes.clone()).unwrap()
+        })
+        .collect::<Vec<_>>();
+
+    assert_ne!(documents[0], documents[1]);
+    assert_ne!(documents[1], documents[2]);
+    assert_eq!(documents[0].semantic_view(), documents[1].semantic_view());
+    assert_eq!(documents[1].semantic_view(), documents[2].semantic_view());
+
+    let identities = variants
+        .iter()
+        .map(|nodes| contextual_formula_identities(nodes))
+        .collect::<Vec<_>>();
+    assert_eq!(identities[0], identities[1]);
+    assert_eq!(identities[1], identities[2]);
+}
+
+// Trace: TC-035, FR-007-AC-9, NFR-002-AC-1
+#[test]
+fn oversized_borrowed_formula_is_a_contextual_identity_error() {
+    let node_count = MAX_FORMULA_DOCUMENT_NODES + 1;
+    let nodes = vec![Node::new(NodeKind::True); node_count];
+    let root = NodeId(u32::try_from(node_count - 1).unwrap());
+    let online = Formula::new(SemanticProfile::OnlinePrefixV1, root, &nodes).unwrap();
+    let closed = Formula::new(SemanticProfile::ClosedTraceV1, root, &nodes).unwrap();
+    let catalog = catalog();
+    let limits = EvaluationLimits {
+        max_node_evaluations: 0,
+        ..EvaluationLimits::default()
+    };
+    let is_document_limit = |detail: &str| {
+        detail.contains("canonical formula identity failed")
+            && detail.contains("exceeds the 100000-node limit")
+    };
+
+    assert!(matches!(
+        evaluate_closed_with_context(
+            closed,
+            "oversized",
+            &[],
+            "empty",
+            limits,
+            &catalog,
+            None
+        ),
+        Err(ContextualEvaluationError::Identity(detail)) if is_document_limit(&detail)
+    ));
+    assert!(matches!(
+        evaluate_prefix_with_context(
+            online,
+            "oversized",
+            &[],
+            "empty",
+            false,
+            limits,
+            &catalog,
+            None
+        ),
+        Err(ContextualEvaluationError::Identity(detail)) if is_document_limit(&detail)
+    ));
+    assert!(matches!(
+        analyze_horizon_with_context(online, "oversized", &catalog, None),
+        Err(ContextualHorizonError::Identity(detail)) if is_document_limit(&detail)
+    ));
+    assert!(matches!(
+        map_to_c2po_with_context(
+            online,
+            "oversized",
+            b"same-bytes",
+            MappingSourceIdentity {
+                revision: "fixture".to_owned(),
+                state: MappingSourceState::Clean,
+            },
+            None,
+            0,
+            &catalog,
+            None,
+        ),
+        Err(MappingError::Identity(detail)) if is_document_limit(&detail)
+    ));
 }

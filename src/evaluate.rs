@@ -8,7 +8,9 @@ use tl_syntax::{
 };
 
 use crate::{
-    context::{bind_formula, catalog_sha256, contextual_request_sha256, contextual_result_sha256},
+    context::{
+        bind_formula, catalog_sha256, contextual_formula_request_sha256, contextual_result_sha256,
+    },
     horizon::lookahead,
     ContextualBindingError, HorizonError, MAX_RECURSION_DEPTH, TL_SYNTAX_REVISION,
 };
@@ -194,7 +196,7 @@ pub enum ContextualEvaluationError {
     Binding(ContextualBindingError),
     /// Existing evaluation semantics refused the operation.
     Evaluation(EvaluationError),
-    /// The deterministic identity could not be serialized.
+    /// The deterministic identity could not be constructed or serialized.
     Identity(String),
 }
 
@@ -203,10 +205,7 @@ impl fmt::Display for ContextualEvaluationError {
         match self {
             Self::Binding(error) => error.fmt(formatter),
             Self::Evaluation(error) => error.fmt(formatter),
-            Self::Identity(error) => write!(
-                formatter,
-                "contextual identity serialization failed: {error}"
-            ),
+            Self::Identity(error) => write!(formatter, "contextual identity failed: {error}"),
         }
     }
 }
@@ -615,9 +614,6 @@ pub fn evaluate_closed_with_context(
     #[serde(rename_all = "camelCase")]
     struct Request<'a> {
         formula_id: &'a str,
-        formula_root: u32,
-        semantic_profile: &'a str,
-        formula_nodes: &'a [tl_syntax::Node],
         trace: &'a [Vec<PropositionId>],
         trace_id: &'a str,
         limits: [u64; 3],
@@ -626,9 +622,6 @@ pub fn evaluate_closed_with_context(
     }
     let request = Request {
         formula_id: &formula_id,
-        formula_root: formula.root().0,
-        semantic_profile: formula.profile().as_str(),
-        formula_nodes: formula.nodes(),
         trace,
         trace_id: &trace_id,
         limits: [
@@ -639,13 +632,14 @@ pub fn evaluate_closed_with_context(
         source_revision: env!("TL_MLTL_SOURCE_REVISION"),
         syntax_revision: TL_SYNTAX_REVISION,
     };
-    let request_sha256 = contextual_request_sha256(
+    let request_sha256 = contextual_formula_request_sha256(
         "tl-mltl.contextual-evaluation/v2/request",
         &request,
+        formula,
         signal_catalog,
         requirement_context,
     )
-    .map_err(|error| ContextualEvaluationError::Identity(error.to_string()))?;
+    .map_err(ContextualEvaluationError::Identity)?;
     let report = evaluate_closed(formula, formula_id.clone(), trace, trace_id.clone(), limits)
         .map_err(ContextualEvaluationError::Evaluation)?;
     let mut contextual = ContextualEvaluationReport {
@@ -734,9 +728,6 @@ pub fn evaluate_prefix_with_context(
     #[serde(rename_all = "camelCase")]
     struct Request<'a> {
         formula_id: &'a str,
-        formula_root: u32,
-        semantic_profile: &'a str,
-        formula_nodes: &'a [tl_syntax::Node],
         trace: &'a [Vec<PropositionId>],
         trace_id: &'a str,
         closed: bool,
@@ -746,9 +737,6 @@ pub fn evaluate_prefix_with_context(
     }
     let request = Request {
         formula_id: &formula_id,
-        formula_root: formula.root().0,
-        semantic_profile: formula.profile().as_str(),
-        formula_nodes: formula.nodes(),
         trace,
         trace_id: &trace_id,
         closed,
@@ -760,13 +748,14 @@ pub fn evaluate_prefix_with_context(
         source_revision: env!("TL_MLTL_SOURCE_REVISION"),
         syntax_revision: TL_SYNTAX_REVISION,
     };
-    let request_sha256 = contextual_request_sha256(
+    let request_sha256 = contextual_formula_request_sha256(
         "tl-mltl.contextual-prefix-evaluation/v2/request",
         &request,
+        formula,
         signal_catalog,
         requirement_context,
     )
-    .map_err(|error| ContextualEvaluationError::Identity(error.to_string()))?;
+    .map_err(ContextualEvaluationError::Identity)?;
     let report = evaluate_prefix(
         formula,
         formula_id.clone(),

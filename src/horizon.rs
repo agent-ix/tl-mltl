@@ -4,7 +4,9 @@ use serde::{Deserialize, Serialize};
 use tl_syntax::{Formula, NodeId, NodeKind, RequirementContextDocument, SignalCatalogDocument};
 
 use crate::{
-    context::{bind_formula, catalog_sha256, contextual_request_sha256, contextual_result_sha256},
+    context::{
+        bind_formula, catalog_sha256, contextual_formula_request_sha256, contextual_result_sha256,
+    },
     ContextualBindingError, TL_SYNTAX_CORPUS_REVISION, TL_SYNTAX_REVISION,
 };
 
@@ -115,7 +117,7 @@ pub enum ContextualHorizonError {
     Binding(ContextualBindingError),
     /// Existing horizon analysis refused the operation.
     Horizon(HorizonError),
-    /// The deterministic identity could not be serialized.
+    /// The deterministic identity could not be constructed or serialized.
     Identity(String),
 }
 
@@ -124,10 +126,7 @@ impl fmt::Display for ContextualHorizonError {
         match self {
             Self::Binding(error) => error.fmt(formatter),
             Self::Horizon(error) => error.fmt(formatter),
-            Self::Identity(error) => write!(
-                formatter,
-                "contextual identity serialization failed: {error}"
-            ),
+            Self::Identity(error) => write!(formatter, "contextual identity failed: {error}"),
         }
     }
 }
@@ -261,27 +260,22 @@ pub fn analyze_horizon_with_context(
     #[serde(rename_all = "camelCase")]
     struct Request<'a> {
         formula_id: &'a str,
-        formula_root: u32,
-        semantic_profile: &'a str,
-        formula_nodes: &'a [tl_syntax::Node],
         source_revision: &'a str,
         syntax_revision: &'a str,
     }
     let request = Request {
         formula_id: &formula_id,
-        formula_root: formula.root().0,
-        semantic_profile: formula.profile().as_str(),
-        formula_nodes: formula.nodes(),
         source_revision: env!("TL_MLTL_SOURCE_REVISION"),
         syntax_revision: TL_SYNTAX_REVISION,
     };
-    let request_sha256 = contextual_request_sha256(
+    let request_sha256 = contextual_formula_request_sha256(
         "tl-mltl.contextual-horizon/v2/request",
         &request,
+        formula,
         signal_catalog,
         requirement_context,
     )
-    .map_err(|error| ContextualHorizonError::Identity(error.to_string()))?;
+    .map_err(ContextualHorizonError::Identity)?;
     let report =
         analyze_horizon(formula, formula_id.clone()).map_err(ContextualHorizonError::Horizon)?;
     let mut contextual = ContextualHorizonReport {

@@ -6,7 +6,8 @@
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use tl_syntax::{
-    Formula, FormulaBindingError, PropositionId, RequirementContextDocument, SignalCatalogDocument,
+    Formula, FormulaBindingError, FormulaDocument, PropositionId, RequirementContextDocument,
+    SignalCatalogDocument,
 };
 
 /// A context field that accepts an explicit JSON null but never a missing key.
@@ -141,6 +142,36 @@ pub(crate) fn contextual_request_sha256<T: Serialize>(
             requirement_context,
         },
     )
+}
+
+/// Returns a contextual request identity whose formula contribution uses the
+/// shared span-free semantic document view.
+pub(crate) fn contextual_formula_request_sha256<T: Serialize>(
+    domain: &str,
+    operation: &T,
+    formula: Formula<'_>,
+    catalog_document: &SignalCatalogDocument,
+    requirement_context: Option<&RequirementContextDocument>,
+) -> Result<String, String> {
+    let formula_document = FormulaDocument::from_formula(formula)
+        .map_err(|error| format!("canonical formula identity failed: {error}"))?;
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct FormulaRequest<'a, T> {
+        #[serde(flatten)]
+        operation: &'a T,
+        formula: tl_syntax::SemanticFormulaDocument<'a>,
+    }
+    contextual_request_sha256(
+        domain,
+        &FormulaRequest {
+            operation,
+            formula: formula_document.semantic_view(),
+        },
+        catalog_document,
+        requirement_context,
+    )
+    .map_err(|error| error.to_string())
 }
 
 /// Returns a result identity without recursively including its own digest field.
