@@ -1047,19 +1047,19 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 81 is every row Quire mints from `spec/`: 43 acceptance criteria, 30
+    // 84 is every row Quire mints from `spec/`: 44 acceptance criteria, 32
     // test-matrix rows and 8 suite-registry rows. Naming the population matters
     // — "matrix rows" would have been wrong, since the test matrix contributes
     // 30 of them. This assertion deliberately tracks the current specification,
     // rather than preserving an obsolete population after a shared requirement
     // expansion.
     assert_eq!(
-        totals["total"], 81,
-        "the declared-row population changed: {totals}. It is 43 acceptance \
-         criteria + 30 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 84,
+        "the declared-row population changed: {totals}. It is 44 acceptance \
+         criteria + 32 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
-        totals["backed"], 79,
+        totals["backed"], 82,
         "backed-row count changed: {totals}. Exactly two rows are unbacked on \
          purpose — SUITE-001 (`make ci`, the composite that contains every other \
          suite) and SUITE-002 (the `quire validate` half of `make spec`, which \

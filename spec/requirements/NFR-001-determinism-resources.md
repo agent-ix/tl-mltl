@@ -39,7 +39,7 @@ operations and exercise checked arithmetic and configured work limits.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| NFR-001-AC-1 | Repeated evaluation, analysis, mapping, context binding, digesting, comparison, and serialization are byte-for-byte stable. | Test (TC-003, TC-013, TC-014, TC-025, TC-028, TC-029, TC-032) |
+| NFR-001-AC-1 | Repeated evaluation, analysis, mapping, context binding, digesting, comparison, and serialization are byte-for-byte stable. | Test (TC-003, TC-013, TC-014, TC-025, TC-028, TC-029) |
 | NFR-001-AC-2 | Overflow and work-limit exhaustion are explicit errors with no partial success claim. | Test (TC-004, TC-006) |
 
 ## Dependencies
