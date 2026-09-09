@@ -34,7 +34,7 @@ relationships:
 | Non-Functional Req | Verification Method | Evidence/Test Cases | Status |
 |---|---|---|---|
 | NFR-001 | deterministic, digest, and resource-limit tests | TC-003, TC-004, TC-006, TC-013, TC-025, TC-028, TC-029 | 🚧 extension planned |
-| NFR-002 | schema-negative tests, contextual identity checks, and compiled-test census | TC-012, TC-014, TC-016, TC-017, TC-025, TC-028, TC-031 | 🚧 extension planned |
+| NFR-002 | schema-negative tests, contextual identity checks, compiled-test census, and tracked review-identity census | TC-012, TC-014, TC-016, TC-017, TC-025, TC-028, TC-031, TC-033 | 🚧 extension planned |
 | NFR-003 | producer-boundary, shared-input serialization, state-vocabulary, and mutation-probe tests | TC-018, TC-019, TC-022, TC-024 | ✅ covered |
 
 ## Test Case Summary
@@ -71,3 +71,4 @@ relationships:
 | TC-029 | Preserve existing context-free API/CLI behavior and exact v1 bytes while strictly round-tripping all contextual v2 native record families | Snapshot | P0 | FR-007-AC-5, NFR-001-AC-1 | 🚧 planned |
 | TC-030 | Carry contextual native records through the existing producer-owned Quoin intake without new generic machinery or external execution | Integration | P0 | FR-007-AC-6 | 🚧 planned |
 | TC-031 | Exercise the bounded overlay-response example with one shared named-signal catalog and requirement context across every contextual operation | Integration | P0 | FR-007-AC-7, StR-003-VC-1, NFR-002-AC-4 | 🚧 planned |
+| TC-033 | Refuse an empty tracked SpecReview set and duplicate semantic YAML identities while naming each colliding path | Integration | P0 | NFR-002-AC-5 | ✅ implemented |

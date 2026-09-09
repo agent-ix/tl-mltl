@@ -15,6 +15,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::OnceLock;
 
+use serde::Deserialize;
 use serde_json::Value;
 
 fn root() -> PathBuf {
@@ -102,6 +103,83 @@ fn git_files(root: &Path, arguments: &[&str]) -> Vec<String> {
         .filter(|value| !value.is_empty())
         .map(str::to_owned)
         .collect()
+}
+
+#[derive(Deserialize)]
+struct ReviewFrontmatter {
+    id: String,
+}
+
+fn review_id(contents: &str, path: &str) -> String {
+    let mut documents = serde_yaml_ng::Deserializer::from_str(contents);
+    let frontmatter = documents
+        .next()
+        .unwrap_or_else(|| panic!("tracked review {path} has no YAML frontmatter"));
+    ReviewFrontmatter::deserialize(frontmatter)
+        .unwrap_or_else(|error| {
+            panic!("tracked review {path} has invalid YAML frontmatter: {error}")
+        })
+        .id
+}
+
+fn duplicate_review_ids(
+    reviews: impl IntoIterator<Item = (String, String)>,
+) -> BTreeMap<String, Vec<String>> {
+    let mut paths_by_id = BTreeMap::<String, Vec<String>>::new();
+    for (path, contents) in reviews {
+        paths_by_id
+            .entry(review_id(&contents, &path))
+            .or_default()
+            .push(path);
+    }
+    assert!(
+        !paths_by_id.is_empty(),
+        "tracked SpecReview census is empty; uniqueness would be vacuous"
+    );
+    paths_by_id
+        .into_iter()
+        .filter(|(_, paths)| paths.len() > 1)
+        .collect()
+}
+
+// Trace: TC-033, NFR-002-AC-5
+#[test]
+fn every_tracked_spec_review_id_is_unique() {
+    let reviews = git_files(&root(), &["ls-files", "-z", "spec/reviews"])
+        .into_iter()
+        .map(|path| {
+            let contents = fs::read_to_string(root().join(&path))
+                .unwrap_or_else(|error| panic!("could not read tracked review {path}: {error}"));
+            (path, contents)
+        });
+    let duplicates = duplicate_review_ids(reviews);
+    assert!(
+        duplicates.is_empty(),
+        "duplicate tracked SpecReview ids: {duplicates:?}"
+    );
+}
+
+// Trace: TC-033, NFR-002-AC-5
+#[test]
+fn quoted_review_identity_collides_with_its_plain_yaml_value() {
+    let duplicates = duplicate_review_ids([
+        ("plain.md".to_owned(), "---\nid: SR-091\n---\n".to_owned()),
+        (
+            "quoted.md".to_owned(),
+            "---\nid: \"SR-091\"\n---\n".to_owned(),
+        ),
+    ]);
+    assert_eq!(
+        duplicates.get("SR-091"),
+        Some(&vec!["plain.md".to_owned(), "quoted.md".to_owned()])
+    );
+}
+
+// Trace: TC-033, NFR-002-AC-5
+#[test]
+#[should_panic(expected = "tracked SpecReview census is empty")]
+fn review_identity_census_refuses_an_empty_set() {
+    let _ = duplicate_review_ids(std::iter::empty::<(String, String)>());
 }
 
 fn census_paths<F>(root: &Path, denied: F) -> (Vec<String>, Vec<String>)

@@ -19,8 +19,8 @@ from human approval and consuming-project validation.
 
 ## Scope
 
-All wire documents, cross-repository pins, evidence records, and release claims
-are in scope.
+All wire documents, cross-repository pins, evidence records, tracked review
+artifacts, and release claims are in scope.
 
 ## Rationale
 
@@ -48,6 +48,7 @@ re-derives which requirement-tagged tests Cargo actually runs.
 | NFR-002-AC-2 | Exchanged records name exact tl-syntax, corpus, external-tool, dependency, and output identities without recording an automated release decision. | Test (TC-016) |
 | NFR-002-AC-3 | Every requirement-tagged Rust test is a test Cargo actually compiles and runs, and no compiled requirement-tagged test is ignored or configured out, so a matrix row cannot be backed by a tag above a test that never executes. | Test (TC-017) |
 | NFR-002-AC-4 | Every contextual native record names the exact participating tl-mltl and tl-syntax revisions, complete shared catalog identity, and exact optional requirement context without claiming that tl-mltl validated the caller's provenance or a consuming monitor. | Test (TC-025, TC-028, TC-031) |
+| NFR-002-AC-5 | The tracked `SpecReview` review set is non-empty, and every artifact declares an identity unique within it; a duplicate identity is refused while naming every colliding path. | Test (TC-033) |
 
 ## Dependencies
 
@@ -65,7 +66,7 @@ cost of the removal.
 The current compiled-test-census criterion reuses `NFR-002-AC-3`, an identifier
 that the pre-migration requirement used for generic collection controls. That
 reuse predates issue #20 and violates the later stable-identity rule recorded by
-SR-012 FND-1204. This pre-stable repository has no retained evidence requiring a
+SR-015 FND-1204. This pre-stable repository has no retained evidence requiring a
 compatibility alias, so the identifier is not churned again in this follow-up;
 historical review prose that names the former criterion continues to mean the
 former criterion, while current trace links mean the table row above. The gap is
