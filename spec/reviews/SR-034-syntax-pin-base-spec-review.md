@@ -1,9 +1,9 @@
 ---
-id: SR-013
+id: SR-034
 title: "Base specification review — exact tl-syntax semantic pin"
 type: SpecReview
 analysis: base
-scope: "NFR-002-AC-2, TM-001, SR-012"
+scope: "NFR-002-AC-2, TM-001, SR-033"
 review_set: base
 ---
 
