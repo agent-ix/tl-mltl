@@ -1539,7 +1539,9 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        ("spec", 76),
+        // The full-corpus review, property baseline, and bounded-Kani reviews
+        // are tracked scope.
+        ("spec", 78),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -1576,8 +1578,8 @@ fn no_local_evidence_framework_remains() {
         "a cross-area file swap preserved both the total and the per-area control"
     );
 
-    // The full-corpus review and this property baseline bring the reviewed
-    // population to 153 tracked paths.
+    // The full-corpus review, property baseline, and bounded-Kani reviews
+    // bring the reviewed population to 155 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
