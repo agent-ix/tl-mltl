@@ -16,10 +16,11 @@ relationships:
 
 The base checklist reviewed the span-independent contextual identity increment
 for identifier integrity, functional-requirement quality, cross-references, and
-all six test-coverage rules. Three boundary ambiguities were corrected before
+all six test-coverage rules. Four issues were corrected before
 implementation: optional span presence is explicit, mapping identity holds its
 separately supplied formula bytes fixed, and conversion from a larger borrowed
-formula to the bounded canonical document has a typed refusal.
+formula to the bounded canonical document has a typed refusal. Existing
+TC-025 through TC-031 statuses now reflect their compiled Rust evidence.
 
 ## Findings
 
@@ -28,6 +29,7 @@ formula to the bounded canonical document has a typed refusal.
 | FND-3501 | medium | “Different spans” did not explicitly cover the absent-versus-present boundary even though optional-span serialization is one way diagnostic provenance can leak into identity. | FR-007-AC-8, TC-034 |
 | FND-3502 | medium | Mapping also binds exact formula bytes, so an unconditional equality claim across differently spelled source inputs would conflict with the existing content-identity contract. | FR-007 digest allocation, FR-007-AC-8, TC-034 |
 | FND-3503 | medium | The shared semantic view is constructed through the bounded v1 FormulaDocument, but a borrowed Formula can exceed that node limit; an undocumented conversion failure would invite a panic or mislabeled error. | FR-007 inputs and shared context behavior |
+| FND-3504 | medium | TC-025 through TC-031 remained marked planned after their requirement-tagged Rust evidence landed, obscuring the actual remaining FR-007 gap. | TM-001, TC-025 through TC-031 |
 
 ## Dispositions
 
@@ -36,6 +38,7 @@ formula to the bounded canonical document has a typed refusal.
 | FND-3501 | **FIXED** | FR-007-AC-8 and TC-034 now cover absent, empty, and distinct valid diagnostic spans with every other operation input fixed. |
 | FND-3502 | **FIXED** | FR-007-AC-8 and TC-034 explicitly retain exact mapping formula bytes as a separately bound input. |
 | FND-3503 | **FIXED** | FR-007 now requires a typed contextual identity failure before work, with FR-007-AC-9 and TC-035 owning the document-limit boundary. |
+| FND-3504 | **FIXED** | Each existing tag was resolved to compiled Rust source and TC-025 through TC-031 are now marked implemented; the FR-007 summary remains planned until TC-034 and TC-035 land. |
 
 ## Base checklist result
 
