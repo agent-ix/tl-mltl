@@ -1,5 +1,5 @@
 ---
-id: SR-017
+id: SR-026
 title: "Integrity retrospective review of the tl-mltl specification corpus"
 type: SpecReview
 analysis: integrity
