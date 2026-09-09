@@ -205,12 +205,32 @@ fn contextual_identities_change_for_independent_operation_inputs() {
         Some(&context),
     )
     .unwrap();
+    let mut semantic_nodes = overlay_nodes();
+    semantic_nodes[3] = Node::new(NodeKind::And {
+        left: NodeId(0),
+        right: NodeId(2),
+    });
+    let semantic_formula =
+        Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(3), &semantic_nodes).unwrap();
+    let formula_changed = evaluate_prefix_with_context(
+        semantic_formula,
+        "overlay-response",
+        &trace,
+        "overlay-trace",
+        false,
+        limits,
+        &catalog(),
+        Some(&context),
+    )
+    .unwrap();
     assert_ne!(evaluation.request_sha256, catalog_changed.request_sha256);
     assert_ne!(evaluation.result_sha256, catalog_changed.result_sha256);
     assert_ne!(evaluation.request_sha256, trace_changed.request_sha256);
     assert_ne!(evaluation.result_sha256, trace_changed.result_sha256);
     assert_ne!(evaluation.request_sha256, limit_changed.request_sha256);
     assert_ne!(evaluation.result_sha256, limit_changed.result_sha256);
+    assert_ne!(evaluation.request_sha256, formula_changed.request_sha256);
+    assert_ne!(evaluation.result_sha256, formula_changed.result_sha256);
 
     let mapping = map_to_c2po_with_context(
         formula,
@@ -425,6 +445,28 @@ fn diagnostic_formula_spans_do_not_change_contextual_identities() {
         .collect::<Vec<_>>();
     assert_eq!(identities[0], identities[1]);
     assert_eq!(identities[1], identities[2]);
+
+    let formula = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(3), &variants[0]).unwrap();
+    let map = |formula_bytes: &[u8]| {
+        map_to_c2po_with_context(
+            formula,
+            "overlay-response",
+            formula_bytes,
+            MappingSourceIdentity {
+                revision: "fixture".to_owned(),
+                state: MappingSourceState::Clean,
+            },
+            None,
+            100,
+            &catalog(),
+            Some(&context()),
+        )
+        .unwrap()
+    };
+    let original_bytes = map(b"overlay-response");
+    let changed_bytes = map(b"overlay-response-with-distinct-bytes");
+    assert_ne!(original_bytes.request_sha256, changed_bytes.request_sha256);
+    assert_ne!(original_bytes.result_sha256, changed_bytes.result_sha256);
 }
 
 // Trace: TC-035, FR-007-AC-9, NFR-002-AC-1
