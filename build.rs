@@ -17,6 +17,9 @@ fn watch_existing_git_path(path: &str) {
 }
 
 fn main() {
+    // `cargo kani` enables this verifier-specific cfg for test-only harnesses.
+    // Declare it to rustc so ordinary `-D warnings` builds remain strict.
+    println!("cargo:rustc-check-cfg=cfg(kani)");
     println!("cargo:rerun-if-env-changed=TL_MLTL_SOURCE_REVISION");
     println!("cargo:rerun-if-env-changed=TL_MLTL_SOURCE_STATE");
     if let Some(files) = git(&["ls-files"]) {
