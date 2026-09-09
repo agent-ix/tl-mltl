@@ -484,10 +484,10 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         let stale = fs::read_to_string(&candidate)
             .unwrap()
             .replace(
-                "6ad7499f2ccc179bb33b2590666399c6632a7e3c",
-                "953ee825e5060335b4c79682f5f41a78c5a1bfae",
+                "26b801d4a68ebfe720062cfdb3c66b070ab60e92",
+                "1b3c4026ff9567491e87a19fdf2793d3b2e76160",
             )
-            .replace("6ad7499f", "953ee825");
+            .replace("26b801d4", "1b3c4026");
         fs::write(&candidate, stale).unwrap();
         let (code, stdout, stderr) = run(
             &python,
@@ -1539,7 +1539,7 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        ("spec", 76),
+        ("spec", 78),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -1576,15 +1576,15 @@ fn no_local_evidence_framework_remains() {
         "a cross-area file swap preserved both the total and the per-area control"
     );
 
-    // The full-corpus review and this property baseline bring the reviewed
-    // population to 153 tracked paths.
+    // The full-corpus review, property baseline, and semantic-pin reviews
+    // bring the reviewed population to 155 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 153,
-        "the source census population changed from the reviewed 153 tracked files \
+        inspected, 155,
+        "the source census population changed from the reviewed 155 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

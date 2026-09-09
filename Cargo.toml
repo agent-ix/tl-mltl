@@ -18,7 +18,7 @@ path = "src/lib.rs"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
-tl-syntax = { git = "https://github.com/agent-ix/tl-syntax.git", rev = "6ad7499f2ccc179bb33b2590666399c6632a7e3c", default-features = false, features = ["alloc", "serde"] }
+tl-syntax = { git = "https://github.com/agent-ix/tl-syntax.git", rev = "26b801d4a68ebfe720062cfdb3c66b070ab60e92", default-features = false, features = ["alloc", "serde"] }
 
 [dev-dependencies]
 serde_yaml_ng = "0.10"
