@@ -115,16 +115,16 @@ fn every_tracked_spec_review_id_is_unique() {
             .lines()
             .find_map(|line| line.strip_prefix("id: "))
             .unwrap_or_else(|| panic!("tracked review {path} has no frontmatter id"));
-        paths_by_id
-            .entry(id.to_owned())
-            .or_default()
-            .push(path);
+        paths_by_id.entry(id.to_owned()).or_default().push(path);
     }
     let duplicates: BTreeMap<_, _> = paths_by_id
         .into_iter()
         .filter(|(_, paths)| paths.len() > 1)
         .collect();
-    assert!(duplicates.is_empty(), "duplicate tracked SpecReview ids: {duplicates:?}");
+    assert!(
+        duplicates.is_empty(),
+        "duplicate tracked SpecReview ids: {duplicates:?}"
+    );
 }
 
 fn census_paths<F>(root: &Path, denied: F) -> (Vec<String>, Vec<String>)
