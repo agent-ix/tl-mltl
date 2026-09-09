@@ -34,14 +34,14 @@ installed, run:
 
 ```bash
 cargo kani --lib \
-  --harness horizon::kani_proofs::horizon_bound_addition_preserves_zero_and_refuses_overflow \
+  --harness horizon::kani_proofs::horizon_bound_addition_matches_checked_add \
   --exact --unwind 4
 ```
 
-The harness proves the checked horizon-bound addition primitive over its stated
-finite unwinding bound, including overflow refusal. It does not claim an
-unbounded MLTL evaluator proof. It is deliberately not part of `make ci` or
-hosted CI.
+The harness proves the checked horizon-bound addition primitive for all `u32` /
+`u64` operands, including overflow refusal. It does not claim an unbounded MLTL
+evaluator proof. It is part of local `make ci` and the dispatch-only hosted
+gate, which installs the pinned Kani verifier before running the aggregate.
 
 ## Corpora
 

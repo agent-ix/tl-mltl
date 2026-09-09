@@ -190,7 +190,7 @@ mod kani_proofs {
     // This is intentionally the arithmetic primitive used by horizon traversal;
     // it does not claim a proof of arbitrary formula traversal.
     #[kani::proof]
-    fn horizon_bound_addition_preserves_zero_and_refuses_overflow() {
+    fn horizon_bound_addition_matches_checked_add() {
         let bound: u32 = kani::any();
         let child: u64 = kani::any();
         let expected = child

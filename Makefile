@@ -106,7 +106,7 @@ lint:
 .PHONY: kani-check
 kani-check:
 	$(CARGO) kani --lib \
-		--harness horizon::kani_proofs::horizon_bound_addition_preserves_zero_and_refuses_overflow \
+		--harness horizon::kani_proofs::horizon_bound_addition_matches_checked_add \
 		--exact --unwind 4 --output-format terse
 
 # The traced tests invoke the assurance gates, so the producers must already have
