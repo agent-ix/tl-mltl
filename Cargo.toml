@@ -22,6 +22,7 @@ tl-syntax = { git = "https://github.com/agent-ix/tl-syntax.git", rev = "6ad7499f
 
 [dev-dependencies]
 serde_yaml_ng = "0.10"
+proptest = "=1.5.0"
 
 [profile.release]
 lto = "thin"

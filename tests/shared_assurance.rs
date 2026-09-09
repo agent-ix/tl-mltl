@@ -1047,19 +1047,19 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 81 is every row Quire mints from `spec/`: 43 acceptance criteria, 30
+    // 84 is every row Quire mints from `spec/`: 44 acceptance criteria, 32
     // test-matrix rows and 8 suite-registry rows. Naming the population matters
     // — "matrix rows" would have been wrong, since the test matrix contributes
     // 30 of them. This assertion deliberately tracks the current specification,
     // rather than preserving an obsolete population after a shared requirement
     // expansion.
     assert_eq!(
-        totals["total"], 81,
-        "the declared-row population changed: {totals}. It is 43 acceptance \
-         criteria + 30 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 84,
+        "the declared-row population changed: {totals}. It is 44 acceptance \
+         criteria + 32 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
-        totals["backed"], 79,
+        totals["backed"], 82,
         "backed-row count changed: {totals}. Exactly two rows are unbacked on \
          purpose — SUITE-001 (`make ci`, the composite that contains every other \
          suite) and SUITE-002 (the `quire validate` half of `make spec`, which \
@@ -1539,12 +1539,12 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        ("spec", 75),
+        ("spec", 76),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
         ("src", 8),
-        ("tests", 16),
+        ("tests", 17),
     ]
     .into_iter()
     .map(|(area, count)| (area.to_owned(), count))
@@ -1576,15 +1576,15 @@ fn no_local_evidence_framework_remains() {
         "a cross-area file swap preserved both the total and the per-area control"
     );
 
-    // The merged review-ID controls and this full-corpus review bring the
-    // reviewed population to 151 tracked paths.
+    // The full-corpus review and this property baseline bring the reviewed
+    // population to 153 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 151,
-        "the source census population changed from the reviewed 151 tracked files \
+        inspected, 153,
+        "the source census population changed from the reviewed 153 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
