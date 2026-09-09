@@ -1,5 +1,5 @@
 use proptest::prelude::*;
-use tl_mltl::{evaluate_closed, evaluate_prefix, EvaluationLimits};
+use tl_mltl::{evaluate_closed, evaluate_prefix, EvaluationLimits, TruthValue};
 use tl_syntax::{Formula, Interval, Node, NodeId, NodeKind, PropositionId, SemanticProfile};
 
 fn formula<'a>(profile: SemanticProfile, nodes: &'a [Node]) -> Formula<'a> {
@@ -30,8 +30,9 @@ fn bounded_formula(kind: u8, interval: Interval) -> Vec<Node> {
     }
 }
 
-fn trace(bits: Vec<bool>) -> Vec<Vec<PropositionId>> {
-    bits.into_iter()
+fn trace(bits: &[bool]) -> Vec<Vec<PropositionId>> {
+    bits.iter()
+        .copied()
         .map(|present| {
             if present {
                 vec![PropositionId(0)]
@@ -40,6 +41,45 @@ fn trace(bits: Vec<bool>) -> Vec<Vec<PropositionId>> {
             }
         })
         .collect()
+}
+
+/// Independent closed-trace oracle for the deliberately small TC-032 grammar.
+/// Keep this separate from the evaluator: the property is useful only when a
+/// defect in the production traversal cannot make both sides agree.
+fn closed_oracle(kind: u8, start: u32, end: u32, bits: &[bool]) -> TruthValue {
+    let at = |time: u32| {
+        bits.get(time as usize)
+            .copied()
+            .map_or(TruthValue::False, |present| {
+                if present {
+                    TruthValue::True
+                } else {
+                    TruthValue::False
+                }
+            })
+    };
+    match kind {
+        0 => at(0),
+        1 => match at(0) {
+            TruthValue::True => TruthValue::False,
+            TruthValue::False => TruthValue::True,
+            TruthValue::Pending => unreachable!("closed oracle has no pending values"),
+        },
+        2 => {
+            if (start..=end).any(|offset| at(offset) == TruthValue::True) {
+                TruthValue::True
+            } else {
+                TruthValue::False
+            }
+        }
+        _ => {
+            if (start..=end).all(|offset| at(offset) == TruthValue::True) {
+                TruthValue::True
+            } else {
+                TruthValue::False
+            }
+        }
+    }
 }
 
 proptest! {
@@ -58,7 +98,8 @@ proptest! {
     ) {
         let interval = Interval::new(start.min(end), start.max(end)).unwrap();
         let nodes = bounded_formula(kind, interval);
-        let trace = trace(bits);
+        let expected = closed_oracle(kind, start.min(end), start.max(end), &bits);
+        let trace = trace(&bits);
         let closed = evaluate_closed(
             formula(SemanticProfile::ClosedTraceV1, &nodes),
             "generated",
@@ -74,6 +115,8 @@ proptest! {
             true,
             EvaluationLimits::default(),
         ).unwrap();
+        prop_assert_eq!(closed.verdict, expected);
+        prop_assert_eq!(prefix.verdict, expected);
         prop_assert_eq!(closed.verdict, prefix.verdict);
         prop_assert_eq!(closed.horizon, prefix.horizon);
     }
