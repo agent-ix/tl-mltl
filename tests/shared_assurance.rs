@@ -484,10 +484,10 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         let stale = fs::read_to_string(&candidate)
             .unwrap()
             .replace(
-                "6ad7499f2ccc179bb33b2590666399c6632a7e3c",
-                "953ee825e5060335b4c79682f5f41a78c5a1bfae",
+                "26b801d4a68ebfe720062cfdb3c66b070ab60e92",
+                "1b3c4026ff9567491e87a19fdf2793d3b2e76160",
             )
-            .replace("6ad7499f", "953ee825");
+            .replace("26b801d4", "1b3c4026");
         fs::write(&candidate, stale).unwrap();
         let (code, stdout, stderr) = run(
             &python,

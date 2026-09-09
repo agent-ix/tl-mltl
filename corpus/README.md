@@ -6,8 +6,9 @@ shared temporal corpus from `agent-ix/tl-syntax` revision
 `SHA256SUMS` remains authoritative and is verified by `make check-corpus`.
 
 The copy is not restamped when the compiled `tl-syntax` dependency advances.
-The crate is built against `1b3c4026ff9567491e87a19fdf2793d3b2e76160` on the
-reviewed `tl-syntax` semantic branch; these bytes were taken at `740182f13b84858008d6f176f75136737d405c1b`
+The crate is built against `26b801d4a68ebfe720062cfdb3c66b070ab60e92` on
+`tl-syntax` main after the reviewed semantic change was squash-merged; these
+bytes were taken at `740182f13b84858008d6f176f75136737d405c1b`
 and the formula fixtures are identical between the two revisions. The compiled
 revision and the corpus basis are two separate declared facts, cross-checked by
 `scripts/check_shared_pins.py`, which refuses a tree in which they have been

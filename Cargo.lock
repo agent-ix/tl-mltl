@@ -454,7 +454,7 @@ dependencies = [
 [[package]]
 name = "tl-syntax"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/tl-syntax.git?rev=1b3c4026ff9567491e87a19fdf2793d3b2e76160#1b3c4026ff9567491e87a19fdf2793d3b2e76160"
+source = "git+https://github.com/agent-ix/tl-syntax.git?rev=26b801d4a68ebfe720062cfdb3c66b070ab60e92#26b801d4a68ebfe720062cfdb3c66b070ab60e92"
 dependencies = [
  "serde",
 ]
