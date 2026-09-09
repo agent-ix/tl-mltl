@@ -44,12 +44,11 @@ fn trace(bits: Vec<bool>) -> Vec<Vec<PropositionId>> {
 
 proptest! {
     #![proptest_config(ProptestConfig {
-        cases: 64,
-        failure_persistence: None,
+        cases: 512,
         ..ProptestConfig::default()
     })]
 
-    // Trace: TC-032, FR-003-AC-2, NFR-001-AC-1
+    // Trace: TC-032, FR-003-AC-2
     #[test]
     fn closed_prefix_matches_closed_evaluation_over_bounded_generated_inputs(
         kind in 0_u8..4,
