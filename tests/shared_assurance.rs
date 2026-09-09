@@ -104,7 +104,7 @@ fn git_files(root: &Path, arguments: &[&str]) -> Vec<String> {
         .collect()
 }
 
-// Trace: TC-024, FR-006-AC-7, NFR-003-AC-1
+// Trace: TC-033, NFR-002-AC-5
 #[test]
 fn every_tracked_spec_review_id_is_unique() {
     let mut paths_by_id = BTreeMap::<String, Vec<String>>::new();
