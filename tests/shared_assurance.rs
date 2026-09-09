@@ -1585,8 +1585,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 153,
-        "the source census population changed from the reviewed 153 tracked files \
+        inspected, 155,
+        "the source census population changed from the reviewed 155 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
