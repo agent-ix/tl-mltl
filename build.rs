@@ -28,11 +28,20 @@ fn cargo_supports_check_cfg() -> bool {
     else {
         return false;
     };
-    version
-        .split('.')
-        .nth(1)
+    let mut components = version.split('.');
+    let Some(major) = components
+        .next()
+        .and_then(|major| major.parse::<u32>().ok())
+    else {
+        return false;
+    };
+    let Some(minor) = components
+        .next()
         .and_then(|minor| minor.parse::<u32>().ok())
-        .is_some_and(|minor| minor >= 80)
+    else {
+        return false;
+    };
+    major > 1 || (major == 1 && minor >= 80)
 }
 
 fn main() {
