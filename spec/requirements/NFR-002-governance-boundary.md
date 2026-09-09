@@ -65,7 +65,7 @@ cost of the removal.
 The current compiled-test-census criterion reuses `NFR-002-AC-3`, an identifier
 that the pre-migration requirement used for generic collection controls. That
 reuse predates issue #20 and violates the later stable-identity rule recorded by
-SR-012 FND-1204. This pre-stable repository has no retained evidence requiring a
+SR-015 FND-1204. This pre-stable repository has no retained evidence requiring a
 compatibility alias, so the identifier is not churned again in this follow-up;
 historical review prose that names the former criterion continues to mean the
 former criterion, while current trace links mean the table row above. The gap is

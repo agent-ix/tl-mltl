@@ -1,5 +1,5 @@
 ---
-id: SR-012
+id: SR-015
 title: Composite specification review of the shared-assurance residuals
 type: SpecReview
 analysis: base
@@ -7,7 +7,7 @@ scope: spec/requirements/NFR-003-qualification-integrity.md, spec/test-matrix.md
 review_set: all
 ---
 
-# Composite specification review of the shared-assurance residuals
+# SR-015: Composite specification review of the shared-assurance residuals
 
 ## Summary
 

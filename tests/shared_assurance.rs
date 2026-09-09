@@ -104,6 +104,29 @@ fn git_files(root: &Path, arguments: &[&str]) -> Vec<String> {
         .collect()
 }
 
+// Trace: TC-024, FR-006-AC-7, NFR-003-AC-1
+#[test]
+fn every_tracked_spec_review_id_is_unique() {
+    let mut paths_by_id = BTreeMap::<String, Vec<String>>::new();
+    for path in git_files(&root(), &["ls-files", "-z", "spec/reviews"]) {
+        let contents = fs::read_to_string(root().join(&path))
+            .unwrap_or_else(|error| panic!("could not read tracked review {path}: {error}"));
+        let id = contents
+            .lines()
+            .find_map(|line| line.strip_prefix("id: "))
+            .unwrap_or_else(|| panic!("tracked review {path} has no frontmatter id"));
+        paths_by_id
+            .entry(id.to_owned())
+            .or_default()
+            .push(path);
+    }
+    let duplicates: BTreeMap<_, _> = paths_by_id
+        .into_iter()
+        .filter(|(_, paths)| paths.len() > 1)
+        .collect();
+    assert!(duplicates.is_empty(), "duplicate tracked SpecReview ids: {duplicates:?}");
+}
+
 fn census_paths<F>(root: &Path, denied: F) -> (Vec<String>, Vec<String>)
 where
     F: Fn(&str) -> bool,
