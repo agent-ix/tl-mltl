@@ -71,4 +71,4 @@ relationships:
 | TC-029 | Preserve existing context-free API/CLI behavior and exact v1 bytes while strictly round-tripping all contextual v2 native record families | Snapshot | P0 | FR-007-AC-5, NFR-001-AC-1 | 🚧 planned |
 | TC-030 | Carry contextual native records through the existing producer-owned Quoin intake without new generic machinery or external execution | Integration | P0 | FR-007-AC-6 | 🚧 planned |
 | TC-031 | Exercise the bounded overlay-response example with one shared named-signal catalog and requirement context across every contextual operation | Integration | P0 | FR-007-AC-7, StR-003-VC-1, NFR-002-AC-4 | 🚧 planned |
-| TC-033 | Refuse duplicate identities among every tracked SpecReview artifact while naming each colliding path | Integration | P0 | NFR-002-AC-5 | ✅ implemented |
+| TC-033 | Refuse an empty tracked SpecReview set and duplicate semantic YAML identities while naming each colliding path | Integration | P0 | NFR-002-AC-5 | ✅ implemented |
