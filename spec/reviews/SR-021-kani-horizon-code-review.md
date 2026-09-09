@@ -3,7 +3,7 @@ id: SR-021
 title: "Code review — bounded Kani horizon arithmetic"
 type: SpecReview
 analysis: code-review
-scope: "README.md, build.rs, src/horizon.rs, SR-020; candidate 8341b33 plus working tree"
+scope: "README.md, build.rs, src/horizon.rs, tests/shared_assurance.rs, SR-020; candidate 8341b33 plus working tree"
 review_set: subset
 ---
 
@@ -18,6 +18,8 @@ branch, and leaves normal builds and evaluator semantics unchanged. Local Kani
 0.67.0 verified the exact harness with `--unwind 4` (0 of 127 checks failed).
 README documents the exact manual command and proof boundary without making it
 a Make or hosted-CI gate.
+The TC-024 census update classifies all four paths introduced by the stacked
+property/Kani work and preserves its area and total controls.
 
 ## Assurance Context
 

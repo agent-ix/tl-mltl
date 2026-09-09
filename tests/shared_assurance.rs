@@ -2184,8 +2184,8 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        // Issue #42 adds the reviewed SR-037 specification artifact.
-        ("spec", 81),
+        // Issue #42 and the two bounded-Kani reviews are tracked scope.
+        ("spec", 83),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -2222,16 +2222,15 @@ fn no_local_evidence_framework_remains() {
         "a cross-area file swap preserved both the total and the per-area control"
     );
 
-    // The full-corpus review, property baseline, semantic-pin reviews, and
-    // contextual-identity and hosted-package base reviews, plus the issue #42
-    // comment-safe review, bring the reviewed population to 158 tracked paths.
+    // Current main plus the two bounded-Kani reviews bring the reviewed
+    // population to 160 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 158,
-        "the source census population changed from the reviewed 158 tracked files \
+        inspected, 160,
+        "the source census population changed from the reviewed 160 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
