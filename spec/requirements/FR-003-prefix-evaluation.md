@@ -30,7 +30,7 @@ and shall emit a Boolean verdict only when every continuation preserves it.
 | ID | Criteria | Verification |
 |---|---|---|
 | FR-003-AC-1 | Insufficient prefixes remain pending while decisive witnesses and counterexamples resolve early. | Test (TC-008, TC-009) |
-| FR-003-AC-2 | Closing any prefix yields the same verdict as closed evaluation of those bytes. | Test (TC-010) |
+| FR-003-AC-2 | Closing any prefix yields the same verdict as closed evaluation of those bytes. | Test (TC-010, TC-032) |
 | FR-003-AC-3 | No pending, malformed, or resource-failure state is serialized as conclusive. | Test (TC-009) |
 
 ## Dependencies
