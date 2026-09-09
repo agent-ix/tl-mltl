@@ -27,6 +27,22 @@ The `tl-mltl` binary accepts one `tl-mltl.command/v1` JSON document, either by
 path or on stdin with `-`, and emits a versioned evaluation, horizon, or mapping
 record.
 
+## Bounded formal check
+
+Kani is an optional, manual-only supplementary check. With Kani 0.67.0
+installed, run:
+
+```bash
+cargo kani --lib \
+  --harness horizon::kani_proofs::horizon_bound_addition_preserves_zero_and_refuses_overflow \
+  --exact --unwind 4
+```
+
+The harness proves the checked horizon-bound addition primitive over its stated
+finite unwinding bound, including overflow refusal. It does not claim an
+unbounded MLTL evaluator proof. It is deliberately not part of `make ci` or
+hosted CI.
+
 ## Corpora
 
 - `corpus/tl-syntax-v1/` is the byte-pinned shared `tl-syntax-corpus/v1`.
