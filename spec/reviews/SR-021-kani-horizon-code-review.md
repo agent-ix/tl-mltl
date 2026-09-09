@@ -35,5 +35,5 @@ gap in SR-020 rather than hidden by this primitive-level proof.
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-2101 | low | No code defect found. The verifier-only module is gated by `cfg(kani)`, whose check-cfg declaration preserves ordinary `-D warnings` builds; it adds no public API, no production branch, no suppression, and no alternate evaluator. | build.rs, src/horizon.rs, AP-001 |
+| FND-2101 | low | `cargo:rustc-check-cfg` is emitted only when the invoking Cargo supports it (1.80+); the Rust-1.75 MSRV receives no unsupported directive, while modern ordinary `-D warnings` builds still validate the verifier-only `cfg(kani)`. The module adds no public API, production branch, or alternate evaluator. | build.rs, src/horizon.rs, AP-001 |
 | FND-2102 | medium | Evaluator-wide Kani equivalence remains unproven: a reduced public-evaluator harness did not complete in the installed verifier configuration. Do not widen this primitive proof into an MLTL semantic proof claim. | SR-020, FR-003-AC-2, TC-032 |
