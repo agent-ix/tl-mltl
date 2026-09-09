@@ -6,7 +6,7 @@ shared temporal corpus from `agent-ix/tl-syntax` revision
 `SHA256SUMS` remains authoritative and is verified by `make check-corpus`.
 
 The copy is not restamped when the compiled `tl-syntax` dependency advances.
-The crate is built against `2e6bd6a297a75bb4eed9ea96d5083611283a4214` on the
+The crate is built against `1b3c4026ff9567491e87a19fdf2793d3b2e76160` on the
 reviewed `tl-syntax` semantic branch; these bytes were taken at `740182f13b84858008d6f176f75136737d405c1b`
 and the formula fixtures are identical between the two revisions. The compiled
 revision and the corpus basis are two separate declared facts, cross-checked by

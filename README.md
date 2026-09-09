@@ -11,7 +11,7 @@ make spec
 ```
 
 The library consumes validated `tl-syntax` formulas pinned to exact revision
-`2e6bd6a297a75bb4eed9ea96d5083611283a4214` on the reviewed semantic branch. The
+`1b3c4026ff9567491e87a19fdf2793d3b2e76160` on the reviewed semantic branch. The
 retained shared temporal corpus under `corpus/tl-syntax-v1` is a byte-identical
 copy taken at the earlier revision `740182f13b84858008d6f176f75136737d405c1b`
 and is deliberately not restamped; `TL_SYNTAX_REVISION` and
