@@ -57,6 +57,15 @@ existing context-free APIs or v1 wire bytes.
   operation input. Output or comparison digests bind the corresponding request
   identity and native outcome so context mutation cannot preserve the result
   identity.
+- Formula structure enters each contextual request through tl-syntax's canonical
+  semantic formula view. Diagnostic node source spans remain available on the
+  structural formula document but do not participate in request or result
+  identity. A source span carried by the explicit requirement-context document
+  remains part of that caller-supplied context and therefore remains bound.
+- Constructing that canonical view uses tl-syntax's bounded v1 formula-document
+  contract. A borrowed formula exceeding
+  \`MAX_FORMULA_DOCUMENT_NODES\` returns the contextual operation's typed identity
+  failure before request hashing or semantic, horizon, or mapping work.
 
 ## Digest allocation
 
@@ -149,10 +158,12 @@ its user documentation omits reserved `TAU` and `T`.
 | FR-007-AC-1 | Context-aware closed/prefix evaluation and horizon analysis resolve every formula proposition through one shared catalog and carry its complete digest identity, exact optional requirement context, distinct clause span, operation inputs, outcomes, and exact tl-mltl/tl-syntax revisions. | Test (TC-025) |
 | FR-007-AC-2 | Contextual mapping renders each proposition with its exact bound Boolean signal name; every invalid or pinned-reserved C2PO name and every unresolved proposition returns a typed refusal identifying the signal or proposition and emits no expression/manifest, while unused bounded scalar declarations are neither coerced nor rejected. | Test (TC-026) |
 | FR-007-AC-3 | Contextual comparison returns agreement only when reference and external contextual versions, catalog identity, exact context presence/value, formula/trace identities, truth value, and verdict time agree; identity/context mismatch is distinct from semantic mismatch and pending/unsupported/tool-error remain non-conclusive. | Test (TC-027) |
-| FR-007-AC-4 | Independently changing or dropping any catalog declaration, name, domain, binding, requirement id, revision, clause, anchor, span, presence marker, formula, trace, limit, source/dependency revision, mapping expression, external identity, or native outcome changes the applicable request/output/comparison digest or produces typed non-success. | Test (TC-028) |
+| FR-007-AC-4 | Independently changing or dropping any catalog declaration, name, domain, binding, requirement id, revision, clause, anchor, requirement-context span, presence marker, semantic formula structure, trace, limit, source/dependency revision, mapping expression, external identity, or native outcome changes the applicable request/output/comparison digest or produces typed non-success. | Test (TC-028) |
 | FR-007-AC-5 | Existing context-free APIs and CLI retain their signatures, semantic behavior, and exact v1 serialized snapshots; all five contextual v2 record families round-trip strictly and reject contextual field smuggling, omitted required fields, unknown fields, mixed versions, and unsupported versions. | Test (TC-029) |
 | FR-007-AC-6 | Contextual native domain records traverse the existing producer-owned Quoin intake without Quoin, Quire, C2PO, or R2U2 executing a producer or monitor; no new generic runner, collector, evidence envelope, adapter framework, or retention path is added, and package license/publication settings remain unchanged. | Test (TC-030) |
 | FR-007-AC-7 | A fixture shaped like quire-contract-ir#57's bounded “overlay change accepted, response within N cycles” requirement uses named Boolean signals and one exact requirement revision/clause/anchor/span consistently across contextual evaluation, horizon, mapping, external verdict, and differential records, with no contract-IR or rewrite runtime dependency. | Test (TC-031) |
+| FR-007-AC-8 | With every other operation input held equal, contextual closed evaluation, prefix evaluation, horizon analysis, and mapping produce identical request and result identities for formula documents with the same schema, semantic profile, root, and node kinds whether diagnostic node source spans are absent or contain different valid offsets; structural formula documents retain those span differences, and mapping continues to bind its separately supplied exact formula bytes. | Test (TC-034) |
+| FR-007-AC-9 | A structurally valid borrowed formula with more than \`MAX_FORMULA_DOCUMENT_NODES\` nodes is refused as a typed contextual identity failure before request hashing or operation work. | Test (TC-035) |
 
 ## Dependencies
 

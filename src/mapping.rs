@@ -9,7 +9,9 @@ use tl_syntax::{
 };
 
 use crate::{
-    context::{bind_formula, catalog_sha256, contextual_request_sha256, contextual_result_sha256},
+    context::{
+        bind_formula, catalog_sha256, contextual_formula_request_sha256, contextual_result_sha256,
+    },
     ContextualBindingError, ToolIdentity, MAX_RECURSION_DEPTH, TL_SYNTAX_REVISION,
 };
 
@@ -171,6 +173,8 @@ pub enum MappingError {
     Binding(ContextualBindingError),
     /// The caller-supplied catalog document no longer validates.
     InvalidCatalog(String),
+    /// The deterministic identity could not be constructed or serialized.
+    Identity(String),
     /// R2U2/C2PO mapping is defined only for online-prefix semantics.
     UnsupportedProfile {
         /// Actual profile.
@@ -202,6 +206,7 @@ impl fmt::Display for MappingError {
         match self {
             Self::Binding(error) => error.fmt(formatter),
             Self::InvalidCatalog(error) => write!(formatter, "invalid signal catalog: {error}"),
+            Self::Identity(error) => write!(formatter, "contextual identity failed: {error}"),
             Self::UnsupportedProfile { actual } => write!(
                 formatter,
                 "R2U2/C2PO mapping requires {}, found {actual}",
@@ -501,7 +506,6 @@ pub fn map_to_c2po_with_context(
     #[serde(rename_all = "camelCase")]
     struct Request<'a> {
         formula_id: &'a str,
-        formula_nodes: &'a [tl_syntax::Node],
         formula_bytes: &'a [u8],
         source_revision: &'a str,
         source_state: &'a str,
@@ -511,7 +515,6 @@ pub fn map_to_c2po_with_context(
     }
     let request = Request {
         formula_id: &formula_id,
-        formula_nodes: formula.nodes(),
         formula_bytes,
         source_revision: &source.revision,
         source_state: source.state.as_str(),
@@ -519,13 +522,14 @@ pub fn map_to_c2po_with_context(
         work_limit,
         syntax_revision: TL_SYNTAX_REVISION,
     };
-    let request_sha256 = contextual_request_sha256(
+    let request_sha256 = contextual_formula_request_sha256(
         "tl-mltl.contextual-mapping/v2/request",
         &request,
+        formula,
         signal_catalog,
         requirement_context,
     )
-    .map_err(|error| MappingError::InvalidCatalog(error.to_string()))?;
+    .map_err(MappingError::Identity)?;
     let expression = render_contextual_expression(formula, signal_catalog, work_limit)?;
     let proposition_ids = formula
         .nodes()
@@ -561,7 +565,7 @@ pub fn map_to_c2po_with_context(
     };
     manifest.result_sha256 =
         contextual_result_sha256("tl-mltl.contextual-mapping/v2/result", &manifest)
-            .map_err(|error| MappingError::InvalidCatalog(error.to_string()))?;
+            .map_err(|error| MappingError::Identity(error.to_string()))?;
     Ok(manifest)
 }
 
