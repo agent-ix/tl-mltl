@@ -66,6 +66,49 @@ fn head_revision() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_owned()
 }
 
+// Trace: TC-036, NFR-003-AC-5
+#[test]
+fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
+    let workflow_path = root().join(".github/workflows/ci.yml");
+    let workflow = fs::read_to_string(&workflow_path)
+        .unwrap_or_else(|error| panic!("cannot read {}: {error}", workflow_path.display()));
+
+    assert!(
+        workflow.contains("\non:\n  workflow_dispatch:\n\njobs:\n"),
+        "hosted CI must retain workflow_dispatch as its only trigger"
+    );
+
+    // Scan every package token in the workflow rather than recognizing one npm
+    // command spelling. A later `npm i -g` install is just as capable of
+    // replacing the executable as the current `npm install --global` form.
+    let ix_flow_packages: Vec<&str> = workflow
+        .split_ascii_whitespace()
+        .map(|token| token.trim_matches(['\'', '"']))
+        .filter(|token| token.contains("ix-flow@"))
+        .collect();
+    assert_eq!(
+        ix_flow_packages,
+        ["@agent-ix/ix-flow@0.0.4"],
+        "hosted CI must install the released scoped package exactly once"
+    );
+
+    let output = Command::new("ix-flow")
+        .arg("--version")
+        .current_dir(root())
+        .output()
+        .expect("the exact ix-flow executable is absent from PATH");
+    assert!(
+        output.status.success(),
+        "ix-flow --version failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout).trim(),
+        "0.0.4",
+        "the local gate must exercise the same released version installed by hosted CI"
+    );
+}
+
 fn deleted_names_in<'a>(
     _inputs: &AssuranceInputsGuard,
     path: &Path,
@@ -1047,19 +1090,19 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 88 is every row Quire mints from `spec/`: 46 acceptance criteria, 34
+    // 90 is every row Quire mints from `spec/`: 47 acceptance criteria, 35
     // test-matrix rows and 8 suite-registry rows. Naming the population matters
     // — "matrix rows" would have been wrong, since the test matrix contributes
-    // 34 of them. This assertion deliberately tracks the current specification,
+    // 35 of them. This assertion deliberately tracks the current specification,
     // rather than preserving an obsolete population after a shared requirement
     // expansion.
     assert_eq!(
-        totals["total"], 88,
-        "the declared-row population changed: {totals}. It is 46 acceptance \
-         criteria + 34 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 90,
+        "the declared-row population changed: {totals}. It is 47 acceptance \
+         criteria + 35 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
-        totals["backed"], 86,
+        totals["backed"], 88,
         "backed-row count changed: {totals}. Exactly two rows are unbacked on \
          purpose — SUITE-001 (`make ci`, the composite that contains every other \
          suite) and SUITE-002 (the `quire validate` half of `make spec`, which \
@@ -1539,7 +1582,7 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        ("spec", 79),
+        ("spec", 80),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -1577,15 +1620,15 @@ fn no_local_evidence_framework_remains() {
     );
 
     // The full-corpus review, property baseline, semantic-pin reviews, and
-    // contextual-identity base review bring the reviewed population to 156
-    // tracked paths.
+    // contextual-identity and hosted-package base reviews bring the reviewed
+    // population to 157 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 156,
-        "the source census population changed from the reviewed 156 tracked files \
+        inspected, 157,
+        "the source census population changed from the reviewed 157 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

@@ -35,7 +35,7 @@ relationships:
 |---|---|---|---|
 | NFR-001 | deterministic, digest, and resource-limit tests | TC-003, TC-004, TC-006, TC-013, TC-025, TC-028, TC-029, TC-034 | ✅ covered |
 | NFR-002 | schema-negative tests, contextual identity checks, compiled-test census, and tracked review-identity census | TC-012, TC-014, TC-016, TC-017, TC-025, TC-028, TC-031, TC-033, TC-034, TC-035 | ✅ covered |
-| NFR-003 | producer-boundary, shared-input serialization, state-vocabulary, and mutation-probe tests | TC-018, TC-019, TC-022, TC-024 | ✅ covered |
+| NFR-003 | producer-boundary, shared-input serialization, state-vocabulary, mutation-probe, and hosted-tool identity tests | TC-018, TC-019, TC-022, TC-024, TC-036 | ✅ covered |
 
 ## Test Case Summary
 
@@ -75,3 +75,4 @@ relationships:
 | TC-033 | Refuse an empty tracked SpecReview set and duplicate semantic YAML identities while naming each colliding path | Integration | P0 | NFR-002-AC-5 | ✅ implemented |
 | TC-034 | With all other inputs fixed, keep every contextual request and result identity invariant across absent, empty, and distinct valid diagnostic formula spans; retain those structural span differences and keep exact mapping formula bytes bound | Integration | P0 | FR-007-AC-8, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4 | ✅ implemented |
 | TC-035 | Refuse a structurally valid borrowed formula above the canonical tl-syntax document node limit with a typed contextual identity failure before operation work | Integration | P0 | FR-007-AC-9, NFR-002-AC-1 | ✅ implemented |
+| TC-036 | Require manual-only hosted CI to install exactly one scoped ix-flow 0.0.4 package token under every npm install spelling and require the local gate to observe that exact executable version | Integration | P0 | NFR-003-AC-5 | ✅ implemented |
