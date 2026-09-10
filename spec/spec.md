@@ -68,6 +68,7 @@ NFR-002 constrains identity, provenance, and qualification claims.
 
 - [tl-mltl epic](https://github.com/agent-ix/tl-mltl/issues/7).
 - [Typed context child](https://github.com/agent-ix/tl-mltl/issues/24).
+- [Post-v0.1 corpus and interoperability campaign](./corpus-campaign.md).
 - [Future FRETish consumer](https://github.com/agent-ix/quire-contract-ir/issues/57).
 - [Pinned C2PO language](https://github.com/R2U2/r2u2/blob/336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a/compiler/docs/user/language.md).
 - [Pinned C2PO lexer](https://github.com/R2U2/r2u2/blob/336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a/compiler/c2po/parse_c2po.py).

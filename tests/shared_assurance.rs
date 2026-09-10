@@ -1175,8 +1175,8 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     let parsed: Value = serde_json::from_slice(&bytes).expect("the Quire export is JSON");
     let text = String::from_utf8_lossy(&bytes);
     for requirement in [
-        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "NFR-001", "NFR-002",
-        "NFR-003", "StR-001", "StR-002", "StR-003",
+        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "FR-008", "FR-009",
+        "FR-010", "NFR-001", "NFR-002", "NFR-003", "NFR-004", "StR-001", "StR-002", "StR-003",
     ] {
         assert!(
             text.contains(requirement),
@@ -1194,25 +1194,26 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 90 is every row Quire mints from `spec/`: 47 acceptance criteria, 35
+    // 122 is every row Quire mints from `spec/`: 66 acceptance criteria, 48
     // test-matrix rows and 8 suite-registry rows. Naming the population matters
     // — "matrix rows" would have been wrong, since the test matrix contributes
-    // 35 of them. This assertion deliberately tracks the current specification,
+    // 48 of them. This assertion deliberately tracks the current specification,
     // rather than preserving an obsolete population after a shared requirement
     // expansion.
     assert_eq!(
-        totals["total"], 90,
-        "the declared-row population changed: {totals}. It is 47 acceptance \
-         criteria + 35 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 122,
+        "the declared-row population changed: {totals}. It is 66 acceptance \
+         criteria + 48 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
         totals["backed"], 88,
-        "backed-row count changed: {totals}. Exactly two rows are unbacked on \
-         purpose — SUITE-001 (`make ci`, the composite that contains every other \
-         suite) and SUITE-002 (the `quire validate` half of `make spec`, which \
-         writes no structured result) — and spec/evidence/suites.md says why. If \
-         that number moved, update the registry deliberately rather than \
-         adjusting this assertion."
+        "backed-row count changed: {totals}. Thirty-four rows are unbacked on \
+         purpose: 19 new campaign criteria and TC-037 through TC-049 are planned, \
+         while SUITE-001 (`make ci`, the composite containing every other suite) \
+         and SUITE-002 (the `quire validate` half of `make spec`, which writes no \
+         structured result) remain the two v0.1 registry exceptions. If this count \
+         moved, update the campaign or registry deliberately rather than adjusting \
+         the assertion."
     );
     assert!(
         parsed["status_lies"].as_array().unwrap().is_empty(),
@@ -1686,8 +1687,9 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        // Issue #42 adds the reviewed SR-037 specification artifact.
-        ("spec", 81),
+        // Issue #42 adds SR-037. Issue #38 adds seven live campaign artifacts
+        // and eight archival SpecReviews.
+        ("spec", 96),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -1725,15 +1727,16 @@ fn no_local_evidence_framework_remains() {
     );
 
     // The full-corpus review, property baseline, semantic-pin reviews, and
-    // contextual-identity and hosted-package base reviews, plus the issue #42
-    // comment-safe review, bring the reviewed population to 158 tracked paths.
+    // contextual-identity and hosted-package base reviews, the issue #42
+    // comment-safe review, and the issue #38 campaign specification/reviews
+    // bring the reviewed population to 173 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 158,
-        "the source census population changed from the reviewed 158 tracked files \
+        inspected, 173,
+        "the source census population changed from the reviewed 173 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
