@@ -99,12 +99,13 @@ the shared-pin reader and the requirements-file mutation probe; a poisoned guard
 is a distinct failure because a panicking predecessor may have left those inputs
 mutated.
 
-The hosted-workflow control reads the tracked workflow bytes, removes YAML
-comment text beginning at an unquoted `#`, requires `workflow_dispatch` to
-remain the only trigger, and inspects every remaining token naming an
-`ix-flow@` package regardless of whether npm uses its `install` or `i` command
-and long or short global option. Hash characters inside single- or double-quoted
-tokens remain executable content rather than comment delimiters. It also
+The hosted-workflow control parses the tracked YAML bytes, isolates scalar
+`run` scripts (including quoted keys and literal blocks), requires
+`workflow_dispatch` to remain the only trigger, and inspects ix-flow package
+arguments consumed by npm `install`, `i`, or `add`. YAML metadata and comments
+never enter the executable population. Within a run script, `#` begins a shell
+comment only at a word boundary; quoted and word-internal hashes remain
+executable argument content. It also
 observes `ix-flow --version` from the local gate environment so a correctly
 spelled package token cannot silently run a different executable version.
 
@@ -115,7 +116,7 @@ spelled package token cannot silently run a different executable version.
 | NFR-003-AC-1 | Every attested proof result is derived from the producer's own structured output; a producer whose output is absent, empty, or unreadable is an error naming the target that writes it, and never a pass. Every test that reads or temporarily mutates shared assurance inputs holds the repository's private serialization guard for the full access. | Test (TC-018, TC-019, TC-024) |
 | NFR-003-AC-2 | Neither Quire nor Quoin executes a producer, and no gate executes R2U2 or C2PO. Demonstrated four ways, because no single one is sufficient: every producer on `PATH` replaced by a logging stub with the log required to be empty; a control that stubs Quoin and requires the chain to fail; every declared input moved aside in turn with the driver required to refuse rather than recreate it; and an audit hook inside the driver that refuses any child process which is neither the pinned Quoin CLI nor a version observation, exercised by injecting `quire coverage` into a copy of the driver. The injected-child refusal is paired with the unmodified driver succeeding in the same owned scratch, whose Quoin store is proved outside the repository store. A PATH shim alone cannot establish this, because Quoin legitimately runs `quire coverage` itself. | Test (TC-019) |
 | NFR-003-AC-3 | The twelve verification outcomes stay distinguishable, each demonstrated by a case that produced it and matched, with every negative paired with a positive control and a control naming a non-existent scenario refused. | Test (TC-022) |
-| NFR-003-AC-5 | After YAML comment text beginning at an unquoted `#` is removed, the hosted workflow contains exactly one executable `@agent-ix/ix-flow@0.0.4` package token and no other scoped, unscoped, or alias-form ix-flow package through any accepted npm install spelling; comment-only package spellings do not change that population, quoted hash characters remain part of their token, `workflow_dispatch` remains the only trigger, and the local qualification gate observes `ix-flow --version` as exactly `0.0.4`. | Test (TC-036) |
+| NFR-003-AC-5 | Across parsed scalar YAML `run` scripts, including quoted keys and literal blocks, npm `install`, `i`, and `add` consume exactly one executable ix-flow package, `@agent-ix/ix-flow@0.0.4`, and no other scoped, unscoped, alias-form, or identity-bearing alternate; YAML metadata and YAML/shell comments do not change that population, a word-internal shell `#` remains argument content, `workflow_dispatch` remains the only trigger, and the local qualification gate observes `ix-flow --version` as exactly `0.0.4`. | Test (TC-036) |
 
 ## Qualification Boundary
 

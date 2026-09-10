@@ -17,8 +17,9 @@ relationships:
 Reviewed the issue #42 refinement that excludes YAML comment text from the
 hosted ix-flow package population while preserving every existing executable,
 trigger, and runtime control. The initial ambiguity around quoted hash
-characters was corrected before implementation; no blocking specification gap
-remains.
+characters was corrected before implementation. Independent exact-head review
+then exposed the distinct YAML-versus-shell comment boundary; that gap is now
+specified and covered by the corrective implementation.
 
 ## Findings
 
@@ -28,6 +29,8 @@ remains.
 | FND-3702 | low | The corrected criterion keeps alias-form executable duplicates, every npm install spelling, the sole manual trigger, and the observed runtime version in scope; the matrix truthfully returns TC-036 to planned until its positive and negative comment controls exist. | NFR-003-AC-5, TC-036, TM-001 |
 | FND-3703 | low | No language-boundary gap is introduced: this is internal hosted-assurance parsing and does not define a user-authored Quire or tl-syntax language surface. | NFR-003, owner ruling 2026-09-09 |
 | FND-3704 | medium | **FIXED:** the existing sealed declaration named NFR-003 but omitted both the hosted workflow bytes and NFR-003-AC-5 from its record projection. `hosted-ci`, `.github`, and the criterion are now explicit source, subject, and definition entries, so the candidate claim cannot float free of the workflow it qualifies. | NFR-003-AC-5, TC-036, hosted-ci |
+| FND-3705 | high | **FIXED after independent review of `ab6c4ce`:** globally removing every unquoted `#` treated word-internal hashes inside literal-block shell scripts as comments, hiding an executable alias install. The control now parses YAML before tokenizing each run script and applies shell word-boundary comment rules. | NFR-003-AC-5, TC-036, tests/shared_assurance.rs, tl-mltl#43 review |
+| FND-3706 | low | **FIXED after independent review of `ab6c4ce`:** plain-scalar metadata containing an apostrophe could distort global quote state and count inert package text. The YAML parser now selects only scalar `run` values; TC-036 covers apostrophe-bearing metadata and a quoted `run` key. | NFR-003-AC-5, TC-036, tests/shared_assurance.rs, tl-mltl#43 review |
 
 ## Verdict
 
