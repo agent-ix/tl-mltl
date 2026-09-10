@@ -66,6 +66,73 @@ fn head_revision() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_owned()
 }
 
+#[derive(Clone, Copy)]
+enum YamlQuote {
+    Single,
+    Double,
+}
+
+fn without_unquoted_yaml_comments(source: &str) -> String {
+    let mut executable = String::with_capacity(source.len());
+    let mut characters = source.chars().peekable();
+    let mut quote = None;
+
+    while let Some(character) = characters.next() {
+        match quote {
+            None => match character {
+                '\'' => {
+                    quote = Some(YamlQuote::Single);
+                    executable.push(character);
+                }
+                '"' => {
+                    quote = Some(YamlQuote::Double);
+                    executable.push(character);
+                }
+                '#' => {
+                    for comment_character in characters.by_ref() {
+                        if comment_character == '\n' {
+                            executable.push('\n');
+                            break;
+                        }
+                    }
+                }
+                _ => executable.push(character),
+            },
+            Some(YamlQuote::Single) => {
+                executable.push(character);
+                if character == '\'' {
+                    if characters.peek() == Some(&'\'') {
+                        executable.push(characters.next().expect("peeked YAML quote"));
+                    } else {
+                        quote = None;
+                    }
+                }
+            }
+            Some(YamlQuote::Double) => {
+                executable.push(character);
+                if character == '\\' {
+                    if let Some(escaped) = characters.next() {
+                        executable.push(escaped);
+                    }
+                } else if character == '"' {
+                    quote = None;
+                }
+            }
+        }
+    }
+
+    executable
+}
+
+fn ix_flow_package_tokens(workflow: &str) -> Vec<String> {
+    without_unquoted_yaml_comments(workflow)
+        .split_ascii_whitespace()
+        .map(|token| token.trim_matches(['\'', '"']))
+        .filter(|token| token.contains("ix-flow@"))
+        .map(str::to_owned)
+        .collect()
+}
+
 // Trace: TC-036, NFR-003-AC-5
 #[test]
 fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
@@ -81,14 +148,10 @@ fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
     // Scan every package token in the workflow rather than recognizing one npm
     // command spelling. A later `npm i -g` install is just as capable of
     // replacing the executable as the current `npm install --global` form.
-    let ix_flow_packages: Vec<&str> = workflow
-        .split_ascii_whitespace()
-        .map(|token| token.trim_matches(['\'', '"']))
-        .filter(|token| token.contains("ix-flow@"))
-        .collect();
+    let ix_flow_packages = ix_flow_package_tokens(&workflow);
     assert_eq!(
         ix_flow_packages,
-        ["@agent-ix/ix-flow@0.0.4"],
+        ["@agent-ix/ix-flow@0.0.4".to_owned()],
         "hosted CI must install the released scoped package exactly once"
     );
 
@@ -106,6 +169,47 @@ fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
         String::from_utf8_lossy(&output.stdout).trim(),
         "0.0.4",
         "the local gate must exercise the same released version installed by hosted CI"
+    );
+}
+
+// Trace: TC-036, NFR-003-AC-5
+#[test]
+fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
+    let one_install_with_comments = "npm install --global '@agent-ix/ix-flow@0.0.4' \
+        # npm i -g '@agent-ix/ix-flow@9.9.9'\n\
+        # ix-flow@comment-only\n";
+    assert_eq!(
+        ix_flow_package_tokens(one_install_with_comments),
+        ["@agent-ix/ix-flow@0.0.4".to_owned()]
+    );
+
+    let executable_alias =
+        format!("{one_install_with_comments}npm i -g ix-flow@npm:@agent-ix/ix-flow@9.9.9\n");
+    assert_eq!(
+        ix_flow_package_tokens(&executable_alias),
+        [
+            "@agent-ix/ix-flow@0.0.4".to_owned(),
+            "ix-flow@npm:@agent-ix/ix-flow@9.9.9".to_owned()
+        ]
+    );
+}
+
+// Trace: TC-036, NFR-003-AC-5
+#[test]
+fn yaml_comment_scan_preserves_hashes_inside_quoted_tokens() {
+    let source = "single: 'ix-flow@single#kept' # ix-flow@comment\n\
+        double: \"ix-flow@double#kept\" # ignored\n\
+        escaped: \"ix-flow@double\\\"#kept\" # ignored too\n\
+        doubled: 'ix-flow@single''#kept' # still ignored\n";
+
+    assert_eq!(
+        ix_flow_package_tokens(source),
+        [
+            "ix-flow@single#kept".to_owned(),
+            "ix-flow@double#kept".to_owned(),
+            "ix-flow@double\\\"#kept".to_owned(),
+            "ix-flow@single''#kept".to_owned()
+        ]
     );
 }
 
@@ -1582,7 +1686,8 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        ("spec", 80),
+        // Issue #42 adds the reviewed SR-037 specification artifact.
+        ("spec", 81),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -1620,15 +1725,15 @@ fn no_local_evidence_framework_remains() {
     );
 
     // The full-corpus review, property baseline, semantic-pin reviews, and
-    // contextual-identity and hosted-package base reviews bring the reviewed
-    // population to 157 tracked paths.
+    // contextual-identity and hosted-package base reviews, plus the issue #42
+    // comment-safe review, bring the reviewed population to 158 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 157,
-        "the source census population changed from the reviewed 157 tracked files \
+        inspected, 158,
+        "the source census population changed from the reviewed 158 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
