@@ -160,19 +160,15 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
             *word_started = false;
         }
     };
+    // GitHub evaluates workflow expressions before the generated script
+    // reaches the shell. Shell comments, quotes, and backslash escaping
+    // therefore cannot make `${{ ... }}` literal at this boundary.
+    if script.contains("${{") {
+        return Err(format!(
+            "non-literal workflow expression is unsupported: {script:?}"
+        ));
+    }
     while let Some(character) = characters.next() {
-        // GitHub evaluates workflow expressions before the generated script
-        // reaches the shell. Shell quotes and backslash escaping therefore do
-        // not make `${{ ... }}` literal at this boundary.
-        if character == '$' && characters.peek() == Some(&'{') {
-            let mut lookahead = characters.clone();
-            lookahead.next();
-            if lookahead.peek() == Some(&'{') {
-                return Err(format!(
-                    "non-literal workflow expression is unsupported: {script:?}"
-                ));
-            }
-        }
         if escaped {
             word_started = true;
             if character != '\n' {
@@ -627,6 +623,26 @@ fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
             "{label} GitHub workflow expression stayed green: {error}"
         );
     }
+
+    let comment_expression = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          # ${{ inputs.script }}",
+    );
+    let comment_error = ix_flow_package_tokens(&comment_expression).unwrap_err();
+    assert!(
+        comment_error.contains("non-literal workflow expression"),
+        "a GitHub workflow expression in a shell comment stayed green: {comment_error}"
+    );
+
+    let unquoted_variable = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' $IX_FLOW_INSTALL\n          # ix-flow@comment-only",
+    );
+    let variable_error = ix_flow_package_tokens(&unquoted_variable).unwrap_err();
+    assert!(
+        variable_error.contains("non-literal shell expansion"),
+        "the unquoted shell-variable guard was not independently exercised: {variable_error}"
+    );
 
     let preceding_shell = one_install_with_comments.replace(
         "          # ix-flow@comment-only",
