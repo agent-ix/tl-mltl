@@ -180,6 +180,25 @@ fn add_bound(node: NodeId, bound: u32, child: u64) -> Result<u64, HorizonError> 
         .ok_or(HorizonError::ArithmeticOverflow { node })
 }
 
+#[cfg(kani)]
+mod kani_proofs {
+    use tl_syntax::NodeId;
+
+    use super::{add_bound, HorizonError};
+
+    // This is intentionally the arithmetic primitive used by horizon traversal;
+    // it does not claim a proof of arbitrary formula traversal.
+    #[kani::proof]
+    fn horizon_bound_addition_matches_checked_add() {
+        let bound: u32 = kani::any();
+        let child: u64 = kani::any();
+        let expected = child
+            .checked_add(u64::from(bound))
+            .ok_or(HorizonError::ArithmeticOverflow { node: NodeId(0) });
+        assert_eq!(add_bound(NodeId(0), bound, child), expected);
+    }
+}
+
 /// Computes lookahead, propagation delay, and buffer size with checked arithmetic.
 ///
 /// Implements: FR-002

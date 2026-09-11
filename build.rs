@@ -16,7 +16,41 @@ fn watch_existing_git_path(path: &str) {
     }
 }
 
+fn cargo_supports_check_cfg() -> bool {
+    let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let output = Command::new(cargo).arg("--version").output().ok();
+    let Some(output) = output else {
+        return false;
+    };
+    let Some(version) = String::from_utf8(output.stdout)
+        .ok()
+        .and_then(|version| version.split_whitespace().nth(1).map(str::to_owned))
+    else {
+        return false;
+    };
+    let mut components = version.split('.');
+    let Some(major) = components
+        .next()
+        .and_then(|major| major.parse::<u32>().ok())
+    else {
+        return false;
+    };
+    let Some(minor) = components
+        .next()
+        .and_then(|minor| minor.parse::<u32>().ok())
+    else {
+        return false;
+    };
+    major > 1 || (major == 1 && minor >= 80)
+}
+
 fn main() {
+    // The directive was stabilized in Cargo 1.80. Do not emit an unsupported
+    // directive under this crate's Rust 1.75 MSRV, but retain strict cfg
+    // checking when a newer Cargo invokes the build.
+    if cargo_supports_check_cfg() {
+        println!("cargo:rustc-check-cfg=cfg(kani)");
+    }
     println!("cargo:rerun-if-env-changed=TL_MLTL_SOURCE_REVISION");
     println!("cargo:rerun-if-env-changed=TL_MLTL_SOURCE_STATE");
     if let Some(files) = git(&["ls-files"]) {
