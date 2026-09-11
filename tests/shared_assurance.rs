@@ -209,6 +209,10 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
                     }
                 }
             }
+            '&' if word.ends_with('>') || word.ends_with('<') => {
+                word_started = true;
+                word.push(character);
+            }
             '\n' | ';' | '|' | '&' => {
                 flush(&mut tokens, &mut word, &mut word_started);
                 if !matches!(tokens.last(), Some(ShellToken::Boundary)) {
@@ -538,14 +542,15 @@ fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
 
     let redirected_path_install = one_install_with_comments.replace(
         "          # ix-flow@comment-only",
-        "          >/tmp/reviewer-log /usr/bin/npm add -g github:agent-ix/ix-flow#redirected-attached\n          > /tmp/reviewer-log-2 /usr/bin/npm in -g github:agent-ix/ix-flow#redirected-separate\n          # ix-flow@comment-only",
+        "          >/tmp/reviewer-log /usr/bin/npm add -g github:agent-ix/ix-flow#redirected-attached\n          > /tmp/reviewer-log-2 /usr/bin/npm in -g github:agent-ix/ix-flow#redirected-separate\n          2>&1 /usr/bin/npm inst -g github:agent-ix/ix-flow#redirected-fd\n          # ix-flow@comment-only",
     );
     assert_eq!(
         ix_flow_package_tokens(&redirected_path_install).unwrap(),
         [
             "@agent-ix/ix-flow@0.0.4".to_owned(),
             "github:agent-ix/ix-flow#redirected-attached".to_owned(),
-            "github:agent-ix/ix-flow#redirected-separate".to_owned()
+            "github:agent-ix/ix-flow#redirected-separate".to_owned(),
+            "github:agent-ix/ix-flow#redirected-fd".to_owned()
         ],
         "a leading shell redirection hid a path-qualified npm command"
     );
