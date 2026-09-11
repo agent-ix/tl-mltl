@@ -161,6 +161,18 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
         }
     };
     while let Some(character) = characters.next() {
+        // GitHub evaluates workflow expressions before the generated script
+        // reaches the shell. Shell quotes and backslash escaping therefore do
+        // not make `${{ ... }}` literal at this boundary.
+        if character == '$' && characters.peek() == Some(&'{') {
+            let mut lookahead = characters.clone();
+            lookahead.next();
+            if lookahead.peek() == Some(&'{') {
+                return Err(format!(
+                    "non-literal workflow expression is unsupported: {script:?}"
+                ));
+            }
+        }
         if escaped {
             word_started = true;
             if character != '\n' {
@@ -173,15 +185,6 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
             if character == '\'' {
                 quote = None;
             } else {
-                if character == '$' && characters.peek() == Some(&'{') {
-                    let mut lookahead = characters.clone();
-                    lookahead.next();
-                    if lookahead.peek() == Some(&'{') {
-                        return Err(format!(
-                            "non-literal workflow expression is unsupported: {script:?}"
-                        ));
-                    }
-                }
                 word_started = true;
                 word.push(character);
             }
@@ -603,6 +606,27 @@ fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
         expression_error.contains("non-literal workflow expression"),
         "single shell quotes hid a GitHub workflow expression: {expression_error}"
     );
+
+    for (label, script) in [
+        (
+            "shell-escaped",
+            "          printf '%s\\n' \\${{ inputs.script }}",
+        ),
+        (
+            "double-quoted shell-escaped",
+            "          printf '%s\\n' \"\\${{ inputs.script }}\"",
+        ),
+    ] {
+        let escaped_expression = one_install_with_comments.replace(
+            "          # ix-flow@comment-only",
+            &format!("{script}\n          # ix-flow@comment-only"),
+        );
+        let error = ix_flow_package_tokens(&escaped_expression).unwrap_err();
+        assert!(
+            error.contains("non-literal workflow expression"),
+            "{label} GitHub workflow expression stayed green: {error}"
+        );
+    }
 
     let preceding_shell = one_install_with_comments.replace(
         "          # ix-flow@comment-only",
