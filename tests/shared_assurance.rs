@@ -17,6 +17,7 @@ use std::sync::OnceLock;
 
 use serde::Deserialize;
 use serde_json::Value;
+use serde_yaml_ng::Value as YamlValue;
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -67,35 +68,77 @@ fn head_revision() -> String {
 }
 
 fn workflow_run_scripts(workflow: &str) -> Result<Vec<String>, String> {
-    fn collect(value: &serde_yaml_ng::Value, scripts: &mut Vec<String>) -> Result<(), String> {
-        match value {
-            serde_yaml_ng::Value::Mapping(mapping) => {
-                for (key, value) in mapping {
-                    if key.as_str() == Some("run") {
-                        let script = value.as_str().ok_or_else(|| {
-                            "a run key does not contain a scalar script".to_owned()
-                        })?;
-                        scripts.push(script.to_owned());
-                    } else {
-                        collect(value, scripts)?;
-                    }
-                }
-            }
-            serde_yaml_ng::Value::Sequence(sequence) => {
-                for value in sequence {
-                    collect(value, scripts)?;
-                }
-            }
-            _ => {}
-        }
-        Ok(())
-    }
-
-    let document: serde_yaml_ng::Value = serde_yaml_ng::from_str(workflow)
+    let document: YamlValue = serde_yaml_ng::from_str(workflow)
         .map_err(|error| format!("invalid workflow YAML: {error}"))?;
     let mut scripts = Vec::new();
-    collect(&document, &mut scripts)?;
+    let key = |name: &str| YamlValue::String(name.to_owned());
+    let jobs = document
+        .as_mapping()
+        .and_then(|root| root.get(key("jobs")))
+        .and_then(YamlValue::as_mapping)
+        .ok_or_else(|| "workflow has no jobs mapping".to_owned())?;
+    for (job_name, job) in jobs {
+        let job = job
+            .as_mapping()
+            .ok_or_else(|| format!("workflow job {job_name:?} is not a mapping"))?;
+        let Some(steps) = job.get(key("steps")) else {
+            continue;
+        };
+        let steps = steps
+            .as_sequence()
+            .ok_or_else(|| format!("workflow job {job_name:?} steps are not a sequence"))?;
+        for (index, step) in steps.iter().enumerate() {
+            let step = step.as_mapping().ok_or_else(|| {
+                format!("workflow job {job_name:?} step {index} is not a mapping")
+            })?;
+            let Some(run) = step.get(key("run")) else {
+                continue;
+            };
+            scripts.push(
+                run.as_str()
+                    .ok_or_else(|| {
+                        format!(
+                            "workflow job {job_name:?} step {index} run value is not a scalar string"
+                        )
+                    })?
+                    .to_owned(),
+            );
+        }
+    }
     Ok(scripts)
+}
+
+fn workflow_trigger_names(workflow: &str) -> Result<Vec<String>, String> {
+    let document: YamlValue = serde_yaml_ng::from_str(workflow)
+        .map_err(|error| format!("invalid workflow YAML: {error}"))?;
+    let root = document
+        .as_mapping()
+        .ok_or_else(|| "workflow document is not a mapping".to_owned())?;
+    let on = root
+        .get(YamlValue::String("on".to_owned()))
+        .ok_or_else(|| "workflow has no on key".to_owned())?;
+    match on {
+        YamlValue::String(trigger) => Ok(vec![trigger.clone()]),
+        YamlValue::Sequence(triggers) => triggers
+            .iter()
+            .map(|trigger| {
+                trigger
+                    .as_str()
+                    .map(str::to_owned)
+                    .ok_or_else(|| "workflow on sequence contains a non-string trigger".to_owned())
+            })
+            .collect(),
+        YamlValue::Mapping(triggers) => triggers
+            .keys()
+            .map(|trigger| {
+                trigger
+                    .as_str()
+                    .map(str::to_owned)
+                    .ok_or_else(|| "workflow on mapping contains a non-string trigger".to_owned())
+            })
+            .collect(),
+        _ => Err("workflow on value is not a trigger, sequence, or mapping".to_owned()),
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -107,16 +150,19 @@ enum ShellToken {
 fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
     let mut tokens = Vec::new();
     let mut word = String::new();
+    let mut word_started = false;
     let mut quote = None;
     let mut escaped = false;
     let mut characters = script.chars().peekable();
-    let flush = |tokens: &mut Vec<ShellToken>, word: &mut String| {
-        if !word.is_empty() {
+    let flush = |tokens: &mut Vec<ShellToken>, word: &mut String, word_started: &mut bool| {
+        if *word_started {
             tokens.push(ShellToken::Word(std::mem::take(word)));
+            *word_started = false;
         }
     };
     while let Some(character) = characters.next() {
         if escaped {
+            word_started = true;
             if character != '\n' {
                 word.push(character);
             }
@@ -127,6 +173,7 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
             if character == '\'' {
                 quote = None;
             } else {
+                word_started = true;
                 word.push(character);
             }
             continue;
@@ -135,15 +182,24 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
             match character {
                 '"' => quote = None,
                 '\\' => escaped = true,
-                _ => word.push(character),
+                _ => {
+                    word_started = true;
+                    word.push(character);
+                }
             }
             continue;
         }
         match character {
-            '\'' | '"' => quote = Some(character),
-            '\\' => escaped = true,
-            ' ' | '\t' | '\r' => flush(&mut tokens, &mut word),
-            '#' if word.is_empty() => {
+            '\'' | '"' => {
+                word_started = true;
+                quote = Some(character);
+            }
+            '\\' => {
+                word_started = true;
+                escaped = true;
+            }
+            ' ' | '\t' | '\r' => flush(&mut tokens, &mut word, &mut word_started),
+            '#' if !word_started => {
                 for comment_character in characters.by_ref() {
                     if comment_character == '\n' {
                         if !matches!(tokens.last(), Some(ShellToken::Boundary)) {
@@ -154,7 +210,7 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
                 }
             }
             '\n' | ';' | '|' | '&' => {
-                flush(&mut tokens, &mut word);
+                flush(&mut tokens, &mut word, &mut word_started);
                 if !matches!(tokens.last(), Some(ShellToken::Boundary)) {
                     tokens.push(ShellToken::Boundary);
                 }
@@ -162,7 +218,10 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
                     characters.next();
                 }
             }
-            _ => word.push(character),
+            _ => {
+                word_started = true;
+                word.push(character);
+            }
         }
     }
     if escaped || quote.is_some() {
@@ -170,44 +229,88 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
             "shell script has an unterminated token near {word:?}"
         ));
     }
-    flush(&mut tokens, &mut word);
+    flush(&mut tokens, &mut word, &mut word_started);
     Ok(tokens)
+}
+
+const NPM_INSTALL_ALIASES: &[&str] = &[
+    "install", "add", "i", "in", "ins", "inst", "insta", "instal", "isnt", "isnta", "isntal",
+    "isntall",
+];
+
+fn is_npm_install_alias(word: &str) -> bool {
+    NPM_INSTALL_ALIASES.contains(&word)
+}
+
+fn is_shell_interpreter(word: &str) -> bool {
+    matches!(word.rsplit('/').next(), Some("sh" | "bash"))
+}
+
+fn scan_ix_flow_packages(
+    script: &str,
+    depth: usize,
+    packages: &mut Vec<String>,
+) -> Result<(), String> {
+    if depth > 8 {
+        return Err("nested shell command depth exceeds 8".to_owned());
+    }
+    let tokens = shell_tokens(script)?;
+    for command in tokens.split(|token| *token == ShellToken::Boundary) {
+        let words: Vec<&str> = command
+            .iter()
+            .filter_map(|token| match token {
+                ShellToken::Word(word) => Some(word.as_str()),
+                ShellToken::Boundary => None,
+            })
+            .collect();
+        for (shell_index, shell) in words.iter().enumerate() {
+            if !is_shell_interpreter(shell) {
+                continue;
+            }
+            let Some(command_option) = words[shell_index + 1..]
+                .iter()
+                .position(|word| word.starts_with('-') && word[1..].contains('c'))
+                .map(|offset| shell_index + 1 + offset)
+            else {
+                continue;
+            };
+            let nested = words[command_option + 1..]
+                .iter()
+                .find(|word| **word != "--")
+                .ok_or_else(|| {
+                    "shell -c option has no statically classifiable script".to_owned()
+                })?;
+            scan_ix_flow_packages(nested, depth + 1, packages)?;
+        }
+        for (npm_index, npm) in words.iter().enumerate() {
+            if *npm != "npm" {
+                continue;
+            }
+            let Some((install_offset, _)) = words[npm_index + 1..]
+                .iter()
+                .enumerate()
+                .find(|(_, word)| is_npm_install_alias(word))
+            else {
+                continue;
+            };
+            let install_index = npm_index + 1 + install_offset;
+            for argument in &words[install_index + 1..] {
+                if *argument != "--"
+                    && !argument.starts_with('-')
+                    && argument.to_ascii_lowercase().contains("ix-flow")
+                {
+                    packages.push((*argument).to_owned());
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 fn ix_flow_package_tokens(workflow: &str) -> Result<Vec<String>, String> {
     let mut packages = Vec::new();
     for script in workflow_run_scripts(workflow)? {
-        let tokens = shell_tokens(&script)?;
-        for command in tokens.split(|token| *token == ShellToken::Boundary) {
-            let words: Vec<&str> = command
-                .iter()
-                .filter_map(|token| match token {
-                    ShellToken::Word(word) => Some(word.as_str()),
-                    ShellToken::Boundary => None,
-                })
-                .collect();
-            for (npm_index, npm) in words.iter().enumerate() {
-                if *npm != "npm" {
-                    continue;
-                }
-                let Some((install_offset, _)) = words[npm_index + 1..]
-                    .iter()
-                    .enumerate()
-                    .find(|(_, word)| matches!(**word, "install" | "i" | "add"))
-                else {
-                    continue;
-                };
-                let install_index = npm_index + 1 + install_offset;
-                for argument in &words[install_index + 1..] {
-                    if *argument != "--"
-                        && !argument.starts_with('-')
-                        && argument.to_ascii_lowercase().contains("ix-flow")
-                    {
-                        packages.push((*argument).to_owned());
-                    }
-                }
-            }
-        }
+        scan_ix_flow_packages(&script, 0, &mut packages)?;
     }
     Ok(packages)
 }
@@ -219,9 +322,26 @@ fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
     let workflow = fs::read_to_string(&workflow_path)
         .unwrap_or_else(|error| panic!("cannot read {}: {error}", workflow_path.display()));
 
-    assert!(
-        workflow.contains("\non:\n  workflow_dispatch:\n\njobs:\n"),
+    assert_eq!(
+        workflow_trigger_names(&workflow).expect("classify hosted triggers"),
+        ["workflow_dispatch"],
         "hosted CI must retain workflow_dispatch as its only trigger"
+    );
+    let trigger_metadata = workflow.replacen("\njobs:\n", "\npermissions: read-all\n\njobs:\n", 1);
+    assert_eq!(
+        workflow_trigger_names(&trigger_metadata).expect("classify triggers around metadata"),
+        ["workflow_dispatch"],
+        "valid top-level metadata changed the semantic trigger set"
+    );
+    let automatic = workflow.replacen(
+        "  workflow_dispatch:\n",
+        "  workflow_dispatch:\n  push:\n",
+        1,
+    );
+    assert_ne!(
+        workflow_trigger_names(&automatic).expect("classify automatic trigger mutation"),
+        ["workflow_dispatch"],
+        "an automatic trigger was accepted"
     );
 
     // Scan every package token in the workflow rather than recognizing one npm
@@ -255,11 +375,16 @@ fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
 #[test]
 fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
     let one_install_with_comments = concat!(
-        "steps:\n",
-        "  - run: |\n",
-        "      npm install --global '@agent-ix/ix-flow@0.0.4' ",
+        "name: probe\n",
+        "on: workflow_dispatch\n",
+        "jobs:\n",
+        "  probe:\n",
+        "    runs-on: ubuntu-latest\n",
+        "    steps:\n",
+        "      - run: |\n",
+        "          npm install --global '@agent-ix/ix-flow@0.0.4' ",
         "# npm i -g '@agent-ix/ix-flow@9.9.9'\n",
-        "      # ix-flow@comment-only\n",
+        "          # ix-flow@comment-only\n",
     );
     assert_eq!(
         ix_flow_package_tokens(one_install_with_comments).unwrap(),
@@ -267,8 +392,8 @@ fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
     );
 
     let executable_alias = one_install_with_comments.replace(
-        "      # ix-flow@comment-only",
-        "      npm i -g ix-flow@npm:@agent-ix/ix-flow@9.9.9\n      # ix-flow@comment-only",
+        "          # ix-flow@comment-only",
+        "          npm i -g ix-flow@npm:@agent-ix/ix-flow@9.9.9\n          # ix-flow@comment-only",
     );
     assert_eq!(
         ix_flow_package_tokens(&executable_alias).unwrap(),
@@ -278,27 +403,71 @@ fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
         ]
     );
 
-    let word_internal_hash = "steps:\n  - \"run\": |\n      echo marker#not-a-comment; npm add -g github:agent-ix/ix-flow#v9.9.9\n";
+    let word_internal_hash = concat!(
+        "on: workflow_dispatch\n",
+        "jobs:\n",
+        "  probe:\n",
+        "    steps:\n",
+        "      - \"r\\u0075n\": |\n",
+        "          echo marker#not-a-comment; npm add -g github:agent-ix/ix-flow#v9.9.9\n",
+    );
     assert_eq!(
         ix_flow_package_tokens(word_internal_hash).unwrap(),
         ["github:agent-ix/ix-flow#v9.9.9".to_owned()],
         "a word-internal shell hash hid an executable npm-add package"
     );
 
-    let inert_metadata =
-        "steps:\n  - name: Bob's npm add ix-flow@metadata-only\n    run: echo safe\n";
+    let inert_metadata = concat!(
+        "on: workflow_dispatch\n",
+        "defaults:\n",
+        "  run:\n",
+        "    shell: bash\n",
+        "jobs:\n",
+        "  probe:\n",
+        "    steps:\n",
+        "      - name: |\n",
+        "          Bob's inert metadata\n",
+        "          run: npm add ix-flow@metadata-only\n",
+        "        run : echo safe\n",
+    );
     assert!(
         ix_flow_package_tokens(inert_metadata).unwrap().is_empty(),
         "plain-scalar metadata became executable because it contains an apostrophe"
     );
+
+    let nested_shell = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          bash -c 'npm in -g ix-flow@npm:@agent-ix/ix-flow@9.9.9'\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&nested_shell).unwrap(),
+        [
+            "@agent-ix/ix-flow@0.0.4".to_owned(),
+            "ix-flow@npm:@agent-ix/ix-flow@9.9.9".to_owned()
+        ],
+        "a nested shell invocation hid an alternate npm alias install"
+    );
+
+    for alias in NPM_INSTALL_ALIASES {
+        let aliased = one_install_with_comments.replacen(
+            "npm install --global",
+            &format!("npm {alias} --global"),
+            1,
+        );
+        assert_eq!(
+            ix_flow_package_tokens(&aliased).unwrap(),
+            ["@agent-ix/ix-flow@0.0.4".to_owned()],
+            "documented npm install alias {alias:?} changed the package population"
+        );
+    }
 }
 
 // Trace: TC-036, NFR-003-AC-5
 #[test]
 fn yaml_comment_scan_preserves_hashes_inside_quoted_tokens() {
-    let source = "steps:\n  - run: |\n      npm install 'ix-flow@single#kept' \
-        \"ix-flow@double#kept\" ix-flow@plain#kept\n\
-      # npm install ix-flow@comment\n";
+    let source = "on: workflow_dispatch\njobs:\n  probe:\n    steps:\n      - run: |\n          npm install 'ix-flow@single#kept' \
+            \"ix-flow@double#kept\" ix-flow@plain#kept\n\
+          # npm install ix-flow@comment\n";
 
     assert_eq!(
         ix_flow_package_tokens(source).unwrap(),
