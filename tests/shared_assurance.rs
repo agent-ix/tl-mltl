@@ -173,6 +173,15 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
             if character == '\'' {
                 quote = None;
             } else {
+                if character == '$' && characters.peek() == Some(&'{') {
+                    let mut lookahead = characters.clone();
+                    lookahead.next();
+                    if lookahead.peek() == Some(&'{') {
+                        return Err(format!(
+                            "non-literal workflow expression is unsupported: {script:?}"
+                        ));
+                    }
+                }
                 word_started = true;
                 word.push(character);
             }
@@ -182,6 +191,11 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
             match character {
                 '"' => quote = None,
                 '\\' => escaped = true,
+                '$' | '`' => {
+                    return Err(format!(
+                        "non-literal shell expansion is unsupported: {script:?}"
+                    ));
+                }
                 _ => {
                     word_started = true;
                     word.push(character);
@@ -197,6 +211,11 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
             '\\' => {
                 word_started = true;
                 escaped = true;
+            }
+            '$' | '`' => {
+                return Err(format!(
+                    "non-literal shell expansion is unsupported: {script:?}"
+                ));
             }
             ' ' | '\t' | '\r' => flush(&mut tokens, &mut word, &mut word_started),
             '#' if !word_started => {
@@ -541,6 +560,48 @@ fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
             && redirected_error.contains("github:agent-ix/ix-flow#redirected-fd")
             && redirected_error.contains("github:agent-ix/ix-flow#redirected-chained"),
         "an unquoted shell redirection was partially scanned: {redirected_error}"
+    );
+
+    let command_substitution = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' \"$(2>&1> /dev/null /usr/bin/npm add -g github:agent-ix/ix-flow#substitution)\"\n          # ix-flow@comment-only",
+    );
+    let substitution_error = ix_flow_package_tokens(&command_substitution).unwrap_err();
+    assert!(
+        substitution_error.contains("non-literal shell expansion")
+            && substitution_error.contains("github:agent-ix/ix-flow#substitution"),
+        "a double-quoted command substitution hid an executable npm command: {substitution_error}"
+    );
+
+    let backtick_substitution = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' `/usr/bin/npm add -g github:agent-ix/ix-flow#backtick`\n          # ix-flow@comment-only",
+    );
+    let backtick_error = ix_flow_package_tokens(&backtick_substitution).unwrap_err();
+    assert!(
+        backtick_error.contains("non-literal shell expansion")
+            && backtick_error.contains("github:agent-ix/ix-flow#backtick"),
+        "a backtick command substitution hid an executable npm command: {backtick_error}"
+    );
+
+    let inert_substitution_spellings = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' '$(npm add github:agent-ix/ix-flow#single-quoted)' '`npm add github:agent-ix/ix-flow#single-backtick`' \"\\$(npm add github:agent-ix/ix-flow#escaped-dollar)\" \"\\`npm add github:agent-ix/ix-flow#escaped-backtick\\`\"\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&inert_substitution_spellings).unwrap(),
+        ["@agent-ix/ix-flow@0.0.4".to_owned()],
+        "quoted or escaped substitution spellings became executable"
+    );
+
+    let workflow_expression = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' '${{ inputs.script }}'\n          # ix-flow@comment-only",
+    );
+    let expression_error = ix_flow_package_tokens(&workflow_expression).unwrap_err();
+    assert!(
+        expression_error.contains("non-literal workflow expression"),
+        "single shell quotes hid a GitHub workflow expression: {expression_error}"
     );
 
     let preceding_shell = one_install_with_comments.replace(
