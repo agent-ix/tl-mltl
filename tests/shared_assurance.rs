@@ -209,9 +209,10 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
                     }
                 }
             }
-            '&' if word.ends_with('>') || word.ends_with('<') => {
-                word_started = true;
-                word.push(character);
+            '<' | '>' => {
+                return Err(format!(
+                    "non-literal shell redirection is unsupported: {script:?}"
+                ));
             }
             '\n' | ';' | '|' | '&' => {
                 flush(&mut tokens, &mut word, &mut word_started);
@@ -274,21 +275,11 @@ fn is_shell_assignment(word: &str) -> bool {
         && characters.all(|character| character == '_' || character.is_ascii_alphanumeric())
 }
 
-fn shell_redirection_word_span(word: &str) -> Option<usize> {
-    let remainder = word.trim_start_matches(|character: char| character.is_ascii_digit());
-    let operator = ["<<<", "<<-", ">>", "<<", "<>", "<&", ">&", ">|", ">", "<"]
-        .into_iter()
-        .find(|operator| remainder.starts_with(*operator))?;
-    Some(usize::from(remainder.len() == operator.len()) + 1)
-}
-
 fn command_executable_index(words: &[&str]) -> Option<usize> {
     let mut index = 0;
     while let Some(word) = words.get(index).copied() {
         if is_shell_assignment(word) {
             index += 1;
-        } else if let Some(span) = shell_redirection_word_span(word) {
-            index += span;
         } else {
             break;
         }
@@ -303,8 +294,6 @@ fn command_executable_index(words: &[&str]) -> Option<usize> {
                 index += 2;
             } else if word.starts_with('-') || is_shell_assignment(word) {
                 index += 1;
-            } else if let Some(span) = shell_redirection_word_span(word) {
-                index += span;
             } else {
                 break;
             }
@@ -542,17 +531,16 @@ fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
 
     let redirected_path_install = one_install_with_comments.replace(
         "          # ix-flow@comment-only",
-        "          >/tmp/reviewer-log /usr/bin/npm add -g github:agent-ix/ix-flow#redirected-attached\n          > /tmp/reviewer-log-2 /usr/bin/npm in -g github:agent-ix/ix-flow#redirected-separate\n          2>&1 /usr/bin/npm inst -g github:agent-ix/ix-flow#redirected-fd\n          # ix-flow@comment-only",
+        "          >/tmp/reviewer-log /usr/bin/npm add -g github:agent-ix/ix-flow#redirected-attached\n          > /tmp/reviewer-log-2 /usr/bin/npm in -g github:agent-ix/ix-flow#redirected-separate\n          2>&1 /usr/bin/npm inst -g github:agent-ix/ix-flow#redirected-fd\n          2>&1> /dev/null /usr/bin/npm insta -g github:agent-ix/ix-flow#redirected-chained\n          # ix-flow@comment-only",
     );
-    assert_eq!(
-        ix_flow_package_tokens(&redirected_path_install).unwrap(),
-        [
-            "@agent-ix/ix-flow@0.0.4".to_owned(),
-            "github:agent-ix/ix-flow#redirected-attached".to_owned(),
-            "github:agent-ix/ix-flow#redirected-separate".to_owned(),
-            "github:agent-ix/ix-flow#redirected-fd".to_owned()
-        ],
-        "a leading shell redirection hid a path-qualified npm command"
+    let redirected_error = ix_flow_package_tokens(&redirected_path_install).unwrap_err();
+    assert!(
+        redirected_error.contains("non-literal shell redirection")
+            && redirected_error.contains("github:agent-ix/ix-flow#redirected-attached")
+            && redirected_error.contains("github:agent-ix/ix-flow#redirected-separate")
+            && redirected_error.contains("github:agent-ix/ix-flow#redirected-fd")
+            && redirected_error.contains("github:agent-ix/ix-flow#redirected-chained"),
+        "an unquoted shell redirection was partially scanned: {redirected_error}"
     );
 
     let preceding_shell = one_install_with_comments.replace(
