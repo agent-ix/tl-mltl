@@ -270,13 +270,24 @@ fn is_shell_assignment(word: &str) -> bool {
         && characters.all(|character| character == '_' || character.is_ascii_alphanumeric())
 }
 
+fn shell_redirection_word_span(word: &str) -> Option<usize> {
+    let remainder = word.trim_start_matches(|character: char| character.is_ascii_digit());
+    let operator = ["<<<", "<<-", ">>", "<<", "<>", "<&", ">&", ">|", ">", "<"]
+        .into_iter()
+        .find(|operator| remainder.starts_with(*operator))?;
+    Some(usize::from(remainder.len() == operator.len()) + 1)
+}
+
 fn command_executable_index(words: &[&str]) -> Option<usize> {
     let mut index = 0;
-    while words
-        .get(index)
-        .is_some_and(|word| is_shell_assignment(word))
-    {
-        index += 1;
+    while let Some(word) = words.get(index).copied() {
+        if is_shell_assignment(word) {
+            index += 1;
+        } else if let Some(span) = shell_redirection_word_span(word) {
+            index += span;
+        } else {
+            break;
+        }
     }
     if words.get(index).copied() == Some("env") {
         index += 1;
@@ -288,6 +299,8 @@ fn command_executable_index(words: &[&str]) -> Option<usize> {
                 index += 2;
             } else if word.starts_with('-') || is_shell_assignment(word) {
                 index += 1;
+            } else if let Some(span) = shell_redirection_word_span(word) {
+                index += span;
             } else {
                 break;
             }
@@ -327,7 +340,7 @@ fn scan_ix_flow_packages(
                 .position(|word| is_shell_command_option(word))
                 .map(|offset| executable_index + 1 + offset)
             else {
-                return Err("shell invocation has no statically classifiable -c script".to_owned());
+                continue;
             };
             let nested = words[command_option + 1..]
                 .iter()
@@ -523,6 +536,33 @@ fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
         "a grouped path-qualified npm command hid an alternate install"
     );
 
+    let redirected_path_install = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          >/tmp/reviewer-log /usr/bin/npm add -g github:agent-ix/ix-flow#redirected-attached\n          > /tmp/reviewer-log-2 /usr/bin/npm in -g github:agent-ix/ix-flow#redirected-separate\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&redirected_path_install).unwrap(),
+        [
+            "@agent-ix/ix-flow@0.0.4".to_owned(),
+            "github:agent-ix/ix-flow#redirected-attached".to_owned(),
+            "github:agent-ix/ix-flow#redirected-separate".to_owned()
+        ],
+        "a leading shell redirection hid a path-qualified npm command"
+    );
+
+    let preceding_shell = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          bash --version; /usr/bin/npm add -g github:agent-ix/ix-flow#after-shell\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&preceding_shell).unwrap(),
+        [
+            "@agent-ix/ix-flow@0.0.4".to_owned(),
+            "github:agent-ix/ix-flow#after-shell".to_owned()
+        ],
+        "a non--c shell invocation suppressed later commands"
+    );
+
     let long_shell_option = one_install_with_comments.replace(
         "          # ix-flow@comment-only",
         "          bash --norc -c 'npm in -g github:agent-ix/ix-flow#nested-long'\n          # ix-flow@comment-only",
@@ -538,7 +578,7 @@ fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
 
     let inert_arguments = one_install_with_comments.replace(
         "          # ix-flow@comment-only",
-        "          printf '%s\\n' 'npm add github:agent-ix/ix-flow#inert' 'bash -c npm in ix-flow@9.9.9'\n          # ix-flow@comment-only",
+        "          printf '%s\\n' npm add github:agent-ix/ix-flow#inert bash -c npm in ix-flow@9.9.9\n          # ix-flow@comment-only",
     );
     assert_eq!(
         ix_flow_package_tokens(&inert_arguments).unwrap(),
