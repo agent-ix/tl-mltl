@@ -17,6 +17,7 @@ use std::sync::OnceLock;
 
 use serde::Deserialize;
 use serde_json::Value;
+use serde_yaml_ng::Value as YamlValue;
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -66,6 +67,330 @@ fn head_revision() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_owned()
 }
 
+fn workflow_run_scripts(workflow: &str) -> Result<Vec<String>, String> {
+    let document: YamlValue = serde_yaml_ng::from_str(workflow)
+        .map_err(|error| format!("invalid workflow YAML: {error}"))?;
+    let mut scripts = Vec::new();
+    let key = |name: &str| YamlValue::String(name.to_owned());
+    let jobs = document
+        .as_mapping()
+        .and_then(|root| root.get(key("jobs")))
+        .and_then(YamlValue::as_mapping)
+        .ok_or_else(|| "workflow has no jobs mapping".to_owned())?;
+    for (job_name, job) in jobs {
+        let job = job
+            .as_mapping()
+            .ok_or_else(|| format!("workflow job {job_name:?} is not a mapping"))?;
+        let Some(steps) = job.get(key("steps")) else {
+            continue;
+        };
+        let steps = steps
+            .as_sequence()
+            .ok_or_else(|| format!("workflow job {job_name:?} steps are not a sequence"))?;
+        for (index, step) in steps.iter().enumerate() {
+            let step = step.as_mapping().ok_or_else(|| {
+                format!("workflow job {job_name:?} step {index} is not a mapping")
+            })?;
+            let Some(run) = step.get(key("run")) else {
+                continue;
+            };
+            scripts.push(
+                run.as_str()
+                    .ok_or_else(|| {
+                        format!(
+                            "workflow job {job_name:?} step {index} run value is not a scalar string"
+                        )
+                    })?
+                    .to_owned(),
+            );
+        }
+    }
+    Ok(scripts)
+}
+
+fn workflow_trigger_names(workflow: &str) -> Result<Vec<String>, String> {
+    let document: YamlValue = serde_yaml_ng::from_str(workflow)
+        .map_err(|error| format!("invalid workflow YAML: {error}"))?;
+    let root = document
+        .as_mapping()
+        .ok_or_else(|| "workflow document is not a mapping".to_owned())?;
+    let on = root
+        .get(YamlValue::String("on".to_owned()))
+        .ok_or_else(|| "workflow has no on key".to_owned())?;
+    match on {
+        YamlValue::String(trigger) => Ok(vec![trigger.clone()]),
+        YamlValue::Sequence(triggers) => triggers
+            .iter()
+            .map(|trigger| {
+                trigger
+                    .as_str()
+                    .map(str::to_owned)
+                    .ok_or_else(|| "workflow on sequence contains a non-string trigger".to_owned())
+            })
+            .collect(),
+        YamlValue::Mapping(triggers) => triggers
+            .keys()
+            .map(|trigger| {
+                trigger
+                    .as_str()
+                    .map(str::to_owned)
+                    .ok_or_else(|| "workflow on mapping contains a non-string trigger".to_owned())
+            })
+            .collect(),
+        _ => Err("workflow on value is not a trigger, sequence, or mapping".to_owned()),
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum ShellToken {
+    Word(String),
+    Boundary,
+}
+
+fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
+    let mut tokens = Vec::new();
+    let mut word = String::new();
+    let mut word_started = false;
+    let mut quote = None;
+    let mut escaped = false;
+    let mut characters = script.chars().peekable();
+    let flush = |tokens: &mut Vec<ShellToken>, word: &mut String, word_started: &mut bool| {
+        if *word_started {
+            tokens.push(ShellToken::Word(std::mem::take(word)));
+            *word_started = false;
+        }
+    };
+    // GitHub evaluates workflow expressions before the generated script
+    // reaches the shell. Shell comments, quotes, and backslash escaping
+    // therefore cannot make `${{ ... }}` literal at this boundary.
+    if script.contains("${{") {
+        return Err(format!(
+            "non-literal workflow expression is unsupported: {script:?}"
+        ));
+    }
+    while let Some(character) = characters.next() {
+        if escaped {
+            word_started = true;
+            if character != '\n' {
+                word.push(character);
+            }
+            escaped = false;
+            continue;
+        }
+        if quote == Some('\'') {
+            if character == '\'' {
+                quote = None;
+            } else {
+                word_started = true;
+                word.push(character);
+            }
+            continue;
+        }
+        if quote == Some('"') {
+            match character {
+                '"' => quote = None,
+                '\\' => escaped = true,
+                '$' | '`' => {
+                    return Err(format!(
+                        "non-literal shell expansion is unsupported: {script:?}"
+                    ));
+                }
+                _ => {
+                    word_started = true;
+                    word.push(character);
+                }
+            }
+            continue;
+        }
+        match character {
+            '\'' | '"' => {
+                word_started = true;
+                quote = Some(character);
+            }
+            '\\' => {
+                word_started = true;
+                escaped = true;
+            }
+            '$' | '`' => {
+                return Err(format!(
+                    "non-literal shell expansion is unsupported: {script:?}"
+                ));
+            }
+            ' ' | '\t' | '\r' => flush(&mut tokens, &mut word, &mut word_started),
+            '#' if !word_started => {
+                for comment_character in characters.by_ref() {
+                    if comment_character == '\n' {
+                        if !matches!(tokens.last(), Some(ShellToken::Boundary)) {
+                            tokens.push(ShellToken::Boundary);
+                        }
+                        break;
+                    }
+                }
+            }
+            '<' | '>' => {
+                return Err(format!(
+                    "non-literal shell redirection is unsupported: {script:?}"
+                ));
+            }
+            '\n' | ';' | '|' | '&' => {
+                flush(&mut tokens, &mut word, &mut word_started);
+                if !matches!(tokens.last(), Some(ShellToken::Boundary)) {
+                    tokens.push(ShellToken::Boundary);
+                }
+                if matches!(character, '|' | '&') && characters.peek() == Some(&character) {
+                    characters.next();
+                }
+            }
+            '(' | '{' if !word_started => {
+                if !matches!(tokens.last(), Some(ShellToken::Boundary)) {
+                    tokens.push(ShellToken::Boundary);
+                }
+            }
+            ')' | '}' => {
+                flush(&mut tokens, &mut word, &mut word_started);
+                if !matches!(tokens.last(), Some(ShellToken::Boundary)) {
+                    tokens.push(ShellToken::Boundary);
+                }
+            }
+            _ => {
+                word_started = true;
+                word.push(character);
+            }
+        }
+    }
+    if escaped || quote.is_some() {
+        return Err(format!(
+            "shell script has an unterminated token near {word:?}"
+        ));
+    }
+    flush(&mut tokens, &mut word, &mut word_started);
+    Ok(tokens)
+}
+
+const NPM_INSTALL_ALIASES: &[&str] = &[
+    "install", "add", "i", "in", "ins", "inst", "insta", "instal", "isnt", "isnta", "isntal",
+    "isntall",
+];
+
+fn is_npm_install_alias(word: &str) -> bool {
+    NPM_INSTALL_ALIASES.contains(&word)
+}
+
+fn is_shell_interpreter(word: &str) -> bool {
+    matches!(word.rsplit('/').next(), Some("sh" | "bash"))
+}
+
+fn is_npm_executable(word: &str) -> bool {
+    word.rsplit('/').next() == Some("npm")
+}
+
+fn is_shell_assignment(word: &str) -> bool {
+    let Some((name, _)) = word.split_once('=') else {
+        return false;
+    };
+    let mut characters = name.chars();
+    matches!(characters.next(), Some(first) if first == '_' || first.is_ascii_alphabetic())
+        && characters.all(|character| character == '_' || character.is_ascii_alphanumeric())
+}
+
+fn command_executable_index(words: &[&str]) -> Option<usize> {
+    let mut index = 0;
+    while let Some(word) = words.get(index).copied() {
+        if is_shell_assignment(word) {
+            index += 1;
+        } else {
+            break;
+        }
+    }
+    if words.get(index).copied() == Some("env") {
+        index += 1;
+        while let Some(word) = words.get(index).copied() {
+            if matches!(
+                word,
+                "-u" | "--unset" | "-C" | "--chdir" | "-S" | "--split-string"
+            ) {
+                index += 2;
+            } else if word.starts_with('-') || is_shell_assignment(word) {
+                index += 1;
+            } else {
+                break;
+            }
+        }
+    }
+    words.get(index).map(|_| index)
+}
+
+fn is_shell_command_option(word: &str) -> bool {
+    word.starts_with('-') && !word.starts_with("--") && word[1..].contains('c')
+}
+
+fn scan_ix_flow_packages(
+    script: &str,
+    depth: usize,
+    packages: &mut Vec<String>,
+) -> Result<(), String> {
+    if depth > 8 {
+        return Err("nested shell command depth exceeds 8".to_owned());
+    }
+    let tokens = shell_tokens(script)?;
+    for command in tokens.split(|token| *token == ShellToken::Boundary) {
+        let words: Vec<&str> = command
+            .iter()
+            .filter_map(|token| match token {
+                ShellToken::Word(word) => Some(word.as_str()),
+                ShellToken::Boundary => None,
+            })
+            .collect();
+        let Some(executable_index) = command_executable_index(&words) else {
+            continue;
+        };
+        let executable = words[executable_index];
+        if is_shell_interpreter(executable) {
+            let Some(command_option) = words[executable_index + 1..]
+                .iter()
+                .position(|word| is_shell_command_option(word))
+                .map(|offset| executable_index + 1 + offset)
+            else {
+                continue;
+            };
+            let nested = words[command_option + 1..]
+                .iter()
+                .find(|word| **word != "--")
+                .ok_or_else(|| {
+                    "shell -c option has no statically classifiable script".to_owned()
+                })?;
+            scan_ix_flow_packages(nested, depth + 1, packages)?;
+        }
+        if is_npm_executable(executable) {
+            let Some((install_offset, _)) = words[executable_index + 1..]
+                .iter()
+                .enumerate()
+                .find(|(_, word)| is_npm_install_alias(word))
+            else {
+                continue;
+            };
+            let install_index = executable_index + 1 + install_offset;
+            for argument in &words[install_index + 1..] {
+                if *argument != "--"
+                    && !argument.starts_with('-')
+                    && argument.to_ascii_lowercase().contains("ix-flow")
+                {
+                    packages.push((*argument).to_owned());
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn ix_flow_package_tokens(workflow: &str) -> Result<Vec<String>, String> {
+    let mut packages = Vec::new();
+    for script in workflow_run_scripts(workflow)? {
+        scan_ix_flow_packages(&script, 0, &mut packages)?;
+    }
+    Ok(packages)
+}
+
 // Trace: TC-036, NFR-003-AC-5
 #[test]
 fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
@@ -73,22 +398,45 @@ fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
     let workflow = fs::read_to_string(&workflow_path)
         .unwrap_or_else(|error| panic!("cannot read {}: {error}", workflow_path.display()));
 
-    assert!(
-        workflow.contains("\non:\n  workflow_dispatch:\n\njobs:\n"),
+    assert_eq!(
+        workflow_trigger_names(&workflow).expect("classify hosted triggers"),
+        ["workflow_dispatch"],
         "hosted CI must retain workflow_dispatch as its only trigger"
+    );
+    let trigger_metadata = concat!(
+        "name: trigger probe\n",
+        "on:\n",
+        "  workflow_dispatch:\n",
+        "permissions: read-all\n",
+        "jobs:\n",
+        "  probe:\n",
+        "    runs-on: ubuntu-latest\n",
+        "    steps:\n",
+        "      - run: echo safe\n",
+    );
+    assert_eq!(
+        workflow_trigger_names(trigger_metadata).expect("classify triggers around metadata"),
+        ["workflow_dispatch"],
+        "valid top-level metadata changed the semantic trigger set"
+    );
+    let automatic = workflow.replacen(
+        "  workflow_dispatch:\n",
+        "  workflow_dispatch:\n  push:\n",
+        1,
+    );
+    assert_ne!(
+        workflow_trigger_names(&automatic).expect("classify automatic trigger mutation"),
+        ["workflow_dispatch"],
+        "an automatic trigger was accepted"
     );
 
     // Scan every package token in the workflow rather than recognizing one npm
     // command spelling. A later `npm i -g` install is just as capable of
     // replacing the executable as the current `npm install --global` form.
-    let ix_flow_packages: Vec<&str> = workflow
-        .split_ascii_whitespace()
-        .map(|token| token.trim_matches(['\'', '"']))
-        .filter(|token| token.contains("ix-flow@"))
-        .collect();
+    let ix_flow_packages = ix_flow_package_tokens(&workflow).expect("classify hosted workflow");
     assert_eq!(
         ix_flow_packages,
-        ["@agent-ix/ix-flow@0.0.4"],
+        ["@agent-ix/ix-flow@0.0.4".to_owned()],
         "hosted CI must install the released scoped package exactly once"
     );
 
@@ -106,6 +454,260 @@ fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
         String::from_utf8_lossy(&output.stdout).trim(),
         "0.0.4",
         "the local gate must exercise the same released version installed by hosted CI"
+    );
+}
+
+// Trace: TC-036, NFR-003-AC-5
+#[test]
+fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
+    let one_install_with_comments = concat!(
+        "name: probe\n",
+        "on: workflow_dispatch\n",
+        "jobs:\n",
+        "  probe:\n",
+        "    runs-on: ubuntu-latest\n",
+        "    steps:\n",
+        "      - run: |\n",
+        "          npm install --global '@agent-ix/ix-flow@0.0.4' ",
+        "# npm i -g '@agent-ix/ix-flow@9.9.9'\n",
+        "          # ix-flow@comment-only\n",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(one_install_with_comments).unwrap(),
+        ["@agent-ix/ix-flow@0.0.4".to_owned()]
+    );
+
+    let executable_alias = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          npm i -g ix-flow@npm:@agent-ix/ix-flow@9.9.9\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&executable_alias).unwrap(),
+        [
+            "@agent-ix/ix-flow@0.0.4".to_owned(),
+            "ix-flow@npm:@agent-ix/ix-flow@9.9.9".to_owned()
+        ]
+    );
+
+    let word_internal_hash = concat!(
+        "on: workflow_dispatch\n",
+        "jobs:\n",
+        "  probe:\n",
+        "    steps:\n",
+        "      - \"r\\u0075n\": |\n",
+        "          echo marker#not-a-comment; npm add -g github:agent-ix/ix-flow#v9.9.9\n",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(word_internal_hash).unwrap(),
+        ["github:agent-ix/ix-flow#v9.9.9".to_owned()],
+        "a word-internal shell hash hid an executable npm-add package"
+    );
+
+    let inert_metadata = concat!(
+        "on: workflow_dispatch\n",
+        "defaults:\n",
+        "  run:\n",
+        "    shell: bash\n",
+        "jobs:\n",
+        "  probe:\n",
+        "    steps:\n",
+        "      - name: |\n",
+        "          Bob's inert metadata\n",
+        "          run: npm add ix-flow@metadata-only\n",
+        "        run : echo safe\n",
+    );
+    assert!(
+        ix_flow_package_tokens(inert_metadata).unwrap().is_empty(),
+        "plain-scalar metadata became executable because it contains an apostrophe"
+    );
+
+    let nested_shell = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          bash -c 'npm in -g ix-flow@npm:@agent-ix/ix-flow@9.9.9'\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&nested_shell).unwrap(),
+        [
+            "@agent-ix/ix-flow@0.0.4".to_owned(),
+            "ix-flow@npm:@agent-ix/ix-flow@9.9.9".to_owned()
+        ],
+        "a nested shell invocation hid an alternate npm alias install"
+    );
+
+    let grouped_path_install = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          ( /usr/bin/npm in -g github:agent-ix/ix-flow#grouped )\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&grouped_path_install).unwrap(),
+        [
+            "@agent-ix/ix-flow@0.0.4".to_owned(),
+            "github:agent-ix/ix-flow#grouped".to_owned()
+        ],
+        "a grouped path-qualified npm command hid an alternate install"
+    );
+
+    let redirected_path_install = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          >/tmp/reviewer-log /usr/bin/npm add -g github:agent-ix/ix-flow#redirected-attached\n          > /tmp/reviewer-log-2 /usr/bin/npm in -g github:agent-ix/ix-flow#redirected-separate\n          2>&1 /usr/bin/npm inst -g github:agent-ix/ix-flow#redirected-fd\n          2>&1> /dev/null /usr/bin/npm insta -g github:agent-ix/ix-flow#redirected-chained\n          # ix-flow@comment-only",
+    );
+    let redirected_error = ix_flow_package_tokens(&redirected_path_install).unwrap_err();
+    assert!(
+        redirected_error.contains("non-literal shell redirection")
+            && redirected_error.contains("github:agent-ix/ix-flow#redirected-attached")
+            && redirected_error.contains("github:agent-ix/ix-flow#redirected-separate")
+            && redirected_error.contains("github:agent-ix/ix-flow#redirected-fd")
+            && redirected_error.contains("github:agent-ix/ix-flow#redirected-chained"),
+        "an unquoted shell redirection was partially scanned: {redirected_error}"
+    );
+
+    let command_substitution = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' \"$(2>&1> /dev/null /usr/bin/npm add -g github:agent-ix/ix-flow#substitution)\"\n          # ix-flow@comment-only",
+    );
+    let substitution_error = ix_flow_package_tokens(&command_substitution).unwrap_err();
+    assert!(
+        substitution_error.contains("non-literal shell expansion")
+            && substitution_error.contains("github:agent-ix/ix-flow#substitution"),
+        "a double-quoted command substitution hid an executable npm command: {substitution_error}"
+    );
+
+    let backtick_substitution = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' `/usr/bin/npm add -g github:agent-ix/ix-flow#backtick`\n          # ix-flow@comment-only",
+    );
+    let backtick_error = ix_flow_package_tokens(&backtick_substitution).unwrap_err();
+    assert!(
+        backtick_error.contains("non-literal shell expansion")
+            && backtick_error.contains("github:agent-ix/ix-flow#backtick"),
+        "a backtick command substitution hid an executable npm command: {backtick_error}"
+    );
+
+    let inert_substitution_spellings = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' '$(npm add github:agent-ix/ix-flow#single-quoted)' '`npm add github:agent-ix/ix-flow#single-backtick`' \"\\$(npm add github:agent-ix/ix-flow#escaped-dollar)\" \"\\`npm add github:agent-ix/ix-flow#escaped-backtick\\`\"\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&inert_substitution_spellings).unwrap(),
+        ["@agent-ix/ix-flow@0.0.4".to_owned()],
+        "quoted or escaped substitution spellings became executable"
+    );
+
+    let workflow_expression = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' '${{ inputs.script }}'\n          # ix-flow@comment-only",
+    );
+    let expression_error = ix_flow_package_tokens(&workflow_expression).unwrap_err();
+    assert!(
+        expression_error.contains("non-literal workflow expression"),
+        "single shell quotes hid a GitHub workflow expression: {expression_error}"
+    );
+
+    for (label, script) in [
+        (
+            "shell-escaped",
+            "          printf '%s\\n' \\${{ inputs.script }}",
+        ),
+        (
+            "double-quoted shell-escaped",
+            "          printf '%s\\n' \"\\${{ inputs.script }}\"",
+        ),
+    ] {
+        let escaped_expression = one_install_with_comments.replace(
+            "          # ix-flow@comment-only",
+            &format!("{script}\n          # ix-flow@comment-only"),
+        );
+        let error = ix_flow_package_tokens(&escaped_expression).unwrap_err();
+        assert!(
+            error.contains("non-literal workflow expression"),
+            "{label} GitHub workflow expression stayed green: {error}"
+        );
+    }
+
+    let comment_expression = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          # ${{ inputs.script }}",
+    );
+    let comment_error = ix_flow_package_tokens(&comment_expression).unwrap_err();
+    assert!(
+        comment_error.contains("non-literal workflow expression"),
+        "a GitHub workflow expression in a shell comment stayed green: {comment_error}"
+    );
+
+    let unquoted_variable = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' $IX_FLOW_INSTALL\n          # ix-flow@comment-only",
+    );
+    let variable_error = ix_flow_package_tokens(&unquoted_variable).unwrap_err();
+    assert!(
+        variable_error.contains("non-literal shell expansion"),
+        "the unquoted shell-variable guard was not independently exercised: {variable_error}"
+    );
+
+    let preceding_shell = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          bash --version; /usr/bin/npm add -g github:agent-ix/ix-flow#after-shell\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&preceding_shell).unwrap(),
+        [
+            "@agent-ix/ix-flow@0.0.4".to_owned(),
+            "github:agent-ix/ix-flow#after-shell".to_owned()
+        ],
+        "a non--c shell invocation suppressed later commands"
+    );
+
+    let long_shell_option = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          bash --norc -c 'npm in -g github:agent-ix/ix-flow#nested-long'\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&long_shell_option).unwrap(),
+        [
+            "@agent-ix/ix-flow@0.0.4".to_owned(),
+            "github:agent-ix/ix-flow#nested-long".to_owned()
+        ],
+        "a long shell option obscured the actual -c script"
+    );
+
+    let inert_arguments = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' npm add github:agent-ix/ix-flow#inert bash -c npm in ix-flow@9.9.9\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&inert_arguments).unwrap(),
+        ["@agent-ix/ix-flow@0.0.4".to_owned()],
+        "npm- or shell-shaped inert command arguments entered the executable population"
+    );
+
+    for alias in NPM_INSTALL_ALIASES {
+        let aliased = one_install_with_comments.replacen(
+            "npm install --global",
+            &format!("npm {alias} --global"),
+            1,
+        );
+        assert_eq!(
+            ix_flow_package_tokens(&aliased).unwrap(),
+            ["@agent-ix/ix-flow@0.0.4".to_owned()],
+            "documented npm install alias {alias:?} changed the package population"
+        );
+    }
+}
+
+// Trace: TC-036, NFR-003-AC-5
+#[test]
+fn yaml_comment_scan_preserves_hashes_inside_quoted_tokens() {
+    let source = "on: workflow_dispatch\njobs:\n  probe:\n    steps:\n      - run: |\n          npm install 'ix-flow@single#kept' \
+            \"ix-flow@double#kept\" ix-flow@plain#kept\n\
+          # npm install ix-flow@comment\n";
+
+    assert_eq!(
+        ix_flow_package_tokens(source).unwrap(),
+        [
+            "ix-flow@single#kept".to_owned(),
+            "ix-flow@double#kept".to_owned(),
+            "ix-flow@plain#kept".to_owned()
+        ]
     );
 }
 
@@ -1582,7 +2184,8 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        ("spec", 80),
+        // Issue #42 adds the reviewed SR-037 specification artifact.
+        ("spec", 81),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -1620,15 +2223,15 @@ fn no_local_evidence_framework_remains() {
     );
 
     // The full-corpus review, property baseline, semantic-pin reviews, and
-    // contextual-identity and hosted-package base reviews bring the reviewed
-    // population to 157 tracked paths.
+    // contextual-identity and hosted-package base reviews, plus the issue #42
+    // comment-safe review, bring the reviewed population to 158 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 157,
-        "the source census population changed from the reviewed 157 tracked files \
+        inspected, 158,
+        "the source census population changed from the reviewed 158 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
