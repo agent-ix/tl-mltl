@@ -218,6 +218,17 @@ fn shell_tokens(script: &str) -> Result<Vec<ShellToken>, String> {
                     characters.next();
                 }
             }
+            '(' | '{' if !word_started => {
+                if !matches!(tokens.last(), Some(ShellToken::Boundary)) {
+                    tokens.push(ShellToken::Boundary);
+                }
+            }
+            ')' | '}' => {
+                flush(&mut tokens, &mut word, &mut word_started);
+                if !matches!(tokens.last(), Some(ShellToken::Boundary)) {
+                    tokens.push(ShellToken::Boundary);
+                }
+            }
             _ => {
                 word_started = true;
                 word.push(character);
@@ -246,6 +257,49 @@ fn is_shell_interpreter(word: &str) -> bool {
     matches!(word.rsplit('/').next(), Some("sh" | "bash"))
 }
 
+fn is_npm_executable(word: &str) -> bool {
+    word.rsplit('/').next() == Some("npm")
+}
+
+fn is_shell_assignment(word: &str) -> bool {
+    let Some((name, _)) = word.split_once('=') else {
+        return false;
+    };
+    let mut characters = name.chars();
+    matches!(characters.next(), Some(first) if first == '_' || first.is_ascii_alphabetic())
+        && characters.all(|character| character == '_' || character.is_ascii_alphanumeric())
+}
+
+fn command_executable_index(words: &[&str]) -> Option<usize> {
+    let mut index = 0;
+    while words
+        .get(index)
+        .is_some_and(|word| is_shell_assignment(word))
+    {
+        index += 1;
+    }
+    if words.get(index).copied() == Some("env") {
+        index += 1;
+        while let Some(word) = words.get(index).copied() {
+            if matches!(
+                word,
+                "-u" | "--unset" | "-C" | "--chdir" | "-S" | "--split-string"
+            ) {
+                index += 2;
+            } else if word.starts_with('-') || is_shell_assignment(word) {
+                index += 1;
+            } else {
+                break;
+            }
+        }
+    }
+    words.get(index).map(|_| index)
+}
+
+fn is_shell_command_option(word: &str) -> bool {
+    word.starts_with('-') && !word.starts_with("--") && word[1..].contains('c')
+}
+
 fn scan_ix_flow_packages(
     script: &str,
     depth: usize,
@@ -263,16 +317,17 @@ fn scan_ix_flow_packages(
                 ShellToken::Boundary => None,
             })
             .collect();
-        for (shell_index, shell) in words.iter().enumerate() {
-            if !is_shell_interpreter(shell) {
-                continue;
-            }
-            let Some(command_option) = words[shell_index + 1..]
+        let Some(executable_index) = command_executable_index(&words) else {
+            continue;
+        };
+        let executable = words[executable_index];
+        if is_shell_interpreter(executable) {
+            let Some(command_option) = words[executable_index + 1..]
                 .iter()
-                .position(|word| word.starts_with('-') && word[1..].contains('c'))
-                .map(|offset| shell_index + 1 + offset)
+                .position(|word| is_shell_command_option(word))
+                .map(|offset| executable_index + 1 + offset)
             else {
-                continue;
+                return Err("shell invocation has no statically classifiable -c script".to_owned());
             };
             let nested = words[command_option + 1..]
                 .iter()
@@ -282,18 +337,15 @@ fn scan_ix_flow_packages(
                 })?;
             scan_ix_flow_packages(nested, depth + 1, packages)?;
         }
-        for (npm_index, npm) in words.iter().enumerate() {
-            if *npm != "npm" {
-                continue;
-            }
-            let Some((install_offset, _)) = words[npm_index + 1..]
+        if is_npm_executable(executable) {
+            let Some((install_offset, _)) = words[executable_index + 1..]
                 .iter()
                 .enumerate()
                 .find(|(_, word)| is_npm_install_alias(word))
             else {
                 continue;
             };
-            let install_index = npm_index + 1 + install_offset;
+            let install_index = executable_index + 1 + install_offset;
             for argument in &words[install_index + 1..] {
                 if *argument != "--"
                     && !argument.starts_with('-')
@@ -327,9 +379,19 @@ fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
         ["workflow_dispatch"],
         "hosted CI must retain workflow_dispatch as its only trigger"
     );
-    let trigger_metadata = workflow.replacen("\njobs:\n", "\npermissions: read-all\n\njobs:\n", 1);
+    let trigger_metadata = concat!(
+        "name: trigger probe\n",
+        "on:\n",
+        "  workflow_dispatch:\n",
+        "permissions: read-all\n",
+        "jobs:\n",
+        "  probe:\n",
+        "    runs-on: ubuntu-latest\n",
+        "    steps:\n",
+        "      - run: echo safe\n",
+    );
     assert_eq!(
-        workflow_trigger_names(&trigger_metadata).expect("classify triggers around metadata"),
+        workflow_trigger_names(trigger_metadata).expect("classify triggers around metadata"),
         ["workflow_dispatch"],
         "valid top-level metadata changed the semantic trigger set"
     );
@@ -446,6 +508,42 @@ fn yaml_comments_do_not_add_packages_but_executable_alias_installs_do() {
             "ix-flow@npm:@agent-ix/ix-flow@9.9.9".to_owned()
         ],
         "a nested shell invocation hid an alternate npm alias install"
+    );
+
+    let grouped_path_install = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          ( /usr/bin/npm in -g github:agent-ix/ix-flow#grouped )\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&grouped_path_install).unwrap(),
+        [
+            "@agent-ix/ix-flow@0.0.4".to_owned(),
+            "github:agent-ix/ix-flow#grouped".to_owned()
+        ],
+        "a grouped path-qualified npm command hid an alternate install"
+    );
+
+    let long_shell_option = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          bash --norc -c 'npm in -g github:agent-ix/ix-flow#nested-long'\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&long_shell_option).unwrap(),
+        [
+            "@agent-ix/ix-flow@0.0.4".to_owned(),
+            "github:agent-ix/ix-flow#nested-long".to_owned()
+        ],
+        "a long shell option obscured the actual -c script"
+    );
+
+    let inert_arguments = one_install_with_comments.replace(
+        "          # ix-flow@comment-only",
+        "          printf '%s\\n' 'npm add github:agent-ix/ix-flow#inert' 'bash -c npm in ix-flow@9.9.9'\n          # ix-flow@comment-only",
+    );
+    assert_eq!(
+        ix_flow_package_tokens(&inert_arguments).unwrap(),
+        ["@agent-ix/ix-flow@0.0.4".to_owned()],
+        "npm- or shell-shaped inert command arguments entered the executable population"
     );
 
     for alias in NPM_INSTALL_ALIASES {
