@@ -75,6 +75,18 @@ jobs:
         with:
           tool: cargo-deny
 
+      # `make ci` includes the verifier-only proof so a private-symbol rename
+      # cannot silently detach it. This workflow is dispatch-only; install the
+      # pinned verifier before invoking that aggregate.
+      - name: Install Kani
+        uses: model-checking/kani-github-action@v1
+        with:
+          kani-version: '0.67.0'
+          # The action otherwise runs `cargo kani` itself. Provision the
+          # verifier with a no-op command; the aggregate below invokes the
+          # canonical `make kani-check` recipe exactly once.
+          command: 'true'
+
       - name: Complete local gate
         run: make ci
 
