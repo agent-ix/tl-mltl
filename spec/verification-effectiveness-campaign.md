@@ -71,14 +71,18 @@ define the four measurements, and TM-003 assigns planned evidence.
 
 ## Admission and dependency order
 
-Specification and review may proceed while the parent work is pending, but no
-campaign implementation begins until M0 PR #43 lands, stacked M4 PR #44 and
-MRS-002 are independently accepted and landed, and MRS-003 itself is accepted.
-W/M obligations remain blocked on accepted and landed tl-syntax PR #37;
-past/history obligations remain blocked on tl-syntax PR #38 plus evaluator
-support; native-predicate and temporal-bridge obligations remain blocked on the
-accepted and implemented quire-contract-ir #63/#64 path. A blocked row earns no
-coverage or effectiveness credit.
+Specification and review may proceed while parent work is pending. M0 is
+already landed at tl-mltl v0.1.0 (`4bff387`), and the W/M specification and
+routed implementations are landed at the exact revisions named by MRS-002.
+Current future/W/M obligations therefore cannot remain blocked merely because
+this campaign predates those merges.
+
+No campaign implementation begins until M4 PR #44 and MRS-002 are independently
+accepted and landed and MRS-003 itself is human-accepted at an exact reviewed
+revision. Past/history obligations remain blocked on tl-syntax PR #38 plus its
+routed evaluator support; native-predicate and temporal-bridge obligations
+remain blocked on the accepted and implemented quire-contract-ir #63/#64 path.
+A blocked row earns no coverage or effectiveness credit.
 
 Implementation follows this order:
 
@@ -99,8 +103,13 @@ Implementation follows this order:
 5. Rust domain producers emit the records; Quire supplies static facts and
    Quoin validates, binds, retains, and presents them for human review.
 
-The adopted implementation tickets are tl-syntax #26, tl-parse #25,
-tl-rewrite #27, and tl-mltl #31. Any changed semantics discovered by those
+Sibling implementation remains tracked by tl-syntax #26, tl-parse #25, and
+tl-rewrite #27. Historical tl-mltl #31 supplies the landed property baseline and
+bounded-Kani feasibility result but explicitly excluded immediate fuzzing and
+mutation; it is not repurposed as the M5 implementation ticket. PLAN-004 is
+mirrored by tl-mltl #58, #56, #60, #61, #59, #57, and #62 in task order. Every
+new ticket remains blocked until the exact specification and predecessor gates
+recorded by the plan are satisfied. Any changed semantics discovered by those
 tickets returns to `/specify` and `/spec-review` before implementation.
 
 Each repository owns and versions its own native result schemas. Identities in

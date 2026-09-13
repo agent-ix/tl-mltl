@@ -1,12 +1,23 @@
 ---
-id: Task-005
+id: Task-013
 title: "Build the Kani candidate ledger and harnesses"
 type: Task
 status: blocked
 track: D
 priority: P1
+owner_repository: agent-ix/tl-mltl
+consumer_repositories: [agent-ix/tl-mltl]
+evidence_method: bounded-analysis-integration-and-mutation-test
+github_issue: ix://agent-ix/tl-mltl/issues/59
+resume_conditions: [ix://agent-ix/tl-mltl/issues/39, ix://agent-ix/tl-mltl/Task-010, ix://agent-ix/quoin/issues/363, ix://agent-ix/quoin/issues/364]
 relationships:
-  - target: ix://agent-ix/tl-mltl/Task-002
+  - target: ix://agent-ix/tl-mltl/issues/39
+    type: depends_on
+  - target: ix://agent-ix/tl-mltl/Task-010
+    type: depends_on
+  - target: ix://agent-ix/quoin/issues/363
+    type: depends_on
+  - target: ix://agent-ix/quoin/issues/364
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-014
     type: references
@@ -24,7 +35,7 @@ relationships:
     type: verifies
 ---
 
-# Task-005: Build the Kani candidate ledger and harnesses
+# Task-013: Build the Kani candidate ledger and harnesses
 
 ## Scope
 

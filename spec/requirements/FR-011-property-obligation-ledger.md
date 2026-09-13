@@ -55,22 +55,40 @@ enumerated remains applicable and binds its enumerator evidence. A
 `blocked` row names the unresolved requirement/profile/implementation revision
 and produces no coverage credit.
 
-The stable row identity is the domain-separated SHA-256 of repository, exact
-source revision, criterion id and statement hash, operation, semantic-profile
-identity, and domain-partition identity. Classification and execution result are
-excluded from that identity, so reclassifying a blocked or failing row cannot
-hide the same concern as a new row.
+Every identity array below is compact JSON encoded as UTF-8 with no
+insignificant whitespace. String escaping follows JSON; identifier and enum
+tokens are closed ASCII values. `propertyRowSha256` is lowercase hexadecimal
+SHA-256 over the UTF-8 bytes of `tl-mltl.property-row/v1`, one zero byte, and
+this exact array:
 
-The ledger digest covers the ordered row identities, classification, reason or
-dependency, domain, profile, oracle, generator, owning matrix priorities, and
-ownership fields. The ledger is append-only within one identity. Changing any
-covered value requires a reviewed successor ledger with predecessor digest and
-an explicit added/changed/removed census; a removed row remains a tombstone.
+```text
+[repository,sourceRevision,criterionId,statementSha256,operationId,semanticProfileId,domainPartitionSha256]
+```
 
-Campaign priority is the highest urgency among the exact TestMatrix rows that
-trace to a criterion; ties retain every row identity. A criterion with no
-reviewed matrix priority is blocked. Neither Quire's currently nullable
-`obligation.criticality` field nor a producer default may invent a priority.
+`domainPartitionSha256` is computed under domain
+`tl-mltl.property-domain/v1` over the compact JSON bytes of the closed domain,
+precondition, valid/invalid partitions, finite cardinality or generator,
+shrinker, and expected result/refusal classes. Classification and execution
+result are excluded from the row identity, so reclassifying a blocked or
+failing row cannot hide the same concern as a new row.
+
+Rows are sorted by the UTF-8 bytes of `propertyRowSha256`.
+`propertyLedgerSha256` is computed under domain
+`tl-mltl.property-ledger/v1` over the compact JSON array of
+`[predecessorLedgerSha256-or-null,rows]`, where each row is the closed ordered
+array of row identity, classification, reason/dependency, domain/profile,
+oracle/metamorphic relation, generator/enumerator, matrix priorities, ownership,
+and limitation fields. The digest is carried outside those hashed bytes. The
+ledger is append-only within one identity. Changing any covered value requires
+a reviewed successor ledger with predecessor digest and an explicit
+added/changed/removed census; a removed row remains a tombstone.
+
+Campaign priority uses the closed rank `P0 < P1 < P2 < P3`, where lower rank is
+more urgent, over the exact TestMatrix rows that trace to a criterion; ties
+retain every row identity sorted by UTF-8 id bytes. An unknown priority or a
+criterion with no reviewed matrix priority is blocked. Neither Quire's
+currently nullable `obligation.criticality` field nor a producer default may
+invent a priority.
 
 The independent oracle may share public canonical input and result types. The
 independent oracle shall not call the production operation under test, its evaluator/horizon/
@@ -96,7 +114,7 @@ result, complete provenance, review, and a successor manifest.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-011-AC-1 | Every criterion in each exact Quire export appears exactly once as applicable, excluded, or blocked under a lifecycle-independent row identity and classification-covering ledger digest; omissions, duplicates, stale statement hashes, unknown classifications, missing matrix priority, and unreviewed successor changes refuse while naming the row. | Test (TC-050, TC-051) |
+| FR-011-AC-1 | Every criterion in each exact Quire export appears exactly once as applicable, excluded, or blocked under the specified row/domain preimages and ordered classification-covering ledger digest; omissions, duplicates, reorderings, stale statement hashes, unknown classifications/priorities, missing matrix priority, and unreviewed successor changes refuse while naming the row. | Test (TC-050, TC-051) |
 | FR-011-AC-2 | Every applicable row binds a finite domain, partitions, precondition, generator/exhaustive enumerator, shrink behavior, independent oracle or justified metamorphic relation, operation, Rust symbol, budgets, expected classes, and limitation. | Test (TC-051, TC-052) |
 | FR-011-AC-3 | Self-oracles, shared derivation helpers, vacuous preconditions, zero accepted cases, excessive discards, incomplete exhaustive visits, and seeded faults that the oracle misses remain suspect or non-conclusive and earn no property-coverage credit. | Test (TC-052, TC-053) |
 | FR-011-AC-4 | Repeating a generated run with the same revision, domain, configuration, seed, and environment reproduces its accepted/discarded class sequence and minimal counterexample, while different seeds remain separately identified. | Test (TC-053) |

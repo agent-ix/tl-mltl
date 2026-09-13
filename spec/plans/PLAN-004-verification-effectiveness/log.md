@@ -14,3 +14,8 @@ description: "What changed in the verification-effectiveness implementation plan
   mutation, and bounded-proof tracks. Recorded M0/M4, semantic-profile,
   local production-binding completeness, attachment, build-profile, and
   local-plan gates.
+- **2026-09-13** - Merged the independently reviewed M4 head, renumbered the
+  seven tasks to Task-009 through Task-015 to avoid PLAN-006 identity
+  collisions, corrected landed M0/W-M dependencies, removed the
+  mutation-to-proof disposition cycle, and linked task tickets #58, #56, #60,
+  #61, #59, #57, and #62 in task order.

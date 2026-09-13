@@ -42,17 +42,29 @@ and refuse any broader interpretation.
 
 ## Behavior
 
-Every candidate trigger from an FR-011 property gap, an FR-012
-plateau/counterexample, an FR-013 missed/timeout disposition, or an exact
-reviewed bounded-arithmetic proposition appears exactly once as `applicable`,
-`excluded`, or `blocked`. Its domain-separated identity binds source revision,
-requirement/statement hash, subject symbols, rationale, and claimed property but
-excludes classification and execution result. Reclassification or removal
-requires a reviewed successor ledger and tombstone. Each ledger carries a
-domain-separated digest over its complete ordered identities,
-classifications, reasons, dependencies, propositions, non-claims, and declared
-bounds plus the predecessor-ledger digest; changing any covered fact creates a
-new successor digest.
+The finite candidate-source registry contains every row explicitly selected
+from an FR-011 property gap, FR-012 plateau/counterexample, raw FR-013
+missed/timeout outcome, or reviewed bounded-arithmetic proposition. The registry
+binds the exact source-record digest and selection review; a matrix priority by
+itself cannot add a row. Every registry row appears exactly once as
+`applicable`, `excluded`, or `blocked`.
+
+`proofCandidateSha256` is lowercase hexadecimal SHA-256 over the UTF-8 bytes of
+`tl-mltl.proof-candidate/v1`, one zero byte, and the compact JSON array
+`[repository,sourceRevision,requirementId,statementSha256,subjectSymbols,selectionRationale,sourceRecordSha256-or-null,propositionSha256]`.
+`subjectSymbols` is sorted by UTF-8 fully-qualified Rust path. The proposition
+digest covers exact claim and non-claim text, finite symbolic types/domains,
+assumptions, stubs, and declared bounds under domain
+`tl-mltl.proof-proposition/v1`.
+
+Candidate rows are sorted by the UTF-8 bytes of `proofCandidateSha256`.
+`proofCandidateLedgerSha256` is computed under domain
+`tl-mltl.proof-candidate-ledger/v1` over the compact JSON array of
+`[predecessorLedgerSha256-or-null,rows]`, where each closed ordered row contains
+the candidate identity, classification, reason/dependency, proposition,
+non-claims, bounds, and ownership fields. The digest is carried outside the
+hashed bytes. Reclassification or removal requires a reviewed successor ledger
+and tombstone; changing any covered fact creates a new successor digest.
 
 `proved_within_bounds` requires successful verification of every claimed
 assertion, enabled unwind checks, no unwinding failure, no unsupported construct
@@ -97,7 +109,7 @@ harness must rerun at its exact landed candidate and retain a new result.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-014-AC-1 | Every candidate trigger is classified exactly once under a lifecycle-independent identity; the ordered ledger digest covers classifications, reasons, dependencies, propositions, non-claims, bounds, and predecessor digest; and every proof record round-trips exact candidate, harness, proposition, non-claims, toolchain/solver/configuration, symbolic domains, assumptions, stubs, resource limits, loop/recursion/unwind bounds or a retained exact not-applicable census, checks, outcomes, and artifact digests. | Test (TC-065, TC-067) |
+| FR-014-AC-1 | Every row in the finite candidate-source registry is classified exactly once under the specified candidate/proposition preimages; the ordered ledger digest covers classifications, reasons, dependencies, propositions, non-claims, bounds, and predecessor digest; and every proof record round-trips exact candidate, harness, proposition, non-claims, toolchain/solver/configuration, symbolic domains, assumptions, stubs, resource limits, loop/recursion/unwind bounds or a retained exact not-applicable census, checks, outcomes, and artifact digests. | Test (TC-065, TC-067) |
 | FR-014-AC-2 | A proved-within-bounds result is possible only when every assertion, applicable unwind check, supported-path check, and partition cover succeeds; loop-free unwind is not-applicable only after an exact retained census; timeout, unknown, vacuity, partial execution, disabled checks, and inert unwind flags remain non-conclusive, and CBMC internal property counts never become proof counts. | Test (TC-065, TC-066) |
 | FR-014-AC-3 | Mutating any bound, assumption, harness digest, candidate, solver/configuration, claim scope, or outcome invalidates the record or makes the owning gate red, while a counterexample remains reproducible. | Test (TC-066, TC-067) |
 | FR-014-AC-4 | Verifier-only code changes only proof-module/visibility reachability over an identical subject body, ordinary/MSRV controls detect any divergence, and no Kani, Loom, Verus, concolic, Java, Node, or Electron runtime enters production. | Test (TC-069) |

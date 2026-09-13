@@ -1,12 +1,19 @@
 ---
-id: Task-002
+id: Task-010
 title: "Build the property ledger and grounded runner"
 type: Task
 status: blocked
 track: A
 priority: P0
+owner_repository: agent-ix/tl-mltl
+consumer_repositories: [agent-ix/tl-mltl]
+evidence_method: property-integration-and-mutation-test
+github_issue: ix://agent-ix/tl-mltl/issues/56
+resume_conditions: [ix://agent-ix/tl-mltl/issues/39, ix://agent-ix/tl-mltl/Task-009]
 relationships:
-  - target: ix://agent-ix/tl-mltl/Task-001
+  - target: ix://agent-ix/tl-mltl/issues/39
+    type: depends_on
+  - target: ix://agent-ix/tl-mltl/Task-009
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-011
     type: references
@@ -24,7 +31,7 @@ relationships:
     type: verifies
 ---
 
-# Task-002: Build the property ledger and grounded runner
+# Task-010: Build the property ledger and grounded runner
 
 ## Scope
 
@@ -39,7 +46,7 @@ runner with independent oracles, deterministic identities, and limitations.
 
 ## Deliverables
 
-- `tl-mltl.property-obligation-ledger/v1` and property-run records.
+- `tl-mltl.property-ledger/v1` and property-run records.
 - Executing requirement-tagged tests for TC-050 through TC-054.
 
 ## Notes

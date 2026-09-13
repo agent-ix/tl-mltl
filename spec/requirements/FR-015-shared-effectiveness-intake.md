@@ -7,6 +7,8 @@ relationships:
     type: implements
   - target: ix://agent-ix/tl-mltl/FR-006
     type: depends_on
+  - target: ix://agent-ix/tl-mltl/FR-009
+    type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-011
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-012
@@ -109,11 +111,14 @@ empty, unreadable, stale, partially written, digest-mismatched, or
 schema-incompatible producer bytes refuse and cannot be reconstructed from exit
 status or console text.
 
-Every referenced artifact path is normalized repository-relative UTF-8 and is
-checked before reading: absolute, empty, dot/dotdot, duplicate-normalized,
-symlinked, non-regular, untracked, escaping, over-count, over-length, over-size,
-or digest-mismatched inputs refuse. A manifest declares finite hard caps before
-allocation. Raw JSON may be embedded in MeasurementCollection v2. No out-of-tree
+Every referenced artifact and manifest obeys the exact `/`-only UTF-8 path,
+digest, checked-`u64`, and inclusive resource maxima in
+`tl-mltl.corpus-limits/v1` from FR-009 unless an accepted versioned shared
+attachment contract declares tighter bounds. Backslash, absolute, empty,
+dot/dotdot, duplicate-byte, symlinked, non-regular, untracked, escaping,
+over-count, over-length, over-size, over-depth, unknown-limit, or
+digest-mismatched inputs refuse before allocation or decode. Raw JSON may be
+embedded in MeasurementCollection v2 only within those bounds. No out-of-tree
 binary is claimed retained until the accepted shared attachment capability
 exists.
 
@@ -130,14 +135,15 @@ the applicable assurance profile can make a release decision.
 | FR-015-AC-1 | Rust domain producers, Quire static export, Quoin MeasurementCollection v2 wrapper/intake/retention, and Engineering Assurance compatibility each perform only their allocated role, and process-spawn probes prove Quire/Quoin do not execute campaign or external producers. | Test (TC-071, TC-072) |
 | FR-015-AC-2 | Every domain state maps to the exact shared ownership-registry state without erasure; absent, partially written, stale, suspect, vacuous, tampered, unreadable, or digest-mismatched producer bytes refuse and cannot be inferred from exit status, logs, counts, or an older result. | Test (TC-072, TC-073) |
 | FR-015-AC-3 | Every source, requirement, test/harness/target, tool, dependency, configuration, environment, raw artifact, status, limitation, owner, and retention identity is bound by exact digest or typed identity before a result is credited. | Test (TC-067, TC-073) |
-| FR-015-AC-4 | Unsafe artifact paths and declared resource-cap violations refuse before bytes are decoded or allocated, and an out-of-tree binary artifact remains blocked unless an accepted Quoin capability binds immutable storage identity and content digest. | Test (TC-074) |
+| FR-015-AC-4 | Every FR-009 path/digest/resource boundary and any tighter accepted shared bound refuses before bytes are decoded or allocated, and an out-of-tree binary artifact remains blocked unless an accepted Quoin capability binds immutable storage identity and content digest. | Test (TC-074) |
 | FR-015-AC-5 | Every collection resolves an exact active plan local to its owning repository and truthfully records its build profile; a proposed, external-only, missing, version-mismatched, or falsely release-labelled plan/stack is refused. | Test (TC-075) |
 | FR-015-AC-6 | No local generic evidence framework, foreign-runtime adapter, automated approval, or collapsed aggregate is introduced, and summaries retain every population before ratios without claiming release, qualification, certification, or monitor acceptance. | Test (TC-068, TC-071) |
 
 ## Dependencies
 
-Depends on FR-006 shared-assurance allocation and all four domain record
-contracts. Complete reviewed local `implements` bindings, atomic mutation raw
+Depends on FR-006 shared-assurance allocation, FR-009 path/resource rules, and
+all four domain record contracts. Complete reviewed local `implements`
+bindings, atomic mutation raw
 evidence, immutable binary attachment support,
 truthful non-release build-profile representation, and local active plan lookup
 must be demonstrated in the pinned Quoin contract or land in its owning project

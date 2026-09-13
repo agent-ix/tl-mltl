@@ -1,12 +1,19 @@
 ---
-id: Task-007
+id: Task-015
 title: "Close the verification-effectiveness campaign"
 type: Task
 status: blocked
 track: A
 priority: P0
+owner_repository: agent-ix/tl-mltl
+consumer_repositories: [agent-ix/tl-mltl]
+evidence_method: complete-integration-mutation-and-assurance-replay
+github_issue: ix://agent-ix/tl-mltl/issues/62
+resume_conditions: [ix://agent-ix/tl-mltl/issues/39, ix://agent-ix/tl-mltl/Task-014]
 relationships:
-  - target: ix://agent-ix/tl-mltl/Task-006
+  - target: ix://agent-ix/tl-mltl/issues/39
+    type: depends_on
+  - target: ix://agent-ix/tl-mltl/Task-014
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-011
     type: references
@@ -26,7 +33,7 @@ relationships:
     type: verifies
 ---
 
-# Task-007: Close the verification-effectiveness campaign
+# Task-015: Close the verification-effectiveness campaign
 
 ## Scope
 

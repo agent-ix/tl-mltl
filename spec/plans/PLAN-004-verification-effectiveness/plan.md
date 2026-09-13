@@ -43,30 +43,34 @@ this plan changes internal Rust verification infrastructure only.
 
 ## Dependency Graph
 
-- `M0 #43 + M4 #44 + accepted MRS-003 -> Task-001`
-  Reason: implementation must use landed release and corpus/profile baselines.
-- `Task-001 -> Task-002`
+- `landed M4 #44 + accepted MRS-003 -> Task-009`
+  Reason: M0 and current W/M are landed, while implementation must still use an
+  accepted M4 corpus/profile baseline.
+- `Task-009 -> Task-010`
   Reason: the property ledger must freeze only after every applicable semantic
   profile and shared intake premise has an explicit admitted or blocked state.
-- `Task-002 -> Task-003, Task-004, Task-005`
+- `Task-010 -> Task-011, Task-012, Task-013`
   Reason: fuzz, mutation, and Kani selections all consume stable criterion,
   requirement, domain, and priority identities from the grounded ledger.
-- `complete exact Quire implements bindings -> Task-004`
+- `complete exact Quire implements bindings -> Task-012`
   Reason: Quire 0.31 provides the relation, but the current tl-mltl export binds
   only six production symbols for FR-001 through FR-005; selection requires a
   complete reviewed applicable population and a tl-mltl-private mapping is
   forbidden.
-- `accepted Quoin #363 attachment + #364 build-profile contracts -> Task-003, Task-005, Task-006`
+- `raw Task-012 missed/timeout outcomes -> conditional Task-013 candidates`
+  Reason: proof selection consumes an immutable execution outcome, not a final
+  equivalent-mutant disposition that would make the dependency circular.
+- `accepted Quoin #363 attachment + #364 build-profile contracts -> Task-011, Task-013, Task-014`
   Reason: binary artifacts and instrumented/model-check builds cannot be
   misrepresented in MeasurementCollection v2.
-- `Task-002 + Task-003 + Task-004 + Task-005 -> Task-006 -> Task-007`
+- `Task-010 + Task-011 + Task-012 + Task-013 -> Task-014 -> Task-015`
   Reason: shared intake is exercised only after native records exist; closure
   follows complete local evidence and mutation controls.
 
-NFR-005 constrains every task. W/M rows remain blocked on landed tl-syntax #37;
-past/history rows on #38 plus evaluator support; native rows on implemented
-quire-contract-ir #63/#64. Sibling repositories own separate plans and native
-producers.
+NFR-005 constrains every task. Current future/W/M rows are admitted at the exact
+MRS-002 revisions; past/history rows remain blocked on #38 plus evaluator
+support, and native rows on implemented quire-contract-ir #63/#64. Sibling
+repositories own separate plans and native producers.
 
 ## The seams
 
@@ -123,62 +127,63 @@ domain behavior.
 
 ### Track Gate: Admission (serial)
 
-- **Gate = Task-001** M5 admission snapshot — Medium; exit: every prerequisite is bound to an exact accepted revision or a typed blocked state, with no local substitute.
+- **Gate = Task-009** M5 admission snapshot — Medium; exit: every prerequisite is bound to an exact accepted revision or a typed blocked state, with no local substitute.
 
 ### Track A: Critical Path (serial)
 
-- **A1 = Task-002** property ledger and grounded runner — Hard; exit: the complete criterion population reproduces with discriminating oracles and explicit limitations.
-- **A2 = Task-006** shared intake and receipts — Hard; exit: each admitted native record round-trips losslessly through compatible shared contracts.
-- **A3 = Task-007** full campaign closure — Medium; exit: all applicable rows execute, all blocked rows stay visible, and every mutation control fails red.
+- **A1 = Task-010** property ledger and grounded runner — Hard; exit: the complete criterion population reproduces with discriminating oracles and explicit limitations.
+- **A2 = Task-014** shared intake and receipts — Hard; exit: each admitted native record round-trips losslessly through compatible shared contracts.
+- **A3 = Task-015** full campaign closure — Medium; exit: all applicable rows execute, all blocked rows stay visible, and every mutation control fails red.
 
 ### Track B: Post-ledger fuzz
 
-- **B1 = Task-003** retained fuzz baseline — Hard; exit: each applicable target completes the declared seeded budget or retains its exact non-conclusive state.
+- **B1 = Task-011** retained fuzz baseline — Hard; exit: each applicable target completes the declared seeded budget or retains its exact non-conclusive state.
 
 ### Track C: Post-ledger mutation
 
-- **C1 = Task-004** deterministic mutation pilot — Hard; exit: frozen populations, controls, conservative score, and every missed/timeout disposition reproduce.
+- **C1 = Task-012** deterministic mutation pilot — Hard; exit: frozen populations, controls, conservative score, and every missed/timeout disposition reproduce.
 
 ### Track D: Post-ledger bounded proof
 
-- **D1 = Task-005** Kani candidate ledger and harnesses — Hard; exit: each admitted finite proposition has an exact result and no claim widening.
+- **D1 = Task-013** Kani candidate ledger and harnesses — Hard; exit: each admitted finite proposition has an exact result and no claim widening.
 
 ## Parallel Execution Summary
 
 ```text
-Gate: Task-001
+Gate: Task-009
           |
           v
-       Task-002
+       Task-010
        /   |   \
       v    v    v
- Task-003 Task-004 Task-005
+ Task-011 Task-012 Task-013
       \    |    /
        v   v   v
-       Task-006
+       Task-014
           |
           v
-       Task-007
+       Task-015
 ```
 
 ## Task File Mapping
 
 | Task | Track | Owns (references) | Verified by (verifies) | Status |
 |---|---|---|---|---|
-| Task-001 | Gate | FR-011, FR-015, NFR-005 | TC-050, TC-075 | blocked |
-| Task-002 | A | FR-011, NFR-005 | TC-050 through TC-054 | blocked |
-| Task-003 | B | FR-012, NFR-005 | TC-055 through TC-058, TC-067, TC-068 | blocked |
-| Task-004 | C | FR-013, NFR-005 | TC-059 through TC-064, TC-067 | blocked |
-| Task-005 | D | FR-014, NFR-005 | TC-065 through TC-070 | blocked |
-| Task-006 | A | FR-015, NFR-005 | TC-067, TC-068, TC-071 through TC-075 | blocked |
-| Task-007 | A | FR-011 through FR-015, NFR-005 | TC-050 through TC-075 | blocked |
+| Task-009 | Gate | FR-011, FR-015, NFR-005 | TC-050, TC-075 | blocked |
+| Task-010 | A | FR-011, NFR-005 | TC-050 through TC-054 | blocked |
+| Task-011 | B | FR-012, NFR-005 | TC-055 through TC-058, TC-067, TC-068 | blocked |
+| Task-012 | C | FR-013, NFR-005 | TC-059 through TC-064, TC-067 | blocked |
+| Task-013 | D | FR-014, NFR-005 | TC-065 through TC-070 | blocked |
+| Task-014 | A | FR-015, NFR-005 | TC-067, TC-068, TC-071 through TC-075 | blocked |
+| Task-015 | A | FR-011 through FR-015, NFR-005 | TC-050 through TC-075 | blocked |
 
 ## Coordination Rules
 
-- Do not implement until #43, #44/MRS-002, and MRS-003 are independently
-  accepted and landed; preserve exact parent-before-child merge order.
-- Do not implement W/M, past/history, or native-predicate rows before their
-  named semantic prerequisites. A blocked row receives no coverage credit.
+- Do not implement until #44/MRS-002 is landed and MRS-003 is independently
+  accepted; preserve exact parent-before-child merge order.
+- Current future/W/M work uses the exact landed revisions. Do not implement
+  past/history or native-predicate rows before their named semantic
+  prerequisites. A blocked row receives no coverage credit.
 - Quire owns the `implements` relation contract and tl-mltl owns complete local
   annotations. Reusable Quoin #363 attachment, #364 build-profile, and
   local-plan contracts remain single-writer shared work. Do not create local

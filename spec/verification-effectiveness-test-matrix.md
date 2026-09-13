@@ -39,22 +39,22 @@ relationships:
 
 | Test ID | Title | Type | Priority | Traces To | Status |
 |---|---|---|---|---|---|
-| TC-050 | Census every exact Quire criterion once and reject omitted, duplicate, stale, or unknown ledger rows | Integration | P0 | FR-011-AC-1 | 🚧 planned |
-| TC-051 | Round-trip applicable, excluded, and blocked property rows with complete finite domain and ownership fields | Property | P0 | FR-011-AC-1, FR-011-AC-2 | 🚧 planned |
+| TC-050 | Census every exact Quire criterion once under the exact row/domain/ledger preimages and reject omitted, duplicate, reordered, stale, unknown, or invalid-priority rows | Integration | P0 | FR-011-AC-1 | 🚧 planned |
+| TC-051 | Round-trip applicable, excluded, and blocked property rows with complete finite domain, ownership, predecessor, and digest fields | Property | P0 | FR-011-AC-1, FR-011-AC-2 | 🚧 planned |
 | TC-052 | Reject self-oracles, shared derivations, vacuous partitions, and seeded faults missed by the claimed oracle | Integration | P0 | FR-011-AC-2, FR-011-AC-3 | 🚧 planned |
 | TC-053 | Reproduce generated and exhaustive property runs, including seed, accepted/discarded classes, failures, and shrinking | Property | P0 | FR-011-AC-3, FR-011-AC-4, NFR-005-AC-1 | 🚧 planned |
 | TC-054 | Keep generated inputs outside canonical corpus and refuse incomplete promotion | Integration | P0 | FR-011-AC-5 | 🚧 planned |
-| TC-055 | Enforce three RNG seeds, both finite caps, first-stop semantics, and requested-versus-observed budgets | Fuzz | P0 | FR-012-AC-1, FR-012-AC-4 | 🚧 planned |
-| TC-056 | Compute plateau only from exact feature-identity sets over the complete final target-time-and-execution window under unchanged instrumentation | Fuzz | P0 | FR-012-AC-1, FR-012-AC-2 | 🚧 planned |
+| TC-055 | Enforce the exact campaign preimage, three pairwise-distinct ordered `u64` seeds, both finite caps, first-stop semantics, and requested-versus-observed budgets | Fuzz | P0 | FR-012-AC-1, FR-012-AC-4 | 🚧 planned |
+| TC-056 | Compute plateau only from cadence-valid exact feature sets at both final-window anchors under unchanged instrumentation; reject missing anchors and insufficient windows | Fuzz | P0 | FR-012-AC-1, FR-012-AC-2 | 🚧 planned |
 | TC-057 | Preserve fuzz growth, plateau, crash, timeout, resource, cancellation, tool, instrumentation, and not-run states | Integration | P0 | FR-012-AC-2, FR-012-AC-3 | 🚧 planned |
 | TC-058 | Retain and independently replay exact fuzz corpora and crashes, refusing missing or stale identities | Integration | P0 | FR-012-AC-3, FR-012-AC-4 | 🚧 planned |
-| TC-059 | Deterministically discover and identity-bind every mutant before exclusion and selection | Integration | P0 | FR-013-AC-1 | 🚧 planned |
+| TC-059 | Deterministically discover and bind every mutant under the exact path/span/identity, closed-priority ordering, and population digest before exclusion and selection | Integration | P0 | FR-013-AC-1 | 🚧 planned |
 | TC-060 | Reproduce selected/unselected/excluded populations and refuse failed, inconsistent, drifting, or partial controls | Integration | P0 | FR-013-AC-1, FR-013-AC-2, NFR-005-AC-1 | 🚧 planned |
 | TC-061 | Isolate each mutant, interleave controls, enforce timeout and clean restoration, and keep every execution state distinct | Integration | P0 | FR-013-AC-2, FR-013-AC-3 | 🚧 planned |
 | TC-062 | Emit the shared score only for a complete nonzero viable denominator and retain every raw count | Integration | P0 | FR-013-AC-3, FR-013-AC-4 | 🚧 planned |
-| TC-063 | Route every missed or timed-out mutant by reviewed matrix priority to exactly one disposition and required follow-up evidence | Inspection | P0 | FR-013-AC-4 | 🚧 planned |
+| TC-063 | Route raw missed/timeout outcomes into proof review without a circular final disposition, then require exactly one reviewed outcome with acyclic duplicates and unexpired risk evidence | Inspection | P0 | FR-013-AC-4 | 🚧 planned |
 | TC-064 | Seed faults in population, status, denominator, isolation, restoration, and survivor controls and require red | Integration | P0 | FR-013-AC-5, NFR-005-AC-2 | 🚧 planned |
-| TC-065 | Census exact proof candidates, round-trip bounded-proof identities, and admit proved-within-bounds only after every required check succeeds | Analysis | P0 | FR-014-AC-1, FR-014-AC-2 | 🚧 planned |
+| TC-065 | Census the finite proof-candidate registry under exact candidate/proposition/ledger preimages and admit proved-within-bounds only after every required check succeeds | Analysis | P0 | FR-014-AC-1, FR-014-AC-2 | 🚧 planned |
 | TC-066 | Mutate assumptions, bounds, cover/unwind checks, outcome, and claim scope and require invalidation or red | Integration | P0 | FR-014-AC-2, FR-014-AC-3, NFR-005-AC-2 | 🚧 planned |
 | TC-067 | Bind every campaign source, tool, environment, configuration, artifact, limitation, and retention identity | Integration | P0 | FR-012-AC-4, FR-014-AC-1, FR-014-AC-3, FR-015-AC-3, NFR-005-AC-1 | 🚧 planned |
 | TC-068 | Refuse every count, ratio, plateau, no-crash, proof, or aggregate that widens into an automated authority claim | Integration | P0 | FR-012-AC-5, FR-015-AC-6, NFR-005-AC-3 | 🚧 planned |
@@ -63,5 +63,5 @@ relationships:
 | TC-071 | Enforce Rust producer and shared Quire/Quoin/Engineering-Assurance responsibility boundaries across all owners | Integration | P0 | FR-015-AC-1, FR-015-AC-6, NFR-005-AC-3 | 🚧 planned |
 | TC-072 | Demonstrate that Quire and Quoin do not execute campaign producers and cannot synthesize missing producer bytes | Integration | P0 | FR-015-AC-1, FR-015-AC-2 | 🚧 planned |
 | TC-073 | Round-trip all domain/shared states and mutation-test stale, partial, collapsed, substituted, and digest-bad records | Integration | P0 | FR-015-AC-2, FR-015-AC-3, NFR-005-AC-1, NFR-005-AC-2 | 🚧 planned |
-| TC-074 | Refuse unsafe paths and resource-cap violations before artifact decoding or allocation | Integration | P0 | FR-015-AC-4, NFR-005-AC-2 | 🚧 planned |
-| TC-075 | Refuse non-local, proposed, missing, definition-mismatched, or falsely release-labelled MeasurementPlan and verification-stack inputs | Integration | P0 | FR-015-AC-5 | 🚧 planned |
+| TC-074 | Exercise every FR-009 path, digest, count, length, size, depth, checked-arithmetic, and unknown-limit boundary before artifact decoding or allocation | Integration | P0 | FR-015-AC-4, NFR-005-AC-2 | 🚧 planned |
+| TC-075 | Validate PLAN-004 and linked tickets for unique ids, owners, consumers, methods, predecessors, resume conditions, local active plans, and truthful stacks; refuse every missing, stale, or falsely release-labelled input | Integration | P0 | FR-015-AC-5 | 🚧 planned |

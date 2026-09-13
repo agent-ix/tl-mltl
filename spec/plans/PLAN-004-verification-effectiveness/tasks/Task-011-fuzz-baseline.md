@@ -1,12 +1,23 @@
 ---
-id: Task-003
+id: Task-011
 title: "Run the retained fuzz baseline"
 type: Task
 status: blocked
 track: B
 priority: P1
+owner_repository: agent-ix/tl-mltl
+consumer_repositories: [agent-ix/tl-mltl]
+evidence_method: fuzz-replay-integration-and-negative-test
+github_issue: ix://agent-ix/tl-mltl/issues/60
+resume_conditions: [ix://agent-ix/tl-mltl/issues/39, ix://agent-ix/tl-mltl/Task-010, ix://agent-ix/quoin/issues/363, ix://agent-ix/quoin/issues/364]
 relationships:
-  - target: ix://agent-ix/tl-mltl/Task-002
+  - target: ix://agent-ix/tl-mltl/issues/39
+    type: depends_on
+  - target: ix://agent-ix/tl-mltl/Task-010
+    type: depends_on
+  - target: ix://agent-ix/quoin/issues/363
+    type: depends_on
+  - target: ix://agent-ix/quoin/issues/364
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-012
     type: references
@@ -26,7 +37,7 @@ relationships:
     type: verifies
 ---
 
-# Task-003: Run the retained fuzz baseline
+# Task-011: Run the retained fuzz baseline
 
 ## Scope
 

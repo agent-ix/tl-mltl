@@ -27,7 +27,8 @@ coverage plateau as semantic proof.
   byte-oriented or structured-input trust boundary.
 - Exact source, target binary, compiler, cargo-fuzz/libFuzzer, sanitizer,
   target-triple, feature/configuration, dictionary, and environment identities.
-- Starting corpus manifest and three distinct declared RNG seeds.
+- Starting corpus manifest and three pairwise-distinct declared unsigned
+  64-bit RNG seeds in retained ascending numeric order.
 - Baseline budget profile `tl-mltl.fuzz-baseline/v1`.
 
 ## Outputs
@@ -42,22 +43,37 @@ coverage plateau as semantic proof.
 ## Behavior
 
 The baseline profile fixes a first bounded observation rather than a strength
-threshold: it has three RNG-seeded repetitions. Each repetition predeclares both a
-900-second wall-clock cap and 1,000,000 executed-input cap and stops at the first
-cap reached, target crash, explicit operator cancellation, resource refusal, or
-tool failure. The record preserves requested and observed budgets; startup,
-build, minimization, and replay time are separate from fuzz-execution time.
+threshold: it has three RNG-seeded repetitions. `fuzzCampaignSha256` is
+lowercase hexadecimal SHA-256 over the UTF-8 bytes of
+`tl-mltl.fuzz-campaign/v1`, one zero byte, and the compact JSON array
+`[repository,sourceRevision,targetBinarySha256,toolchainId,instrumentationId,configurationSha256,dictionarySha256-or-null,startingCorpusSha256,seeds,budgetProfileId]`.
+The digest is carried outside those hashed bytes; each repetition is keyed by
+the campaign digest and its seed.
+
+Each repetition predeclares both a 900-second target-execution cap and
+1,000,000 executed-input cap and stops at the first cap reached, target crash,
+explicit operator cancellation, resource refusal, or tool failure. Time is
+recorded as checked monotonic `u64` nanoseconds since target execution began;
+wall-clock timestamps are provenance only. The record preserves requested and
+observed budgets; startup, build, minimization, and replay time are separate
+from fuzz-execution time.
 
 Coverage snapshots record monotonically increasing executed-input count,
-elapsed monotonic time while the fuzz target executes, corpus entries/bytes,
-and the digest plus sorted identity set (or stable engine bitmap) of exact
-instrumented features at least every 10 target-execution seconds or 10,000
-executions, whichever occurs first. A count without the identities is
-insufficient because one disappearing feature can mask one newly found feature.
-A repetition is `plateau_observed` only when its final 300 target-execution
-seconds and 100,000 executed inputs both add zero instrumented features and the run reaches
-a budget cap without crash, cancellation, resource refusal, counter reset, or
-instrumentation loss. Otherwise it is `growth_observed` or `non_conclusive`.
+elapsed monotonic target-execution nanoseconds, corpus entries/bytes, and the
+digest plus sorted identity set (or stable engine bitmap) of exact instrumented
+features. After a snapshot, the next completed target execution emits another
+snapshot when either 10 seconds or 10,000 additional executions has elapsed,
+whichever threshold is crossed first; the final state always emits a snapshot.
+A count without the identities is insufficient because one disappearing
+feature can mask one newly found feature.
+
+A repetition is `plateau_observed` only when it reaches a budget cap without
+crash, cancellation, resource refusal, counter reset, or instrumentation loss,
+and its snapshots cover both threshold anchors at final target time minus 300
+seconds and final execution count minus 100,000. The exact feature set at the
+first snapshot at or after each anchor must equal the final set. A run shorter
+than either window or missing either anchor is `non_conclusive`, not plateau.
+Otherwise the repetition is `growth_observed` or `non_conclusive`.
 Feature identities are comparable only within one exact target/toolchain/
 instrumentation identity. Plateau is a prioritization signal for seed review or
 bounded analysis, never proof that undiscovered inputs are safe.
@@ -87,8 +103,8 @@ size is not conformance evidence.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-012-AC-1 | Every baseline campaign executes or explicitly records all three predeclared RNG seeds with both finite caps, stops at the first named condition, and preserves requested versus observed target-execution, build, minimization, and replay time. | Test (TC-055, TC-056) |
-| FR-012-AC-2 | Plateau is reported only after exact feature identities show that both the final 300 target-execution seconds and 100,000 inputs add no feature under one unchanged instrumentation identity; every count-only, early-stop, reset, loss, or insufficient window is non-conclusive. | Test (TC-056, TC-057) |
+| FR-012-AC-1 | Every baseline campaign binds the specified campaign preimage and executes or explicitly records all three pairwise-distinct ordered `u64` seeds with both finite caps, stops at the first named condition, and preserves requested versus observed target-execution, build, minimization, and replay time. | Test (TC-055, TC-056) |
+| FR-012-AC-2 | Plateau is reported only after cadence-valid exact feature identities at both specified final-window anchors equal the final set under one unchanged instrumentation identity; every count-only, early-stop, reset, loss, missing-anchor, or insufficient-window case is non-conclusive. | Test (TC-056, TC-057) |
 | FR-012-AC-3 | Every crash, timeout-input, resource refusal, cancellation, tool error, instrumentation loss, and not-run state round-trips separately, and a crash cannot become conclusive until its exact bytes reproduce independently. | Test (TC-057, TC-058) |
 | FR-012-AC-4 | Every target, toolchain, seed, dictionary, starting/final corpus, configuration, environment, snapshot, stopping reason, artifact digest, and limitation is retained; missing or stale identity refuses before a result is credited. | Test (TC-055, TC-058, TC-067) |
 | FR-012-AC-5 | No-crash, duration, execution count, corpus growth, and plateau records remain bounded observations and never become correctness, release, qualification, or certification verdicts. | Test (TC-068) |

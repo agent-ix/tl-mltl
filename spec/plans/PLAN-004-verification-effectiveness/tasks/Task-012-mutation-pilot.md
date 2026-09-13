@@ -1,12 +1,19 @@
 ---
-id: Task-004
+id: Task-012
 title: "Run the deterministic mutation pilot"
 type: Task
 status: blocked
 track: C
 priority: P0
+owner_repository: agent-ix/tl-mltl
+consumer_repositories: [agent-ix/tl-mltl]
+evidence_method: integration-mutation-and-fault-seeding-test
+github_issue: ix://agent-ix/tl-mltl/issues/61
+resume_conditions: [ix://agent-ix/tl-mltl/issues/39, ix://agent-ix/tl-mltl/Task-010]
 relationships:
-  - target: ix://agent-ix/tl-mltl/Task-002
+  - target: ix://agent-ix/tl-mltl/issues/39
+    type: depends_on
+  - target: ix://agent-ix/tl-mltl/Task-010
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-013
     type: references
@@ -28,7 +35,7 @@ relationships:
     type: verifies
 ---
 
-# Task-004: Run the deterministic mutation pilot
+# Task-012: Run the deterministic mutation pilot
 
 ## Scope
 
