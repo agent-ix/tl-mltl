@@ -2239,7 +2239,7 @@ fn no_local_evidence_framework_remains() {
         // #47 adds FR-016 and the five-file PLAN-005 bundle; issue #48 adds
         // FR-017. Issue #38 adds seven live campaign artifacts and eight
         // archival SpecReviews. Independent review adds SR-054 through SR-061.
-        ("spec", 113),
+        ("spec", 115),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -2283,14 +2283,15 @@ fn no_local_evidence_framework_remains() {
     // bundle and tests/future_parity.rs for 167; issue #48 adds the 20-file
     // future-operator corpus, FR-017 and tests/future_interop.rs for 189; the
     // issue #38 campaign specification and author reviews bring it to 204;
-    // PLAN-006 and SR-054 through SR-061 bring it to 223.
+    // PLAN-006 and SR-054 through SR-061 bring it to 223; exact-head code and
+    // gap reviews SR-076/SR-077 bring it to 225.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 223,
-        "the source census population changed from the reviewed 223 tracked files \
+        inspected, 225,
+        "the source census population changed from the reviewed 225 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
