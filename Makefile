@@ -124,6 +124,7 @@ test: assurance-inputs
 check-corpus:
 	sha256sum --check corpus/tl-syntax-v1.sha256
 	sha256sum --check corpus/future-operators/SHA256SUMS
+	sha256sum --check corpus/past-history/SHA256SUMS
 	cd corpus/r2u2-v4.2 && sha256sum --check SHA256SUMS
 
 .PHONY: conformance
