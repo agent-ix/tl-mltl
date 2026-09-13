@@ -11,12 +11,13 @@ use std::{fs, path::Path};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use tl_mltl::{
-    map_to_c2po, MappingError, MappingManifest, MappingSourceIdentity, MappingSourceState,
-    TL_SYNTAX_REVISION,
+    map_to_c2po, map_to_c2po_with_context, ContextualMappingManifest, MappingError,
+    MappingManifest, MappingSourceIdentity, MappingSourceState, TL_SYNTAX_REVISION,
 };
 use tl_syntax::{
     Formula, FormulaDocument, FutureLoweringRefusal, FutureLoweringRequest, Node, NodeId,
-    RawBounds, SemanticProfile, FUTURE_LOWERING_REQUEST_V1,
+    OwnedSignalDeclaration, PropositionBinding, PropositionId, RawBounds, SemanticProfile,
+    SignalCatalogDocument, SignalDomain, SignalId, FUTURE_LOWERING_REQUEST_V1,
 };
 
 /// Retained corpus directory, a byte-identical copy at [`TL_SYNTAX_REVISION`].
@@ -112,7 +113,7 @@ fn replay(case: &Value) -> Result<Vec<Node>, FutureLoweringRefusal> {
             operator_profile: &operator_profile,
             kind: &kind,
             semantic_profile: &semantic_profile,
-            formula: Formula::new(profile, NodeId(nodes.len() as u32 - 1), &nodes).unwrap(),
+            formula: Formula::new(profile, last_node(case, &nodes), &nodes).unwrap(),
             left: lower["left"].as_u64().unwrap(),
             right: lower["right"].as_u64().unwrap(),
             interval: raw_bounds(&lower["interval"]),
@@ -123,6 +124,14 @@ fn replay(case: &Value) -> Result<Vec<Node>, FutureLoweringRefusal> {
         nodes.extend_from_slice(lowered.nodes());
     }
     Ok(nodes)
+}
+
+fn last_node(case: &Value, nodes: &[Node]) -> NodeId {
+    let last = nodes
+        .len()
+        .checked_sub(1)
+        .unwrap_or_else(|| panic!("{}: a lower step precedes every append", case["id"]));
+    NodeId(u32::try_from(last).unwrap_or_else(|_| panic!("{}: node table too large", case["id"])))
 }
 
 fn case_formula<'a>(case: &Value, nodes: &'a [Node]) -> Formula<'a> {
@@ -146,16 +155,62 @@ fn source() -> MappingSourceIdentity {
     }
 }
 
+/// A derived case and its direct pair export under one formula identity.
+fn export_id(case: &Value) -> &str {
+    let id = case["id"].as_str().unwrap();
+    id.strip_suffix("-derived")
+        .or_else(|| id.strip_suffix("-direct"))
+        .unwrap()
+}
+
 fn map(case: &Value, formula: Formula<'_>) -> Result<MappingManifest, MappingError> {
     let expected = case["expected"].as_str().unwrap();
     let formula_bytes = read(&format!("{CORPUS}/{expected}"));
-    // A derived case and its direct pair export under one formula identity.
-    let id = case["id"].as_str().unwrap();
-    let formula_id = id
-        .strip_suffix("-derived")
-        .or_else(|| id.strip_suffix("-direct"))
-        .unwrap();
-    map_to_c2po(formula, formula_id, &formula_bytes, source(), None, 10_000)
+    map_to_c2po(
+        formula,
+        export_id(case),
+        &formula_bytes,
+        source(),
+        None,
+        10_000,
+    )
+}
+
+/// A catalog binding each proposition to a boolean signal named after it.
+fn catalog(propositions: &[u32]) -> SignalCatalogDocument {
+    SignalCatalogDocument::new(
+        propositions
+            .iter()
+            .map(|id| {
+                OwnedSignalDeclaration::new(SignalId(*id), format!("p{id}"), SignalDomain::Boolean)
+            })
+            .collect(),
+        propositions
+            .iter()
+            .map(|id| PropositionBinding::new(PropositionId(*id), SignalId(*id)))
+            .collect(),
+    )
+    .unwrap()
+}
+
+/// The same export through the context-bound v2 C2PO mapping.
+fn map_with_context(
+    case: &Value,
+    formula: Formula<'_>,
+    catalog: &SignalCatalogDocument,
+) -> Result<ContextualMappingManifest, MappingError> {
+    let expected = case["expected"].as_str().unwrap();
+    let formula_bytes = read(&format!("{CORPUS}/{expected}"));
+    map_to_c2po_with_context(
+        formula,
+        export_id(case),
+        &formula_bytes,
+        source(),
+        None,
+        10_000,
+        catalog,
+        None,
+    )
 }
 
 fn derived_cases(cases: &[Value]) -> Vec<&Value> {
@@ -193,11 +248,31 @@ fn lowered_wm_graphs_export_to_c2po_exactly_as_direct_canonical_graphs() {
         }
         let direct = direct_pair(&cases, derived);
         let direct_nodes = replay(direct).unwrap();
+        let direct_formula = case_formula(direct, &direct_nodes);
         let from_lowered = map(derived, lowered).unwrap();
-        let from_direct = map(direct, case_formula(direct, &direct_nodes)).unwrap();
+        let from_direct = map(direct, direct_formula).unwrap();
+        // Both calls share input bytes, formula id, and source identity, so only
+        // `expression`, `output_sha256`, and `proposition_ids` are graph-derived;
+        // the swapped-operand control below shows those fields can differ.
         assert_eq!(from_lowered, from_direct, "{id}");
         assert_eq!(from_lowered.syntax_revision, TL_SYNTAX_REVISION);
         assert_eq!(from_lowered.semantic_profile, "mltl.online-prefix/v1");
+        // The evaluator identity is the build-recorded tl-mltl source revision.
+        assert_eq!(
+            from_lowered.source_revision,
+            env!("TL_MLTL_SOURCE_REVISION")
+        );
+        assert_eq!(from_lowered.source_state, env!("TL_MLTL_SOURCE_STATE"));
+
+        // The context-bound v2 C2PO path exports the same graph.
+        let catalog = catalog(&from_lowered.proposition_ids);
+        let contextual_lowered = map_with_context(derived, lowered, &catalog).unwrap();
+        let contextual_direct = map_with_context(direct, direct_formula, &catalog).unwrap();
+        assert_eq!(contextual_lowered, contextual_direct, "{id}");
+        assert_eq!(contextual_lowered.syntax_revision, TL_SYNTAX_REVISION);
+
+        // Formula-v1 has no W or M node, so this documents rather than gates;
+        // the swapped-operand control below is the discriminating check.
         let tokens: Vec<&str> = from_lowered
             .expression
             .split(|character: char| !character.is_ascii_alphanumeric())
@@ -213,6 +288,28 @@ fn lowered_wm_graphs_export_to_c2po_exactly_as_direct_canonical_graphs() {
         exported, 7,
         "every online-prefix W/M corpus case is exported"
     );
+
+    // Negative control: a wrongly lowered graph (operands swapped) does not
+    // export as the direct pair's manifest.
+    let derived = cases
+        .iter()
+        .find(|case| case["id"] == "weak-until-online-derived")
+        .unwrap();
+    let mut swapped = derived.clone();
+    for step in swapped["steps"].as_array_mut().unwrap() {
+        if let Some(lower) = step.get_mut("lower") {
+            let left = lower["left"].take();
+            lower["left"] = lower["right"].take();
+            lower["right"] = left;
+        }
+    }
+    let swapped_nodes = replay(&swapped).unwrap();
+    let direct = direct_pair(&cases, derived);
+    let direct_nodes = replay(direct).unwrap();
+    let from_swapped = map(&swapped, case_formula(&swapped, &swapped_nodes)).unwrap();
+    let from_direct = map(direct, case_formula(direct, &direct_nodes)).unwrap();
+    assert_ne!(from_swapped.expression, from_direct.expression);
+    assert_ne!(from_swapped, from_direct);
 }
 
 // Trace: TC-082, FR-017-AC-2, NFR-002-AC-1
@@ -228,9 +325,14 @@ fn unpreservable_targets_and_refused_lowerings_emit_no_manifest() {
         let lowered_nodes = replay(derived).unwrap();
         let direct = direct_pair(&cases, derived);
         let direct_nodes = replay(direct).unwrap();
+        let lowered = case_formula(derived, &lowered_nodes);
+        let direct_formula = case_formula(direct, &direct_nodes);
+        let catalog = catalog(&[]);
         for result in [
-            map(derived, case_formula(derived, &lowered_nodes)),
-            map(direct, case_formula(direct, &direct_nodes)),
+            map(derived, lowered).map(|_| ()),
+            map(direct, direct_formula).map(|_| ()),
+            map_with_context(derived, lowered, &catalog).map(|_| ()),
+            map_with_context(direct, direct_formula, &catalog).map(|_| ()),
         ] {
             assert!(
                 matches!(
@@ -259,7 +361,7 @@ fn unpreservable_targets_and_refused_lowerings_emit_no_manifest() {
     assert_eq!(lowering_refusals, 16);
 }
 
-// Trace: TC-083, FR-017-AC-3, NFR-003-AC-1
+// Trace: TC-083, FR-017-AC-3
 #[test]
 fn foreign_parser_and_monitor_acceptance_is_never_qualification_evidence() {
     let cases = pinned_cases();
@@ -268,14 +370,24 @@ fn foreign_parser_and_monitor_acceptance_is_never_qualification_evidence() {
     assert_eq!(manifest["source_cross_check"]["parser"], "tl-parse");
     assert_eq!(manifest["source_cross_check"]["revision"], PARSER_REVISION);
 
-    // The parser is a recorded upstream cross-check, not a tl-mltl input.
+    // The parser is a recorded upstream cross-check, not a tl-mltl input,
+    // neither direct nor transitive.
     let cargo = String::from_utf8(read("Cargo.toml")).unwrap();
     assert!(!cargo.contains("tl-parse"), "tl-parse became a dependency");
+    let lock = String::from_utf8(read("Cargo.lock")).unwrap();
+    assert!(
+        !lock.contains("name = \"tl-parse\""),
+        "tl-parse became a transitive dependency"
+    );
     // The corpus is consumed from the compiled tl-syntax revision.
     let corpus_readme = String::from_utf8(read("corpus/README.md")).unwrap();
-    assert!(corpus_readme.contains(&format!(
+    let pinned_sentence = format!(
         "`future-operators/` is a byte-identical copy of `corpus/future-operators` at\nthe compiled revision `{TL_SYNTAX_REVISION}`"
-    )));
+    );
+    assert!(
+        corpus_readme.contains(&pinned_sentence),
+        "corpus/README.md does not contain: {pinned_sentence}"
+    );
 
     for derived in derived_cases(&cases) {
         if profile(derived) != SemanticProfile::OnlinePrefixV1 {

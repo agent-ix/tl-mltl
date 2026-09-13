@@ -37,7 +37,7 @@ relationships:
 |---|---|---|---|
 | NFR-001 | deterministic, digest, and resource-limit tests | TC-003, TC-004, TC-006, TC-013, TC-025, TC-028, TC-029, TC-034 | ✅ covered |
 | NFR-002 | schema-negative tests, contextual identity checks, compiled-test census, and tracked review-identity census | TC-012, TC-014, TC-016, TC-017, TC-025, TC-028, TC-031, TC-033, TC-034, TC-035, TC-082 | ✅ covered |
-| NFR-003 | producer-boundary, shared-input serialization, state-vocabulary, mutation-probe, and hosted-tool identity tests | TC-018, TC-019, TC-022, TC-024, TC-036, TC-083 | ✅ covered |
+| NFR-003 | producer-boundary, shared-input serialization, state-vocabulary, mutation-probe, and hosted-tool identity tests | TC-018, TC-019, TC-022, TC-024, TC-036 | ✅ covered |
 
 ## Test Case Summary
 
@@ -85,4 +85,4 @@ relationships:
 | TC-080 | Eight wrong W/M expansions each disagree with the direct reference while the real lowering disagrees nowhere, and the evaluator source and lowered graphs contain no derived future vocabulary | Integration | P0 | FR-016-AC-5, FR-016-AC-6 | ✅ implemented |
 | TC-081 | Every digest-verified W/M corpus case lowers to its pinned canonical document, and each online-prefix lowered graph yields a C2PO manifest identical to its direct canonical pair with no W or M token | Integration | P0 | FR-017-AC-1 | ✅ implemented |
 | TC-082 | Every closed-trace W/M corpus case, lowered or direct, is refused for C2PO with no manifest, and every refused lowering yields its declared refusal code and no graph | Integration | P0 | FR-017-AC-2, NFR-002-AC-1 | ✅ implemented |
-| TC-083 | The recorded tl-parse cross-check is pinned and not a dependency, the corpus is consumed at the compiled tl-syntax revision, exported manifests name no external tool and carry the non-qualification limitation, and no source names FRETish | Integration | P0 | FR-017-AC-3, NFR-003-AC-1 | ✅ implemented |
+| TC-083 | The recorded tl-parse cross-check is pinned and not a dependency, the corpus is consumed at the compiled tl-syntax revision, exported manifests name no external tool and carry the non-qualification limitation, and no source names FRETish | Integration | P0 | FR-017-AC-3 | ✅ implemented |

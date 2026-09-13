@@ -58,8 +58,8 @@ qualification evidence.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-017-AC-1 | Every retained corpus file matches the pinned manifest digest. Every derived case lowers to its pinned expected document, ignoring spans. Each of the seven online-prefix derived cases yields a C2PO manifest equal to its direct pair's, bound to the compiled tl-syntax revision, with no standalone `W` or `M` token. | Test (TC-081) |
-| FR-017-AC-2 | All eight closed-trace derived cases and their direct pairs are refused for C2PO with `UnsupportedProfile` and no manifest. All sixteen refused cases produce their declared refusal code and no graph. | Test (TC-082) |
+| FR-017-AC-1 | The retained `manifest.json` matches its pinned digest and every file it pins matches. Every derived case lowers to its pinned expected document, ignoring spans. Each of the seven online-prefix derived cases yields v1 and context-bound v2 C2PO manifests equal to its direct pair's, bound to the compiled tl-syntax revision and to the build-recorded tl-mltl source revision and state, with no standalone `W` or `M` token. A lowering with swapped operands does not yield its direct pair's manifest. | Test (TC-081) |
+| FR-017-AC-2 | All eight closed-trace derived cases and their direct pairs are refused by both the v1 and context-bound v2 C2PO mappings with `UnsupportedProfile` and no manifest. All sixteen refused cases produce their declared refusal code and no graph. | Test (TC-082) |
 | FR-017-AC-3 | The corpus manifest's tl-parse cross-check equals the pinned parser revision, and `Cargo.toml` names no tl-parse dependency. `corpus/README.md` records the corpus at the compiled tl-syntax revision. Every exported manifest has no external tool and the non-qualification limitation. No file under `src/` names FRETish. | Test (TC-083) |
 
 ## Dependencies

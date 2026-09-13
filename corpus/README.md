@@ -19,7 +19,10 @@ the compiled revision `5b1c13440e54d5a851df2d33cc88944135574bc6`. Its upstream
 `SHA256SUMS` names repository-root paths and is verified unchanged from the
 repository root by `make check-corpus`. Its manifest records the tl-parse
 revision it was cross-checked against; tl-mltl neither depends on nor re-runs
-that parser.
+that parser. In this repository the manifest digest is `CORPUS_MANIFEST_SHA256`
+in `tests/future_interop.rs` (TC-081 through TC-083); the vendored
+`future-operators/README.md` names tl-syntax tests and constants and is itself
+not digest-pinned.
 
 tl-mltl consumes the formula, profile, trace, horizon, and closed-verdict fields
 without changing their meaning. Evaluator-specific and external-monitor cases
