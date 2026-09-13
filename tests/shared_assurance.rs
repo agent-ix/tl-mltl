@@ -1129,10 +1129,10 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         let stale = fs::read_to_string(&candidate)
             .unwrap()
             .replace(
+                "5b1c13440e54d5a851df2d33cc88944135574bc6",
                 "8dc18eec5af227f484170362c9e8894b8531a27d",
-                "26b801d4a68ebfe720062cfdb3c66b070ab60e92",
             )
-            .replace("8dc18eec", "26b801d4");
+            .replace("5b1c1344", "8dc18eec");
         fs::write(&candidate, stale).unwrap();
         let (code, stdout, stderr) = run(
             &python,
@@ -1692,22 +1692,23 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 93 is every row Quire counts from `spec/`: 53 acceptance criteria and 40
+    // 99 is every row Quire counts from `spec/`: 56 acceptance criteria and 43
     // test-matrix rows. Naming the population matters — "matrix rows" would
-    // have been wrong, since acceptance criteria contribute 53 of them. Issue
-    // #47 added FR-016-AC-1..AC-6 and TC-076..TC-080. Re-pinned from 90/88: the
+    // have been wrong, since acceptance criteria contribute 56 of them. Issue
+    // #47 added FR-016-AC-1..AC-6 and TC-076..TC-080; issue #48 adds
+    // FR-017-AC-1..AC-3 and TC-081..TC-083. Re-pinned from 90/88: the
     // suite registry (spec/evidence/suites.md) is no longer counted, because
     // spec-artifacts-process 737987b (quire-rs#363) declares evidence
     // registries `evidence: reference-only`, so its 8 SUITE rows — including
     // the two rows unbacked on purpose, SUITE-001 and SUITE-002 — left the
     // coverage population. Every counted row must be backed.
     assert_eq!(
-        totals["total"], 93,
-        "the declared-row population changed: {totals}. It is 53 acceptance \
-         criteria + 40 test-matrix rows; suite-registry rows are reference-only."
+        totals["total"], 99,
+        "the declared-row population changed: {totals}. It is 56 acceptance \
+         criteria + 43 test-matrix rows; suite-registry rows are reference-only."
     );
     assert_eq!(
-        totals["backed"], 93,
+        totals["backed"], 99,
         "backed-row count changed: {totals}. Every counted acceptance criterion \
          and test-matrix row is backed; an unbacked row is a coverage regression, \
          not a number to adjust here."
@@ -2225,18 +2226,20 @@ fn no_local_evidence_framework_remains() {
         (".agent", 1),
         (".github", 2),
         ("assurance", 3),
-        ("corpus", 25),
+        // Issue #48 adds the 20-file retained tl-syntax future-operator corpus.
+        ("corpus", 45),
         ("examples", 3),
         ("scripts", 5),
         // Issue #42 and the two bounded-Kani reviews are tracked scope. Issue
-        // #47 adds FR-016 and the five-file PLAN-005 bundle.
-        ("spec", 89),
+        // #47 adds FR-016 and the five-file PLAN-005 bundle; issue #48 adds FR-017.
+        ("spec", 90),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
         ("src", 8),
-        // Issue #47 adds tests/future_parity.rs, the W/M parity controls.
-        ("tests", 18),
+        // Issue #47 adds tests/future_parity.rs, the W/M parity controls; issue
+        // #48 adds tests/future_interop.rs, the W/M export and loss controls.
+        ("tests", 19),
     ]
     .into_iter()
     .map(|(area, count)| (area.to_owned(), count))
@@ -2270,14 +2273,15 @@ fn no_local_evidence_framework_remains() {
 
     // Current main plus the two bounded-Kani reviews bring the reviewed
     // population to 160 tracked paths; issue #47 adds FR-016, the PLAN-005
-    // bundle and tests/future_parity.rs for 167.
+    // bundle and tests/future_parity.rs for 167; issue #48 adds the 20-file
+    // future-operator corpus, FR-017 and tests/future_interop.rs for 189.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 167,
-        "the source census population changed from the reviewed 167 tracked files \
+        inspected, 189,
+        "the source census population changed from the reviewed 189 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

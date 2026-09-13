@@ -69,7 +69,7 @@ pub use wire::{
 /// [`TL_SYNTAX_CORPUS_BASIS`], which names the revision whose corpus bytes were
 /// copied into `corpus/tl-syntax-v1`; the compiled pin moved onto tl-syntax
 /// `main` and the retained corpus bytes did not move with it.
-pub const TL_SYNTAX_REVISION: &str = "8dc18eec5af227f484170362c9e8894b8531a27d";
+pub const TL_SYNTAX_REVISION: &str = "5b1c13440e54d5a851df2d33cc88944135574bc6";
 
 /// Exact tl-syntax revision whose shared corpus bytes are retained here.
 ///
