@@ -1,5 +1,5 @@
 ---
-id: Task-002
+id: Task-017
 title: "FR-008/FR-009 — syntax-owned canonical family"
 type: Task
 status: blocked
@@ -13,7 +13,7 @@ resume_conditions: [ix://agent-ix/tl-mltl/issues/38, ix://agent-ix/tl-mltl/issue
 relationships:
   - target: ix://agent-ix/tl-mltl/issues/38
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-001
+  - target: ix://agent-ix/tl-mltl/Task-016
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-008
     type: references
@@ -25,7 +25,7 @@ relationships:
     type: verifies
 ---
 
-# Task-002: FR-008/FR-009 — syntax-owned canonical family
+# Task-017: FR-008/FR-009 — syntax-owned canonical family
 
 ## Scope
 
@@ -48,4 +48,4 @@ canonical graph cases without changing or restamping existing corpus bytes.
 
 - The text notation is internal representation, never a second authored source
   language.
-- Unblocks Tasks 003 through 007.
+- Unblocks Tasks 018 through 022.

@@ -1,5 +1,5 @@
 ---
-id: Task-004
+id: Task-019
 title: "FR-009 — rewrite fixture family"
 type: Task
 status: blocked
@@ -9,13 +9,13 @@ owner_repository: agent-ix/tl-rewrite
 consumer_repositories: [agent-ix/tl-mltl]
 evidence_method: property-and-integration-test
 github_issue: ix://agent-ix/tl-rewrite/issues/37
-resume_conditions: [ix://agent-ix/tl-mltl/issues/38, ix://agent-ix/tl-mltl/Task-001, ix://agent-ix/tl-mltl/Task-002]
+resume_conditions: [ix://agent-ix/tl-mltl/issues/38, ix://agent-ix/tl-mltl/Task-016, ix://agent-ix/tl-mltl/Task-017]
 relationships:
   - target: ix://agent-ix/tl-mltl/issues/38
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-001
+  - target: ix://agent-ix/tl-mltl/Task-016
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-002
+  - target: ix://agent-ix/tl-mltl/Task-017
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-009
     type: references
@@ -25,7 +25,7 @@ relationships:
     type: verifies
 ---
 
-# Task-004: FR-009 — rewrite fixture family
+# Task-019: FR-009 — rewrite fixture family
 
 ## Scope
 

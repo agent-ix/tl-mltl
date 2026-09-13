@@ -1,5 +1,5 @@
 ---
-id: Task-007
+id: Task-022
 title: "FR-009/NFR-004 — manifest lifecycle and reproducible report"
 type: Task
 status: blocked
@@ -9,19 +9,19 @@ owner_repository: agent-ix/tl-mltl
 consumer_repositories: [agent-ix/tl-syntax, agent-ix/tl-parse, agent-ix/tl-rewrite, agent-ix/tl-mltl, agent-ix/quire-contract-ir]
 evidence_method: integration-mutation-and-replay-test
 github_issue: ix://agent-ix/tl-mltl/issues/54
-resume_conditions: [ix://agent-ix/tl-mltl/issues/38, ix://agent-ix/tl-mltl/Task-002, ix://agent-ix/tl-mltl/Task-003, ix://agent-ix/tl-mltl/Task-004, ix://agent-ix/tl-mltl/Task-005, ix://agent-ix/tl-mltl/Task-006]
+resume_conditions: [ix://agent-ix/tl-mltl/issues/38, ix://agent-ix/tl-mltl/Task-017, ix://agent-ix/tl-mltl/Task-018, ix://agent-ix/tl-mltl/Task-019, ix://agent-ix/tl-mltl/Task-020, ix://agent-ix/tl-mltl/Task-021]
 relationships:
   - target: ix://agent-ix/tl-mltl/issues/38
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-002
+  - target: ix://agent-ix/tl-mltl/Task-017
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-003
+  - target: ix://agent-ix/tl-mltl/Task-018
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-004
+  - target: ix://agent-ix/tl-mltl/Task-019
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-005
+  - target: ix://agent-ix/tl-mltl/Task-020
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-006
+  - target: ix://agent-ix/tl-mltl/Task-021
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-009
     type: references
@@ -39,7 +39,7 @@ relationships:
     type: verifies
 ---
 
-# Task-007: FR-009/NFR-004 — manifest lifecycle and reproducible report
+# Task-022: FR-009/NFR-004 — manifest lifecycle and reproducible report
 
 ## Scope
 

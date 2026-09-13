@@ -1,5 +1,5 @@
 ---
-id: Task-005
+id: Task-020
 title: "FR-008/FR-009 — evaluator overlays and independent oracle"
 type: Task
 status: blocked
@@ -9,13 +9,13 @@ owner_repository: agent-ix/tl-mltl
 consumer_repositories: [agent-ix/tl-mltl]
 evidence_method: property-integration-and-mutation-test
 github_issue: ix://agent-ix/tl-mltl/issues/52
-resume_conditions: [ix://agent-ix/tl-mltl/issues/38, ix://agent-ix/tl-mltl/Task-001, ix://agent-ix/tl-mltl/Task-002]
+resume_conditions: [ix://agent-ix/tl-mltl/issues/38, ix://agent-ix/tl-mltl/Task-016, ix://agent-ix/tl-mltl/Task-017]
 relationships:
   - target: ix://agent-ix/tl-mltl/issues/38
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-001
+  - target: ix://agent-ix/tl-mltl/Task-016
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-002
+  - target: ix://agent-ix/tl-mltl/Task-017
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-008
     type: references
@@ -29,7 +29,7 @@ relationships:
     type: verifies
 ---
 
-# Task-005: FR-008/FR-009 — evaluator overlays and independent oracle
+# Task-020: FR-008/FR-009 — evaluator overlays and independent oracle
 
 ## Scope
 
@@ -51,4 +51,4 @@ derived stored outcomes for current future/W/M cells.
 
 - The oracle cannot call or read any production or expected-result path it
   verifies.
-- Unblocks Task-007.
+- Unblocks Task-022.

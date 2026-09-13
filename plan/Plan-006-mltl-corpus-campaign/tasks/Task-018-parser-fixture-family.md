@@ -1,5 +1,5 @@
 ---
-id: Task-003
+id: Task-018
 title: "FR-009 — parser fixture family"
 type: Task
 status: blocked
@@ -9,13 +9,13 @@ owner_repository: agent-ix/tl-parse
 consumer_repositories: [agent-ix/tl-mltl]
 evidence_method: round-trip-property-and-integration-test
 github_issue: ix://agent-ix/tl-parse/issues/33
-resume_conditions: [ix://agent-ix/tl-mltl/issues/38, ix://agent-ix/tl-mltl/Task-001, ix://agent-ix/tl-mltl/Task-002]
+resume_conditions: [ix://agent-ix/tl-mltl/issues/38, ix://agent-ix/tl-mltl/Task-016, ix://agent-ix/tl-mltl/Task-017]
 relationships:
   - target: ix://agent-ix/tl-mltl/issues/38
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-001
+  - target: ix://agent-ix/tl-mltl/Task-016
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-002
+  - target: ix://agent-ix/tl-mltl/Task-017
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-009
     type: references
@@ -25,7 +25,7 @@ relationships:
     type: verifies
 ---
 
-# Task-003: FR-009 — parser fixture family
+# Task-018: FR-009 — parser fixture family
 
 ## Scope
 
