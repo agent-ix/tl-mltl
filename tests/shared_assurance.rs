@@ -1692,25 +1692,25 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 101 is every row Quire mints from `spec/`: 53 acceptance criteria, 40
-    // test-matrix rows and 8 suite-registry rows. Naming the population matters
-    // — "matrix rows" would have been wrong, since the test matrix contributes
-    // 40 of them. Issue #47 added FR-016-AC-1..AC-6 and TC-076..TC-080. This assertion deliberately tracks the current specification,
-    // rather than preserving an obsolete population after a shared requirement
-    // expansion.
+    // 93 is every row Quire counts from `spec/`: 53 acceptance criteria and 40
+    // test-matrix rows. Naming the population matters — "matrix rows" would
+    // have been wrong, since acceptance criteria contribute 53 of them. Issue
+    // #47 added FR-016-AC-1..AC-6 and TC-076..TC-080. Re-pinned from 90/88: the
+    // suite registry (spec/evidence/suites.md) is no longer counted, because
+    // spec-artifacts-process 737987b (quire-rs#363) declares evidence
+    // registries `evidence: reference-only`, so its 8 SUITE rows — including
+    // the two rows unbacked on purpose, SUITE-001 and SUITE-002 — left the
+    // coverage population. Every counted row must be backed.
     assert_eq!(
-        totals["total"], 101,
+        totals["total"], 93,
         "the declared-row population changed: {totals}. It is 53 acceptance \
-         criteria + 40 test-matrix rows + 8 suite-registry rows."
+         criteria + 40 test-matrix rows; suite-registry rows are reference-only."
     );
     assert_eq!(
-        totals["backed"], 99,
-        "backed-row count changed: {totals}. Exactly two rows are unbacked on \
-         purpose — SUITE-001 (`make ci`, the composite that contains every other \
-         suite) and SUITE-002 (the `quire validate` half of `make spec`, which \
-         writes no structured result) — and spec/evidence/suites.md says why. If \
-         that number moved, update the registry deliberately rather than \
-         adjusting this assertion."
+        totals["backed"], 93,
+        "backed-row count changed: {totals}. Every counted acceptance criterion \
+         and test-matrix row is backed; an unbacked row is a coverage regression, \
+         not a number to adjust here."
     );
     assert!(
         parsed["status_lies"].as_array().unwrap().is_empty(),
