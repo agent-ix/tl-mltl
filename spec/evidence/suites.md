@@ -24,6 +24,11 @@ type: SuiteRegistry
 Six of the eight rows are bound by a test that invokes that suite's own command.
 `SUITE-001` and `SUITE-002` are deliberately unbacked.
 
+Suite rows are reference-only evidence: since spec-artifacts-process 737987b
+(`quire-rs#363`) Quire does not count them in coverage totals. The bindings are
+instead asserted directly by `the_sealed_records_impact_snapshot_is_the_quire_export`
+in `tests/shared_assurance.rs`.
+
 `SUITE-007`, the legacy evidence compatibility view, is gone rather than
 unbacked: the repository owner released the preservation constraint for the
 pre-stable phase on 2026-09-02 (`agent-ix/engineering-assurance#7`) and the

@@ -50,13 +50,44 @@ unchanged. A v1 fixture record contains at least:
 - source repository/revision/path, contribution provenance, SPDX license,
   generator/tool/configuration identities, and stated limitations.
 
-Manifest and artifact paths are normalized repository-relative UTF-8 paths.
-Absolute paths, empty components, `.` or `..` components, duplicate normalized
-paths, symlinks, non-regular files, untracked files, and resolution outside the
-declared corpus root refuse before bytes are parsed. The manifest declares
-bounded case count, artifact count, path/string length, file size, aggregate
-bytes, and nesting depth; values above the implementation hard caps refuse
-before allocation or hashing. Digests are verified before semantic decode.
+Manifest and artifact paths are validated repository-relative UTF-8 paths
+whose separator is `/`; `\` is rejected on every host rather than interpreted
+differently by platform. Unicode path bytes are compared exactly without case
+folding or normalization. A valid path contains only nonempty normal
+components. Absolute paths, empty components, `.` or `..` components,
+duplicate byte-identical paths, symlinks, non-regular files, untracked files,
+and resolution outside the declared corpus root refuse before bytes are parsed.
+Digests are verified before semantic decode.
+
+The closed resource profile `tl-mltl.corpus-limits/v1` uses unsigned wire
+integers and the following inclusive maxima:
+
+| Resource | Maximum |
+|---|---:|
+| coverage cells | 65,536 |
+| fixture cases | 16,384 |
+| artifact references | 65,536 |
+| one path | 1,024 UTF-8 bytes |
+| one manifest string | 65,536 UTF-8 bytes |
+| one artifact | 16,777,216 bytes |
+| aggregate artifact bytes | 536,870,912 bytes |
+| decoded JSON nesting | 128 levels |
+
+Counts and byte totals are preflighted with checked `u64` arithmetic before
+allocation, path resolution, hashing, or decode; conversion to `usize` is
+checked. The manifest may declare tighter limits but cannot widen this profile.
+An unknown limit profile, an omitted limit, or a value above either the
+declared or profile maximum is a typed resource refusal naming the dimension.
+
+Artifact, input, expected-record, retained-output, and vendored-artifact hashes
+cover their exact retained bytes. A family manifest does not contain its own
+digest: its `manifestSha256` is computed over the exact UTF-8 manifest bytes and
+is carried by the consuming campaign manifest and consumer pin. The campaign
+`corpusSha256` is lowercase hexadecimal SHA-256 over domain
+`tl-mltl.corpus-manifest-set/v1`, one zero byte, and the no-whitespace JSON array
+of `[familyId,manifestSha256]` pairs sorted by the UTF-8 bytes of `familyId`.
+The campaign manifest's own byte digest is carried externally by the source
+revision and consumer pin, avoiding a self-referential hash field.
 
 Fixture-family ownership is singular:
 
@@ -99,7 +130,7 @@ store, approval mechanism, or retention runtime.
 | FR-009-AC-3 | Changing any canonical byte, meaning, expected outcome, identity, owner, oracle, license, or provenance requires a successor identity; removal leaves a tombstone and cannot silently shrink the denominator. | Test (TC-045, TC-047) |
 | FR-009-AC-4 | Generated campaign inputs remain outside the canonical population and can be promoted only with a minimal reproducer, independent oracle, complete provenance, owning cell/requirement, review, and new manifest digest. | Test (TC-045) |
 | FR-009-AC-5 | Existing shared and R2U2 corpus bytes, identities, claims, and digest checks remain unchanged, and the new manifest lane introduces no local generic retention/evidence framework. | Test (TC-045, TC-048) |
-| FR-009-AC-6 | Fixture loading rejects every absolute, escaping, ambiguous, symlinked, non-regular, untracked, non-UTF-8, duplicate, over-count, over-length, over-size, over-depth, or digest-mismatched artifact before semantic decode. | Test (TC-044, TC-045) |
+| FR-009-AC-6 | Fixture loading enforces `tl-mltl.corpus-limits/v1` with checked `u64` arithmetic/conversions and rejects every absolute, escaping, backslash-bearing, ambiguous, symlinked, non-regular, untracked, non-UTF-8, duplicate, over-count, over-length, over-size, over-depth, unknown-limit, or digest-mismatched artifact at the specified preflight stage. | Test (TC-044, TC-045) |
 
 ## Dependencies
 

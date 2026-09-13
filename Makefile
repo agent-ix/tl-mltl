@@ -65,6 +65,7 @@ help:
 	@echo "  make fmt-check        - Verify formatting (CI gate)"
 	@echo "  make lint             - Clippy with -D warnings"
 	@echo "  make test             - cargo test plus the shared-assurance tests"
+	@echo "  make kani-check       - Verify the bounded Kani horizon proof"
 	@echo "  make check-corpus     - Verify shared and R2U2 corpus bytes"
 	@echo "  make conformance      - Replay the shared corpus through the evaluator"
 	@echo "  make differential     - Replay the retained R2U2 exchange"
@@ -100,6 +101,14 @@ fmt-check:
 lint:
 	$(CARGO) clippy --all-targets --all-features -- -D warnings
 
+# The proof is verifier-only and does not run in `cargo test`; keep its exact
+# harness name in a local CI gate so a renamed private primitive cannot rot it.
+.PHONY: kani-check
+kani-check:
+	$(CARGO) kani --lib \
+		--harness horizon::kani_proofs::horizon_bound_addition_matches_checked_add \
+		--exact --unwind 4 --output-format terse
+
 # The traced tests invoke the assurance gates, so the producers must already have
 # run. They are a prerequisite rather than something a test creates for itself: a
 # test that can produce its own inputs can produce a green run out of nothing.
@@ -114,6 +123,7 @@ test: assurance-inputs
 .PHONY: check-corpus
 check-corpus:
 	sha256sum --check corpus/tl-syntax-v1.sha256
+	sha256sum --check corpus/future-operators/SHA256SUMS
 	cd corpus/r2u2-v4.2 && sha256sum --check SHA256SUMS
 
 .PHONY: conformance
@@ -242,5 +252,5 @@ assurance-record: assurance-inputs
 # =============================================================================
 
 .PHONY: ci
-ci: fmt-check lint test check-corpus conformance differential cli-conformance \
+ci: fmt-check lint kani-check test check-corpus conformance differential cli-conformance \
 	test-census deny audit-unsafe spec msrv rustdoc assurance

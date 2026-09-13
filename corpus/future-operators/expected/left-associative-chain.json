@@ -1,0 +1,16 @@
+{
+  "schema_version": "tl-syntax.formula/v1",
+  "semantic_profile": "mltl.closed-trace/v1",
+  "root": 8,
+  "nodes": [
+    { "kind": "proposition", "proposition": 0 },
+    { "kind": "proposition", "proposition": 1 },
+    { "kind": "until", "interval": { "start": 0, "end": 1 }, "left": 0, "right": 1 },
+    { "kind": "globally", "interval": { "start": 0, "end": 1 }, "operand": 0 },
+    { "kind": "or", "left": 2, "right": 3 },
+    { "kind": "proposition", "proposition": 2 },
+    { "kind": "release", "interval": { "start": 2, "end": 3 }, "left": 4, "right": 5 },
+    { "kind": "future", "interval": { "start": 2, "end": 3 }, "operand": 4 },
+    { "kind": "and", "left": 6, "right": 7 }
+  ]
+}
