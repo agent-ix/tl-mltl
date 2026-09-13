@@ -6,8 +6,8 @@ shared temporal corpus from `agent-ix/tl-syntax` revision
 `SHA256SUMS` remains authoritative and is verified by `make check-corpus`.
 
 The copy is not restamped when the compiled `tl-syntax` dependency advances.
-The crate is built against `5b1c13440e54d5a851df2d33cc88944135574bc6` on
-`tl-syntax` main after the reviewed W/M future-operator corpus was squash-merged; these
+The crate is built against `e70f2379a752117c79603bc399a86c26feed7716` on
+`tl-syntax` main after the formula-v2 origin-history profile was merged; these
 bytes were taken at `740182f13b84858008d6f176f75136737d405c1b`
 and the formula fixtures are identical between the two revisions. The compiled
 revision and the corpus basis are two separate declared facts, cross-checked by
@@ -15,7 +15,9 @@ revision and the corpus basis are two separate declared facts, cross-checked by
 collapsed into one string.
 
 `future-operators/` is a byte-identical copy of `corpus/future-operators` at
-the compiled revision `5b1c13440e54d5a851df2d33cc88944135574bc6`. Its upstream
+revision `5b1c13440e54d5a851df2d33cc88944135574bc6`, recorded separately as
+`TL_SYNTAX_FUTURE_CORPUS_BASIS`; it is not restamped to the newer compiled
+revision. Its upstream
 `SHA256SUMS` names repository-root paths and is verified unchanged from the
 repository root by `make check-corpus`. Its manifest records the tl-parse
 revision it was cross-checked against; tl-mltl neither depends on nor re-runs

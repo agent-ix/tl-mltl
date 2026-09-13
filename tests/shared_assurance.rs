@@ -1103,6 +1103,30 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         "collapsing the compiled revision and the corpus basis was not detected: {problems:?}"
     );
 
+    let (code, stdout, stderr) = run(
+        &python,
+        &[
+            "-c",
+            "import json,sys;sys.path.insert(0,'scripts');\
+             import check_shared_pins as m;\
+             pins=json.load(open('assurance/pins.json'));\
+             pins['upstream_dependency']['future_corpus_basis']=\
+             pins['upstream_dependency']['compiled_revision'];\
+             print(json.dumps(m.upstream_pin_mismatches(pins)))",
+        ],
+    );
+    assert_eq!(
+        code, 0,
+        "the collapsed future-corpus probe failed: {stderr}"
+    );
+    let problems: Vec<String> = serde_json::from_str(stdout.trim()).unwrap();
+    assert!(
+        problems
+            .iter()
+            .any(|item| item.contains("three separate provenance facts")),
+        "collapsing the compiled and future-corpus revisions was not detected: {problems:?}"
+    );
+
     // The current-facing prose is part of the dependency identity, not merely
     // an author-maintained explanation. Each stale compiled-pin spelling is
     // independently refused by the same guard that checks Cargo and the wire
@@ -1129,10 +1153,10 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         let stale = fs::read_to_string(&candidate)
             .unwrap()
             .replace(
+                "e70f2379a752117c79603bc399a86c26feed7716",
                 "5b1c13440e54d5a851df2d33cc88944135574bc6",
-                "8dc18eec5af227f484170362c9e8894b8531a27d",
             )
-            .replace("5b1c1344", "8dc18eec");
+            .replace("e70f2379", "5b1c1344");
         fs::write(&candidate, stale).unwrap();
         let (code, stdout, stderr) = run(
             &python,

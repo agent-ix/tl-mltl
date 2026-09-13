@@ -32,6 +32,7 @@ mod differential;
 mod evaluate;
 mod horizon;
 mod mapping;
+mod past;
 mod wire;
 
 pub(crate) const MAX_RECURSION_DEPTH: u32 = 512;
@@ -58,6 +59,17 @@ pub use mapping::{
     ContextualMappingSchemaVersion, MappingError, MappingManifest, MappingSourceIdentity,
     MappingSourceState,
 };
+pub use past::{
+    analyze_required_history, evaluate_past, fixed_sample_instant, ClockBinding, ClockError,
+    ClockSample, ExactNumber, ExactNumberError, HistoryError, HistoryRequirementError,
+    HistoryRequirementReport, HistoryRequirementSchemaVersion, HistoryRequirementValidationError,
+    OwnerHistoryState, PastEvaluationError, PastEvaluationLimits, PastEvaluationRelationInput,
+    PastEvaluationReport, PastEvaluationSchemaVersion, PastEvaluationStats, PastEvaluatorIdentity,
+    PastResultFinality, PastResultReference, PastResultRelation, PastResultRelationKind,
+    PastResultValidationError, PositionHistoryDocument, PositionHistoryReference,
+    PositionHistorySchemaVersion, PositionHistorySource, PositionObservation, UnsupportedClockKind,
+    HISTORY_REQUIREMENT_V1, PAST_EVALUATION_V1, PAST_EVALUATOR_V1, POSITION_HISTORY_V1,
+};
 pub use wire::{
     CommandDocument, CommandSchemaVersion, Operation, TraceDocument, TraceSchemaVersion,
 };
@@ -69,7 +81,7 @@ pub use wire::{
 /// [`TL_SYNTAX_CORPUS_BASIS`], which names the revision whose corpus bytes were
 /// copied into `corpus/tl-syntax-v1`; the compiled pin moved onto tl-syntax
 /// `main` and the retained corpus bytes did not move with it.
-pub const TL_SYNTAX_REVISION: &str = "5b1c13440e54d5a851df2d33cc88944135574bc6";
+pub const TL_SYNTAX_REVISION: &str = "e70f2379a752117c79603bc399a86c26feed7716";
 
 /// Exact tl-syntax revision whose shared corpus bytes are retained here.
 ///
@@ -78,6 +90,12 @@ pub const TL_SYNTAX_REVISION: &str = "5b1c13440e54d5a851df2d33cc88944135574bc6";
 /// compiled dependency advances: the retained bytes are what they are, and
 /// restating the newer revision would claim a copy nobody made.
 pub const TL_SYNTAX_CORPUS_BASIS: &str = "740182f13b84858008d6f176f75136737d405c1b";
+
+/// Exact tl-syntax revision whose future-operator corpus is retained here.
+///
+/// This third provenance fact names the source of the retained derived-future
+/// fixtures. Their bytes stay pinned when [`TL_SYNTAX_REVISION`] advances.
+pub const TL_SYNTAX_FUTURE_CORPUS_BASIS: &str = "5b1c13440e54d5a851df2d33cc88944135574bc6";
 
 /// Shared temporal corpus identity consumed by this crate.
 pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";

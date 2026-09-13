@@ -1,7 +1,9 @@
 use core::fmt;
 
 use serde::{Deserialize, Serialize};
-use tl_syntax::{Formula, NodeId, NodeKind, RequirementContextDocument, SignalCatalogDocument};
+use tl_syntax::{
+    Formula, NodeId, NodeKind, RequirementContextDocument, SemanticProfile, SignalCatalogDocument,
+};
 
 use crate::{
     context::{
@@ -136,6 +138,11 @@ impl std::error::Error for ContextualHorizonError {}
 /// Checked horizon-analysis failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum HorizonError {
+    /// Future-horizon analysis was invoked for another semantic profile.
+    UnsupportedProfile {
+        /// Actual profile.
+        actual: &'static str,
+    },
     /// A nested temporal bound exceeded `u64`.
     ArithmeticOverflow {
         /// Node at which the calculation failed.
@@ -146,11 +153,20 @@ pub enum HorizonError {
         /// Referenced node.
         node: NodeId,
     },
+    /// Future-horizon analysis was given a past-time operator.
+    UnsupportedPastNode {
+        /// Rejected node.
+        node: NodeId,
+    },
 }
 
 impl fmt::Display for HorizonError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::UnsupportedProfile { actual } => write!(
+                formatter,
+                "future-horizon analysis does not support semantic profile {actual}"
+            ),
             Self::ArithmeticOverflow { node } => {
                 write!(formatter, "horizon arithmetic overflow at node {}", node.0)
             }
@@ -161,6 +177,11 @@ impl fmt::Display for HorizonError {
                     node.0
                 )
             }
+            Self::UnsupportedPastNode { node } => write!(
+                formatter,
+                "future-horizon analysis does not support the past-time operator at node {}",
+                node.0
+            ),
         }
     }
 }
@@ -232,6 +253,13 @@ pub(crate) fn lookahead(formula: Formula<'_>) -> Result<u64, HorizonError> {
                 interval.end(),
                 prior(&values, left)?.max(prior(&values, right)?),
             )?,
+            NodeKind::Once { .. }
+            | NodeKind::Historically { .. }
+            | NodeKind::StrongPrevious { .. }
+            | NodeKind::Since { .. }
+            | NodeKind::Triggered { .. } => {
+                return Err(HorizonError::UnsupportedPastNode { node: node_id });
+            }
         };
         values.push(value);
     }
@@ -246,6 +274,14 @@ pub fn analyze_horizon(
     formula: Formula<'_>,
     formula_id: impl Into<String>,
 ) -> Result<HorizonReport, HorizonError> {
+    if !matches!(
+        formula.profile(),
+        SemanticProfile::ClosedTraceV1 | SemanticProfile::OnlinePrefixV1
+    ) {
+        return Err(HorizonError::UnsupportedProfile {
+            actual: formula.profile().as_str(),
+        });
+    }
     let lookahead = lookahead(formula)?;
     let required_buffer = lookahead
         .checked_add(1)

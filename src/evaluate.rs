@@ -254,6 +254,8 @@ pub enum EvaluationError {
     Horizon(HorizonError),
     /// A validated formula exposed an impossible node reference.
     InvalidNodeReference(NodeId),
+    /// The future-profile evaluator was given a past-time operator.
+    UnsupportedPastNode(NodeId),
 }
 
 impl fmt::Display for EvaluationError {
@@ -296,6 +298,11 @@ impl fmt::Display for EvaluationError {
                     node.0
                 )
             }
+            Self::UnsupportedPastNode(node) => write!(
+                formatter,
+                "future-profile evaluation does not support the past-time operator at node {}",
+                node.0
+            ),
         }
     }
 }
@@ -450,6 +457,11 @@ impl Evaluator<'_, '_> {
                     child_depth,
                 )?
                 .not()),
+            NodeKind::Once { .. }
+            | NodeKind::Historically { .. }
+            | NodeKind::StrongPrevious { .. }
+            | NodeKind::Since { .. }
+            | NodeKind::Triggered { .. } => Err(EvaluationError::UnsupportedPastNode(node)),
         }
     }
 

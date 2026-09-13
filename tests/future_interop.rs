@@ -12,7 +12,8 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use tl_mltl::{
     map_to_c2po, map_to_c2po_with_context, ContextualMappingManifest, MappingError,
-    MappingManifest, MappingSourceIdentity, MappingSourceState, TL_SYNTAX_REVISION,
+    MappingManifest, MappingSourceIdentity, MappingSourceState, TL_SYNTAX_FUTURE_CORPUS_BASIS,
+    TL_SYNTAX_REVISION,
 };
 use tl_syntax::{
     Formula, FormulaDocument, FutureLoweringRefusal, FutureLoweringRequest, Node, NodeId,
@@ -20,7 +21,7 @@ use tl_syntax::{
     SignalCatalogDocument, SignalDomain, SignalId, FUTURE_LOWERING_REQUEST_V1,
 };
 
-/// Retained corpus directory, a byte-identical copy at [`TL_SYNTAX_REVISION`].
+/// Retained corpus directory, a byte-identical copy at [`TL_SYNTAX_FUTURE_CORPUS_BASIS`].
 const CORPUS: &str = "corpus/future-operators";
 /// SHA-256 of the retained `manifest.json`, which in turn pins every case file.
 const CORPUS_MANIFEST_SHA256: &str =
@@ -379,10 +380,10 @@ fn foreign_parser_and_monitor_acceptance_is_never_qualification_evidence() {
         !lock.contains("name = \"tl-parse\""),
         "tl-parse became a transitive dependency"
     );
-    // The corpus is consumed from the compiled tl-syntax revision.
+    // The retained bytes keep their own historical basis after the dependency advances.
     let corpus_readme = String::from_utf8(read("corpus/README.md")).unwrap();
     let pinned_sentence = format!(
-        "`future-operators/` is a byte-identical copy of `corpus/future-operators` at\nthe compiled revision `{TL_SYNTAX_REVISION}`"
+        "`future-operators/` is a byte-identical copy of `corpus/future-operators` at\nrevision `{TL_SYNTAX_FUTURE_CORPUS_BASIS}`"
     );
     assert!(
         corpus_readme.contains(&pinned_sentence),

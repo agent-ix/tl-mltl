@@ -182,6 +182,8 @@ pub enum MappingError {
     },
     /// A validated formula exposed an impossible node reference.
     InvalidNodeReference(NodeId),
+    /// The future-profile mapping adapter was given a past-time operator.
+    UnsupportedPastNode(NodeId),
     /// Formula expansion exceeded the configured node budget.
     WorkLimitExceeded {
         /// Configured node budget.
@@ -219,6 +221,11 @@ impl fmt::Display for MappingError {
                     node.0
                 )
             }
+            Self::UnsupportedPastNode(node) => write!(
+                formatter,
+                "R2U2/C2PO mapping does not support the past-time operator at node {}",
+                node.0
+            ),
             Self::WorkLimitExceeded { limit } => {
                 write!(formatter, "mapping exceeded work limit {limit}")
             }
@@ -313,6 +320,11 @@ impl Renderer<'_, '_> {
                 right,
                 child_depth,
             ),
+            NodeKind::Once { .. }
+            | NodeKind::Historically { .. }
+            | NodeKind::StrongPrevious { .. }
+            | NodeKind::Since { .. }
+            | NodeKind::Triggered { .. } => Err(MappingError::UnsupportedPastNode(node)),
         }
     }
 

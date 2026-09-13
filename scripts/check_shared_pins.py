@@ -140,7 +140,7 @@ def mirror_references(pins: dict[str, Any]) -> list[str]:
 def upstream_pin_mismatches(pins: dict[str, Any]) -> list[str]:
     """Check the tl-syntax pins this repository actually depends on.
 
-    Two different revisions, and conflating them is the mistake this guards.
+    Three different revisions, and conflating them is the mistake this guards.
 
     The COMPILED revision is what Cargo resolves and what the C2PO mapping
     manifest reports as `syntaxRevision`. Every current-facing record that
@@ -157,6 +157,7 @@ def upstream_pin_mismatches(pins: dict[str, Any]) -> list[str]:
     """
     compiled = pins["upstream_dependency"]["compiled_revision"]
     corpus = pins["upstream_dependency"]["corpus_basis"]
+    future_corpus = pins["upstream_dependency"]["future_corpus_basis"]
     problems: list[str] = []
     checks = {
         "Cargo.toml": f'rev = "{compiled}"',
@@ -166,12 +167,14 @@ def upstream_pin_mismatches(pins: dict[str, Any]) -> list[str]:
         # confusion this function exists to prevent. An adversarial review found
         # only the compiled revision being checked here.
         "src/lib.rs ": f'TL_SYNTAX_CORPUS_BASIS: &str = "{corpus}"',
+        "src/lib.rs  ": f'TL_SYNTAX_FUTURE_CORPUS_BASIS: &str = "{future_corpus}"',
         "README.md": f"`{compiled}`",
         "corpus/README.md": f"`{compiled}`",
         # One file records both facts: the compiled dependency is current, while
         # the retained corpus remains an older, independently verified copy.
         # Keep both needles so neither fact can silently overwrite the other.
         "corpus/README.md ": f"`{corpus}`",
+        "corpus/README.md  ": f"`{future_corpus}`",
         "assurance/change-assurance.json": f"The compiled dependency moved to {compiled[:8]}",
     }
     for name, needle in checks.items():
@@ -191,6 +194,11 @@ def upstream_pin_mismatches(pins: dict[str, Any]) -> list[str]:
         problems.append(
             "the compiled revision and the corpus basis are the same string; they are "
             "two separate facts and collapsing them hides which one moved"
+        )
+    if compiled == future_corpus or corpus == future_corpus:
+        problems.append(
+            "compiled, shared-corpus, and future-corpus revisions must remain three "
+            "separate provenance facts"
         )
     return problems
 
