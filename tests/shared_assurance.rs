@@ -1129,10 +1129,10 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         let stale = fs::read_to_string(&candidate)
             .unwrap()
             .replace(
+                "8dc18eec5af227f484170362c9e8894b8531a27d",
                 "26b801d4a68ebfe720062cfdb3c66b070ab60e92",
-                "1b3c4026ff9567491e87a19fdf2793d3b2e76160",
             )
-            .replace("26b801d4", "1b3c4026");
+            .replace("8dc18eec", "26b801d4");
         fs::write(&candidate, stale).unwrap();
         let (code, stdout, stderr) = run(
             &python,
@@ -1673,8 +1673,8 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     let parsed: Value = serde_json::from_slice(&bytes).expect("the Quire export is JSON");
     let text = String::from_utf8_lossy(&bytes);
     for requirement in [
-        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "NFR-001", "NFR-002",
-        "NFR-003", "StR-001", "StR-002", "StR-003",
+        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "FR-016", "NFR-001",
+        "NFR-002", "NFR-003", "StR-001", "StR-002", "StR-003",
     ] {
         assert!(
             text.contains(requirement),
@@ -1692,25 +1692,69 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 90 is every row Quire mints from `spec/`: 47 acceptance criteria, 35
-    // test-matrix rows and 8 suite-registry rows. Naming the population matters
-    // — "matrix rows" would have been wrong, since the test matrix contributes
-    // 35 of them. This assertion deliberately tracks the current specification,
-    // rather than preserving an obsolete population after a shared requirement
-    // expansion.
+    // 93 is every row Quire counts from `spec/`: 53 acceptance criteria and 40
+    // test-matrix rows. Naming the population matters — "matrix rows" would
+    // have been wrong, since acceptance criteria contribute 53 of them. Issue
+    // #47 added FR-016-AC-1..AC-6 and TC-076..TC-080. Re-pinned from 90/88: the
+    // suite registry (spec/evidence/suites.md) is no longer counted, because
+    // spec-artifacts-process 737987b (quire-rs#363) declares evidence
+    // registries `evidence: reference-only`, so its 8 SUITE rows — including
+    // the two rows unbacked on purpose, SUITE-001 and SUITE-002 — left the
+    // coverage population. Every counted row must be backed.
     assert_eq!(
-        totals["total"], 90,
-        "the declared-row population changed: {totals}. It is 47 acceptance \
-         criteria + 35 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 93,
+        "the declared-row population changed: {totals}. It is 53 acceptance \
+         criteria + 40 test-matrix rows; suite-registry rows are reference-only."
     );
     assert_eq!(
-        totals["backed"], 88,
-        "backed-row count changed: {totals}. Exactly two rows are unbacked on \
-         purpose — SUITE-001 (`make ci`, the composite that contains every other \
-         suite) and SUITE-002 (the `quire validate` half of `make spec`, which \
-         writes no structured result) — and spec/evidence/suites.md says why. If \
-         that number moved, update the registry deliberately rather than \
-         adjusting this assertion."
+        totals["backed"], 93,
+        "backed-row count changed: {totals}. Every counted acceptance criterion \
+         and test-matrix row is backed; an unbacked row is a coverage regression, \
+         not a number to adjust here."
+    );
+    // With suite rows out of the coverage totals, the totals no longer notice a
+    // suite binding disappearing, so the registry's own claim is checked
+    // directly: every suite except SUITE-001 and SUITE-002 is named on a
+    // compiled test's trace line, and those two are named on none.
+    let registry = fs::read_to_string(root().join("spec/evidence/suites.md"))
+        .expect("read the suite registry");
+    let registered: BTreeSet<&str> = registry
+        .lines()
+        .filter_map(|line| line.strip_prefix("| SUITE-"))
+        .filter_map(|rest| rest.split_whitespace().next())
+        .collect();
+    let mut bound = BTreeSet::new();
+    for entry in fs::read_dir(root().join("tests")).expect("list tests") {
+        let path = entry.expect("tests entry").path();
+        if path.extension().and_then(|extension| extension.to_str()) != Some("rs") {
+            continue;
+        }
+        let source = fs::read_to_string(&path).expect("read test source");
+        for trace in source
+            .lines()
+            .filter_map(|line| line.trim().strip_prefix("// Trace:"))
+        {
+            for id in trace.split(',').map(str::trim) {
+                if let Some(suite) = id.strip_prefix("SUITE-") {
+                    bound.insert(suite.to_owned());
+                }
+            }
+        }
+    }
+    let expected_bound: BTreeSet<String> = registered
+        .iter()
+        .filter(|suite| !matches!(**suite, "001" | "002"))
+        .map(|suite| (*suite).to_owned())
+        .collect();
+    assert_eq!(
+        registered.len(),
+        8,
+        "the suite registry population changed: {registered:?}"
+    );
+    assert_eq!(
+        bound, expected_bound,
+        "suite bindings disagree with spec/evidence/suites.md: six rows are bound \
+         by a test running that suite's command and SUITE-001/SUITE-002 by none"
     );
     assert!(
         parsed["status_lies"].as_array().unwrap().is_empty(),
@@ -2184,13 +2228,15 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        // Issue #42 and the two bounded-Kani reviews are tracked scope.
-        ("spec", 83),
+        // Issue #42 and the two bounded-Kani reviews are tracked scope. Issue
+        // #47 adds FR-016 and the five-file PLAN-005 bundle.
+        ("spec", 89),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
         ("src", 8),
-        ("tests", 17),
+        // Issue #47 adds tests/future_parity.rs, the W/M parity controls.
+        ("tests", 18),
     ]
     .into_iter()
     .map(|(area, count)| (area.to_owned(), count))
@@ -2223,14 +2269,15 @@ fn no_local_evidence_framework_remains() {
     );
 
     // Current main plus the two bounded-Kani reviews bring the reviewed
-    // population to 160 tracked paths.
+    // population to 160 tracked paths; issue #47 adds FR-016, the PLAN-005
+    // bundle and tests/future_parity.rs for 167.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 160,
-        "the source census population changed from the reviewed 160 tracked files \
+        inspected, 167,
+        "the source census population changed from the reviewed 167 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

@@ -11,8 +11,8 @@ make spec
 ```
 
 The library consumes validated `tl-syntax` formulas pinned to exact revision
-`26b801d4a68ebfe720062cfdb3c66b070ab60e92` on tl-syntax `main` after the reviewed
-semantic change was squash-merged. The
+`8dc18eec5af227f484170362c9e8894b8531a27d` on tl-syntax `main` after the reviewed
+W/M future-lowering change was squash-merged. The
 retained shared temporal corpus under `corpus/tl-syntax-v1` is a byte-identical
 copy taken at the earlier revision `740182f13b84858008d6f176f75136737d405c1b`
 and is deliberately not restamped; `TL_SYNTAX_REVISION` and

@@ -143,7 +143,7 @@
         },
         {
           "id": "PRESERVE-corpus-basis",
-          "statement": "corpus/tl-syntax-v1 stays a byte-identical copy of the shared temporal corpus at tl-syntax 740182f1, verified by its own SHA256SUMS. The compiled dependency moved to 26b801d4 on tl-syntax main after the reviewed semantic change was squash-merged; the retained corpus bytes did not move with it, and the two revisions are separate declared facts.",
+          "statement": "corpus/tl-syntax-v1 stays a byte-identical copy of the shared temporal corpus at tl-syntax 740182f1, verified by its own SHA256SUMS. The compiled dependency moved to 8dc18eec on tl-syntax main after the reviewed W/M future-lowering change was squash-merged; the retained corpus bytes did not move with it, and the two revisions are separate declared facts.",
           "source_ids": ["NFR-002", "shared-corpus-manifest"]
         },
         {
