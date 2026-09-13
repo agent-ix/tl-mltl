@@ -20,7 +20,7 @@ current baseline.
 |---|---|---|---|
 | FND-5701 | high | W/M prerequisites were recorded as unresolved even though all five repository lanes had landed. Fixed by pinning the exact merges and removing W/M from the blocked family. | MRS-002, FR-008 Dependencies |
 | FND-5702 | high | Prose implementation stages did not supply task-level predecessor edges or an inspectable TC-048 input. Fixed by the PLAN-006 DAG and GitHub issues #51–#55/#44/#33/#37. | PLAN-006, TC-048 |
-| FND-5703 | medium | Native correspondence could become an accidental critical-path dependency for the current corpus. Fixed as Task-008, a blocked successor lane depending on #63/#64 and Task-001 but not gating Task-007. | Task-008, MRS-002 |
+| FND-5703 | medium | Native correspondence could become an accidental critical-path dependency for the current corpus. Fixed as Task-023, a blocked successor lane depending on #63/#64 and Task-016 but not gating Task-022. | Task-023, MRS-002 |
 | FND-5704 | low | No dependency cycle remains: schema precedes owner families; the syntax owner family precedes consumers; current families and dispositions precede the integrated report. | PLAN-006 |
 
 ## Classification
@@ -34,5 +34,5 @@ current baseline.
 
 ## Topological order
 
-`#38 acceptance -> Task-001 -> Task-002 -> (Task-003 || Task-004 || Task-005 || Task-006) -> Task-007`.
-Task-008 proceeds separately after `Task-001 + quire-contract-ir#63 + #64`.
+`#38 acceptance -> Task-016 -> Task-017 -> (Task-018 || Task-019 || Task-020 || Task-021) -> Task-022`.
+Task-023 proceeds separately after `Task-016 + quire-contract-ir#63 + #64`.

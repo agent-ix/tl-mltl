@@ -2233,7 +2233,7 @@ fn no_local_evidence_framework_remains() {
         // 113 spec-area paths. Issue #39 adds 30 M5 requirements, measurements,
         // matrix, plan, campaign, and author-review artifacts; independent M5
         // review adds SR-062 through SR-069.
-        ("spec", 151),
+        ("spec", 155),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -2274,14 +2274,15 @@ fn no_local_evidence_framework_remains() {
 
     // Current main, the retained future/W-M corpus, M4 specifications and both
     // M4 review sets, PLAN-006, the 30 M5 authoring paths, and SR-062 through
-    // SR-069 bring the reviewed population to 261 tracked paths.
+    // SR-069 bring the reviewed population to 261 tracked paths. M4/M5
+    // exact-head code and gap reviews add four more, for 265.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 261,
-        "the source census population changed from the reviewed 261 tracked files \
+        inspected, 265,
+        "the source census population changed from the reviewed 265 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
