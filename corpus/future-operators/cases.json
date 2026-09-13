@@ -1,0 +1,1161 @@
+{
+  "corpus": "tl-syntax.future-operator-corpus/v1",
+  "cases": [
+    {
+      "class": "derived",
+      "id": "weak-until-closed-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 W[1,2] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-closed.json",
+      "expected_lowerings": [
+        { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "weak-until-closed-direct",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "until", "interval": { "start": 1, "end": 2 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "globally", "interval": { "start": 1, "end": 2 }, "operand": 0 } },
+        { "append": { "kind": "or", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-closed.json"
+    },
+    {
+      "class": "derived",
+      "id": "weak-until-online-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 W[1,2] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-online.json",
+      "expected_lowerings": [
+        { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "weak-until-online-direct",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "until", "interval": { "start": 1, "end": 2 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "globally", "interval": { "start": 1, "end": 2 }, "operand": 0 } },
+        { "append": { "kind": "or", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-online.json"
+    },
+    {
+      "class": "derived",
+      "id": "strong-release-closed-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 M[0,3] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 0, "end": 3 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-closed.json",
+      "expected_lowerings": [
+        { "kind": "M", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "strong-release-closed-direct",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "release", "interval": { "start": 0, "end": 3 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "future", "interval": { "start": 0, "end": 3 }, "operand": 0 } },
+        { "append": { "kind": "and", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-closed.json"
+    },
+    {
+      "class": "derived",
+      "id": "strong-release-online-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 M[0,3] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 0, "end": 3 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-online.json",
+      "expected_lowerings": [
+        { "kind": "M", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "strong-release-online-direct",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "release", "interval": { "start": 0, "end": 3 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "future", "interval": { "start": 0, "end": 3 }, "operand": 0 } },
+        { "append": { "kind": "and", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-online.json"
+    },
+    {
+      "class": "derived",
+      "id": "weak-until-zero-singleton-closed-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 W[0,0] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 0, "end": 0 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-zero-singleton-closed.json",
+      "expected_lowerings": [
+        { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "weak-until-zero-singleton-closed-direct",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "until", "interval": { "start": 0, "end": 0 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "globally", "interval": { "start": 0, "end": 0 }, "operand": 0 } },
+        { "append": { "kind": "or", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-zero-singleton-closed.json"
+    },
+    {
+      "class": "derived",
+      "id": "weak-until-zero-singleton-online-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 W[0,0] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 0, "end": 0 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-zero-singleton-online.json",
+      "expected_lowerings": [
+        { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "weak-until-zero-singleton-online-direct",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "until", "interval": { "start": 0, "end": 0 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "globally", "interval": { "start": 0, "end": 0 }, "operand": 0 } },
+        { "append": { "kind": "or", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-zero-singleton-online.json"
+    },
+    {
+      "class": "derived",
+      "id": "strong-release-zero-singleton-closed-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 M[0,0] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 0, "end": 0 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-zero-singleton-closed.json",
+      "expected_lowerings": [
+        { "kind": "M", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "strong-release-zero-singleton-closed-direct",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "release", "interval": { "start": 0, "end": 0 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "future", "interval": { "start": 0, "end": 0 }, "operand": 0 } },
+        { "append": { "kind": "and", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-zero-singleton-closed.json"
+    },
+    {
+      "class": "derived",
+      "id": "strong-release-zero-singleton-online-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 M[0,0] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 0, "end": 0 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-zero-singleton-online.json",
+      "expected_lowerings": [
+        { "kind": "M", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "strong-release-zero-singleton-online-direct",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "release", "interval": { "start": 0, "end": 0 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "future", "interval": { "start": 0, "end": 0 }, "operand": 0 } },
+        { "append": { "kind": "and", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-zero-singleton-online.json"
+    },
+    {
+      "class": "derived",
+      "id": "weak-until-max-singleton-closed-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 W[4294967295,4294967295] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 28, "end": 30 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 4294967295, "end": 4294967295 }, "operator_span": { "start": 3, "end": 27 }, "expression_span": { "start": 0, "end": 30 } } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-max-singleton-closed.json",
+      "expected_lowerings": [
+        { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 27 }, "expression_span": { "start": 0, "end": 30 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "weak-until-max-singleton-closed-direct",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "until", "interval": { "start": 4294967295, "end": 4294967295 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "globally", "interval": { "start": 4294967295, "end": 4294967295 }, "operand": 0 } },
+        { "append": { "kind": "or", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-max-singleton-closed.json"
+    },
+    {
+      "class": "derived",
+      "id": "weak-until-max-singleton-online-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 W[4294967295,4294967295] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 28, "end": 30 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 4294967295, "end": 4294967295 }, "operator_span": { "start": 3, "end": 27 }, "expression_span": { "start": 0, "end": 30 } } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-max-singleton-online.json",
+      "expected_lowerings": [
+        { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 27 }, "expression_span": { "start": 0, "end": 30 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "weak-until-max-singleton-online-direct",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "until", "interval": { "start": 4294967295, "end": 4294967295 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "globally", "interval": { "start": 4294967295, "end": 4294967295 }, "operand": 0 } },
+        { "append": { "kind": "or", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/weak-until-max-singleton-online.json"
+    },
+    {
+      "class": "derived",
+      "id": "strong-release-max-singleton-closed-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 M[4294967295,4294967295] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 28, "end": 30 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 4294967295, "end": 4294967295 }, "operator_span": { "start": 3, "end": 27 }, "expression_span": { "start": 0, "end": 30 } } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-max-singleton-closed.json",
+      "expected_lowerings": [
+        { "kind": "M", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 27 }, "expression_span": { "start": 0, "end": 30 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "strong-release-max-singleton-closed-direct",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "release", "interval": { "start": 4294967295, "end": 4294967295 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "future", "interval": { "start": 4294967295, "end": 4294967295 }, "operand": 0 } },
+        { "append": { "kind": "and", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-max-singleton-closed.json"
+    },
+    {
+      "class": "derived",
+      "id": "strong-release-max-singleton-online-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 M[4294967295,4294967295] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 28, "end": 30 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 4294967295, "end": 4294967295 }, "operator_span": { "start": 3, "end": 27 }, "expression_span": { "start": 0, "end": 30 } } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-max-singleton-online.json",
+      "expected_lowerings": [
+        { "kind": "M", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 27 }, "expression_span": { "start": 0, "end": 30 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "strong-release-max-singleton-online-direct",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "release", "interval": { "start": 4294967295, "end": 4294967295 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "future", "interval": { "start": 4294967295, "end": 4294967295 }, "operand": 0 } },
+        { "append": { "kind": "and", "left": 2, "right": 3 } }
+      ],
+      "root": 4,
+      "expected": "expected/strong-release-max-singleton-online.json"
+    },
+    {
+      "class": "primitive",
+      "id": "primitive-until-or-globally-source",
+      "dialect": "tl-parse.clean-ascii/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "(p0 U[1,2] p1) | G[1,2] p0",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 1, "end": 3 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 11, "end": 13 } } },
+        { "append": { "kind": "until", "interval": { "start": 1, "end": 2 }, "left": 0, "right": 1, "span": { "start": 1, "end": 13 } } },
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 24, "end": 26 } } },
+        { "append": { "kind": "globally", "interval": { "start": 1, "end": 2 }, "operand": 3, "span": { "start": 17, "end": 26 } } },
+        { "append": { "kind": "or", "left": 2, "right": 4, "span": { "start": 0, "end": 26 } } }
+      ],
+      "root": 5,
+      "expected": "expected/primitive-until-or-globally.json"
+    },
+    {
+      "class": "direct",
+      "id": "primitive-until-or-globally-direct",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "until", "interval": { "start": 1, "end": 2 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "globally", "interval": { "start": 1, "end": 2 }, "operand": 3 } },
+        { "append": { "kind": "or", "left": 2, "right": 4 } }
+      ],
+      "root": 5,
+      "expected": "expected/primitive-until-or-globally.json"
+    },
+    {
+      "class": "derived",
+      "id": "left-associative-chain-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 W[0,1] p1 M[2,3] p2",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 0, "end": 1 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } },
+        { "append": { "kind": "proposition", "proposition": 2, "span": { "start": 20, "end": 22 } } },
+        { "lower": { "kind": "M", "left": 4, "right": 5, "interval": { "start": 2, "end": 3 }, "operator_span": { "start": 13, "end": 19 }, "expression_span": { "start": 0, "end": 22 } } }
+      ],
+      "root": 8,
+      "expected": "expected/left-associative-chain.json",
+      "expected_lowerings": [
+        { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } },
+        { "kind": "M", "left": 4, "right": 5, "first_generated": 6, "root": 8, "operator_span": { "start": 13, "end": 19 }, "expression_span": { "start": 0, "end": 22 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "left-associative-chain-direct",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "until", "interval": { "start": 0, "end": 1 }, "left": 0, "right": 1 } },
+        { "append": { "kind": "globally", "interval": { "start": 0, "end": 1 }, "operand": 0 } },
+        { "append": { "kind": "or", "left": 2, "right": 3 } },
+        { "append": { "kind": "proposition", "proposition": 2 } },
+        { "append": { "kind": "release", "interval": { "start": 2, "end": 3 }, "left": 4, "right": 5 } },
+        { "append": { "kind": "future", "interval": { "start": 2, "end": 3 }, "operand": 4 } },
+        { "append": { "kind": "and", "left": 6, "right": 7 } }
+      ],
+      "root": 8,
+      "expected": "expected/left-associative-chain.json"
+    },
+    {
+      "class": "derived",
+      "id": "right-nested-release-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 W[1,1] (p1 M[0,2] p2)",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 11, "end": 13 } } },
+        { "append": { "kind": "proposition", "proposition": 2, "span": { "start": 21, "end": 23 } } },
+        { "lower": { "kind": "M", "left": 1, "right": 2, "interval": { "start": 0, "end": 2 }, "operator_span": { "start": 14, "end": 20 }, "expression_span": { "start": 11, "end": 23 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 5, "interval": { "start": 1, "end": 1 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 24 } } }
+      ],
+      "root": 8,
+      "expected": "expected/right-nested-release.json",
+      "expected_lowerings": [
+        { "kind": "M", "left": 1, "right": 2, "first_generated": 3, "root": 5, "operator_span": { "start": 14, "end": 20 }, "expression_span": { "start": 11, "end": 23 } },
+        { "kind": "W", "left": 0, "right": 5, "first_generated": 6, "root": 8, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 24 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "right-nested-release-direct",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "proposition", "proposition": 2 } },
+        { "append": { "kind": "release", "interval": { "start": 0, "end": 2 }, "left": 1, "right": 2 } },
+        { "append": { "kind": "future", "interval": { "start": 0, "end": 2 }, "operand": 1 } },
+        { "append": { "kind": "and", "left": 3, "right": 4 } },
+        { "append": { "kind": "until", "interval": { "start": 1, "end": 1 }, "left": 0, "right": 5 } },
+        { "append": { "kind": "globally", "interval": { "start": 1, "end": 1 }, "operand": 0 } },
+        { "append": { "kind": "or", "left": 6, "right": 7 } }
+      ],
+      "root": 8,
+      "expected": "expected/right-nested-release.json"
+    },
+    {
+      "class": "derived",
+      "id": "compound-operands-derived",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "!p0 W[0,2] (p1 & true)",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 1, "end": 3 } } },
+        { "append": { "kind": "not", "operand": 0, "span": { "start": 0, "end": 3 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 12, "end": 14 } } },
+        { "append": { "kind": "true", "span": { "start": 17, "end": 21 } } },
+        { "append": { "kind": "and", "left": 2, "right": 3, "span": { "start": 12, "end": 21 } } },
+        { "lower": { "kind": "W", "left": 1, "right": 4, "interval": { "start": 0, "end": 2 }, "operator_span": { "start": 4, "end": 10 }, "expression_span": { "start": 0, "end": 22 } } }
+      ],
+      "root": 7,
+      "expected": "expected/compound-operands.json",
+      "expected_lowerings": [
+        { "kind": "W", "left": 1, "right": 4, "first_generated": 5, "root": 7, "operator_span": { "start": 4, "end": 10 }, "expression_span": { "start": 0, "end": 22 } }
+      ]
+    },
+    {
+      "class": "direct",
+      "id": "compound-operands-direct",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0 } },
+        { "append": { "kind": "not", "operand": 0 } },
+        { "append": { "kind": "proposition", "proposition": 1 } },
+        { "append": { "kind": "true" } },
+        { "append": { "kind": "and", "left": 2, "right": 3 } },
+        { "append": { "kind": "until", "interval": { "start": 0, "end": 2 }, "left": 1, "right": 4 } },
+        { "append": { "kind": "globally", "interval": { "start": 0, "end": 2 }, "operand": 1 } },
+        { "append": { "kind": "or", "left": 5, "right": 6 } }
+      ],
+      "root": 7,
+      "expected": "expected/compound-operands.json"
+    },
+    {
+      "class": "refused",
+      "id": "refused-next-unsupported",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 X[0,1] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "X", "left": 0, "right": 1, "interval": { "start": 0, "end": 1 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "expected_refusal": { "code": "unsupported_kind" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-unknown-kind",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 WU[0,1] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 11, "end": 13 } } },
+        { "lower": { "kind": "WU", "left": 0, "right": 1, "interval": { "start": 0, "end": 1 }, "operator_span": { "start": 3, "end": 10 }, "expression_span": { "start": 0, "end": 13 } } }
+      ],
+      "expected_refusal": { "code": "unknown_kind" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-inverted-interval",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 M[3,2] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 3, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "expected_refusal": { "code": "inverted_interval" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-interval-bound-out-of-range",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 W[0,4294967296] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 19, "end": 21 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 0, "end": 4294967296 }, "operator_span": { "start": 3, "end": 18 }, "expression_span": { "start": 0, "end": 21 } } }
+      ],
+      "expected_refusal": { "code": "interval_bound_out_of_range" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-missing-interval",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 W p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 5, "end": 7 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": null, "operator_span": { "start": 3, "end": 4 }, "expression_span": { "start": 0, "end": 7 } } }
+      ],
+      "expected_refusal": { "code": "missing_interval" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-semantic-profile-mismatch",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 W[1,2] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 }, "semantic_profile": "mltl.online-prefix/v1" } }
+      ],
+      "expected_refusal": { "code": "semantic_profile_mismatch" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-unknown-semantic-profile",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 M[0,3] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 0, "end": 3 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 }, "semantic_profile": "mltl.dense-time/v1" } }
+      ],
+      "expected_refusal": { "code": "unknown_semantic_profile" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-unknown-operator-profile",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 W[1,2] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 }, "operator_profile": "tl-syntax.future-operators/v2" } }
+      ],
+      "expected_refusal": { "code": "unknown_operator_profile" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-unknown-request-identity",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 M[0,3] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 0, "end": 3 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 }, "request_identity": "tl-syntax.future-lowering-request/v2" } }
+      ],
+      "expected_refusal": { "code": "unknown_request_identity" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-operand-absent",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 M[0,1] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 0, "end": 1 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "expected_refusal": { "code": "operand_absent" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-operator-span-outside-expression",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 W[1,2] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 10, "end": 12 } } }
+      ],
+      "expected_refusal": { "code": "operator_span_outside_expression" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-span-half-missing",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 M[0,3] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 0, "end": 3 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": null } }
+      ],
+      "expected_refusal": { "code": "span_half_missing" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-past-since-unsupported",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 S[0,1] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "S", "left": 0, "right": 1, "interval": { "start": 0, "end": 1 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "expected_refusal": { "code": "unsupported_kind" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-operand-id-out-of-range",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 W[1,2] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "W", "left": 4294967296, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "expected_refusal": { "code": "operand_id_out_of_range" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-inverted-span",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.online-prefix/v1",
+      "source": "p0 M[0,3] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 0, "end": 3 }, "operator_span": { "start": 9, "end": 3 }, "expression_span": { "start": 0, "end": 12 } } }
+      ],
+      "expected_refusal": { "code": "inverted_span" }
+    },
+    {
+      "class": "refused",
+      "id": "refused-span-endpoint-out-of-range",
+      "dialect": "tl-parse.clean-ascii/v2",
+      "operator_profile": "tl-syntax.future-operators/v1",
+      "semantic_profile": "mltl.closed-trace/v1",
+      "source": "p0 W[1,2] p1",
+      "steps": [
+        { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+        { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+        { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 4294967296 } } }
+      ],
+      "expected_refusal": { "code": "span_endpoint_out_of_range" }
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-derived-case-without-lowering",
+      "entry": {
+        "class": "derived",
+        "id": "derived-case-without-lowering",
+        "dialect": "tl-parse.clean-ascii/v2",
+        "operator_profile": "tl-syntax.future-operators/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "true",
+        "steps": [
+          { "append": { "kind": "true", "span": { "start": 0, "end": 4 } } }
+        ],
+        "root": 0,
+        "expected": "expected/weak-until-closed.json",
+        "expected_lowerings": []
+      },
+      "expected_error": "derived_case_without_lowering"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-derived-step-refused",
+      "entry": {
+        "class": "derived",
+        "id": "derived-step-refused",
+        "dialect": "tl-parse.clean-ascii/v2",
+        "operator_profile": "tl-syntax.future-operators/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "p0 W[2,1] p1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+          { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 2, "end": 1 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+        ],
+        "root": 4,
+        "expected": "expected/weak-until-closed.json",
+        "expected_lowerings": []
+      },
+      "expected_error": "unexpected_refusal"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-nested-malformed",
+      "entry": {
+        "class": "malformed",
+        "id": "nested-malformed",
+        "entry": { "class": "direct", "id": "inner", "semantic_profile": "mltl.closed-trace/v1", "steps": [], "root": 0, "expected": "expected/weak-until-closed.json" },
+        "expected_error": "graph_invalid"
+      },
+      "expected_error": "nested_malformed"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-primitive-case-under-v2",
+      "entry": {
+        "class": "primitive",
+        "id": "primitive-case-under-v2",
+        "dialect": "tl-parse.clean-ascii/v2",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "true",
+        "steps": [
+          { "append": { "kind": "true", "span": { "start": 0, "end": 4 } } }
+        ],
+        "root": 0,
+        "expected": "expected/primitive-until-or-globally.json"
+      },
+      "expected_error": "primitive_dialect_mismatch"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-primitive-case-lowers",
+      "entry": {
+        "class": "primitive",
+        "id": "primitive-case-lowers",
+        "dialect": "tl-parse.clean-ascii/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "p0 W[1,2] p1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+          { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+        ],
+        "root": 4,
+        "expected": "expected/weak-until-closed.json"
+      },
+      "expected_error": "dialect_refuses_derived"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-operator-separator",
+      "entry": {
+        "class": "primitive",
+        "id": "operator-separator",
+        "dialect": "tl-parse.clean-ascii/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "(p0 U[1,2] p1) & G[1,2] p0",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 1, "end": 3 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 11, "end": 13 } } },
+          { "append": { "kind": "until", "interval": { "start": 1, "end": 2 }, "left": 0, "right": 1, "span": { "start": 1, "end": 13 } } },
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 24, "end": 26 } } },
+          { "append": { "kind": "globally", "interval": { "start": 1, "end": 2 }, "operand": 3, "span": { "start": 17, "end": 26 } } },
+          { "append": { "kind": "or", "left": 2, "right": 4, "span": { "start": 0, "end": 26 } } }
+        ],
+        "root": 5,
+        "expected": "expected/primitive-until-or-globally.json"
+      },
+      "expected_error": "source_binding_mismatch"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-derived-wire-node",
+      "entry": {
+        "class": "derived",
+        "id": "derived-wire-node",
+        "dialect": "tl-parse.clean-ascii/v2",
+        "operator_profile": "tl-syntax.future-operators/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "p0 W[1,2] p1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+          { "append": { "kind": "weak_until", "interval": { "start": 1, "end": 2 }, "left": 0, "right": 1, "span": { "start": 0, "end": 12 } } }
+        ],
+        "root": 2,
+        "expected": "expected/weak-until-closed.json",
+        "expected_lowerings": []
+      },
+      "expected_error": "node_decode_rejected"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-v1-dialect-derived-step",
+      "entry": {
+        "class": "derived",
+        "id": "v1-dialect-derived-step",
+        "dialect": "tl-parse.clean-ascii/v1",
+        "operator_profile": "tl-syntax.future-operators/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "p0 W[1,2] p1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+          { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+        ],
+        "root": 4,
+        "expected": "expected/weak-until-closed.json",
+        "expected_lowerings": [
+          { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+        ]
+      },
+      "expected_error": "dialect_refuses_derived"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-unknown-dialect",
+      "entry": {
+        "class": "derived",
+        "id": "unknown-dialect",
+        "dialect": "tl-parse.clean-ascii/v9",
+        "operator_profile": "tl-syntax.future-operators/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "p0 W[1,2] p1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+          { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+        ],
+        "root": 4,
+        "expected": "expected/weak-until-closed.json",
+        "expected_lowerings": [
+          { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+        ]
+      },
+      "expected_error": "unknown_dialect"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-unknown-case-field",
+      "entry": {
+        "class": "direct",
+        "id": "unknown-case-field",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "steps": [
+          { "append": { "kind": "true" } }
+        ],
+        "root": 0,
+        "expected": "expected/weak-until-closed.json",
+        "evaluation": "satisfied"
+      },
+      "expected_error": "case_decode_rejected"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-unknown-case-class",
+      "entry": {
+        "class": "evaluated",
+        "id": "unknown-case-class",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "steps": [],
+        "root": 0,
+        "expected": "expected/weak-until-closed.json"
+      },
+      "expected_error": "case_decode_rejected"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-operator-span-names-operand",
+      "entry": {
+        "class": "derived",
+        "id": "operator-span-names-operand",
+        "dialect": "tl-parse.clean-ascii/v2",
+        "operator_profile": "tl-syntax.future-operators/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "p0 W[1,2] p1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+          { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 10, "end": 12 }, "expression_span": { "start": 0, "end": 12 } } }
+        ],
+        "root": 4,
+        "expected": "expected/weak-until-closed.json",
+        "expected_lowerings": [
+          { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 10, "end": 12 }, "expression_span": { "start": 0, "end": 12 } }
+        ]
+      },
+      "expected_error": "source_binding_mismatch"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-direct-case-lowers",
+      "entry": {
+        "class": "direct",
+        "id": "direct-case-lowers",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0 } },
+          { "append": { "kind": "proposition", "proposition": 1 } },
+          { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": null, "expression_span": null } }
+        ],
+        "root": 4,
+        "expected": "expected/weak-until-closed.json"
+      },
+      "expected_error": "direct_case_lowers"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-direct-case-carries-span",
+      "entry": {
+        "class": "direct",
+        "id": "direct-case-carries-span",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1 } },
+          { "append": { "kind": "until", "interval": { "start": 1, "end": 2 }, "left": 0, "right": 1 } },
+          { "append": { "kind": "globally", "interval": { "start": 1, "end": 2 }, "operand": 0 } },
+          { "append": { "kind": "or", "left": 2, "right": 3 } }
+        ],
+        "root": 4,
+        "expected": "expected/weak-until-closed.json"
+      },
+      "expected_error": "direct_case_carries_span"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-unpinned-expected-document",
+      "entry": {
+        "class": "direct",
+        "id": "unpinned-expected-document",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "steps": [
+          { "append": { "kind": "true" } }
+        ],
+        "root": 0,
+        "expected": "expected/primitive-true.json"
+      },
+      "expected_error": "unpinned_expected_document"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-release-steps-weak-until-expectation",
+      "entry": {
+        "class": "derived",
+        "id": "release-steps-weak-until-expectation",
+        "dialect": "tl-parse.clean-ascii/v2",
+        "operator_profile": "tl-syntax.future-operators/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "p0 M[1,2] p1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+          { "lower": { "kind": "M", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+        ],
+        "root": 4,
+        "expected": "expected/weak-until-closed.json",
+        "expected_lowerings": [
+          { "kind": "M", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+        ]
+      },
+      "expected_error": "document_mismatch"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-lowering-record-charge",
+      "entry": {
+        "class": "derived",
+        "id": "lowering-record-charge",
+        "dialect": "tl-parse.clean-ascii/v2",
+        "operator_profile": "tl-syntax.future-operators/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "p0 W[1,2] p1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+          { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+        ],
+        "root": 4,
+        "expected": "expected/weak-until-closed.json",
+        "expected_lowerings": [
+          { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 3, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+        ]
+      },
+      "expected_error": "lowering_report_mismatch"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-forward-operand",
+      "entry": {
+        "class": "direct",
+        "id": "forward-operand",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "steps": [
+          { "append": { "kind": "and", "left": 0, "right": 1 } }
+        ],
+        "root": 0,
+        "expected": "expected/weak-until-closed.json"
+      },
+      "expected_error": "graph_invalid"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-override-outside-refused",
+      "entry": {
+        "class": "derived",
+        "id": "override-outside-refused",
+        "dialect": "tl-parse.clean-ascii/v2",
+        "operator_profile": "tl-syntax.future-operators/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "p0 W[1,2] p1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+          { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 }, "semantic_profile": "mltl.closed-trace/v1" } }
+        ],
+        "root": 4,
+        "expected": "expected/weak-until-closed.json",
+        "expected_lowerings": [
+          { "kind": "W", "left": 0, "right": 1, "first_generated": 2, "root": 4, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } }
+        ]
+      },
+      "expected_error": "override_outside_refused"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-refused-case-lowers",
+      "entry": {
+        "class": "refused",
+        "id": "refused-case-lowers",
+        "dialect": "tl-parse.clean-ascii/v2",
+        "operator_profile": "tl-syntax.future-operators/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "p0 W[1,2] p1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+          { "lower": { "kind": "W", "left": 0, "right": 1, "interval": { "start": 1, "end": 2 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+        ],
+        "expected_refusal": { "code": "unknown_kind" }
+      },
+      "expected_error": "missing_refusal"
+    },
+    {
+      "class": "malformed",
+      "id": "malformed-refusal-code",
+      "entry": {
+        "class": "refused",
+        "id": "refusal-code",
+        "dialect": "tl-parse.clean-ascii/v2",
+        "operator_profile": "tl-syntax.future-operators/v1",
+        "semantic_profile": "mltl.closed-trace/v1",
+        "source": "p0 X[0,1] p1",
+        "steps": [
+          { "append": { "kind": "proposition", "proposition": 0, "span": { "start": 0, "end": 2 } } },
+          { "append": { "kind": "proposition", "proposition": 1, "span": { "start": 10, "end": 12 } } },
+          { "lower": { "kind": "X", "left": 0, "right": 1, "interval": { "start": 0, "end": 1 }, "operator_span": { "start": 3, "end": 9 }, "expression_span": { "start": 0, "end": 12 } } }
+        ],
+        "expected_refusal": { "code": "unknown_kind" }
+      },
+      "expected_error": "refusal_mismatch"
+    }
+  ]
+}

@@ -11,8 +11,8 @@ make spec
 ```
 
 The library consumes validated `tl-syntax` formulas pinned to exact revision
-`8dc18eec5af227f484170362c9e8894b8531a27d` on tl-syntax `main` after the reviewed
-W/M future-lowering change was squash-merged. The
+`5b1c13440e54d5a851df2d33cc88944135574bc6` on tl-syntax `main` after the reviewed
+W/M future-operator corpus was squash-merged. The
 retained shared temporal corpus under `corpus/tl-syntax-v1` is a byte-identical
 copy taken at the earlier revision `740182f13b84858008d6f176f75136737d405c1b`
 and is deliberately not restamped; `TL_SYNTAX_REVISION` and
@@ -51,6 +51,9 @@ gate, which installs the pinned Kani verifier before running the aggregate.
   `4.2-release` at commit `336a2453…`, including C2PO inputs, compiled binary,
   raw verdicts, exact tool/configuration digests, and 8/8 supported formula/time
   agreements across unary, Until, Release, nested, and nonzero-time cases.
+- `corpus/future-operators/` is a byte-identical copy of the tl-syntax W/M
+  future-operator corpus at the compiled revision. Lowered W/M graphs map to
+  C2PO only through the canonical graph; see FR-017.
 - Closed-profile mapping remains explicitly unsupported; it is not silently
   reinterpreted as online-prefix semantics.
 

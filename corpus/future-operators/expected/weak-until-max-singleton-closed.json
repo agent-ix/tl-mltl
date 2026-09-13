@@ -1,0 +1,12 @@
+{
+  "schema_version": "tl-syntax.formula/v1",
+  "semantic_profile": "mltl.closed-trace/v1",
+  "root": 4,
+  "nodes": [
+    { "kind": "proposition", "proposition": 0 },
+    { "kind": "proposition", "proposition": 1 },
+    { "kind": "until", "interval": { "start": 4294967295, "end": 4294967295 }, "left": 0, "right": 1 },
+    { "kind": "globally", "interval": { "start": 4294967295, "end": 4294967295 }, "operand": 0 },
+    { "kind": "or", "left": 2, "right": 3 }
+  ]
+}
