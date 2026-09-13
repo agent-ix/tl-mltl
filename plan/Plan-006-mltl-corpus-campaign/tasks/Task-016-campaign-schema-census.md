@@ -1,5 +1,5 @@
 ---
-id: Task-001
+id: Task-016
 title: "FR-008 — campaign schema and fail-closed census"
 type: Task
 status: blocked
@@ -23,7 +23,7 @@ relationships:
     type: verifies
 ---
 
-# Task-001: FR-008 — campaign schema and fail-closed census
+# Task-016: FR-008 — campaign schema and fail-closed census
 
 ## Scope
 

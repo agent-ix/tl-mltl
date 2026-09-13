@@ -1,5 +1,5 @@
 ---
-id: Task-006
+id: Task-021
 title: "FR-010 — interoperability dispositions"
 type: Task
 status: blocked
@@ -9,13 +9,13 @@ owner_repository: agent-ix/tl-mltl
 consumer_repositories: [agent-ix/tl-mltl, agent-ix/quire-contract-ir]
 evidence_method: integration-snapshot-and-negative-test
 github_issue: ix://agent-ix/tl-mltl/issues/53
-resume_conditions: [ix://agent-ix/tl-mltl/issues/38, ix://agent-ix/tl-mltl/Task-001, ix://agent-ix/tl-mltl/Task-002]
+resume_conditions: [ix://agent-ix/tl-mltl/issues/38, ix://agent-ix/tl-mltl/Task-016, ix://agent-ix/tl-mltl/Task-017]
 relationships:
   - target: ix://agent-ix/tl-mltl/issues/38
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-001
+  - target: ix://agent-ix/tl-mltl/Task-016
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/Task-002
+  - target: ix://agent-ix/tl-mltl/Task-017
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-010
     type: references
@@ -25,7 +25,7 @@ relationships:
     type: verifies
 ---
 
-# Task-006: FR-010 — interoperability dispositions
+# Task-021: FR-010 — interoperability dispositions
 
 ## Scope
 
@@ -45,4 +45,4 @@ model over retained C2PO/R2U2 observations without executing a target runtime.
 ## Notes
 
 - FRETish remains output-only under its quire-contract-ir owner.
-- Unblocks Task-007.
+- Unblocks Task-022.

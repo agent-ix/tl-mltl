@@ -23,6 +23,7 @@ past/native facts no longer contradict each other.
 | FND-5603 | medium | MRS-002's W/M blocked statement contradicted current main, whose W/M specification, parser, rewrite, evaluator, corpus, and target-loss work are landed. Fixed at the exact merge revisions. | MRS-002, FR-008, TM-002 |
 | FND-5604 | low | TC-037 through TC-049 and all 19 campaign criteria remain intentionally planned and unbacked; no implementation status was advanced during specification remediation. | TM-002 |
 | FND-5605 | low | At the reviewed module revision, Quire reports 112/112 spec documents grammar-clean and PLAN-006 11/11 clean; repo-wide structural validation still hits the pre-existing duplicate-module TestMatrix `Status`/`Coverage Status` contradiction. No scoped status was falsified to hide it. | TM-001, TM-002, quire-contract-ir#21 |
+| FND-5606 | high | Repository-wide identity review found PLAN-006's initial Task-001 through Task-008 ids collided with legacy plan tasks even though isolated validation passed. Fixed by renumbering PLAN-006 to the unoccupied Task-016 through Task-023 range and updating every path and edge. | PLAN-006 |
 
 ## Traceability
 
