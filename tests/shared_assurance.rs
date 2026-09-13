@@ -1674,8 +1674,8 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     let text = String::from_utf8_lossy(&bytes);
     for requirement in [
         "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "FR-008", "FR-009",
-        "FR-010", "FR-016", "FR-017", "NFR-001", "NFR-002", "NFR-003", "NFR-004", "StR-001",
-        "StR-002", "StR-003",
+        "FR-010", "FR-011", "FR-012", "FR-013", "FR-014", "FR-015", "FR-016", "FR-017", "NFR-001",
+        "NFR-002", "NFR-003", "NFR-004", "NFR-005", "StR-001", "StR-002", "StR-003",
     ] {
         assert!(
             text.contains(requirement),
@@ -1693,27 +1693,21 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 131 is every row Quire counts from `spec/`: 75 acceptance criteria and 56
-    // test-matrix rows. Naming the population matters — "matrix rows" would
-    // have been wrong, since acceptance criteria contribute 75 of them. Issues
-    // #47/#48 added the backed W/M rows; issue #38 adds 19 campaign criteria and
-    // TC-037 through TC-049 as planned rows. Re-pinned from the older engine: the
-    // suite registry (spec/evidence/suites.md) is no longer counted, because
-    // spec-artifacts-process 737987b (quire-rs#363) declares evidence
-    // registries `evidence: reference-only`, so its 8 SUITE rows — including
-    // the two rows unbacked on purpose, SUITE-001 and SUITE-002 — left the
-    // coverage population.
+    // 186 is every row Quire counts from `spec/`: 104 acceptance criteria and
+    // 82 test-matrix rows. Issues #47/#48 added the backed W/M rows; issue #38
+    // contributes 32 planned M4 rows, and issue #39 contributes 55 planned M5
+    // rows. The suite registry is not counted because spec-artifacts-process
+    // 737987b (quire-rs#363) declares evidence registries reference-only.
     assert_eq!(
-        totals["total"], 131,
-        "the declared-row population changed: {totals}. It is 75 acceptance \
-         criteria + 56 test-matrix rows; suite-registry rows are reference-only."
+        totals["total"], 186,
+        "the declared-row population changed: {totals}. It is 104 acceptance \
+         criteria + 82 test-matrix rows; suite-registry rows are reference-only."
     );
     assert_eq!(
         totals["backed"], 99,
-        "backed-row count changed: {totals}. The 32 campaign rows are planned and \
-         intentionally unbacked: 19 criteria plus TC-037 through TC-049. If this \
-         count moved, update the campaign deliberately rather than adjusting the \
-         assertion."
+        "backed-row count changed: {totals}. The 87 M4/M5 rows are planned and \
+         intentionally unbacked: 32 M4 rows plus 55 M5 rows. If this count moved, \
+         update the campaigns deliberately rather than adjusting the assertion."
     );
     // With suite rows out of the coverage totals, the totals no longer notice a
     // suite binding disappearing, so the registry's own claim is checked
@@ -2235,11 +2229,11 @@ fn no_local_evidence_framework_remains() {
         // issue #38 campaign: overview, index, log, and eight tasks.
         ("plan", 11),
         ("scripts", 5),
-        // Issue #42 and the two bounded-Kani reviews are tracked scope. Issue
-        // #47 adds FR-016 and the five-file PLAN-005 bundle; issue #48 adds
-        // FR-017. Issue #38 adds seven live campaign artifacts and eight
-        // archival SpecReviews. Independent review adds SR-054 through SR-061.
-        ("spec", 113),
+        // Current main plus M4's author and independent review sets contribute
+        // 113 spec-area paths. Issue #39 adds 30 M5 requirements, measurements,
+        // matrix, plan, campaign, and author-review artifacts; independent M5
+        // review adds SR-062 through SR-069.
+        ("spec", 151),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -2278,19 +2272,16 @@ fn no_local_evidence_framework_remains() {
         "a cross-area file swap preserved both the total and the per-area control"
     );
 
-    // Current main plus the two bounded-Kani reviews bring the reviewed
-    // population to 160 tracked paths; issue #47 adds FR-016, the PLAN-005
-    // bundle and tests/future_parity.rs for 167; issue #48 adds the 20-file
-    // future-operator corpus, FR-017 and tests/future_interop.rs for 189; the
-    // issue #38 campaign specification and author reviews bring it to 204;
-    // PLAN-006 and SR-054 through SR-061 bring it to 223.
+    // Current main, the retained future/W-M corpus, M4 specifications and both
+    // M4 review sets, PLAN-006, the 30 M5 authoring paths, and SR-062 through
+    // SR-069 bring the reviewed population to 261 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 223,
-        "the source census population changed from the reviewed 223 tracked files \
+        inspected, 261,
+        "the source census population changed from the reviewed 261 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
