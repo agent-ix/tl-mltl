@@ -2231,12 +2231,15 @@ fn no_local_evidence_framework_remains() {
         // Issue #48 adds the 20-file retained tl-syntax future-operator corpus.
         ("corpus", 45),
         ("examples", 3),
+        // PLAN-006 is the machine-readable owner/dependency manifest for the
+        // issue #38 campaign: overview, index, log, and eight tasks.
+        ("plan", 11),
         ("scripts", 5),
         // Issue #42 and the two bounded-Kani reviews are tracked scope. Issue
         // #47 adds FR-016 and the five-file PLAN-005 bundle; issue #48 adds
         // FR-017. Issue #38 adds seven live campaign artifacts and eight
-        // archival SpecReviews.
-        ("spec", 105),
+        // archival SpecReviews. Independent review adds SR-054 through SR-061.
+        ("spec", 113),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
@@ -2279,14 +2282,15 @@ fn no_local_evidence_framework_remains() {
     // population to 160 tracked paths; issue #47 adds FR-016, the PLAN-005
     // bundle and tests/future_parity.rs for 167; issue #48 adds the 20-file
     // future-operator corpus, FR-017 and tests/future_interop.rs for 189; the
-    // issue #38 campaign specification and reviews bring it to 204.
+    // issue #38 campaign specification and author reviews bring it to 204;
+    // PLAN-006 and SR-054 through SR-061 bring it to 223.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 204,
-        "the source census population changed from the reviewed 204 tracked files \
+        inspected, 223,
+        "the source census population changed from the reviewed 223 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

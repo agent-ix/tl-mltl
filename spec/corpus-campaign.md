@@ -37,8 +37,9 @@ dependencies.
   license/provenance, retention, and promotion rules.
 - Explicit mapping loss and external-observation states for R2U2/C2PO and
   FRETish, including unavailable and unsupported cases.
-- Conditional rows for reviewed-but-not-yet-accepted future-derived,
-  past/history, native-predicate, and native-temporal bridge profiles.
+- Landed W/M canonical-lowering rows plus conditional rows for the
+  not-yet-accepted past/history, native-predicate, and native-temporal bridge
+  profiles.
 - A reproducible measurement that reports the declared population and every
   exclusion rather than inferring strength from fixture counts.
 
@@ -66,21 +67,28 @@ planned evidence.
 
 ## Admission and implementation gate
 
-The current v1 future-profile rows may be specified against landed contracts.
-Rows for W/M, past/history, and native predicate/temporal correspondence remain
-`blocked` until their exact specification revisions are independently accepted
-and landed. A blocked row is visible but excluded from the applicable-coverage
-denominator and cannot own a conformance fixture.
+M0 is closed at `tl-mltl` v0.1.0 (`4bff387`). The W/M specification and routed
+implementations have also landed: tl-syntax #37/#42 (`8d3ff98`/`8dc18ee`),
+tl-parse #32 (`9ca856b`), tl-rewrite #36 (`033a687`), and tl-mltl #49/#50
+(`36604b8`/`1770705`). W/M cells are therefore part of the current eligible
+population and cannot remain `blocked` merely because this campaign predates
+those merges.
 
-No implementation begins before M0 closes and this MRS, its requirements,
-measurement plan, matrix, and review set are accepted. Predicate fixtures also
-require quire-contract-ir #63; native temporal correspondence fixtures require
-#63 and #64; W/M and past/history fixtures require tl-syntax #37 and #38.
+Past/history and native predicate/temporal correspondence rows remain `blocked`
+until their exact specification and implementation revisions are independently
+accepted and landed. A blocked row is visible but excluded from the
+applicable-coverage denominator and cannot own a conformance fixture.
+
+No campaign implementation begins before this MRS, its requirements,
+measurement plan, matrix, review set, and PLAN-006 routing bundle are accepted.
+Predicate fixtures also require quire-contract-ir #63; native temporal
+correspondence fixtures require #63 and #64; past/history fixtures require
+tl-syntax #38 and its routed evaluator implementation.
 
 After those gates, implementation order is:
 
 1. `tl-mltl` implements the campaign/dimension/cell schema and fail-closed
-   census for already landed future-v1 contracts.
+   census for already landed future-v1 and W/M contracts.
 2. Each authoritative owner publishes its family manifest and canonical cases;
    consumers add exact-digest replay only after the owner revision exists.
 3. Rust adapter owners add loss reports; `tl-mltl` adds observation/comparison
@@ -88,3 +96,9 @@ After those gates, implementation order is:
 4. The corpus census and replay feed MP-002 through the existing shared Quoin
    intake. Conditional families enter only through successor manifests after
    their own dependencies land.
+
+The machine-readable owner, consumer, evidence, predecessor, and external
+resume-condition allocation is PLAN-006 under
+`plan/Plan-006-mltl-corpus-campaign/`. GitHub implementation tickets mirror
+that bundle and remain blocked on this specification ticket until human
+acceptance is recorded.
