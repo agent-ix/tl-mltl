@@ -1129,10 +1129,10 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         let stale = fs::read_to_string(&candidate)
             .unwrap()
             .replace(
+                "8dc18eec5af227f484170362c9e8894b8531a27d",
                 "26b801d4a68ebfe720062cfdb3c66b070ab60e92",
-                "1b3c4026ff9567491e87a19fdf2793d3b2e76160",
             )
-            .replace("26b801d4", "1b3c4026");
+            .replace("8dc18eec", "26b801d4");
         fs::write(&candidate, stale).unwrap();
         let (code, stdout, stderr) = run(
             &python,
@@ -1692,19 +1692,19 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 90 is every row Quire mints from `spec/`: 47 acceptance criteria, 35
+    // 101 is every row Quire mints from `spec/`: 53 acceptance criteria, 40
     // test-matrix rows and 8 suite-registry rows. Naming the population matters
     // — "matrix rows" would have been wrong, since the test matrix contributes
-    // 35 of them. This assertion deliberately tracks the current specification,
+    // 40 of them. Issue #47 added FR-016-AC-1..AC-6 and TC-076..TC-080. This assertion deliberately tracks the current specification,
     // rather than preserving an obsolete population after a shared requirement
     // expansion.
     assert_eq!(
-        totals["total"], 90,
-        "the declared-row population changed: {totals}. It is 47 acceptance \
-         criteria + 35 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 101,
+        "the declared-row population changed: {totals}. It is 53 acceptance \
+         criteria + 40 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
-        totals["backed"], 88,
+        totals["backed"], 99,
         "backed-row count changed: {totals}. Exactly two rows are unbacked on \
          purpose — SUITE-001 (`make ci`, the composite that contains every other \
          suite) and SUITE-002 (the `quire validate` half of `make spec`, which \
@@ -2184,13 +2184,15 @@ fn no_local_evidence_framework_remains() {
         ("corpus", 25),
         ("examples", 3),
         ("scripts", 5),
-        // Issue #42 and the two bounded-Kani reviews are tracked scope.
-        ("spec", 83),
+        // Issue #42 and the two bounded-Kani reviews are tracked scope. Issue
+        // #47 adds FR-016 and the five-file PLAN-005 bundle.
+        ("spec", 89),
         // Context-bound wire decoding adds src/context.rs; the #57-shaped
         // fixture adds tests/contextual.rs. TC-030 itself extends an existing
         // shared-assurance test file.
         ("src", 8),
-        ("tests", 17),
+        // Issue #47 adds tests/future_parity.rs, the W/M parity controls.
+        ("tests", 18),
     ]
     .into_iter()
     .map(|(area, count)| (area.to_owned(), count))
@@ -2223,14 +2225,15 @@ fn no_local_evidence_framework_remains() {
     );
 
     // Current main plus the two bounded-Kani reviews bring the reviewed
-    // population to 160 tracked paths.
+    // population to 160 tracked paths; issue #47 adds FR-016, the PLAN-005
+    // bundle and tests/future_parity.rs for 167.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 160,
-        "the source census population changed from the reviewed 160 tracked files \
+        inspected, 167,
+        "the source census population changed from the reviewed 167 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

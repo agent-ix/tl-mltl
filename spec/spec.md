@@ -37,6 +37,8 @@ corpus bytes `corpus/tl-syntax-v1` retains.
 - Shared-corpus and external-tool differential evidence.
 - Context-bound native evaluation, horizon, mapping, external-verdict, and
   differential report versions using shared tl-syntax types.
+- Direct-versus-lowered parity controls for the tl-syntax derived W/M future
+  operators, which reach the evaluator only as canonical primitive graphs.
 
 ### Out of Scope
 
@@ -61,7 +63,8 @@ identified external records without running their producer.
 FR-001 owns reference evaluation, FR-002 owns horizon/resource analysis,
 FR-003 owns prefix semantics, FR-004 owns monitor mapping, and FR-005 owns CLI
 and differential reports. FR-006 owns shared assurance intake and FR-007 owns
-typed context propagation. NFR-001 constrains determinism and resource failure;
+typed context propagation. FR-016 owns direct-versus-lowered W/M parity
+controls and adds no derived evaluator semantics. NFR-001 constrains determinism and resource failure;
 NFR-002 constrains identity, provenance, and qualification claims.
 
 ## References

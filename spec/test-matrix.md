@@ -11,7 +11,7 @@ relationships:
 
 ## Functional Requirement Coverage
 
-| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| Functional Req | Acceptance Criteria | Test Cases | Status |
 |---|---|---|---|
 | FR-001 | FR-001-AC-1 through FR-001-AC-3 | TC-001 through TC-004 | ✅ covered |
 | FR-002 | FR-002-AC-1 through FR-002-AC-3 | TC-005 through TC-008 | ✅ covered |
@@ -20,12 +20,13 @@ relationships:
 | FR-005 | FR-005-AC-1 through FR-005-AC-3 | TC-014 through TC-016 | ✅ covered |
 | FR-006 | FR-006-AC-1, FR-006-AC-2, FR-006-AC-3, FR-006-AC-5, FR-006-AC-6, FR-006-AC-7 | TC-018, TC-019, TC-020, TC-022, TC-023, TC-024 | ✅ covered |
 | FR-007 | FR-007-AC-1 through FR-007-AC-9 | TC-025 through TC-031, TC-034, TC-035 | ✅ covered |
+| FR-016 | FR-016-AC-1 through FR-016-AC-6 | TC-076 through TC-080 | ✅ covered |
 
 ## Stakeholder Requirement Coverage
 
-| Stakeholder Req | Trace to US/FR | Test/Validation | Coverage Status |
+| Stakeholder Req | Trace to US/FR | Test/Validation | Status |
 |---|---|---|---|
-| StR-001 | FR-001, FR-005 | TC-001, TC-002, TC-015 | ✅ covered |
+| StR-001 | FR-001, FR-005, FR-016 | TC-001, TC-002, TC-015, TC-076 | ✅ covered |
 | StR-002 | FR-002, FR-003, FR-004, FR-006 | TC-006, TC-009, TC-011, TC-023 | ✅ covered |
 | StR-003 | FR-007 | TC-025 through TC-028, TC-031, TC-034 | ✅ covered |
 
@@ -76,3 +77,8 @@ relationships:
 | TC-034 | With all other inputs fixed, keep every contextual request and result identity invariant across absent, empty, and distinct valid diagnostic formula spans; retain those structural span differences and keep exact mapping formula bytes bound | Integration | P0 | FR-007-AC-8, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4 | ✅ implemented |
 | TC-035 | Refuse a structurally valid borrowed formula above the canonical tl-syntax document node limit with a typed contextual identity failure before operation work | Integration | P0 | FR-007-AC-9, NFR-002-AC-1 | ✅ implemented |
 | TC-036 | Select semantic job-step run scalars before enforcing one executable scoped ix-flow 0.0.4 package across command-position bare/path-qualified npm after assignments, shell groups, the complete documented npm-install alias family, and literal nested shells; fail closed on unquoted redirection and executable expansion scripts; ignore inert command arguments and non-`-c` shell invocations without suppressing later commands, distinguish true comments from started-word hashes, reject alternates, and observe the semantic manual-trigger set and exact runtime | Integration | P0 | NFR-003-AC-5 | ✅ implemented |
+| TC-076 | For W and M over every window within [0,3], every two-proposition trace up to length 5, and verdict times 0 through 2, closed-trace verdicts of the tl-syntax-lowered graph equal an independent first-occurrence direct reference for plain, constant, nested, negated, and correlated operands | Integration | P0 | FR-016-AC-1 | ✅ implemented |
+| TC-077 | Open-prefix verdicts of lowered W/M equal the exact continuation verdict and exercise pending, closed prefixes equal the closed direct reference, and progress along longer traces never retracts and decides at the horizon | Integration | P0 | FR-016-AC-2 | ✅ implemented |
+| TC-078 | Lowered and directly constructed W/M horizon reports are equal under both profiles and match the direct lookahead at [0,0], [0,u32::MAX], [u32::MAX,u32::MAX], and nested maximum windows without wrapping | Integration | P0 | FR-016-AC-3 | ✅ implemented |
+| TC-079 | Lowered W/M nodes, spans, and reports equal direct construction, share exact work, recursion, temporal-span, and time-overflow outcomes under both profiles, and respect the formula-v1 node budget boundary | Integration | P0 | FR-016-AC-4 | ✅ implemented |
+| TC-080 | Eight wrong W/M expansions each disagree with the direct reference while the real lowering disagrees nowhere, and the evaluator source and lowered graphs contain no derived future vocabulary | Integration | P0 | FR-016-AC-5, FR-016-AC-6 | ✅ implemented |
