@@ -11,18 +11,27 @@ make spec
 ```
 
 The library consumes validated `tl-syntax` formulas pinned to exact revision
-`5b1c13440e54d5a851df2d33cc88944135574bc6` on tl-syntax `main` after the reviewed
-W/M future-operator corpus was squash-merged. The
+`e70f2379a752117c79603bc399a86c26feed7716` on tl-syntax `main`, which adds the
+reviewed formula-v2 origin-history profile. The
 retained shared temporal corpus under `corpus/tl-syntax-v1` is a byte-identical
 copy taken at the earlier revision `740182f13b84858008d6f176f75136737d405c1b`
-and is deliberately not restamped; `TL_SYNTAX_REVISION` and
-`TL_SYNTAX_CORPUS_BASIS` are two separate constants for that reason. `evaluate_closed` implements
+and the future-operator corpus was copied at
+`5b1c13440e54d5a851df2d33cc88944135574bc6`. Neither retained corpus is
+restamped; `TL_SYNTAX_REVISION`, `TL_SYNTAX_CORPUS_BASIS`, and
+`TL_SYNTAX_FUTURE_CORPUS_BASIS` name the three separate facts. `evaluate_closed` implements
 the declared all-false-after-closure profile at time zero, while
 `evaluate_closed_at` selects another verdict time. `evaluate_prefix` and
 `evaluate_prefix_at` preserve unknown future observations as `pending`.
 `analyze_horizon` reports checked
 lookahead, propagation delay, and buffer length. `map_to_c2po` emits a
 digest-bearing mapping manifest without claiming that an external monitor ran.
+
+`evaluate_past` implements the closed `mltl.origin-complete-history/v1`
+profile over strict `tl-mltl.position-history/v1` inputs. It evaluates bounded
+O/H/Y/S/T at an explicit anchor, reports checked required history and work,
+accepts exact event-position or fixed-sample clocks, preserves owner non-values
+as typed errors, and emits immutable original/superseding/invalidating results.
+It never returns the future evaluator's `pending` value.
 
 The `tl-mltl` binary accepts one `tl-mltl.command/v1` JSON document, either by
 path or on stdin with `-`, and emits a versioned evaluation, horizon, or mapping

@@ -708,6 +708,9 @@ fn lowered_wm_horizon_matches_direct_lookahead_including_maximum_bounds() {
                     0,
                     limits,
                 ),
+                SemanticProfile::OriginCompleteHistoryV1 => {
+                    unreachable!("future parity profiles exclude origin-complete history")
+                }
             }
             .unwrap();
             assert_eq!(record.horizon, analysis.lookahead, "{kind:?} {profile:?}");
@@ -751,6 +754,9 @@ fn evaluate_both(
         }
         SemanticProfile::OnlinePrefixV1 => {
             evaluate_prefix_at(formula, "wm", trace, "t", false, time, limits)
+        }
+        SemanticProfile::OriginCompleteHistoryV1 => {
+            unreachable!("future parity profiles exclude origin-complete history")
         }
     }
     .map(|report| report.verdict)
@@ -882,6 +888,9 @@ fn lowered_wm_resource_outcomes_match_direct_canonical_construction() {
                 let expected = match profile {
                     SemanticProfile::ClosedTraceV1 => TruthValue::False,
                     SemanticProfile::OnlinePrefixV1 => TruthValue::Pending,
+                    SemanticProfile::OriginCompleteHistoryV1 => {
+                        unreachable!("future parity profiles exclude origin-complete history")
+                    }
                 };
                 assert_eq!(
                     evaluate_both(profile, &last, &[], latest, defaults),
@@ -1068,6 +1077,11 @@ const fn canonical_vocabulary(kind: NodeKind) -> &'static str {
         NodeKind::Globally { .. } => "globally",
         NodeKind::Until { .. } => "until",
         NodeKind::Release { .. } => "release",
+        NodeKind::Once { .. } => "once",
+        NodeKind::Historically { .. } => "historically",
+        NodeKind::StrongPrevious { .. } => "strong_previous",
+        NodeKind::Since { .. } => "since",
+        NodeKind::Triggered { .. } => "triggered",
     }
 }
 
@@ -1129,5 +1143,5 @@ fn evaluator_has_no_derived_future_branch() {
         }
         scanned += 1;
     }
-    assert_eq!(scanned, 8, "the evaluator source population changed");
+    assert_eq!(scanned, 9, "the evaluator source population changed");
 }

@@ -65,6 +65,12 @@ fn run() -> Result<(), String> {
                     trace.closed,
                     EvaluationLimits::default(),
                 ),
+                SemanticProfile::OriginCompleteHistoryV1 => {
+                    return Err(
+                        "origin-complete history formulas require the typed past-evaluation API"
+                            .to_owned(),
+                    );
+                }
             }
             .map_err(|error| format!("evaluate formula: {error}"))?;
             serde_json::to_value(report)

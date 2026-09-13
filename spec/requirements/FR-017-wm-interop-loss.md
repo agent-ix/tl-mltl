@@ -26,8 +26,8 @@ qualification evidence.
 
 ## Inputs
 
-- The retained byte-identical copy of tl-syntax `corpus/future-operators` at the
-  compiled tl-syntax revision `5b1c13440e54d5a851df2d33cc88944135574bc6`,
+- The retained byte-identical copy of tl-syntax `corpus/future-operators` at its
+  source revision `5b1c13440e54d5a851df2d33cc88944135574bc6`,
   corpus `tl-syntax.future-operator-corpus/v1` revision 1, whose
   `manifest.json` SHA-256 is
   `e38ef2a7bfc49631932c9c8527b9d08ba1087825e8ae3bccff5f326e74605172` and pins
