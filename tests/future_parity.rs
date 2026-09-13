@@ -541,17 +541,22 @@ fn lowered_wm_matches_direct_prefix_semantics_and_progress() {
     for kind in KINDS {
         let mut pending = 0_usize;
         for (start, end) in small_intervals() {
-            for expr in shapes(kind, start, end).into_iter().filter(negation_free) {
+            for expr in shapes(kind, start, end) {
                 let nodes = graph(&expr, SemanticProfile::OnlinePrefixV1, Lowering::TlSyntax);
+                // The negation-free restriction applies only to open prefixes:
+                // an explicitly closed prefix is exact for every shape.
+                let monotone = negation_free(&expr);
                 for trace in &traces {
                     for time in 0..=2 {
-                        let open = prefix_verdict(&nodes, trace, false, time);
-                        assert_eq!(
-                            open,
-                            direct_prefix(&expr, trace, time),
-                            "open {kind:?} {expr:?} trace={trace:?} time={time}"
-                        );
-                        pending += usize::from(open == TruthValue::Pending);
+                        if monotone {
+                            let open = prefix_verdict(&nodes, trace, false, time);
+                            assert_eq!(
+                                open,
+                                direct_prefix(&expr, trace, time),
+                                "open {kind:?} {expr:?} trace={trace:?} time={time}"
+                            );
+                            pending += usize::from(open == TruthValue::Pending);
+                        }
                         assert_eq!(
                             prefix_verdict(&nodes, trace, true, time),
                             truth(direct(&expr, trace, time, false)),
@@ -682,21 +687,41 @@ fn lowered_wm_horizon_matches_direct_lookahead_including_maximum_bounds() {
     assert_eq!(report.lookahead, 2 * u64::from(max));
     assert_eq!(report.required_buffer, 2 * u64::from(max) + 1);
 
-    // The evaluation record carries the same horizon as the analysis.
+    // The evaluation record carries the same horizon as the analysis, for both
+    // operators under both profiles.
+    for kind in KINDS {
+        let expr = derived(kind, 1, 3, prop(0), prop(1));
+        for profile in PROFILES {
+            let nodes = graph(&expr, profile, Lowering::TlSyntax);
+            let analysis = analyze_horizon(formula(profile, &nodes), "wm").unwrap();
+            let limits = EvaluationLimits::default();
+            let record = match profile {
+                SemanticProfile::ClosedTraceV1 => {
+                    evaluate_closed_at(formula(profile, &nodes), "wm", &[], "empty", 0, limits)
+                }
+                SemanticProfile::OnlinePrefixV1 => evaluate_prefix_at(
+                    formula(profile, &nodes),
+                    "wm",
+                    &[],
+                    "empty",
+                    false,
+                    0,
+                    limits,
+                ),
+            }
+            .unwrap();
+            assert_eq!(record.horizon, analysis.lookahead, "{kind:?} {profile:?}");
+            assert_eq!(
+                record.horizon,
+                direct_lookahead(&expr),
+                "{kind:?} {profile:?}"
+            );
+            if profile == SemanticProfile::OnlinePrefixV1 {
+                assert_eq!(record.verdict, TruthValue::Pending);
+            }
+        }
+    }
     let expr = derived(Derived::StrongRelease, 1, 3, prop(0), prop(1));
-    let nodes = graph(&expr, SemanticProfile::OnlinePrefixV1, Lowering::TlSyntax);
-    let record = evaluate_prefix_at(
-        formula(SemanticProfile::OnlinePrefixV1, &nodes),
-        "wm",
-        &[],
-        "empty",
-        false,
-        0,
-        EvaluationLimits::default(),
-    )
-    .unwrap();
-    assert_eq!(record.horizon, 3);
-    assert_eq!(record.verdict, TruthValue::Pending);
 
     // A widened endpoint is visible to the horizon control.
     let mutated = graph(
@@ -739,7 +764,11 @@ fn lowered_wm_resource_outcomes_match_direct_canonical_construction() {
     let trace = trace_from_bits(4, 0b1001_0110);
     for kind in KINDS {
         for profile in PROFILES {
-            // Byte-identical graphs, so every resource decision is shared.
+            // Parity itself is structural: the evaluator is a deterministic
+            // function of the canonical graph, so byte-identical lowered and
+            // direct graphs share every resource decision. Comparing the two
+            // outcomes would restate that equality, so instead each
+            // construction is held to the exact expected outcome on its own.
             let nested = derived(
                 kind,
                 0,
@@ -747,115 +776,125 @@ fn lowered_wm_resource_outcomes_match_direct_canonical_construction() {
                 prop(0),
                 derived(kind.other(), 1, 2, prop(1), prop(0)),
             );
-            let lowered = graph(&nested, profile, Lowering::TlSyntax);
-            assert_eq!(lowered, graph(&nested, profile, Lowering::Hand(None)));
+            let full_window = derived(kind, 0, max, prop(0), prop(1));
+            let span_window = derived(kind, 2, 6, prop(0), prop(1));
+            let last_window = derived(kind, max, max, prop(0), prop(1));
+            for expr in [&nested, &full_window, &span_window, &last_window] {
+                assert_eq!(
+                    graph(expr, profile, Lowering::TlSyntax),
+                    graph(expr, profile, Lowering::Hand(None)),
+                    "{kind:?} {profile:?} {expr:?}"
+                );
+            }
 
-            // Work limit: the Ok/Err boundary is identical and exact.
-            let required = (1..=10_000)
-                .find(|&limit| {
-                    evaluate_both(
+            let mut work_boundaries = Vec::new();
+            for construction in [Lowering::TlSyntax, Lowering::Hand(None)] {
+                let nodes = graph(&nested, profile, construction);
+
+                // Work limit: every limit below the requirement is refused
+                // with that exact limit; the requirement itself is admitted.
+                let required = (1..=10_000)
+                    .find(|&limit| {
+                        evaluate_both(
+                            profile,
+                            &nodes,
+                            &trace,
+                            1,
+                            EvaluationLimits {
+                                max_node_evaluations: limit,
+                                ..defaults
+                            },
+                        )
+                        .is_ok()
+                    })
+                    .expect("the nested expansion fits in 10000 node evaluations");
+                for limit in [1, required - 1, required, required + 1] {
+                    let outcome = evaluate_both(
                         profile,
-                        &lowered,
+                        &nodes,
                         &trace,
                         1,
                         EvaluationLimits {
                             max_node_evaluations: limit,
                             ..defaults
                         },
-                    )
-                    .is_ok()
-                })
-                .expect("the nested expansion fits in 10000 node evaluations");
-            let direct_graph = graph(&nested, profile, Lowering::Hand(None));
-            for limit in [1, required - 1, required, required + 1] {
-                let limits = EvaluationLimits {
-                    max_node_evaluations: limit,
-                    ..defaults
-                };
-                let outcome = evaluate_both(profile, &lowered, &trace, 1, limits);
-                assert_eq!(
-                    outcome,
-                    evaluate_both(profile, &direct_graph, &trace, 1, limits)
-                );
-                if limit < required {
-                    assert_eq!(outcome, Err(EvaluationError::WorkLimitExceeded { limit }));
-                }
-            }
-
-            // Recursion depth: Or/And -> U/R -> Or/And -> U/R -> proposition.
-            for depth in 0..=5 {
-                let limits = EvaluationLimits {
-                    max_recursion_depth: depth,
-                    ..defaults
-                };
-                let outcome = evaluate_both(profile, &lowered, &trace, 0, limits);
-                assert_eq!(
-                    outcome,
-                    evaluate_both(profile, &direct_graph, &trace, 0, limits)
-                );
-                assert_eq!(
-                    outcome.is_err(),
-                    depth < 4,
-                    "{kind:?} {profile:?} depth={depth}: {outcome:?}"
-                );
-            }
-
-            // Temporal span: the full u32 window is refused before any verdict.
-            let full = graph(
-                &derived(kind, 0, max, prop(0), prop(1)),
-                profile,
-                Lowering::TlSyntax,
-            );
-            assert_eq!(
-                evaluate_both(profile, &full, &[], 0, defaults),
-                Err(EvaluationError::TemporalSpanExceeded {
-                    requested: 1_u64 << 32,
-                    limit: 100_000,
-                })
-            );
-            let window = graph(
-                &derived(kind, 2, 6, prop(0), prop(1)),
-                profile,
-                Lowering::TlSyntax,
-            );
-            for (span, admitted) in [(4, false), (5, true)] {
-                let limits = EvaluationLimits {
-                    max_temporal_span: span,
-                    ..defaults
-                };
-                let outcome = evaluate_both(profile, &window, &trace, 0, limits);
-                if admitted {
-                    assert!(outcome.is_ok());
-                } else {
-                    assert_eq!(
-                        outcome,
-                        Err(EvaluationError::TemporalSpanExceeded {
-                            requested: 5,
-                            limit: 4
-                        })
                     );
+                    if limit < required {
+                        assert_eq!(outcome, Err(EvaluationError::WorkLimitExceeded { limit }));
+                    } else {
+                        assert!(outcome.is_ok(), "{construction:?} limit={limit}");
+                    }
                 }
-            }
+                work_boundaries.push(required);
 
-            // Time arithmetic: `[u32::MAX, u32::MAX]` at the last representable
-            // verdict time evaluates; one instant later is refused, not wrapped.
-            let last = graph(
-                &derived(kind, max, max, prop(0), prop(1)),
-                profile,
-                Lowering::TlSyntax,
-            );
-            let latest = u64::MAX - u64::from(max);
-            let expected = match profile {
-                SemanticProfile::ClosedTraceV1 => TruthValue::False,
-                SemanticProfile::OnlinePrefixV1 => TruthValue::Pending,
-            };
+                // Recursion depth: Or/And -> U/R -> Or/And -> U/R -> proposition.
+                for depth in 0..=5 {
+                    let limits = EvaluationLimits {
+                        max_recursion_depth: depth,
+                        ..defaults
+                    };
+                    let outcome = evaluate_both(profile, &nodes, &trace, 0, limits);
+                    if depth < 4 {
+                        assert_eq!(
+                            outcome,
+                            Err(EvaluationError::RecursionDepthExceeded { limit: depth }),
+                            "{kind:?} {profile:?} {construction:?} depth={depth}"
+                        );
+                    } else {
+                        assert!(outcome.is_ok(), "{construction:?} depth={depth}");
+                    }
+                }
+
+                // Temporal span: the full u32 window is refused before any verdict.
+                let full = graph(&full_window, profile, construction);
+                assert_eq!(
+                    evaluate_both(profile, &full, &[], 0, defaults),
+                    Err(EvaluationError::TemporalSpanExceeded {
+                        requested: 1_u64 << 32,
+                        limit: 100_000,
+                    })
+                );
+                let window = graph(&span_window, profile, construction);
+                for (span, admitted) in [(4, false), (5, true)] {
+                    let limits = EvaluationLimits {
+                        max_temporal_span: span,
+                        ..defaults
+                    };
+                    let outcome = evaluate_both(profile, &window, &trace, 0, limits);
+                    if admitted {
+                        assert!(outcome.is_ok());
+                    } else {
+                        assert_eq!(
+                            outcome,
+                            Err(EvaluationError::TemporalSpanExceeded {
+                                requested: 5,
+                                limit: 4
+                            })
+                        );
+                    }
+                }
+
+                // Time arithmetic: `[u32::MAX, u32::MAX]` at the last
+                // representable verdict time evaluates; one instant later is
+                // refused, not wrapped.
+                let last = graph(&last_window, profile, construction);
+                let latest = u64::MAX - u64::from(max);
+                let expected = match profile {
+                    SemanticProfile::ClosedTraceV1 => TruthValue::False,
+                    SemanticProfile::OnlinePrefixV1 => TruthValue::Pending,
+                };
+                assert_eq!(
+                    evaluate_both(profile, &last, &[], latest, defaults),
+                    Ok(expected)
+                );
+                assert_eq!(
+                    evaluate_both(profile, &last, &[], latest + 1, defaults),
+                    Err(EvaluationError::TimeOverflow)
+                );
+            }
             assert_eq!(
-                evaluate_both(profile, &last, &[], latest, defaults),
-                Ok(expected)
-            );
-            assert_eq!(
-                evaluate_both(profile, &last, &[], latest + 1, defaults),
-                Err(EvaluationError::TimeOverflow)
+                work_boundaries[0], work_boundaries[1],
+                "{kind:?} {profile:?}: work boundary differs between constructions"
             );
         }
     }
@@ -1056,13 +1095,22 @@ fn evaluator_has_no_derived_future_branch() {
         }
     }
 
-    let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let mut scanned = 0;
-    for entry in fs::read_dir(&source).unwrap() {
-        let path = entry.unwrap().path();
-        if path.extension().and_then(|extension| extension.to_str()) != Some("rs") {
-            continue;
+    // Walk `src/` recursively so a derived branch in a new module directory
+    // cannot hide below the top level.
+    let mut pending = vec![Path::new(env!("CARGO_MANIFEST_DIR")).join("src")];
+    let mut sources = Vec::new();
+    while let Some(directory) = pending.pop() {
+        for entry in fs::read_dir(&directory).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                pending.push(path);
+            } else if path.extension().and_then(|extension| extension.to_str()) == Some("rs") {
+                sources.push(path);
+            }
         }
+    }
+    let mut scanned = 0;
+    for path in sources {
         let text = fs::read_to_string(&path).unwrap();
         for needle in [
             "FutureKind",

@@ -18,3 +18,12 @@ description: "What changed in the derived future-operator parity plan, and when.
 - **Prefix reference bounded.** Kleene prefix evaluation is exact over
   continuations only for negation-free operands. The open-prefix parity sweep
   is restricted to that class rather than inventing a second prefix semantics.
+- **Coverage totals re-pinned to 93/93.** spec-artifacts-process 737987b
+  (quire-rs#363) makes the suite registry reference-only, so the 8 SUITE rows
+  left the totals; the suite bindings are now asserted directly, and the
+  unpinned module revision is recorded as known drift in `assurance/pins.json`.
+- **PR-time review (PR #49) fixes.** Closed-prefix parity now covers every
+  operand shape. The evaluation-record horizon is checked for both operators
+  under both profiles. Exact resource outcomes are asserted on the lowered and
+  the direct construction. The no-derived-branch scan walks `src/` recursively.
+  The Quire export must also name FR-016.

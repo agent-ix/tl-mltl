@@ -71,11 +71,11 @@ under both semantic profiles.
 | ID | Criteria | Verification |
 |---|---|---|
 | FR-016-AC-1 | For W and M, every inclusive window `0 <= a <= b <= 3`, every two-proposition trace of length 0 through 5, verdict times 0 through 2, and plain, constant, repeated, nested, negated, and correlated operands, closed-trace verdicts of the lowered graph equal the direct reference. | Test (TC-076) |
-| FR-016-AC-2 | Over the same windows, traces and negation-free operands, open-prefix verdicts equal the exact continuation verdict and exercise pending, explicitly closed prefixes equal the closed direct reference, and along every prefix of longer traces verdicts never retract and are decisive and equal to the closed verdict beyond the verdict time plus lookahead. | Test (TC-077) |
+| FR-016-AC-2 | Over the same windows and traces, open-prefix verdicts for negation-free operands equal the exact continuation verdict and exercise pending, explicitly closed prefixes for every operand shape equal the closed direct reference, and along every prefix of longer traces verdicts never retract and are decisive and equal to the closed verdict beyond the verdict time plus lookahead. | Test (TC-077) |
 | FR-016-AC-3 | Under both profiles, horizon reports for lowered and directly constructed graphs are equal, their lookahead equals the direct `b + max(child)` value for `[0,0]`, `[0,u32::MAX]`, `[u32::MAX,u32::MAX]` and nested lowerings, nested maximum windows report `2 * u32::MAX` without wrapping, and the evaluation record carries the same horizon. | Test (TC-078) |
 | FR-016-AC-4 | Lowered nodes, spans, and report fields equal direct construction; lowered and directly constructed graphs share exact work-limit, recursion-depth, temporal-span, and time-overflow outcomes under both profiles; a lowering landing exactly on the formula-v1 node limit evaluates and one more base node is refused. | Test (TC-079) |
 | FR-016-AC-5 | Exchanging Until and Release, Globally and Future, Or and And, or W and M, exchanging binary operands, binding the unary node to `q`, widening the end, or raising the start each produces a graph that disagrees with the direct reference, while the tl-syntax lowering and unmutated direct construction disagree nowhere. | Test (TC-080) |
-| FR-016-AC-6 | Every tracked `src/*.rs` file is free of the derived future vocabulary, and lowered graphs contain only the twelve canonical node kinds named by a wildcard-free match. | Test (TC-080) |
+| FR-016-AC-6 | Every Rust source file under `src/`, at any depth, is free of the derived future vocabulary, and lowered graphs contain only the twelve canonical node kinds named by a wildcard-free match. | Test (TC-080) |
 
 ## Dependencies
 

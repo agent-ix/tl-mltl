@@ -1673,8 +1673,8 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     let parsed: Value = serde_json::from_slice(&bytes).expect("the Quire export is JSON");
     let text = String::from_utf8_lossy(&bytes);
     for requirement in [
-        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "NFR-001", "NFR-002",
-        "NFR-003", "StR-001", "StR-002", "StR-003",
+        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "FR-016", "NFR-001",
+        "NFR-002", "NFR-003", "StR-001", "StR-002", "StR-003",
     ] {
         assert!(
             text.contains(requirement),
@@ -1711,6 +1711,50 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
         "backed-row count changed: {totals}. Every counted acceptance criterion \
          and test-matrix row is backed; an unbacked row is a coverage regression, \
          not a number to adjust here."
+    );
+    // With suite rows out of the coverage totals, the totals no longer notice a
+    // suite binding disappearing, so the registry's own claim is checked
+    // directly: every suite except SUITE-001 and SUITE-002 is named on a
+    // compiled test's trace line, and those two are named on none.
+    let registry = fs::read_to_string(root().join("spec/evidence/suites.md"))
+        .expect("read the suite registry");
+    let registered: BTreeSet<&str> = registry
+        .lines()
+        .filter_map(|line| line.strip_prefix("| SUITE-"))
+        .filter_map(|rest| rest.split_whitespace().next())
+        .collect();
+    let mut bound = BTreeSet::new();
+    for entry in fs::read_dir(root().join("tests")).expect("list tests") {
+        let path = entry.expect("tests entry").path();
+        if path.extension().and_then(|extension| extension.to_str()) != Some("rs") {
+            continue;
+        }
+        let source = fs::read_to_string(&path).expect("read test source");
+        for trace in source
+            .lines()
+            .filter_map(|line| line.trim().strip_prefix("// Trace:"))
+        {
+            for id in trace.split(',').map(str::trim) {
+                if let Some(suite) = id.strip_prefix("SUITE-") {
+                    bound.insert(suite.to_owned());
+                }
+            }
+        }
+    }
+    let expected_bound: BTreeSet<String> = registered
+        .iter()
+        .filter(|suite| !matches!(**suite, "001" | "002"))
+        .map(|suite| (*suite).to_owned())
+        .collect();
+    assert_eq!(
+        registered.len(),
+        8,
+        "the suite registry population changed: {registered:?}"
+    );
+    assert_eq!(
+        bound, expected_bound,
+        "suite bindings disagree with spec/evidence/suites.md: six rows are bound \
+         by a test running that suite's command and SUITE-001/SUITE-002 by none"
     );
     assert!(
         parsed["status_lies"].as_array().unwrap().is_empty(),
