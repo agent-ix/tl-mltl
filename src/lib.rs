@@ -27,13 +27,15 @@ macro_rules! deserialize_contextual_record {
     };
 }
 
+pub mod clock;
 mod context;
 mod differential;
-mod evaluate;
-mod horizon;
-mod mapping;
-mod past;
-mod wire;
+pub mod future;
+pub mod mapping;
+pub mod past;
+pub mod wire;
+
+pub(crate) use future::horizon;
 
 pub(crate) const MAX_RECURSION_DEPTH: u32 = 512;
 
@@ -44,15 +46,15 @@ pub use differential::{
     ContextualExternalVerdict, ContextualExternalVerdictSchemaVersion, DifferentialReport,
     ExternalStatus, ExternalVerdict, ToolIdentity,
 };
-pub use evaluate::{
+pub use future::{
+    analyze_horizon, analyze_horizon_with_context, ContextualHorizonError, ContextualHorizonReport,
+    ContextualHorizonSchemaVersion, HorizonError, HorizonReport,
+};
+pub use future::{
     evaluate_closed, evaluate_closed_at, evaluate_closed_with_context, evaluate_prefix,
     evaluate_prefix_at, evaluate_prefix_with_context, ContextualEvaluationError,
     ContextualEvaluationReport, ContextualEvaluationSchemaVersion, EvaluationError,
     EvaluationLimits, EvaluationReport, TruthValue,
-};
-pub use horizon::{
-    analyze_horizon, analyze_horizon_with_context, ContextualHorizonError, ContextualHorizonReport,
-    ContextualHorizonSchemaVersion, HorizonError, HorizonReport,
 };
 pub use mapping::{
     map_to_c2po, map_to_c2po_with_context, ContextualMappingManifest,
@@ -81,7 +83,11 @@ pub use wire::{
 /// [`TL_SYNTAX_CORPUS_BASIS`], which names the revision whose corpus bytes were
 /// copied into `corpus/tl-syntax-v1`; the compiled pin moved onto tl-syntax
 /// `main` and the retained corpus bytes did not move with it.
-pub const TL_SYNTAX_REVISION: &str = "e70f2379a752117c79603bc399a86c26feed7716";
+pub const TL_SYNTAX_REVISION: &str = "842d82553f045eb69a7f38745756d968254fc25e";
+
+/// Exact Quire Observation owner revision whose constructor-private assertion
+/// views are accepted by the temporal request boundary.
+pub const QUIRE_OBSERVATION_REVISION: &str = "9ac80e93f4b68a2c7d5a337f9a448ad10de798fc";
 
 /// Exact tl-syntax revision whose shared corpus bytes are retained here.
 ///

@@ -269,10 +269,9 @@ impl Renderer<'_, '_> {
             .ok_or(MappingError::RecursionDepthExceeded {
                 limit: MAX_RECURSION_DEPTH,
             })?;
-        let kind = self
-            .formula
-            .nodes()
-            .get(node.0 as usize)
+        let kind = usize::try_from(node.0)
+            .ok()
+            .and_then(|index| self.formula.nodes().get(index))
             .map(|value| value.kind)
             .ok_or(MappingError::InvalidNodeReference(node))?;
         match kind {

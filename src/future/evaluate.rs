@@ -320,18 +320,24 @@ struct Evaluator<'formula, 'trace> {
     trace: &'trace [Vec<PropositionId>],
     closed: bool,
     limits: EvaluationLimits,
-    evaluations: u64,
+    stats: EvaluationStats,
+}
+
+/// Exact bounded work retained for owner-level result reporting.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(crate) struct EvaluationStats {
+    pub(crate) node_evaluations: u64,
+    pub(crate) max_recursion_depth: u32,
 }
 
 impl Evaluator<'_, '_> {
     fn consume(&mut self) -> Result<(), EvaluationError> {
-        self.evaluations =
-            self.evaluations
-                .checked_add(1)
-                .ok_or(EvaluationError::WorkLimitExceeded {
-                    limit: self.limits.max_node_evaluations,
-                })?;
-        if self.evaluations > self.limits.max_node_evaluations {
+        self.stats.node_evaluations = self.stats.node_evaluations.checked_add(1).ok_or(
+            EvaluationError::WorkLimitExceeded {
+                limit: self.limits.max_node_evaluations,
+            },
+        )?;
+        if self.stats.node_evaluations > self.limits.max_node_evaluations {
             return Err(EvaluationError::WorkLimitExceeded {
                 limit: self.limits.max_node_evaluations,
             });
@@ -340,9 +346,9 @@ impl Evaluator<'_, '_> {
     }
 
     fn node(&self, node: NodeId) -> Result<NodeKind, EvaluationError> {
-        self.formula
-            .nodes()
-            .get(node.0 as usize)
+        usize::try_from(node.0)
+            .ok()
+            .and_then(|index| self.formula.nodes().get(index))
             .map(|value| value.kind)
             .ok_or(EvaluationError::InvalidNodeReference(node))
     }
@@ -359,6 +365,7 @@ impl Evaluator<'_, '_> {
     }
 
     fn at(&mut self, node: NodeId, time: u64, depth: u32) -> Result<TruthValue, EvaluationError> {
+        self.stats.max_recursion_depth = self.stats.max_recursion_depth.max(depth);
         if depth > self.limits.max_recursion_depth {
             return Err(EvaluationError::RecursionDepthExceeded {
                 limit: self.limits.max_recursion_depth,
@@ -557,7 +564,7 @@ fn referenced_propositions(formula: Formula<'_>) -> Vec<u32> {
         .collect()
 }
 
-fn evaluate(
+fn evaluate_with_stats(
     formula: Formula<'_>,
     formula_id: impl Into<String>,
     trace: &[Vec<PropositionId>],
@@ -565,24 +572,41 @@ fn evaluate(
     closed: bool,
     verdict_time: u64,
     limits: EvaluationLimits,
-) -> Result<EvaluationReport, EvaluationError> {
-    validate_trace(trace)?;
-    let horizon = lookahead(formula)?;
+) -> (Result<EvaluationReport, EvaluationError>, EvaluationStats) {
+    if let Err(error) = validate_trace(trace) {
+        return (Err(error), EvaluationStats::default());
+    }
+    let horizon = match lookahead(formula) {
+        Ok(horizon) => horizon,
+        Err(error) => return (Err(error.into()), EvaluationStats::default()),
+    };
+    let trace_length = match u64::try_from(trace.len()) {
+        Ok(length) => length,
+        Err(_) => {
+            return (
+                Err(EvaluationError::TimeOverflow),
+                EvaluationStats::default(),
+            )
+        }
+    };
     let mut evaluator = Evaluator {
         formula,
         trace,
         closed,
         limits,
-        evaluations: 0,
+        stats: EvaluationStats::default(),
     };
-    let verdict = evaluator.at(formula.root(), verdict_time, 0)?;
-    Ok(EvaluationReport {
+    let verdict = match evaluator.at(formula.root(), verdict_time, 0) {
+        Ok(verdict) => verdict,
+        Err(error) => return (Err(error), evaluator.stats),
+    };
+    let report = EvaluationReport {
         schema_version: "tl-mltl.evaluation/v1".to_owned(),
         formula_id: formula_id.into(),
         formula_root: formula.root().0,
         semantic_profile: formula.profile().as_str().to_owned(),
         trace_id: trace_id.into(),
-        trace_length: trace.len() as u64,
+        trace_length,
         trace_closed: closed,
         verdict,
         verdict_time,
@@ -592,7 +616,8 @@ fn evaluate(
             .and_then(|index| u64::try_from(index).ok()),
         horizon,
         proposition_ids: referenced_propositions(formula),
-    })
+    };
+    (Ok(report), evaluator.stats)
 }
 
 /// Evaluates a complete trace under `mltl.closed-trace/v1`.
@@ -690,13 +715,27 @@ pub fn evaluate_closed_at(
     verdict_time: u64,
     limits: EvaluationLimits,
 ) -> Result<EvaluationReport, EvaluationError> {
+    evaluate_closed_at_with_stats(formula, formula_id, trace, trace_id, verdict_time, limits).0
+}
+
+pub(crate) fn evaluate_closed_at_with_stats(
+    formula: Formula<'_>,
+    formula_id: impl Into<String>,
+    trace: &[Vec<PropositionId>],
+    trace_id: impl Into<String>,
+    verdict_time: u64,
+    limits: EvaluationLimits,
+) -> (Result<EvaluationReport, EvaluationError>, EvaluationStats) {
     if formula.profile() != SemanticProfile::ClosedTraceV1 {
-        return Err(EvaluationError::UnsupportedProfile {
-            expected: SemanticProfile::ClosedTraceV1.as_str(),
-            actual: formula.profile().as_str(),
-        });
+        return (
+            Err(EvaluationError::UnsupportedProfile {
+                expected: SemanticProfile::ClosedTraceV1.as_str(),
+                actual: formula.profile().as_str(),
+            }),
+            EvaluationStats::default(),
+        );
     }
-    evaluate(
+    evaluate_with_stats(
         formula,
         formula_id,
         trace,
@@ -816,13 +855,37 @@ pub fn evaluate_prefix_at(
     verdict_time: u64,
     limits: EvaluationLimits,
 ) -> Result<EvaluationReport, EvaluationError> {
+    evaluate_prefix_at_with_stats(
+        formula,
+        formula_id,
+        trace,
+        trace_id,
+        closed,
+        verdict_time,
+        limits,
+    )
+    .0
+}
+
+pub(crate) fn evaluate_prefix_at_with_stats(
+    formula: Formula<'_>,
+    formula_id: impl Into<String>,
+    trace: &[Vec<PropositionId>],
+    trace_id: impl Into<String>,
+    closed: bool,
+    verdict_time: u64,
+    limits: EvaluationLimits,
+) -> (Result<EvaluationReport, EvaluationError>, EvaluationStats) {
     if formula.profile() != SemanticProfile::OnlinePrefixV1 {
-        return Err(EvaluationError::UnsupportedProfile {
-            expected: SemanticProfile::OnlinePrefixV1.as_str(),
-            actual: formula.profile().as_str(),
-        });
+        return (
+            Err(EvaluationError::UnsupportedProfile {
+                expected: SemanticProfile::OnlinePrefixV1.as_str(),
+                actual: formula.profile().as_str(),
+            }),
+            EvaluationStats::default(),
+        );
     }
-    evaluate(
+    evaluate_with_stats(
         formula,
         formula_id,
         trace,

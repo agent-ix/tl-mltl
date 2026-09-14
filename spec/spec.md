@@ -72,6 +72,10 @@ NFR-002 constrains identity, provenance, and qualification claims.
 
 ## References
 
+FR-018 adds the complete strict request/result/mapping owner boundary and the
+subsystem module topology required by the origin-complete ecosystem. It changes
+no existing future or past semantic profile.
+
 - [tl-mltl epic](https://github.com/agent-ix/tl-mltl/issues/7).
 - [Typed context child](https://github.com/agent-ix/tl-mltl/issues/24).
 - [Future FRETish consumer](https://github.com/agent-ix/quire-contract-ir/issues/57).

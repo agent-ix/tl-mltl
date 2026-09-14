@@ -189,8 +189,9 @@ impl fmt::Display for HorizonError {
 impl std::error::Error for HorizonError {}
 
 fn prior(values: &[u64], node: NodeId) -> Result<u64, HorizonError> {
-    values
-        .get(node.0 as usize)
+    usize::try_from(node.0)
+        .ok()
+        .and_then(|index| values.get(index))
         .copied()
         .ok_or(HorizonError::InvalidNodeReference { node })
 }
@@ -226,7 +227,12 @@ mod kani_proofs {
 pub(crate) fn lookahead(formula: Formula<'_>) -> Result<u64, HorizonError> {
     let mut values = Vec::with_capacity(formula.nodes().len());
     for (index, node) in formula.nodes().iter().enumerate() {
-        let node_id = NodeId(index as u32);
+        let node_id =
+            NodeId(
+                u32::try_from(index).map_err(|_| HorizonError::InvalidNodeReference {
+                    node: formula.root(),
+                })?,
+            );
         let value = match node.kind {
             NodeKind::False | NodeKind::True | NodeKind::Proposition { .. } => 0,
             NodeKind::Not { operand } => prior(&values, operand)?,
