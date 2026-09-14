@@ -18,7 +18,7 @@ make test-census      # bind requirement-tagged tests to compiled tests
 make deny             # cargo deny check licenses and sources
 make audit-unsafe     # check that every unsafe block has a // SAFETY: comment
 make spec             # validate specs and strict coverage
-make msrv             # check all targets and features with Rust 1.75
+make msrv             # check all targets and features with Rust 1.98.1
 make rustdoc          # build warning-free public docs
 make assurance-env    # create the pinned shared-assurance interpreter
 make assurance-inputs # run the producers and write their structured results
@@ -89,7 +89,7 @@ producers that feed the chain. Tracked as `agent-ix/tl-mltl#14`.
 
 Backported from `agent-ix/ecaz`:
 
-- `clippy.toml` pins MSRV to `1.75` and caps cognitive complexity / arg count
+- `clippy.toml` pins MSRV to `1.98` and caps cognitive complexity / arg count
 - `deny.toml` allow-lists licenses and denies unknown registries/git sources
 - `scripts/check_unsafe_comments.sh` runs locally via `make audit-unsafe`. Every
   `unsafe {` block must have a `// SAFETY:` comment within the 3 preceding lines,

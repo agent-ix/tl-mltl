@@ -46,7 +46,7 @@ fn cargo_supports_check_cfg() -> bool {
 
 fn main() {
     // The directive was stabilized in Cargo 1.80. Do not emit an unsupported
-    // directive under this crate's Rust 1.75 MSRV, but retain strict cfg
+    // directive under historical toolchains, while retaining strict cfg
     // checking when a newer Cargo invokes the build.
     if cargo_supports_check_cfg() {
         println!("cargo:rustc-check-cfg=cfg(kani)");

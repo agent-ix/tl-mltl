@@ -1,4 +1,9 @@
-//! Origin-complete position histories, checked history analysis, and past evaluation.
+//! Origin-complete past-time history, requirement, result, and evaluation subsystem.
+
+pub mod evaluate;
+pub mod history;
+pub mod requirement;
+pub mod result;
 
 use core::fmt;
 
@@ -1859,12 +1864,12 @@ struct PastEvaluator<'formula, 'history> {
 
 impl PastEvaluator<'_, '_> {
     fn consume_node(&mut self, depth: u32) -> Result<(), PastEvaluationError> {
+        self.stats.max_recursion_depth = self.stats.max_recursion_depth.max(depth);
         if depth > self.limits.max_recursion_depth {
             return Err(PastEvaluationError::RecursionDepthExceeded {
                 limit: self.limits.max_recursion_depth,
             });
         }
-        self.stats.max_recursion_depth = self.stats.max_recursion_depth.max(depth);
         self.stats.node_evaluations = self.stats.node_evaluations.checked_add(1).ok_or(
             PastEvaluationError::StepLimitExceeded {
                 limit: self.limits.max_steps,
@@ -2194,6 +2199,60 @@ pub fn evaluate_past<'history>(
     relation_input: PastEvaluationRelationInput<'_>,
     limits: PastEvaluationLimits,
 ) -> Result<PastEvaluationReport, PastEvaluationError> {
+    evaluate_past_with_stats(
+        formula,
+        formula_id,
+        history_source,
+        anchor,
+        proposition_map_id,
+        result_revision,
+        relation_input,
+        limits,
+    )
+    .0
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn evaluate_past_with_stats<'history>(
+    formula: Formula<'_>,
+    formula_id: impl Into<String>,
+    history_source: impl Into<PositionHistorySource<'history>>,
+    anchor: u64,
+    proposition_map_id: impl Into<String>,
+    result_revision: u64,
+    relation_input: PastEvaluationRelationInput<'_>,
+    limits: PastEvaluationLimits,
+) -> (
+    Result<PastEvaluationReport, PastEvaluationError>,
+    PastEvaluationStats,
+) {
+    let mut stats = PastEvaluationStats::default();
+    let result = evaluate_past_inner(
+        formula,
+        formula_id,
+        history_source,
+        anchor,
+        proposition_map_id,
+        result_revision,
+        relation_input,
+        limits,
+        &mut stats,
+    );
+    (result, stats)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn evaluate_past_inner<'history>(
+    formula: Formula<'_>,
+    formula_id: impl Into<String>,
+    history_source: impl Into<PositionHistorySource<'history>>,
+    anchor: u64,
+    proposition_map_id: impl Into<String>,
+    result_revision: u64,
+    relation_input: PastEvaluationRelationInput<'_>,
+    limits: PastEvaluationLimits,
+    observed: &mut PastEvaluationStats,
+) -> Result<PastEvaluationReport, PastEvaluationError> {
     let history = match history_source.into() {
         PositionHistorySource::History(history) => history,
         PositionHistorySource::NonValue(state) => {
@@ -2201,6 +2260,7 @@ pub fn evaluate_past<'history>(
         }
     };
     history.validate().map_err(PastEvaluationError::History)?;
+    observed.input_positions = history.observations.len();
     if anchor > history.through_position {
         return Err(PastEvaluationError::AnchorOutOfRange {
             anchor,
@@ -2247,7 +2307,14 @@ pub fn evaluate_past<'history>(
             ..PastEvaluationStats::default()
         },
     };
-    let verdict = evaluator.at(formula.root(), i128::from(anchor), 0)?;
+    let verdict = match evaluator.at(formula.root(), i128::from(anchor), 0) {
+        Ok(verdict) => verdict,
+        Err(error) => {
+            *observed = evaluator.stats;
+            return Err(error);
+        }
+    };
+    *observed = evaluator.stats;
     let mut report = PastEvaluationReport {
         schema_version: PastEvaluationSchemaVersion::V1,
         result_revision,
@@ -2269,7 +2336,7 @@ pub fn evaluate_past<'history>(
         syntax_revision: TL_SYNTAX_REVISION.to_owned(),
         limits,
         required_history: requirement.required_positions,
-        stats: evaluator.stats,
+        stats: *observed,
         verdict,
         finality: PastResultFinality::Final,
         relation,

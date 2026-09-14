@@ -137,5 +137,5 @@ Observation FR-004 supplies the assertion views that requests/results preserve.
 
 ## Status
 
-Proposed complete TL evaluator owner boundary for `tl-syntax#52/#64` and
-`quire-contract-ir/FR-026`.
+Implemented complete TL evaluator owner boundary for `tl-syntax#52/#64` and
+`quire-contract-ir/FR-026`; promotion is tracked by `tl-mltl#66/#67`.

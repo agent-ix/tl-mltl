@@ -10,9 +10,12 @@ make ci
 make spec
 ```
 
-The library consumes validated `tl-syntax` formulas pinned to exact revision
-`e70f2379a752117c79603bc399a86c26feed7716` on tl-syntax `main`, which adds the
-reviewed formula-v2 origin-history profile. The
+The library requires Rust 1.98 and consumes validated `tl-syntax` formulas
+pinned to exact revision `842d82553f045eb69a7f38745756d968254fc25e`.
+Temporal owner requests additionally consume constructor-private Quire
+Observation clock, progress, closure, completeness, and availability views at
+exact revision `9ac80e93f4b68a2c7d5a337f9a448ad10de798fc`; tl-mltl does not mirror or
+reconstruct those owner types. The
 retained shared temporal corpus under `corpus/tl-syntax-v1` is a byte-identical
 copy taken at the earlier revision `740182f13b84858008d6f176f75136737d405c1b`
 and the future-operator corpus was copied at
@@ -32,6 +35,17 @@ O/H/Y/S/T at an explicit anchor, reports checked required history and work,
 accepts exact event-position or fixed-sample clocks, preserves owner non-values
 as typed errors, and emits immutable original/superseding/invalidating results.
 It never returns the future evaluator's `pending` value.
+
+The public subsystem layout is `future`,
+`past::{history,requirement,evaluate,result}`, `wire::{trace,command,request,report}`,
+`clock`, and `mapping::{legacy,contract_ir}`. Each temporal owner contract
+publishes immutable schema bytes and a pinned digest. `wire::request::read`
+admits one exact future or past request against independently supplied owner
+views; `wire::report::{evaluate,read}` emits and revalidates one immutable
+result; and `mapping::contract_ir::{map,read}` derives a TL-owned value or typed
+non-value without importing Contract-IR vocabulary or coercing unavailable
+states to Boolean values. Existing root-level evaluation, history, and legacy
+mapping paths remain available as compatibility re-exports.
 
 The `tl-mltl` binary accepts one `tl-mltl.command/v1` JSON document, either by
 path or on stdin with `-`, and emits a versioned evaluation, horizon, or mapping
@@ -80,4 +94,6 @@ validate, accredit, or qualify R2U2, another monitor, or a consuming project.
 ## License
 
 Licensed under either of Apache License, Version 2.0 or MIT license at your
-option.
+option. The required `quire-observation` dependency is AGPL-3.0-or-later; consumers
+and distributors of the combined dependency graph must comply with that
+dependency's license terms.
