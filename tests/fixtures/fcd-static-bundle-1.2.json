@@ -1,0 +1,1212 @@
+{
+  "bundleIdentity": "ix://agent-ix/commerce/bundle/orders-static-a",
+  "bundleRevision": {
+    "namespace": "filament-core-data/producer-object-revision-1",
+    "value": "2026-09-11-1"
+  },
+  "components": [
+    {
+      "componentIdentity": "ix://agent-ix/commerce/component/orders",
+      "componentRevision": {
+        "namespace": "filament-core-data/producer-object-revision-1",
+        "value": "2026-09-11-1"
+      },
+      "digest": {
+        "algorithm": "sha256",
+        "domain": "filament-canonical-json-1",
+        "value": "sha256:a51b43e104d49e4221195e9b8891d2406d421e3209a29cd648eba7d92a9f3814",
+        "version": "1"
+      },
+      "inventoryMembership": {
+        "completeness": "complete",
+        "inventoryIdentity": "ix://agent-ix/commerce/inventory/orders-2026-09-11"
+      },
+      "owningTypeIdentity": "ix://agent-ix/commerce/type/Order",
+      "repositoryIdentity": "ix://agent-ix/commerce/repository/orders",
+      "repositoryRevision": {
+        "namespace": "filament-core-data/producer-object-revision-1",
+        "value": "2026-09-11-1"
+      },
+      "roleIdentities": [
+        "ix://agent-ix/commerce/role/orders"
+      ],
+      "sourceLocus": {
+        "formal": {
+          "document": "ix://agent-ix/commerce/formal/order-declarations",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          }
+        },
+        "source": {
+          "authority": "ix://agent-ix/commerce/model-authority/primary",
+          "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "identity": "ix://agent-ix/commerce/source/order-declarations",
+          "kind": "source",
+          "refVersion": "3",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          },
+          "wire": {
+            "identity": "filament-core-data/producer-bundle",
+            "version": "1.2.0"
+          }
+        },
+        "span": {
+          "end": 192,
+          "start": 64
+        }
+      }
+    },
+    {
+      "componentIdentity": "ix://agent-ix/commerce/component/shipments",
+      "componentRevision": {
+        "namespace": "filament-core-data/producer-object-revision-1",
+        "value": "2026-09-11-1"
+      },
+      "digest": {
+        "algorithm": "sha256",
+        "domain": "filament-canonical-json-1",
+        "value": "sha256:208b8082afeec37e17ba32a2987633c8a6397f381b114699f5216d0de12d47e5",
+        "version": "1"
+      },
+      "inventoryMembership": {
+        "completeness": "complete",
+        "inventoryIdentity": "ix://agent-ix/commerce/inventory/orders-2026-09-11"
+      },
+      "owningTypeIdentity": "ix://agent-ix/commerce/type/Shipment",
+      "repositoryIdentity": "ix://agent-ix/commerce/repository/shipments",
+      "repositoryRevision": {
+        "namespace": "filament-core-data/producer-object-revision-1",
+        "value": "2026-09-11-1"
+      },
+      "roleIdentities": [
+        "ix://agent-ix/commerce/role/shipments"
+      ],
+      "sourceLocus": {
+        "formal": {
+          "document": "ix://agent-ix/commerce/formal/shipment-declarations",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          }
+        },
+        "source": {
+          "authority": "ix://agent-ix/commerce/model-authority/primary",
+          "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "identity": "ix://agent-ix/commerce/source/shipment-declarations",
+          "kind": "source",
+          "refVersion": "3",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          },
+          "wire": {
+            "identity": "filament-core-data/producer-bundle",
+            "version": "1.2.0"
+          }
+        },
+        "span": {
+          "end": 160,
+          "start": 32
+        }
+      }
+    }
+  ],
+  "configuration": {
+    "adapterIdentities": [
+      "ix://agent-ix/commerce/adapter/orders"
+    ],
+    "baselineVersion": "1.2.0",
+    "configurationIdentity": "ix://agent-ix/commerce/config/evaluation-default",
+    "digest": {
+      "algorithm": "sha256",
+      "domain": "filament-canonical-json-1",
+      "value": "sha256:20ccb33ceda91edc3bb95c28867e5ff9a46c5c9c808b41a2bda64092792d64b3",
+      "version": "1"
+    },
+    "digestSelections": [
+      {
+        "domain": "filament-canonical-json-1",
+        "version": "1"
+      },
+      {
+        "domain": "quire-native-bytes-1",
+        "version": "1"
+      }
+    ],
+    "lossPolicy": "ix://agent-ix/commerce/loss-policy/refuse",
+    "mappingTargets": [
+      "ix://agent-ix/quire/profile/order-assessment-1-2"
+    ],
+    "modelAuthority": "ix://agent-ix/commerce/model-authority/primary",
+    "profileIdentities": [
+      "ix://agent-ix/quire/profile/order-assessment-1-2"
+    ],
+    "resourceLimits": {
+      "declaredBounds": {
+        "maximumExactDecimalCoefficient": 9007199254740993,
+        "maximumStaticBundleBytes": 1048576
+      },
+      "numericResourceLimit": {
+        "maximumCoefficientDigits": 4096,
+        "maximumExponentMagnitude": 6144
+      }
+    },
+    "revisionNamespaces": [
+      "filament-core-data/producer-object-revision-1",
+      "quire-native/definition-revision-1"
+    ],
+    "trustedReferences": [
+      "ix://agent-ix/commerce/trust/model-registry"
+    ]
+  },
+  "correspondences": [
+    {
+      "bindingRelationIdentity": "ix://agent-ix/commerce/binding/order-model-to-quire-artifact",
+      "configurationIdentity": "ix://agent-ix/commerce/config/evaluation-default",
+      "exports": [
+        {
+          "exportIdentity": "ix://agent-ix/commerce/component/orders",
+          "exportPath": [
+            "orders",
+            "component"
+          ],
+          "kind": "component",
+          "locus": {
+            "formal": {
+              "document": "ix://agent-ix/commerce/formal/order-declarations",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              }
+            },
+            "source": {
+              "authority": "ix://agent-ix/commerce/model-authority/primary",
+              "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "identity": "ix://agent-ix/commerce/source/order-declarations",
+              "kind": "source",
+              "refVersion": "3",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              },
+              "wire": {
+                "identity": "filament-core-data/producer-bundle",
+                "version": "1.2.0"
+              }
+            },
+            "span": {
+              "end": 192,
+              "start": 64
+            }
+          },
+          "producerObjectIdentity": "ix://agent-ix/commerce/model/order-1-2"
+        },
+        {
+          "exportIdentity": "ix://agent-ix/commerce/component/shipments",
+          "exportPath": [
+            "shipments",
+            "component"
+          ],
+          "kind": "component",
+          "locus": {
+            "formal": {
+              "document": "ix://agent-ix/commerce/formal/shipment-declarations",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              }
+            },
+            "source": {
+              "authority": "ix://agent-ix/commerce/model-authority/primary",
+              "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "identity": "ix://agent-ix/commerce/source/shipment-declarations",
+              "kind": "source",
+              "refVersion": "3",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              },
+              "wire": {
+                "identity": "filament-core-data/producer-bundle",
+                "version": "1.2.0"
+              }
+            },
+            "span": {
+              "end": 160,
+              "start": 32
+            }
+          },
+          "producerObjectIdentity": "ix://agent-ix/commerce/model/order-1-2"
+        },
+        {
+          "exportIdentity": "ix://agent-ix/commerce/endpoint/orders",
+          "exportPath": [
+            "orders",
+            "endpoint"
+          ],
+          "kind": "endpoint",
+          "locus": {
+            "formal": {
+              "document": "ix://agent-ix/commerce/formal/order-declarations",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              }
+            },
+            "source": {
+              "authority": "ix://agent-ix/commerce/model-authority/primary",
+              "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "identity": "ix://agent-ix/commerce/source/order-declarations",
+              "kind": "source",
+              "refVersion": "3",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              },
+              "wire": {
+                "identity": "filament-core-data/producer-bundle",
+                "version": "1.2.0"
+              }
+            },
+            "span": {
+              "end": 240,
+              "start": 192
+            }
+          },
+          "producerObjectIdentity": "ix://agent-ix/commerce/model/order-1-2"
+        },
+        {
+          "exportIdentity": "ix://agent-ix/commerce/endpoint/Order-shipment-source",
+          "exportPath": [
+            "orders",
+            "Order",
+            "shipment",
+            "source"
+          ],
+          "kind": "endpoint",
+          "locus": {
+            "formal": {
+              "document": "ix://agent-ix/commerce/formal/order-declarations",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              }
+            },
+            "source": {
+              "authority": "ix://agent-ix/commerce/model-authority/primary",
+              "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "identity": "ix://agent-ix/commerce/source/order-declarations",
+              "kind": "source",
+              "refVersion": "3",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              },
+              "wire": {
+                "identity": "filament-core-data/producer-bundle",
+                "version": "1.2.0"
+              }
+            },
+            "span": {
+              "end": 320,
+              "start": 240
+            }
+          },
+          "producerObjectIdentity": "ix://agent-ix/commerce/model/order-1-2"
+        },
+        {
+          "exportIdentity": "ix://agent-ix/commerce/endpoint/Order-shipment-target",
+          "exportPath": [
+            "shipments",
+            "Shipment",
+            "shipment",
+            "target"
+          ],
+          "kind": "endpoint",
+          "locus": {
+            "formal": {
+              "document": "ix://agent-ix/commerce/formal/shipment-declarations",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              }
+            },
+            "source": {
+              "authority": "ix://agent-ix/commerce/model-authority/primary",
+              "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "identity": "ix://agent-ix/commerce/source/shipment-declarations",
+              "kind": "source",
+              "refVersion": "3",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              },
+              "wire": {
+                "identity": "filament-core-data/producer-bundle",
+                "version": "1.2.0"
+              }
+            },
+            "span": {
+              "end": 240,
+              "start": 160
+            }
+          },
+          "producerObjectIdentity": "ix://agent-ix/commerce/model/order-1-2"
+        },
+        {
+          "exportIdentity": "ix://agent-ix/commerce/endpoint/Order-successor-source",
+          "exportPath": [
+            "orders",
+            "Order",
+            "successor",
+            "source"
+          ],
+          "kind": "endpoint",
+          "locus": {
+            "formal": {
+              "document": "ix://agent-ix/commerce/formal/order-declarations",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              }
+            },
+            "source": {
+              "authority": "ix://agent-ix/commerce/model-authority/primary",
+              "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "identity": "ix://agent-ix/commerce/source/order-declarations",
+              "kind": "source",
+              "refVersion": "3",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              },
+              "wire": {
+                "identity": "filament-core-data/producer-bundle",
+                "version": "1.2.0"
+              }
+            },
+            "span": {
+              "end": 400,
+              "start": 320
+            }
+          },
+          "producerObjectIdentity": "ix://agent-ix/commerce/model/order-1-2"
+        },
+        {
+          "exportIdentity": "ix://agent-ix/commerce/endpoint/Order-successor-target",
+          "exportPath": [
+            "orders",
+            "Order",
+            "successor",
+            "target"
+          ],
+          "kind": "endpoint",
+          "locus": {
+            "formal": {
+              "document": "ix://agent-ix/commerce/formal/order-declarations",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              }
+            },
+            "source": {
+              "authority": "ix://agent-ix/commerce/model-authority/primary",
+              "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "identity": "ix://agent-ix/commerce/source/order-declarations",
+              "kind": "source",
+              "refVersion": "3",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              },
+              "wire": {
+                "identity": "filament-core-data/producer-bundle",
+                "version": "1.2.0"
+              }
+            },
+            "span": {
+              "end": 480,
+              "start": 400
+            }
+          },
+          "producerObjectIdentity": "ix://agent-ix/commerce/model/order-1-2"
+        },
+        {
+          "exportIdentity": "ix://agent-ix/commerce/relationship/Order-shipment",
+          "exportPath": [
+            "orders",
+            "Order",
+            "shipment"
+          ],
+          "kind": "relationship",
+          "locus": {
+            "formal": {
+              "document": "ix://agent-ix/commerce/formal/order-declarations",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              }
+            },
+            "source": {
+              "authority": "ix://agent-ix/commerce/model-authority/primary",
+              "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "identity": "ix://agent-ix/commerce/source/order-declarations",
+              "kind": "source",
+              "refVersion": "3",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              },
+              "wire": {
+                "identity": "filament-core-data/producer-bundle",
+                "version": "1.2.0"
+              }
+            },
+            "span": {
+              "end": 320,
+              "start": 240
+            }
+          },
+          "producerObjectIdentity": "ix://agent-ix/commerce/model/order-1-2"
+        },
+        {
+          "exportIdentity": "ix://agent-ix/commerce/type/Order",
+          "exportPath": [
+            "orders",
+            "Order"
+          ],
+          "kind": "object",
+          "locus": {
+            "formal": {
+              "document": "ix://agent-ix/commerce/formal/order-declarations",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              }
+            },
+            "source": {
+              "authority": "ix://agent-ix/commerce/model-authority/primary",
+              "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "identity": "ix://agent-ix/commerce/source/order-declarations",
+              "kind": "source",
+              "refVersion": "3",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              },
+              "wire": {
+                "identity": "filament-core-data/producer-bundle",
+                "version": "1.2.0"
+              }
+            },
+            "span": {
+              "end": 192,
+              "start": 64
+            }
+          },
+          "producerObjectIdentity": "ix://agent-ix/commerce/model/order-1-2"
+        },
+        {
+          "exportIdentity": "ix://agent-ix/commerce/type/Shipment",
+          "exportPath": [
+            "shipments",
+            "Shipment"
+          ],
+          "kind": "record",
+          "locus": {
+            "formal": {
+              "document": "ix://agent-ix/commerce/formal/shipment-declarations",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              }
+            },
+            "source": {
+              "authority": "ix://agent-ix/commerce/model-authority/primary",
+              "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "identity": "ix://agent-ix/commerce/source/shipment-declarations",
+              "kind": "source",
+              "refVersion": "3",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              },
+              "wire": {
+                "identity": "filament-core-data/producer-bundle",
+                "version": "1.2.0"
+              }
+            },
+            "span": {
+              "end": 160,
+              "start": 32
+            }
+          },
+          "producerObjectIdentity": "ix://agent-ix/commerce/model/order-1-2"
+        }
+      ],
+      "native": {
+        "identity": "ix://agent-ix/quire/artifact/order-assessment-1-2",
+        "rawByteDigest": {
+          "algorithm": "sha256",
+          "domain": "quire-native-bytes-1",
+          "value": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+          "version": "1"
+        },
+        "revision": {
+          "namespace": "quire-native/definition-revision-1",
+          "value": "1.2.0"
+        }
+      },
+      "nativeDefinitionClosure": [
+        {
+          "identity": "ix://agent-ix/quire/definition/core-assessment-1-2",
+          "rawByteDigest": {
+            "algorithm": "sha256",
+            "domain": "quire-native-bytes-1",
+            "value": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+            "version": "1"
+          },
+          "revision": {
+            "namespace": "quire-native/definition-revision-1",
+            "value": "1.2.0"
+          }
+        },
+        {
+          "identity": "ix://agent-ix/quire/definition/order-assessment-1-2",
+          "rawByteDigest": {
+            "algorithm": "sha256",
+            "domain": "quire-native-bytes-1",
+            "value": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+            "version": "1"
+          },
+          "revision": {
+            "namespace": "quire-native/definition-revision-1",
+            "value": "1.2.0"
+          }
+        }
+      ],
+      "producer": {
+        "authority": "ix://agent-ix/commerce/model-authority/primary",
+        "digest": {
+          "algorithm": "sha256",
+          "domain": "filament-canonical-json-1",
+          "value": "sha256:4c0d70191bea37835bdbb8229736201080579b072f878d181ac93118b68a3f5e",
+          "version": "1"
+        },
+        "identity": "ix://agent-ix/commerce/model/order-1-2",
+        "objectKind": "model",
+        "revision": {
+          "namespace": "filament-core-data/producer-object-revision-1",
+          "value": "1.2.0"
+        }
+      },
+      "requiredNativeDefinitionIdentities": [
+        "ix://agent-ix/quire/definition/core-assessment-1-2",
+        "ix://agent-ix/quire/definition/order-assessment-1-2"
+      ]
+    },
+    {
+      "bindingRelationIdentity": "ix://agent-ix/commerce/binding/order-profile-to-quire-artifact",
+      "configurationIdentity": "ix://agent-ix/commerce/config/evaluation-default",
+      "exports": [
+        {
+          "exportIdentity": "ix://agent-ix/commerce/relationship/Order-successor",
+          "exportPath": [
+            "orders",
+            "Order",
+            "successor"
+          ],
+          "kind": "relationship",
+          "locus": {
+            "formal": {
+              "document": "ix://agent-ix/commerce/formal/order-declarations",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              }
+            },
+            "source": {
+              "authority": "ix://agent-ix/commerce/model-authority/primary",
+              "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "identity": "ix://agent-ix/commerce/source/order-declarations",
+              "kind": "source",
+              "refVersion": "3",
+              "revision": {
+                "namespace": "filament-core-data/producer-object-revision-1",
+                "value": "2026-09-11-1"
+              },
+              "wire": {
+                "identity": "filament-core-data/producer-bundle",
+                "version": "1.2.0"
+              }
+            },
+            "span": {
+              "end": 400,
+              "start": 320
+            }
+          },
+          "producerObjectIdentity": "ix://agent-ix/quire/profile/order-assessment-1-2"
+        }
+      ],
+      "native": {
+        "identity": "ix://agent-ix/quire/artifact/order-profile-1-2",
+        "rawByteDigest": {
+          "algorithm": "sha256",
+          "domain": "quire-native-bytes-1",
+          "value": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+          "version": "1"
+        },
+        "revision": {
+          "namespace": "quire-native/definition-revision-1",
+          "value": "1.2.0"
+        }
+      },
+      "nativeDefinitionClosure": [
+        {
+          "identity": "ix://agent-ix/quire/definition/core-assessment-1-2",
+          "rawByteDigest": {
+            "algorithm": "sha256",
+            "domain": "quire-native-bytes-1",
+            "value": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+            "version": "1"
+          },
+          "revision": {
+            "namespace": "quire-native/definition-revision-1",
+            "value": "1.2.0"
+          }
+        }
+      ],
+      "producer": {
+        "authority": "ix://agent-ix/commerce/model-authority/primary",
+        "digest": {
+          "algorithm": "sha256",
+          "domain": "filament-canonical-json-1",
+          "value": "sha256:831daba180268128c8fb19835ccd14c0b682a8c5e9bbae366c71a6231356cce7",
+          "version": "1"
+        },
+        "identity": "ix://agent-ix/quire/profile/order-assessment-1-2",
+        "objectKind": "profile",
+        "revision": {
+          "namespace": "filament-core-data/producer-object-revision-1",
+          "value": "1.2.0"
+        }
+      },
+      "requiredNativeDefinitionIdentities": [
+        "ix://agent-ix/quire/definition/core-assessment-1-2"
+      ]
+    }
+  ],
+  "digest": {
+    "algorithm": "sha256",
+    "domain": "filament-canonical-json-1",
+    "value": "sha256:e63d3f2c7c8743f479fb4745a19b87edb80497a1e1e84b2557bcb8e88f352ed0",
+    "version": "1"
+  },
+  "endpoints": [
+    {
+      "componentIdentity": "ix://agent-ix/commerce/component/orders",
+      "digest": {
+        "algorithm": "sha256",
+        "domain": "filament-canonical-json-1",
+        "value": "sha256:dceb5829af981e4c9546ee80490a44661e6d60bd2bf5c7a7403e8bd8ff2395c1",
+        "version": "1"
+      },
+      "endpointIdentity": "ix://agent-ix/commerce/endpoint/orders",
+      "endpointRevision": {
+        "namespace": "filament-core-data/producer-object-revision-1",
+        "value": "2026-09-11-1"
+      },
+      "inventoryMembership": {
+        "completeness": "complete",
+        "inventoryIdentity": "ix://agent-ix/commerce/inventory/orders-2026-09-11"
+      },
+      "multiplicity": {
+        "lower": 0,
+        "ordered": false,
+        "unique": true
+      },
+      "role": "orders",
+      "sourceLocus": {
+        "formal": {
+          "document": "ix://agent-ix/commerce/formal/order-declarations",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          }
+        },
+        "source": {
+          "authority": "ix://agent-ix/commerce/model-authority/primary",
+          "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "identity": "ix://agent-ix/commerce/source/order-declarations",
+          "kind": "source",
+          "refVersion": "3",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          },
+          "wire": {
+            "identity": "filament-core-data/producer-bundle",
+            "version": "1.2.0"
+          }
+        },
+        "span": {
+          "end": 240,
+          "start": 192
+        }
+      },
+      "typeIdentity": "ix://agent-ix/commerce/type/Order"
+    },
+    {
+      "componentIdentity": "ix://agent-ix/commerce/component/orders",
+      "digest": {
+        "algorithm": "sha256",
+        "domain": "filament-canonical-json-1",
+        "value": "sha256:29896bf0d3b5fcda6277036052804054c4170c612a63384e175012fd944871f7",
+        "version": "1"
+      },
+      "endpointIdentity": "ix://agent-ix/commerce/endpoint/Order-shipment-source",
+      "endpointRevision": {
+        "namespace": "filament-core-data/producer-object-revision-1",
+        "value": "2026-09-11-1"
+      },
+      "inventoryMembership": {
+        "completeness": "complete",
+        "inventoryIdentity": "ix://agent-ix/commerce/inventory/orders-2026-09-11"
+      },
+      "multiplicity": {
+        "lower": 0,
+        "ordered": false,
+        "unique": true,
+        "upper": 1
+      },
+      "role": "order",
+      "sourceLocus": {
+        "formal": {
+          "document": "ix://agent-ix/commerce/formal/order-declarations",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          }
+        },
+        "source": {
+          "authority": "ix://agent-ix/commerce/model-authority/primary",
+          "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "identity": "ix://agent-ix/commerce/source/order-declarations",
+          "kind": "source",
+          "refVersion": "3",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          },
+          "wire": {
+            "identity": "filament-core-data/producer-bundle",
+            "version": "1.2.0"
+          }
+        },
+        "span": {
+          "end": 320,
+          "start": 240
+        }
+      },
+      "typeIdentity": "ix://agent-ix/commerce/type/Order"
+    },
+    {
+      "componentIdentity": "ix://agent-ix/commerce/component/shipments",
+      "digest": {
+        "algorithm": "sha256",
+        "domain": "filament-canonical-json-1",
+        "value": "sha256:b98f21f40a429b16d70159cd8273a87ff52ba4010b6612a272d7fc5cc064c4ac",
+        "version": "1"
+      },
+      "endpointIdentity": "ix://agent-ix/commerce/endpoint/Order-shipment-target",
+      "endpointRevision": {
+        "namespace": "filament-core-data/producer-object-revision-1",
+        "value": "2026-09-11-1"
+      },
+      "inventoryMembership": {
+        "completeness": "complete",
+        "inventoryIdentity": "ix://agent-ix/commerce/inventory/orders-2026-09-11"
+      },
+      "multiplicity": {
+        "lower": 1,
+        "ordered": false,
+        "unique": true,
+        "upper": 1
+      },
+      "role": "shipment",
+      "sourceLocus": {
+        "formal": {
+          "document": "ix://agent-ix/commerce/formal/shipment-declarations",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          }
+        },
+        "source": {
+          "authority": "ix://agent-ix/commerce/model-authority/primary",
+          "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "identity": "ix://agent-ix/commerce/source/shipment-declarations",
+          "kind": "source",
+          "refVersion": "3",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          },
+          "wire": {
+            "identity": "filament-core-data/producer-bundle",
+            "version": "1.2.0"
+          }
+        },
+        "span": {
+          "end": 240,
+          "start": 160
+        }
+      },
+      "typeIdentity": "ix://agent-ix/commerce/type/Shipment"
+    },
+    {
+      "componentIdentity": "ix://agent-ix/commerce/component/orders",
+      "digest": {
+        "algorithm": "sha256",
+        "domain": "filament-canonical-json-1",
+        "value": "sha256:88e2647ab323942701b7653cc7e931d9c867bd386a80fe17d197f2e136b82841",
+        "version": "1"
+      },
+      "endpointIdentity": "ix://agent-ix/commerce/endpoint/Order-successor-source",
+      "endpointRevision": {
+        "namespace": "filament-core-data/producer-object-revision-1",
+        "value": "2026-09-11-1"
+      },
+      "inventoryMembership": {
+        "completeness": "complete",
+        "inventoryIdentity": "ix://agent-ix/commerce/inventory/orders-2026-09-11"
+      },
+      "multiplicity": {
+        "lower": 0,
+        "ordered": false,
+        "unique": true,
+        "upper": 1
+      },
+      "role": "predecessor",
+      "sourceLocus": {
+        "formal": {
+          "document": "ix://agent-ix/commerce/formal/order-declarations",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          }
+        },
+        "source": {
+          "authority": "ix://agent-ix/commerce/model-authority/primary",
+          "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "identity": "ix://agent-ix/commerce/source/order-declarations",
+          "kind": "source",
+          "refVersion": "3",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          },
+          "wire": {
+            "identity": "filament-core-data/producer-bundle",
+            "version": "1.2.0"
+          }
+        },
+        "span": {
+          "end": 400,
+          "start": 320
+        }
+      },
+      "typeIdentity": "ix://agent-ix/commerce/type/Order"
+    },
+    {
+      "componentIdentity": "ix://agent-ix/commerce/component/orders",
+      "digest": {
+        "algorithm": "sha256",
+        "domain": "filament-canonical-json-1",
+        "value": "sha256:44e429da4d009ef8f45ef86463781979826fab76415af190235b0b418a14f1a1",
+        "version": "1"
+      },
+      "endpointIdentity": "ix://agent-ix/commerce/endpoint/Order-successor-target",
+      "endpointRevision": {
+        "namespace": "filament-core-data/producer-object-revision-1",
+        "value": "2026-09-11-1"
+      },
+      "inventoryMembership": {
+        "completeness": "complete",
+        "inventoryIdentity": "ix://agent-ix/commerce/inventory/orders-2026-09-11"
+      },
+      "multiplicity": {
+        "lower": 0,
+        "ordered": true,
+        "unique": true
+      },
+      "role": "successor",
+      "sourceLocus": {
+        "formal": {
+          "document": "ix://agent-ix/commerce/formal/order-declarations",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          }
+        },
+        "source": {
+          "authority": "ix://agent-ix/commerce/model-authority/primary",
+          "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "identity": "ix://agent-ix/commerce/source/order-declarations",
+          "kind": "source",
+          "refVersion": "3",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          },
+          "wire": {
+            "identity": "filament-core-data/producer-bundle",
+            "version": "1.2.0"
+          }
+        },
+        "span": {
+          "end": 480,
+          "start": 400
+        }
+      },
+      "typeIdentity": "ix://agent-ix/commerce/type/Order"
+    }
+  ],
+  "interfaceVersion": "1.2.0",
+  "inventory": {
+    "completeness": "complete",
+    "componentIdentities": [
+      "ix://agent-ix/commerce/component/orders",
+      "ix://agent-ix/commerce/component/shipments"
+    ],
+    "endpointIdentities": [
+      "ix://agent-ix/commerce/endpoint/Order-shipment-source",
+      "ix://agent-ix/commerce/endpoint/Order-shipment-target",
+      "ix://agent-ix/commerce/endpoint/Order-successor-source",
+      "ix://agent-ix/commerce/endpoint/Order-successor-target",
+      "ix://agent-ix/commerce/endpoint/orders"
+    ],
+    "inventoryIdentity": "ix://agent-ix/commerce/inventory/orders-2026-09-11",
+    "relationshipIdentities": [
+      "ix://agent-ix/commerce/relationship/Order-shipment",
+      "ix://agent-ix/commerce/relationship/Order-successor"
+    ]
+  },
+  "model": {
+    "digest": {
+      "algorithm": "sha256",
+      "domain": "filament-canonical-json-1",
+      "value": "sha256:4c0d70191bea37835bdbb8229736201080579b072f878d181ac93118b68a3f5e",
+      "version": "1"
+    },
+    "modelIdentity": "ix://agent-ix/commerce/model/order-1-2",
+    "modelRevision": {
+      "namespace": "filament-core-data/producer-object-revision-1",
+      "value": "1.2.0"
+    }
+  },
+  "profile": {
+    "digest": {
+      "algorithm": "sha256",
+      "domain": "filament-canonical-json-1",
+      "value": "sha256:831daba180268128c8fb19835ccd14c0b682a8c5e9bbae366c71a6231356cce7",
+      "version": "1"
+    },
+    "profileIdentity": "ix://agent-ix/quire/profile/order-assessment-1-2",
+    "profileRevision": {
+      "namespace": "filament-core-data/producer-object-revision-1",
+      "value": "1.2.0"
+    }
+  },
+  "relationships": [
+    {
+      "digest": {
+        "algorithm": "sha256",
+        "domain": "filament-canonical-json-1",
+        "value": "sha256:927f5667e17e84338bf05ca347db905653f026fd9d47d738068cc68b678e5e3a",
+        "version": "1"
+      },
+      "inventoryMembership": {
+        "completeness": "complete",
+        "inventoryIdentity": "ix://agent-ix/commerce/inventory/orders-2026-09-11"
+      },
+      "ownership": {
+        "configurationIdentity": "ix://agent-ix/commerce/config/evaluation-default",
+        "modelIdentity": "ix://agent-ix/commerce/model/order-1-2",
+        "profileIdentity": "ix://agent-ix/quire/profile/order-assessment-1-2"
+      },
+      "relationshipIdentity": "ix://agent-ix/commerce/relationship/Order-shipment",
+      "relationshipName": "shipment",
+      "relationshipRevision": {
+        "namespace": "filament-core-data/producer-object-revision-1",
+        "value": "2026-09-11-1"
+      },
+      "semantics": {
+        "category": "structural",
+        "composite": true,
+        "direction": "source-to-target",
+        "lifecycle": "order-owned",
+        "ownership": "order"
+      },
+      "source": {
+        "endpointIdentity": "ix://agent-ix/commerce/endpoint/Order-shipment-source",
+        "multiplicity": {
+          "lower": 0,
+          "ordered": false,
+          "unique": true,
+          "upper": 1
+        },
+        "role": "order",
+        "typeIdentity": "ix://agent-ix/commerce/type/Order"
+      },
+      "target": {
+        "endpointIdentity": "ix://agent-ix/commerce/endpoint/Order-shipment-target",
+        "multiplicity": {
+          "lower": 1,
+          "ordered": false,
+          "unique": true,
+          "upper": 1
+        },
+        "role": "shipment",
+        "typeIdentity": "ix://agent-ix/commerce/type/Shipment"
+      }
+    },
+    {
+      "digest": {
+        "algorithm": "sha256",
+        "domain": "filament-canonical-json-1",
+        "value": "sha256:b16b61e8969073513ef817f84beda21b1c4f4381781e747fe181fab6c082596e",
+        "version": "1"
+      },
+      "inventoryMembership": {
+        "completeness": "complete",
+        "inventoryIdentity": "ix://agent-ix/commerce/inventory/orders-2026-09-11"
+      },
+      "ownership": {
+        "configurationIdentity": "ix://agent-ix/commerce/config/evaluation-default",
+        "modelIdentity": "ix://agent-ix/commerce/model/order-1-2",
+        "profileIdentity": "ix://agent-ix/quire/profile/order-assessment-1-2"
+      },
+      "relationshipIdentity": "ix://agent-ix/commerce/relationship/Order-successor",
+      "relationshipName": "successor",
+      "relationshipRevision": {
+        "namespace": "filament-core-data/producer-object-revision-1",
+        "value": "2026-09-11-1"
+      },
+      "semantics": {
+        "category": "associative",
+        "composite": false,
+        "direction": "source-to-target",
+        "lifecycle": "order-independent",
+        "ownership": "none"
+      },
+      "source": {
+        "endpointIdentity": "ix://agent-ix/commerce/endpoint/Order-successor-source",
+        "multiplicity": {
+          "lower": 0,
+          "ordered": false,
+          "unique": true,
+          "upper": 1
+        },
+        "role": "predecessor",
+        "typeIdentity": "ix://agent-ix/commerce/type/Order"
+      },
+      "target": {
+        "endpointIdentity": "ix://agent-ix/commerce/endpoint/Order-successor-target",
+        "multiplicity": {
+          "lower": 0,
+          "ordered": true,
+          "unique": true
+        },
+        "role": "successor",
+        "typeIdentity": "ix://agent-ix/commerce/type/Order"
+      }
+    }
+  ],
+  "staticClosure": {
+    "configurationDigest": {
+      "algorithm": "sha256",
+      "domain": "filament-canonical-json-1",
+      "value": "sha256:20ccb33ceda91edc3bb95c28867e5ff9a46c5c9c808b41a2bda64092792d64b3",
+      "version": "1"
+    },
+    "configurationIdentity": "ix://agent-ix/commerce/config/evaluation-default",
+    "declarationSources": [
+      {
+        "formal": {
+          "document": "ix://agent-ix/commerce/formal/order-declarations",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          }
+        },
+        "native": {
+          "identity": "ix://agent-ix/quire/source/order-declarations",
+          "revision": "editable-draft-7"
+        },
+        "path": "models/orders.tsp",
+        "source": {
+          "authority": "ix://agent-ix/commerce/model-authority/primary",
+          "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "identity": "ix://agent-ix/commerce/source/order-declarations",
+          "kind": "source",
+          "refVersion": "3",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          },
+          "wire": {
+            "identity": "filament-core-data/producer-bundle",
+            "version": "1.2.0"
+          }
+        }
+      },
+      {
+        "formal": {
+          "document": "ix://agent-ix/commerce/formal/shipment-declarations",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          }
+        },
+        "native": {
+          "identity": "ix://agent-ix/quire/source/shipment-declarations",
+          "revision": "editable-draft-3"
+        },
+        "path": "models/shipments.tsp",
+        "source": {
+          "authority": "ix://agent-ix/commerce/model-authority/primary",
+          "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "identity": "ix://agent-ix/commerce/source/shipment-declarations",
+          "kind": "source",
+          "refVersion": "3",
+          "revision": {
+            "namespace": "filament-core-data/producer-object-revision-1",
+            "value": "2026-09-11-1"
+          },
+          "wire": {
+            "identity": "filament-core-data/producer-bundle",
+            "version": "1.2.0"
+          }
+        }
+      }
+    ],
+    "modelDigest": {
+      "algorithm": "sha256",
+      "domain": "filament-canonical-json-1",
+      "value": "sha256:4c0d70191bea37835bdbb8229736201080579b072f878d181ac93118b68a3f5e",
+      "version": "1"
+    },
+    "modelIdentity": "ix://agent-ix/commerce/model/order-1-2",
+    "profileDigest": {
+      "algorithm": "sha256",
+      "domain": "filament-canonical-json-1",
+      "value": "sha256:831daba180268128c8fb19835ccd14c0b682a8c5e9bbae366c71a6231356cce7",
+      "version": "1"
+    },
+    "profileIdentity": "ix://agent-ix/quire/profile/order-assessment-1-2"
+  }
+}

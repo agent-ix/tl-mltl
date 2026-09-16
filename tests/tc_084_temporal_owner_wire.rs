@@ -1,18 +1,19 @@
+use agent_ix_baseline_producer::StaticProducerBundle;
 use quire_observation::authority::{
     self, AuthoritySelection, Context, History, Limits as ObservationLimits, OpenClosed,
     SubjectSelection, TemporalBoundary,
 };
 use quire_observation::{
     admit, AdmissionOutcome, AdmissionRequest, AdmittedRecord, Anchor, ClockRange, Digest,
-    Identity, Member, ObservationBinding, PackageSelection, ProducerSelection,
-    QualifiedObservation, ResourceLimits, ScopeKind, ScopeSelection, Subject, SubjectKind,
-    ValueState, Visibility, NATIVE_LINKED_PACKAGE_FORMAT, PRODUCER_INTERFACE_VERSION,
+    Identity, Member, ObservationBinding, PackageSelection, QualifiedObservation, QualifiedSubject,
+    ResourceLimits, ScopeKind, ScopeSelection, SubjectIdentity, SubjectKind, ValueState,
+    Visibility, NATIVE_LINKED_PACKAGE_FORMAT,
 };
 use serde_json::Value;
 use sha2::{Digest as _, Sha256};
 use tl_mltl::mapping::contract_ir::{self, MappedOutcome, MappingSelection, NonValueKind};
 use tl_mltl::past::{history, requirement, result};
-use tl_mltl::wire::{command, report, request, trace};
+use tl_mltl::wire::{command, observation, report, request, trace};
 use tl_mltl::wire::{OwnerLimits, OwnerReadErrorCode};
 use tl_mltl::{
     analyze_required_history, fixed_sample_instant, ClockBinding, ClockSample, CommandDocument,
@@ -116,10 +117,14 @@ fn qualified_with_clock(
     positions: u64,
     fixture_clock: FixtureClock,
 ) -> Box<QualifiedObservation> {
-    let subject = Subject {
-        kind: SubjectKind::Order,
-        identity: id(format!("order:{tag}")),
-    };
+    let producer =
+        StaticProducerBundle::admit_json(include_bytes!("fixtures/fcd-static-bundle-1.2.json"))
+            .unwrap();
+    let subject = QualifiedSubject::new(
+        &producer,
+        SubjectKind::new("ix://agent-ix/commerce/type/Order").unwrap(),
+        SubjectIdentity::new(format!("order:{tag}")).unwrap(),
+    );
     let mut request = AdmissionRequest {
         package: PackageSelection {
             format: NATIVE_LINKED_PACKAGE_FORMAT.to_owned(),
@@ -127,14 +132,7 @@ fn qualified_with_clock(
             revision: id("1"),
             digest: digest(1),
         },
-        producer: ProducerSelection {
-            interface_version: PRODUCER_INTERFACE_VERSION.to_owned(),
-            document_identity: id(format!("producer:{tag}")),
-            document_digest: digest(2),
-            model_identity: id(format!("model:{tag}")),
-            configuration_identity: id(format!("configuration:{tag}")),
-            configuration_digest: digest(3),
-        },
+        producer,
         binding: ObservationBinding {
             identity: id(format!("binding:{tag}")),
             source_identity: id(format!("source:{tag}")),
@@ -142,7 +140,7 @@ fn qualified_with_clock(
             signal_identity: id("signal:p0"),
             trigger_identity: id(format!("trigger:{tag}")),
             unit: id("boolean"),
-            subject_kind: SubjectKind::Order,
+            subject_kind: subject.kind().clone(),
             required: true,
         },
         expected_subject: subject.clone(),
@@ -1696,4 +1694,106 @@ fn tc_084_owner_evidence_contexts_cannot_be_cross_wired() {
             .field(),
         "decisionEvidenceContext"
     );
+}
+
+// Trace: TC-085, FR-019-AC-1, FR-019-AC-2, FR-019-AC-3
+#[test]
+fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
+    let decision = owner_views("decision-c00", 2);
+    let surrounding = owner_views("surrounding-c00", 2);
+    let formula = future_formula(SemanticProfile::ClosedTraceV1);
+    let propositions = proposition_map();
+    let trace =
+        trace::ValidatedTrace::admit(&trace_document("trace:c00", true), OwnerLimits::default())
+            .unwrap();
+    let input = future_request_input(
+        &formula,
+        &propositions,
+        &trace,
+        &decision,
+        &surrounding,
+        observations(
+            &decision,
+            &surrounding,
+            true,
+            true,
+            true,
+            true,
+            &decision.completeness_complete,
+            &decision.availability_available,
+        ),
+    );
+
+    let direct = request::derive(input, OwnerLimits::default()).unwrap();
+    let dispatched = observation::consume_temporal(input, OwnerLimits::default()).unwrap();
+    assert_eq!(dispatched.bytes(), direct.bytes());
+    assert_eq!(dispatched.usage(), direct.usage());
+
+    let tightening = OwnerLimits {
+        max_output_bytes: direct.bytes().len(),
+        ..OwnerLimits::default()
+    };
+    let tightened = request::derive(input, tightening).unwrap();
+    let exact = OwnerLimits {
+        max_output_bytes: tightened.bytes().len(),
+        ..OwnerLimits::default()
+    };
+    let exact_direct = request::derive(input, exact).unwrap();
+    assert_eq!(exact_direct.bytes().len(), exact.max_output_bytes);
+    assert_eq!(
+        observation::consume_temporal(input, exact).unwrap().bytes(),
+        exact_direct.bytes()
+    );
+    let one_over = OwnerLimits {
+        max_output_bytes: exact.max_output_bytes - 1,
+        ..OwnerLimits::default()
+    };
+    assert_eq!(
+        observation::consume_temporal(input, one_over)
+            .unwrap_err()
+            .code(),
+        OwnerReadErrorCode::ResourceIncomplete
+    );
+
+    let observation::Compatibility::Supported(supported) =
+        observation::compatibility(observation::Contract::TemporalAssessment)
+    else {
+        panic!("temporal assessment contract must remain supported by TL");
+    };
+    assert_eq!(
+        supported.contract(),
+        observation::Contract::TemporalAssessment
+    );
+    assert_eq!(supported.contract_label(), request::CONTRACT);
+    assert_eq!(
+        supported.observation_revision(),
+        tl_mltl::QUIRE_OBSERVATION_REVISION
+    );
+    for (contract, expected_label) in [
+        (
+            observation::Contract::RepairPlan,
+            "quire.observation.repair-plan/v1",
+        ),
+        (
+            observation::Contract::ClosedPopulationQuery,
+            "quire.observation.closed-population-query/v1",
+        ),
+    ] {
+        let observation::Compatibility::Unsupported(unsupported) =
+            observation::compatibility(contract)
+        else {
+            panic!("QObs-owned contract must remain unsupported by TL");
+        };
+        assert_eq!(unsupported.contract(), contract);
+        assert_eq!(unsupported.contract_label(), expected_label);
+        assert_eq!(
+            unsupported.observation_revision(),
+            tl_mltl::QUIRE_OBSERVATION_REVISION
+        );
+    }
+
+    const C00_REVISION: &str = "581d98f1ac9f1467cc5355785d67b242f8d5d150";
+    assert_eq!(tl_mltl::QUIRE_OBSERVATION_REVISION, C00_REVISION);
+    assert!(include_str!("../Cargo.toml").contains(C00_REVISION));
+    assert!(include_str!("../Cargo.lock").contains(C00_REVISION));
 }
