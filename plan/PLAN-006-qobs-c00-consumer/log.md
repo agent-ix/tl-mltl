@@ -30,3 +30,8 @@ description: "Chronological record for the QObs C00 consumer compatibility plan.
   and Rust 1.98.1 tool matrix. Native Quoin remained in normal use until the
   already-reported #543 `verify-receipt` exit-code regression required the
   permitted fallback.
+- **2026-09-16** — Reconciled FR-019's unsupported-path description with its
+  selector-only input, AC-2, and implementation: callers select a foreign
+  contract, but tl-mltl accepts no plan or evaluation artifact. SR-047 and
+  SR-050 now record the closed wording ambiguity instead of overclaiming that
+  the original prose had only one interpretation.

@@ -21,9 +21,10 @@ relationships:
 
 When a caller selects a QObs C00 handoff, tl-mltl shall bind the exact compiled
 QObs revision and shall dispatch only the already-owned bounded temporal request
-adapter. If the caller supplies a QObs repair plan or closed-population query
-evaluation, then tl-mltl shall return an explicit typed unsupported outcome
-without inspecting, projecting, evaluating, or relabeling the foreign result.
+adapter. If the caller selects the QObs repair-plan or closed-population-query
+contract, then tl-mltl shall return an explicit typed unsupported outcome
+without accepting, inspecting, projecting, evaluating, or relabeling a foreign
+artifact.
 
 ## Inputs
 
@@ -52,10 +53,10 @@ without inspecting, projecting, evaluating, or relabeling the foreign result.
 - The temporal dispatch output shall be byte-identical to a direct invocation of
   the existing adapter for the same inputs and limits.
 - The repair branch shall identify `quire.observation.repair-plan/v1` as
-  unsupported and shall not accept, inspect, or mutate a supplied plan.
+  unsupported and shall not accept, inspect, or mutate a plan artifact.
 - The query branch shall identify
   `quire.observation.closed-population-query/v1` as unsupported and shall not
-  accept, inspect, aggregate, or mutate a supplied evaluation.
+  accept, inspect, aggregate, or mutate an evaluation artifact.
 - Every supported or unsupported result shall identify the same exact compiled
   QObs revision exported by tl-mltl; no branch may substitute a compatible range,
   ambient checkout, ingestion order, or TL-owned reconstruction.

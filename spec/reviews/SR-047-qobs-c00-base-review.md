@@ -20,10 +20,11 @@ The base review checked identifier uniqueness, atomic requirement language,
 contract and revision consistency, boundary/error coverage, and every
 FR-019 acceptance criterion's TC-085 trace. The requirement separates supported
 temporal delegation from unsupported foreign semantics and introduces no new
-temporal truth rule.
+temporal truth rule. Review reconciliation made the unsupported path explicitly
+selector-only so the description cannot be read as accepting a foreign artifact.
 
 ## Findings
 
 | ID | Severity | Summary | Refs |
 |---|---|---|---|
-| FND-4701 | low | No base-review defect found: all three criteria are concrete, boundary and negative behavior are explicit, and TC-085 covers each criterion. | FR-019, TC-085 |
+| FND-4701 | medium | Closed: the description's former “supplies” wording could conflict with the selector-only input and AC-2; FR-019 now says the caller selects a contract and no foreign artifact is accepted. The three criteria and TC-085 remain aligned. | FR-019, TC-085 |

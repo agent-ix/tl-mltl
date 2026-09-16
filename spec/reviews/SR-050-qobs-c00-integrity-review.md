@@ -19,10 +19,12 @@ relationships:
 The requirement is one closed boundary decision: delegate the supported
 temporal path and reject the two unowned C00 paths. Its upstream stakeholder,
 predecessor, external contracts, outputs, constraints, and executable
-verification are explicit and non-conflicting.
+verification are explicit. The unsupported path now consistently describes a
+contract selector with no value-bearing foreign artifact, closing the one
+description-versus-input ambiguity found during merge review.
 
 ## Findings
 
 | ID | Severity | Summary | Refs |
 |---|---|---|---|
-| FND-5001 | low | No integrity defect found: FR-019 has one interpretation, no hidden fallback, and complete StR-to-FR-to-TC traceability. | StR-002, FR-018, FR-019, TC-085 |
+| FND-5001 | medium | Closed: the description formerly admitted an artifact-bearing interpretation while AC-2 and the API were selector-only. Reconciled FR-019 has one interpretation, no hidden fallback, and complete StR-to-FR-to-TC traceability. | StR-002, FR-018, FR-019, TC-085 |
