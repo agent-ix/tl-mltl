@@ -97,8 +97,8 @@ provenance, fixture, matrix, and owner-boundary files.
 - Do not add repair/query artifact parameters or reproduce QObs-owned semantics.
 - Use native Quoin for normal work; the npm fallback is confined to the affected
   assurance gate documented in agent-ix/quoin#543.
-- Keep TL PR #70 open and unmerged until draft QObs PR #27 lands at the exact
-  pinned commit; a different upstream landing requires repinning and renewed
-  compatibility review.
-- Run formal gap analysis only after both plan tasks are done, then publish but
-  do not merge the final PR.
+- Treat accepted QObs merge `924006300f45b38483be1cbdf99b68f899b7d368`
+  as the satisfied enablement prerequisite; any later owner revision requires
+  repinning and renewed compatibility review.
+- Run formal gap analysis only after both plan tasks are done, then publish the
+  final PR for review and merge only after its exact-head gates pass.
