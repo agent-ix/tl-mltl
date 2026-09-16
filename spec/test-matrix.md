@@ -23,6 +23,7 @@ relationships:
 | FR-016 | FR-016-AC-1 through FR-016-AC-6 | TC-076 through TC-080 | ✅ covered |
 | FR-017 | FR-017-AC-1 through FR-017-AC-3 | TC-081 through TC-083 | ✅ covered |
 | FR-018 | FR-018-AC-1 through FR-018-AC-6 | TC-084 | ✅ covered |
+| FR-019 | FR-019-AC-1 through FR-019-AC-3 | TC-085 | 🚧 planned |
 
 ## Stakeholder Requirement Coverage
 
@@ -88,3 +89,4 @@ relationships:
 | TC-082 | Every closed-trace W/M corpus case, lowered or direct, is refused for C2PO with no manifest, and every refused lowering yields its declared refusal code and no graph | Integration | P0 | FR-017-AC-2, NFR-002-AC-1 | ✅ implemented |
 | TC-083 | The recorded tl-parse cross-check is pinned and not a dependency, the corpus is consumed at the compiled tl-syntax revision, exported manifests name no external tool and carry the non-qualification limitation, and no source names FRETish | Integration | P0 | FR-017-AC-3 | ✅ implemented |
 | TC-084 | Strict-read, evaluate, report and map every temporal owner lane | Integration | P0 | FR-018-AC-1, FR-018-AC-2, FR-018-AC-3, FR-018-AC-4, FR-018-AC-5, FR-018-AC-6 | ✅ implemented |
+| TC-085 | Bind QObs C00 and preserve temporal dispatch while refusing repair and query semantics | Integration | P0 | FR-019-AC-1, FR-019-AC-2, FR-019-AC-3 | 🚧 planned |
