@@ -3,6 +3,7 @@
 pub mod command;
 pub(crate) mod common;
 mod legacy;
+pub mod observation;
 pub mod report;
 pub mod request;
 pub mod trace;

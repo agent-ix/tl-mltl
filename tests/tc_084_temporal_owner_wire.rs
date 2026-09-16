@@ -1,18 +1,19 @@
+use agent_ix_baseline_producer::StaticProducerBundle;
 use quire_observation::authority::{
     self, AuthoritySelection, Context, History, Limits as ObservationLimits, OpenClosed,
     SubjectSelection, TemporalBoundary,
 };
 use quire_observation::{
     admit, AdmissionOutcome, AdmissionRequest, AdmittedRecord, Anchor, ClockRange, Digest,
-    Identity, Member, ObservationBinding, PackageSelection, ProducerSelection,
-    QualifiedObservation, ResourceLimits, ScopeKind, ScopeSelection, Subject, SubjectKind,
-    ValueState, Visibility, NATIVE_LINKED_PACKAGE_FORMAT, PRODUCER_INTERFACE_VERSION,
+    Identity, Member, ObservationBinding, PackageSelection, QualifiedObservation, QualifiedSubject,
+    ResourceLimits, ScopeKind, ScopeSelection, SubjectIdentity, SubjectKind, ValueState,
+    Visibility, NATIVE_LINKED_PACKAGE_FORMAT,
 };
 use serde_json::Value;
 use sha2::{Digest as _, Sha256};
 use tl_mltl::mapping::contract_ir::{self, MappedOutcome, MappingSelection, NonValueKind};
 use tl_mltl::past::{history, requirement, result};
-use tl_mltl::wire::{command, report, request, trace};
+use tl_mltl::wire::{command, observation, report, request, trace};
 use tl_mltl::wire::{OwnerLimits, OwnerReadErrorCode};
 use tl_mltl::{
     analyze_required_history, fixed_sample_instant, ClockBinding, ClockSample, CommandDocument,
@@ -116,10 +117,14 @@ fn qualified_with_clock(
     positions: u64,
     fixture_clock: FixtureClock,
 ) -> Box<QualifiedObservation> {
-    let subject = Subject {
-        kind: SubjectKind::Order,
-        identity: id(format!("order:{tag}")),
-    };
+    let producer =
+        StaticProducerBundle::admit_json(include_bytes!("fixtures/fcd-static-bundle-1.2.json"))
+            .unwrap();
+    let subject = QualifiedSubject::new(
+        &producer,
+        SubjectKind::new("ix://agent-ix/commerce/type/Order").unwrap(),
+        SubjectIdentity::new(format!("order:{tag}")).unwrap(),
+    );
     let mut request = AdmissionRequest {
         package: PackageSelection {
             format: NATIVE_LINKED_PACKAGE_FORMAT.to_owned(),
@@ -127,14 +132,7 @@ fn qualified_with_clock(
             revision: id("1"),
             digest: digest(1),
         },
-        producer: ProducerSelection {
-            interface_version: PRODUCER_INTERFACE_VERSION.to_owned(),
-            document_identity: id(format!("producer:{tag}")),
-            document_digest: digest(2),
-            model_identity: id(format!("model:{tag}")),
-            configuration_identity: id(format!("configuration:{tag}")),
-            configuration_digest: digest(3),
-        },
+        producer,
         binding: ObservationBinding {
             identity: id(format!("binding:{tag}")),
             source_identity: id(format!("source:{tag}")),
@@ -142,7 +140,7 @@ fn qualified_with_clock(
             signal_identity: id("signal:p0"),
             trigger_identity: id(format!("trigger:{tag}")),
             unit: id("boolean"),
-            subject_kind: SubjectKind::Order,
+            subject_kind: subject.kind().clone(),
             required: true,
         },
         expected_subject: subject.clone(),
@@ -1695,5 +1693,237 @@ fn tc_084_owner_evidence_contexts_cannot_be_cross_wired() {
             .unwrap_err()
             .field(),
         "decisionEvidenceContext"
+    );
+}
+
+// Trace: TC-085, FR-019-AC-1, FR-019-AC-2, FR-019-AC-3
+#[test]
+fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
+    const C00_REVISION: &str = "924006300f45b38483be1cbdf99b68f899b7d368";
+
+    let decision = owner_views("decision-c00", 2);
+    let surrounding = owner_views("surrounding-c00", 2);
+    let formula = future_formula(SemanticProfile::ClosedTraceV1);
+    let propositions = proposition_map();
+    let trace =
+        trace::ValidatedTrace::admit(&trace_document("trace:c00", true), OwnerLimits::default())
+            .unwrap();
+    let input = future_request_input(
+        &formula,
+        &propositions,
+        &trace,
+        &decision,
+        &surrounding,
+        observations(
+            &decision,
+            &surrounding,
+            true,
+            true,
+            true,
+            true,
+            &decision.completeness_complete,
+            &decision.availability_available,
+        ),
+    );
+
+    let direct = request::derive(input, OwnerLimits::default()).unwrap();
+    let dispatched = observation::consume_temporal(input, OwnerLimits::default()).unwrap();
+    assert_eq!(dispatched, direct);
+    let direct_wire: Value =
+        serde_json::from_slice(direct.bytes()).expect("temporal request is canonical JSON");
+    assert_eq!(direct_wire["observationRevision"], C00_REVISION);
+
+    let tightening = OwnerLimits {
+        max_output_bytes: direct.bytes().len(),
+        ..OwnerLimits::default()
+    };
+    let tightened = request::derive(input, tightening).unwrap();
+    let exact = OwnerLimits {
+        max_output_bytes: tightened.bytes().len(),
+        ..OwnerLimits::default()
+    };
+    let exact_direct = request::derive(input, exact).unwrap();
+    assert_eq!(exact_direct.bytes().len(), exact.max_output_bytes);
+    let exact_dispatched = observation::consume_temporal(input, exact).unwrap();
+    assert_eq!(exact_dispatched, exact_direct);
+    let one_over = OwnerLimits {
+        max_output_bytes: exact.max_output_bytes - 1,
+        ..OwnerLimits::default()
+    };
+    let one_over_direct = request::derive(input, one_over);
+    let one_over_dispatched = observation::consume_temporal(input, one_over);
+    assert_eq!(one_over_dispatched, one_over_direct);
+    assert_eq!(
+        one_over_direct.unwrap_err().code(),
+        OwnerReadErrorCode::ResourceIncomplete
+    );
+
+    for (dimension, limits) in [
+        (
+            "maxInputBytes",
+            OwnerLimits {
+                max_input_bytes: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxOutputBytes",
+            OwnerLimits {
+                max_output_bytes: exact.max_output_bytes,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxDepth",
+            OwnerLimits {
+                max_depth: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxStringBytes",
+            OwnerLimits {
+                max_string_bytes: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxFormulaNodes",
+            OwnerLimits {
+                max_formula_nodes: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxFormulaDepth",
+            OwnerLimits {
+                max_formula_depth: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxPositions",
+            OwnerLimits {
+                max_positions: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxPropositions",
+            OwnerLimits {
+                max_propositions: 0,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxSupport",
+            OwnerLimits {
+                max_support: 0,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxHistorySpan",
+            OwnerLimits {
+                max_history_span: 0,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxEvaluationSteps",
+            OwnerLimits {
+                max_evaluation_steps: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxRecursionDepth",
+            OwnerLimits {
+                max_recursion_depth: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxVisitedFields",
+            OwnerLimits {
+                max_visited_fields: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+    ] {
+        assert_eq!(
+            observation::consume_temporal(input, limits),
+            request::derive(input, limits),
+            "dispatch must forward {dimension} without reconstruction"
+        );
+    }
+
+    let observation::Compatibility::Supported(supported) =
+        observation::compatibility(observation::Contract::TemporalAssessment)
+    else {
+        panic!("temporal assessment contract must remain supported by TL");
+    };
+    assert_eq!(
+        supported.contract(),
+        observation::Contract::TemporalAssessment
+    );
+    assert_eq!(supported.contract_label(), request::CONTRACT);
+    assert_eq!(
+        supported.observation_revision(),
+        tl_mltl::QUIRE_OBSERVATION_REVISION
+    );
+    for (contract, expected_label) in [
+        (
+            observation::Contract::RepairPlan,
+            authority::repair::CONTRACT,
+        ),
+        (
+            observation::Contract::ClosedPopulationQuery,
+            authority::query::CONTRACT,
+        ),
+    ] {
+        let observation::Compatibility::Unsupported(unsupported) =
+            observation::compatibility(contract)
+        else {
+            panic!("QObs-owned contract must remain unsupported by TL");
+        };
+        assert_eq!(unsupported.contract(), contract);
+        assert_eq!(unsupported.contract_label(), expected_label);
+        assert_eq!(
+            unsupported.observation_revision(),
+            tl_mltl::QUIRE_OBSERVATION_REVISION
+        );
+    }
+
+    assert_eq!(tl_mltl::QUIRE_OBSERVATION_REVISION, C00_REVISION);
+    let manifest_entry = include_str!("../Cargo.toml")
+        .lines()
+        .find(|line| line.starts_with("quire-observation = "))
+        .expect("manifest has one direct QObs dependency");
+    assert_eq!(
+        manifest_entry,
+        format!(
+            "quire-observation = {{ version = \"=0.1.0\", git = \
+             \"https://github.com/agent-ix/quire-observation\", rev = \"{C00_REVISION}\" }}"
+        )
+    );
+    let lock_entry = include_str!("../Cargo.lock")
+        .split("[[package]]")
+        .find(|entry| {
+            entry
+                .lines()
+                .any(|line| line == "name = \"quire-observation\"")
+        })
+        .expect("lockfile has the QObs package");
+    let lock_source = lock_entry
+        .lines()
+        .find(|line| line.starts_with("source = "))
+        .expect("QObs lock entry has an exact source");
+    assert_eq!(
+        lock_source,
+        format!(
+            "source = \"git+https://github.com/agent-ix/quire-observation?rev={0}#{0}\"",
+            C00_REVISION
+        )
     );
 }

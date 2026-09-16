@@ -3,6 +3,16 @@
 version = 4
 
 [[package]]
+name = "agent-ix-baseline-producer"
+version = "0.0.0"
+source = "git+https://github.com/agent-ix/filament-core-data?rev=404288282402d60de007295ccbafa960532b955e#404288282402d60de007295ccbafa960532b955e"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -249,8 +259,9 @@ checksum = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
 [[package]]
 name = "quire-observation"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-observation?rev=9ac80e93f4b68a2c7d5a337f9a448ad10de798fc#9ac80e93f4b68a2c7d5a337f9a448ad10de798fc"
+source = "git+https://github.com/agent-ix/quire-observation?rev=924006300f45b38483be1cbdf99b68f899b7d368#924006300f45b38483be1cbdf99b68f899b7d368"
 dependencies = [
+ "agent-ix-baseline-producer",
  "serde",
  "serde_json",
  "sha2",
@@ -474,6 +485,7 @@ dependencies = [
 name = "tl-mltl"
 version = "0.1.0"
 dependencies = [
+ "agent-ix-baseline-producer",
  "proptest",
  "quire-observation",
  "serde",

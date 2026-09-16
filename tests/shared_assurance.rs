@@ -1153,10 +1153,10 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         let stale = fs::read_to_string(&candidate)
             .unwrap()
             .replace(
+                "842d82553f045eb69a7f38745756d968254fc25e",
                 "e70f2379a752117c79603bc399a86c26feed7716",
-                "5b1c13440e54d5a851df2d33cc88944135574bc6",
             )
-            .replace("e70f2379", "5b1c1344");
+            .replace("842d8255", "e70f2379");
         fs::write(&candidate, stale).unwrap();
         let (code, stdout, stderr) = run(
             &python,
@@ -1272,7 +1272,7 @@ fn the_chain_reaches_quoin_without_quoin_or_quire_executing_a_producer() {
 /// anything. Every such invocation is logged and the log must be empty.
 ///
 /// `--version` is matched anywhere in the argv, not just in `$1`, because the
-/// MSRV attestation observes `rustup run 1.75.0 cargo --version`: its declared
+/// MSRV attestation observes `rustup run 1.98.1 cargo --version`: its declared
 /// command runs cargo through the pinned toolchain, so the version sealed into
 /// the attestation has to come from that toolchain rather than from ambient
 /// cargo. That is still a version observation. Anything without a version flag
@@ -1697,8 +1697,8 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     let parsed: Value = serde_json::from_slice(&bytes).expect("the Quire export is JSON");
     let text = String::from_utf8_lossy(&bytes);
     for requirement in [
-        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "FR-016", "NFR-001",
-        "NFR-002", "NFR-003", "StR-001", "StR-002", "StR-003",
+        "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "FR-016", "FR-017",
+        "FR-018", "FR-019", "NFR-001", "NFR-002", "NFR-003", "StR-001", "StR-002", "StR-003",
     ] {
         assert!(
             text.contains(requirement),
@@ -1716,31 +1716,28 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 99 is every row Quire counts from `spec/`: 56 acceptance criteria and 43
-    // test-matrix rows. Naming the population matters — "matrix rows" would
-    // have been wrong, since acceptance criteria contribute 56 of them. Issue
-    // #47 added FR-016-AC-1..AC-6 and TC-076..TC-080; issue #48 adds
-    // FR-017-AC-1..AC-3 and TC-081..TC-083. Re-pinned from 90/88: the
-    // suite registry (spec/evidence/suites.md) is no longer counted, because
-    // spec-artifacts-process 737987b (quire-rs#363) declares evidence
-    // registries `evidence: reference-only`, so its 8 SUITE rows — including
-    // the two rows unbacked on purpose, SUITE-001 and SUITE-002 — left the
-    // coverage population. Every counted row must be backed.
+    // 118 is every row this repository's installed module currently declares:
+    // 65 requirement criteria, 45 test-matrix rows, and 8 suite-registry rows.
+    // Naming the population matters — "matrix rows" would be wrong, because
+    // criteria and the authored suite registry are separate declarations. All
+    // criteria and matrix rows are backed. SUITE-001 and SUITE-002 are the two
+    // intentionally non-runnable registry rows; their exact absence and every
+    // other suite's binding are checked directly below.
     assert_eq!(
-        totals["total"], 99,
-        "the declared-row population changed: {totals}. It is 56 acceptance \
-         criteria + 43 test-matrix rows; suite-registry rows are reference-only."
+        totals["total"], 118,
+        "the declared-row population changed: {totals}. It is 65 requirement \
+         criteria + 45 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
-        totals["backed"], 99,
-        "backed-row count changed: {totals}. Every counted acceptance criterion \
-         and test-matrix row is backed; an unbacked row is a coverage regression, \
-         not a number to adjust here."
+        totals["backed"], 116,
+        "backed-row count changed: {totals}. Every requirement criterion and \
+         test-matrix row plus six runnable suite rows is backed; only the two \
+         deliberately non-runnable suite rows are absent."
     );
-    // With suite rows out of the coverage totals, the totals no longer notice a
-    // suite binding disappearing, so the registry's own claim is checked
-    // directly: every suite except SUITE-001 and SUITE-002 is named on a
-    // compiled test's trace line, and those two are named on none.
+    // The aggregate alone cannot identify which suite rows are absent, so check
+    // the registry's own claim directly: every suite except SUITE-001 and
+    // SUITE-002 is named on a compiled test's trace line, and those two are
+    // named on none.
     let registry = fs::read_to_string(root().join("spec/evidence/suites.md"))
         .expect("read the suite registry");
     let registered: BTreeSet<&str> = registry
@@ -2164,7 +2161,8 @@ fn no_local_evidence_framework_remains() {
         // and the retained records themselves go together: a tree that still
         // holds any one of them has not made the deletion it claims to have.
         "evidence",
-        "schemas",
+        "schemas/tl-mltl-evidence-input-v1.schema.json",
+        "schemas/tl-mltl-evidence-manifest-v1.schema.json",
         "scripts/legacy_evidence_view.py",
         "tests/fixtures/legacy-compat",
     ] {
@@ -2250,20 +2248,29 @@ fn no_local_evidence_framework_remains() {
         (".agent", 1),
         (".github", 2),
         ("assurance", 3),
-        // Issue #48 adds the 20-file retained tl-syntax future-operator corpus.
-        ("corpus", 45),
+        // The accepted temporal owner boundary adds the retained past corpus.
+        ("corpus", 50),
         ("examples", 3),
         ("scripts", 5),
-        // Issue #42 and the two bounded-Kani reviews are tracked scope. Issue
-        // #47 adds FR-016 and the five-file PLAN-005 bundle; issue #48 adds FR-017.
-        ("spec", 90),
-        // Context-bound wire decoding adds src/context.rs; the #57-shaped
-        // fixture adds tests/contextual.rs. TC-030 itself extends an existing
-        // shared-assurance test file.
-        ("src", 8),
-        // Issue #47 adds tests/future_parity.rs, the W/M parity controls; issue
-        // #48 adds tests/future_interop.rs, the W/M export and loss controls.
-        ("tests", 19),
+        // The accepted temporal owner boundary, FR-019 specification cycle,
+        // and Rust review are the complete in-spec reviewed population.
+        ("spec", 106),
+        // The accepted temporal owner modules plus the C00 compatibility
+        // dispatch comprise the complete reviewed production source set.
+        ("src", 24),
+        // The temporal owner suites and exact admitted-producer fixture are
+        // tracked test inputs rather than ambient sibling-repository state.
+        ("tests", 24),
+        // Active owner-wire schemas are production contracts; only the two
+        // legacy evidence schemas remain denied above.
+        ("schemas", 8),
+        // PLAN-006 is deliberately retrospective and root-scoped so the formal
+        // gap-analysis skill can audit one typed target without rewriting the
+        // historical in-spec plans.
+        ("plan", 5),
+        // The readiness and formal gap-analysis skill artifacts live at the
+        // root review path required by their output contracts.
+        ("reviews", 3),
     ]
     .into_iter()
     .map(|(area, count)| (area.to_owned(), count))
@@ -2295,17 +2302,15 @@ fn no_local_evidence_framework_remains() {
         "a cross-area file swap preserved both the total and the per-area control"
     );
 
-    // Current main plus the two bounded-Kani reviews bring the reviewed
-    // population to 160 tracked paths; issue #47 adds FR-016, the PLAN-005
-    // bundle and tests/future_parity.rs for 167; issue #48 adds the 20-file
-    // future-operator corpus, FR-017 and tests/future_interop.rs for 189.
+    // Merged temporal-owner work and this compatibility successor bring the
+    // reviewed non-exempt population to 247 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 189,
-        "the source census population changed from the reviewed 189 tracked files \
+        inspected, 247,
+        "the source census population changed from the reviewed 247 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
@@ -2589,7 +2594,7 @@ fn no_local_evidence_framework_remains() {
         // Split, because `$(CARGO)` expands to an absolute rustup path when
         // `make` runs under `cargo test` — which is exactly the environment
         // this assertion runs in.
-        "rustup run 1.75.0",
+        "rustup run 1.98.1",
         "cargo check --locked --all-targets --all-features",
         "scripts/assurance_chain.py",
         "scripts/check_shared_pins.py",
