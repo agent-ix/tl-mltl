@@ -128,7 +128,7 @@
       "preservation_constraints": [
         {
           "id": "RELEASE-legacy-evidence",
-          "statement": "The preservation constraint that governed the migration is released for the pre-stable phase by the repository owner's decision of 2026-09-02, recorded in agent-ix/engineering-assurance#7 under 'Preservation constraint released for the pre-stable phase'. Under it, evidence/ (283 files, 842668 bytes, 6 records, all quire.derivation-evidence/v1 and all classified incompatible by the pinned mapping), scripts/legacy_evidence_view.py, the PROOF-legacy-compatibility obligation, the compat-view target, tests/fixtures/legacy-compat/ and schemas/ are deleted rather than carried forward. Nothing is rewritten, backdated or re-sealed: every claim that argued from the retained records is deleted with them and none is restated more weakly. The constraint re-applies unchanged at the move toward stable releases.",
+          "statement": "The preservation constraint that governed the migration is released for the pre-stable phase by the repository owner's decision of 2026-09-02, recorded in agent-ix/engineering-assurance#7 under 'Preservation constraint released for the pre-stable phase'. Under it, evidence/ (283 files, 842668 bytes, 6 records, all quire.derivation-evidence/v1 and all classified incompatible by the pinned mapping), scripts/legacy_evidence_view.py, the PROOF-legacy-compatibility obligation, the compat-view target, tests/fixtures/legacy-compat/ and the two legacy evidence schemas are deleted rather than carried forward. Active domain owner schemas are not legacy evidence machinery. Nothing is rewritten, backdated or re-sealed: every claim that argued from the retained records is deleted with them and none is restated more weakly. The constraint re-applies unchanged at the move toward stable releases.",
           "source_ids": ["NFR-002", "FR-006"]
         },
         {
@@ -143,7 +143,7 @@
         },
         {
           "id": "PRESERVE-corpus-basis",
-          "statement": "corpus/tl-syntax-v1 stays a byte-identical copy of the shared temporal corpus at tl-syntax 740182f1 and corpus/future-operators stays its byte-identical 5b1c1344 copy, each verified by its own SHA256SUMS. The compiled dependency moved to e70f2379 on tl-syntax main for formula-v2 and the closed past vocabulary; neither retained corpus moved with it, and all three revisions are separate declared facts.",
+          "statement": "corpus/tl-syntax-v1 stays a byte-identical copy of the shared temporal corpus at tl-syntax 740182f1 and corpus/future-operators stays its byte-identical 5b1c1344 copy, each verified by its own SHA256SUMS. The compiled dependency moved to 842d8255 on tl-syntax main for the exact typed syntax surface consumed by the temporal-owner boundary; neither retained corpus moved with it, and all three revisions are separate declared facts.",
           "source_ids": ["NFR-002", "shared-corpus-manifest"]
         },
         {
@@ -224,7 +224,7 @@
           "obligation_ids": ["FR-006-AC-2"],
           "evidence_kind": "Static",
           "command": {
-            "argv": ["rustup", "run", "1.75.0", "cargo", "check", "--locked", "--all-targets", "--all-features", "--message-format=json"],
+            "argv": ["rustup", "run", "1.98.1", "cargo", "check", "--locked", "--all-targets", "--all-features", "--message-format=json"],
             "working_directory": "."
           },
           "tool_identity": "cargo",

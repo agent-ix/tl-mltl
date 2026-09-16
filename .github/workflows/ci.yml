@@ -9,7 +9,7 @@ on:
 
 jobs:
   msrv:
-    name: Rust 1.75 Feature Boundary
+    name: Rust 1.98.1 Feature Boundary
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +18,7 @@ jobs:
       - name: Install MSRV
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.75.0
+          toolchain: 1.98.1
       - name: Cache cargo artifacts
         uses: Swatinem/rust-cache@v2
       - name: Check library, CLI, examples, and integration tests
@@ -42,7 +42,7 @@ jobs:
       - name: Install MSRV toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.75.0
+          toolchain: 1.98.1
 
       - name: Cache cargo artifacts
         uses: Swatinem/rust-cache@v2
@@ -81,7 +81,7 @@ jobs:
       - name: Install Kani
         uses: model-checking/kani-github-action@v1
         with:
-          kani-version: '0.67.0'
+          kani-version: '0.68.0'
           # The action otherwise runs `cargo kani` itself. Provision the
           # verifier with a no-op command; the aggregate below invokes the
           # canonical `make kani-check` recipe exactly once.
