@@ -87,7 +87,7 @@ pub const TL_SYNTAX_REVISION: &str = "842d82553f045eb69a7f38745756d968254fc25e";
 
 /// Exact Quire Observation owner revision whose constructor-private assertion
 /// views are accepted by the temporal request boundary.
-pub const QUIRE_OBSERVATION_REVISION: &str = "581d98f1ac9f1467cc5355785d67b242f8d5d150";
+pub const QUIRE_OBSERVATION_REVISION: &str = "7dcfe2c95909249ee179a27cddc2e3a4f8d93120";
 
 /// Exact tl-syntax revision whose shared corpus bytes are retained here.
 ///

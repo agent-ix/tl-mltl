@@ -259,7 +259,7 @@ checksum = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
 [[package]]
 name = "quire-observation"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-observation?rev=581d98f1ac9f1467cc5355785d67b242f8d5d150#581d98f1ac9f1467cc5355785d67b242f8d5d150"
+source = "git+https://github.com/agent-ix/quire-observation?rev=7dcfe2c95909249ee179a27cddc2e3a4f8d93120#7dcfe2c95909249ee179a27cddc2e3a4f8d93120"
 dependencies = [
  "agent-ix-baseline-producer",
  "serde",

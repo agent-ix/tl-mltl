@@ -19,7 +19,7 @@ serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.151"
 sha2 = "=0.10.9"
 tl-syntax = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "842d82553f045eb69a7f38745756d968254fc25e", default-features = false, features = ["alloc", "serde"] }
-quire-observation = { version = "=0.1.0", git = "https://github.com/agent-ix/quire-observation", rev = "581d98f1ac9f1467cc5355785d67b242f8d5d150" }
+quire-observation = { version = "=0.1.0", git = "https://github.com/agent-ix/quire-observation", rev = "7dcfe2c95909249ee179a27cddc2e3a4f8d93120" }
 
 [dev-dependencies]
 agent-ix-baseline-producer = { version = "=0.0.0", git = "https://github.com/agent-ix/filament-core-data", rev = "404288282402d60de007295ccbafa960532b955e" }

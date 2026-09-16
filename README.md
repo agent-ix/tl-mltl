@@ -14,7 +14,7 @@ The library requires Rust 1.98 or later and consumes validated `tl-syntax` formu
 pinned to exact revision `842d82553f045eb69a7f38745756d968254fc25e`.
 Temporal owner requests additionally consume constructor-private Quire
 Observation clock, progress, closure, completeness, and availability views at
-exact candidate revision `581d98f1ac9f1467cc5355785d67b242f8d5d150`
+exact candidate revision `7dcfe2c95909249ee179a27cddc2e3a4f8d93120`
 from QObs PR #27. This TL change must not merge before that exact upstream
 commit lands; tl-mltl does not mirror or reconstruct those owner types. The
 retained shared temporal corpus under `corpus/tl-syntax-v1` is a byte-identical
@@ -58,12 +58,12 @@ record.
 
 ## Bounded formal check
 
-Kani is an optional, manual-only supplementary check. With Kani 0.67.0
+Kani is an optional, manual-only supplementary check. With Kani 0.68.0
 installed, run:
 
 ```bash
 cargo kani --lib \
-  --harness horizon::kani_proofs::horizon_bound_addition_matches_checked_add \
+  --harness future::horizon::kani_proofs::horizon_bound_addition_matches_checked_add \
   --exact --unwind 4
 ```
 

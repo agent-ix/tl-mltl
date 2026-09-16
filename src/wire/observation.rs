@@ -6,11 +6,12 @@
 
 use super::{request, OwnerLimits, OwnerReadError};
 use crate::QUIRE_OBSERVATION_REVISION;
+use quire_observation::authority::{query, repair};
 
 /// Exact QObs C00 repair-plan contract not consumed by tl-mltl.
-pub const REPAIR_PLAN_CONTRACT: &str = "quire.observation.repair-plan/v1";
+pub const REPAIR_PLAN_CONTRACT: &str = repair::CONTRACT;
 /// Exact QObs C00 closed-population-query contract not consumed by tl-mltl.
-pub const CLOSED_POPULATION_QUERY_CONTRACT: &str = "quire.observation.closed-population-query/v1";
+pub const CLOSED_POPULATION_QUERY_CONTRACT: &str = query::CONTRACT;
 
 /// Closed QObs C00 contract families presented to the TL consumer boundary.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

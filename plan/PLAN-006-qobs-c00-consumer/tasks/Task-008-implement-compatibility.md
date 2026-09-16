@@ -22,7 +22,7 @@ artifact input or semantic substitution.
 
 ## Subtasks
 
-- [x] Pin Cargo resolution and public provenance to QObs `581d98f1`.
+- [x] Pin Cargo resolution and public provenance to QObs `7dcfe2c9`.
 - [x] Adapt temporal fixtures to the exact typed FCD/QObs C00 constructor API.
 - [x] Delegate temporal compatibility to `wire::request::derive`.
 - [x] Expose typed supported and unsupported dispositions with exact contract

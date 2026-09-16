@@ -1699,6 +1699,8 @@ fn tc_084_owner_evidence_contexts_cannot_be_cross_wired() {
 // Trace: TC-085, FR-019-AC-1, FR-019-AC-2, FR-019-AC-3
 #[test]
 fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
+    const C00_REVISION: &str = "7dcfe2c95909249ee179a27cddc2e3a4f8d93120";
+
     let decision = owner_views("decision-c00", 2);
     let surrounding = owner_views("surrounding-c00", 2);
     let formula = future_formula(SemanticProfile::ClosedTraceV1);
@@ -1726,8 +1728,10 @@ fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
 
     let direct = request::derive(input, OwnerLimits::default()).unwrap();
     let dispatched = observation::consume_temporal(input, OwnerLimits::default()).unwrap();
-    assert_eq!(dispatched.bytes(), direct.bytes());
-    assert_eq!(dispatched.usage(), direct.usage());
+    assert_eq!(dispatched, direct);
+    let direct_wire: Value =
+        serde_json::from_slice(direct.bytes()).expect("temporal request is canonical JSON");
+    assert_eq!(direct_wire["observationRevision"], C00_REVISION);
 
     let tightening = OwnerLimits {
         max_output_bytes: direct.bytes().len(),
@@ -1740,20 +1744,119 @@ fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
     };
     let exact_direct = request::derive(input, exact).unwrap();
     assert_eq!(exact_direct.bytes().len(), exact.max_output_bytes);
-    assert_eq!(
-        observation::consume_temporal(input, exact).unwrap().bytes(),
-        exact_direct.bytes()
-    );
+    let exact_dispatched = observation::consume_temporal(input, exact).unwrap();
+    assert_eq!(exact_dispatched, exact_direct);
     let one_over = OwnerLimits {
         max_output_bytes: exact.max_output_bytes - 1,
         ..OwnerLimits::default()
     };
+    let one_over_direct = request::derive(input, one_over);
+    let one_over_dispatched = observation::consume_temporal(input, one_over);
+    assert_eq!(one_over_dispatched, one_over_direct);
     assert_eq!(
-        observation::consume_temporal(input, one_over)
-            .unwrap_err()
-            .code(),
+        one_over_direct.unwrap_err().code(),
         OwnerReadErrorCode::ResourceIncomplete
     );
+
+    for (dimension, limits) in [
+        (
+            "maxInputBytes",
+            OwnerLimits {
+                max_input_bytes: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxOutputBytes",
+            OwnerLimits {
+                max_output_bytes: exact.max_output_bytes,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxDepth",
+            OwnerLimits {
+                max_depth: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxStringBytes",
+            OwnerLimits {
+                max_string_bytes: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxFormulaNodes",
+            OwnerLimits {
+                max_formula_nodes: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxFormulaDepth",
+            OwnerLimits {
+                max_formula_depth: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxPositions",
+            OwnerLimits {
+                max_positions: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxPropositions",
+            OwnerLimits {
+                max_propositions: 0,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxSupport",
+            OwnerLimits {
+                max_support: 0,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxHistorySpan",
+            OwnerLimits {
+                max_history_span: 0,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxEvaluationSteps",
+            OwnerLimits {
+                max_evaluation_steps: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxRecursionDepth",
+            OwnerLimits {
+                max_recursion_depth: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+        (
+            "maxVisitedFields",
+            OwnerLimits {
+                max_visited_fields: 1,
+                ..OwnerLimits::default()
+            },
+        ),
+    ] {
+        assert_eq!(
+            observation::consume_temporal(input, limits),
+            request::derive(input, limits),
+            "dispatch must forward {dimension} without reconstruction"
+        );
+    }
 
     let observation::Compatibility::Supported(supported) =
         observation::compatibility(observation::Contract::TemporalAssessment)
@@ -1772,11 +1875,11 @@ fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
     for (contract, expected_label) in [
         (
             observation::Contract::RepairPlan,
-            "quire.observation.repair-plan/v1",
+            authority::repair::CONTRACT,
         ),
         (
             observation::Contract::ClosedPopulationQuery,
-            "quire.observation.closed-population-query/v1",
+            authority::query::CONTRACT,
         ),
     ] {
         let observation::Compatibility::Unsupported(unsupported) =
@@ -1792,8 +1895,35 @@ fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
         );
     }
 
-    const C00_REVISION: &str = "581d98f1ac9f1467cc5355785d67b242f8d5d150";
     assert_eq!(tl_mltl::QUIRE_OBSERVATION_REVISION, C00_REVISION);
-    assert!(include_str!("../Cargo.toml").contains(C00_REVISION));
-    assert!(include_str!("../Cargo.lock").contains(C00_REVISION));
+    let manifest_entry = include_str!("../Cargo.toml")
+        .lines()
+        .find(|line| line.starts_with("quire-observation = "))
+        .expect("manifest has one direct QObs dependency");
+    assert_eq!(
+        manifest_entry,
+        format!(
+            "quire-observation = {{ version = \"=0.1.0\", git = \
+             \"https://github.com/agent-ix/quire-observation\", rev = \"{C00_REVISION}\" }}"
+        )
+    );
+    let lock_entry = include_str!("../Cargo.lock")
+        .split("[[package]]")
+        .find(|entry| {
+            entry
+                .lines()
+                .any(|line| line == "name = \"quire-observation\"")
+        })
+        .expect("lockfile has the QObs package");
+    let lock_source = lock_entry
+        .lines()
+        .find(|line| line.starts_with("source = "))
+        .expect("QObs lock entry has an exact source");
+    assert_eq!(
+        lock_source,
+        format!(
+            "source = \"git+https://github.com/agent-ix/quire-observation?rev={0}#{0}\"",
+            C00_REVISION
+        )
+    );
 }
