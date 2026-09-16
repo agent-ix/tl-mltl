@@ -76,10 +76,12 @@ FR-018 adds the complete strict request/result/mapping owner boundary and the
 subsystem module topology required by the origin-complete ecosystem. It changes
 no existing future or past semantic profile.
 
-FR-019 pins that temporal owner boundary to the merged QObs C00 revision and
-publishes explicit compatibility dispatch. It delegates the supported temporal
-path to FR-018 and reports QObs repair-plan and aggregate-query inputs as typed
-unsupported outcomes instead of recreating their owner semantics.
+FR-019 pins that temporal owner boundary to the exact pending QObs C00 candidate
+revision from QObs PR #27 and publishes explicit compatibility dispatch. It
+delegates the supported temporal path to FR-018 and reports QObs repair-plan and
+aggregate-query inputs as typed unsupported outcomes instead of recreating
+their owner semantics. The TL change must not merge until that exact upstream
+commit lands.
 
 - [tl-mltl epic](https://github.com/agent-ix/tl-mltl/issues/7).
 - [Typed context child](https://github.com/agent-ix/tl-mltl/issues/24).

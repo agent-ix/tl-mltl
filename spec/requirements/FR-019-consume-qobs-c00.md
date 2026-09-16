@@ -78,7 +78,11 @@ without inspecting, projecting, evaluating, or relabeling the foreign result.
 ## Dependencies
 
 This requirement advances the accepted FR-018 consumer boundary from its prior
-QObs pin to the merged C00 revision. QObs retains ownership of revisioned I07
-bundles, repair planning/coordinator behavior, and aggregate-query semantics.
-tl-mltl owns only temporal request/evaluation semantics and the explicit
-compatibility disposition at its boundary.
+QObs pin to the exact C00 candidate revision currently proposed by QObs PR #27.
+That upstream landing is an enablement prerequisite: this implementation may be
+reviewed against the exact candidate commit, but the TL PR must not merge until
+QObs #27 lands at that commit. A different upstream landing requires a repin and
+renewed compatibility review. QObs retains ownership of revisioned I07 bundles,
+repair planning/coordinator behavior, and aggregate-query semantics. tl-mltl
+owns only temporal request/evaluation semantics and the explicit compatibility
+disposition at its boundary.

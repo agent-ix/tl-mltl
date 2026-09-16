@@ -10,12 +10,13 @@ make ci
 make spec
 ```
 
-The library requires Rust 1.98 and consumes validated `tl-syntax` formulas
+The library requires Rust 1.98 or later and consumes validated `tl-syntax` formulas
 pinned to exact revision `842d82553f045eb69a7f38745756d968254fc25e`.
 Temporal owner requests additionally consume constructor-private Quire
 Observation clock, progress, closure, completeness, and availability views at
-exact revision `581d98f1ac9f1467cc5355785d67b242f8d5d150`; tl-mltl does not mirror or
-reconstruct those owner types. The
+exact candidate revision `581d98f1ac9f1467cc5355785d67b242f8d5d150`
+from QObs PR #27. This TL change must not merge before that exact upstream
+commit lands; tl-mltl does not mirror or reconstruct those owner types. The
 retained shared temporal corpus under `corpus/tl-syntax-v1` is a byte-identical
 copy taken at the earlier revision `740182f13b84858008d6f176f75136737d405c1b`
 and the future-operator corpus was copied at
