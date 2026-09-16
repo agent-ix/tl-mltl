@@ -11,7 +11,7 @@ relationships:
 
 ## Functional Requirement Coverage
 
-| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| Functional Req | Acceptance Criteria | Test Cases | Status |
 |---|---|---|---|
 | FR-001 | FR-001-AC-1 through FR-001-AC-3 | TC-001 through TC-004 | ✅ covered |
 | FR-002 | FR-002-AC-1 through FR-002-AC-3 | TC-005 through TC-008 | ✅ covered |
@@ -27,7 +27,7 @@ relationships:
 
 ## Stakeholder Requirement Coverage
 
-| Stakeholder Req | Trace to US/FR | Test/Validation | Coverage Status |
+| Stakeholder Req | Trace to US/FR | Test/Validation | Status |
 |---|---|---|---|
 | StR-001 | FR-001, FR-005, FR-016 | TC-001, TC-002, TC-015, TC-076 | ✅ covered |
 | StR-002 | FR-002, FR-003, FR-004, FR-006, FR-017 | TC-006, TC-009, TC-011, TC-023, TC-081 | ✅ covered |

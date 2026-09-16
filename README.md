@@ -14,9 +14,8 @@ The library requires Rust 1.98 or later and consumes validated `tl-syntax` formu
 pinned to exact revision `842d82553f045eb69a7f38745756d968254fc25e`.
 Temporal owner requests additionally consume constructor-private Quire
 Observation clock, progress, closure, completeness, and availability views at
-exact candidate revision `7dcfe2c95909249ee179a27cddc2e3a4f8d93120`
-from QObs PR #27. This TL change must not merge before that exact upstream
-commit lands; tl-mltl does not mirror or reconstruct those owner types. The
+accepted owner revision `924006300f45b38483be1cbdf99b68f899b7d368`
+from merged QObs PR #27. tl-mltl does not mirror or reconstruct those owner types. The
 retained shared temporal corpus under `corpus/tl-syntax-v1` is a byte-identical
 copy taken at the earlier revision `740182f13b84858008d6f176f75136737d405c1b`
 and the future-operator corpus was copied at

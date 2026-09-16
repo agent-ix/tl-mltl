@@ -28,7 +28,7 @@ without inspecting, projecting, evaluating, or relabeling the foreign result.
 ## Inputs
 
 - The exact compiled `quire-observation` revision
-  `7dcfe2c95909249ee179a27cddc2e3a4f8d93120`.
+  `924006300f45b38483be1cbdf99b68f899b7d368`.
 - For the temporal path, the existing [FR-018](./FR-018-publish-temporal-owner-wire.md)
   request input containing constructor-private clock, progress, closure,
   completeness, and availability views plus caller-lowered owner limits.
@@ -73,16 +73,14 @@ without inspecting, projecting, evaluating, or relabeling the foreign result.
 |---|---|---|
 | FR-019-AC-1 | Given valid temporal owner views, dispatch produces bytes and resource usage identical to direct FR-018 request derivation under exact and one-over limits. | Test (TC-085) |
 | FR-019-AC-2 | Given the QObs repair-plan or closed-population-query contract selector, compatibility dispatch returns the corresponding typed unsupported contract and exact compiled revision with no value-bearing or artifact input/output. | Test (TC-085) |
-| FR-019-AC-3 | Cargo resolution, the public revision constant, request provenance, and compatibility outcomes all name `7dcfe2c95909249ee179a27cddc2e3a4f8d93120`; the existing temporal owner suite remains unchanged in behavior. | Test (TC-085) |
+| FR-019-AC-3 | Cargo resolution, the public revision constant, request provenance, and compatibility outcomes all name `924006300f45b38483be1cbdf99b68f899b7d368`; the existing temporal owner suite remains unchanged in behavior. | Test (TC-085) |
 
 ## Dependencies
 
 This requirement advances the accepted FR-018 consumer boundary from its prior
-QObs pin to the exact C00 candidate revision currently proposed by QObs PR #27.
-That upstream landing is an enablement prerequisite: this implementation may be
-reviewed against the exact candidate commit, but the TL PR must not merge until
-QObs #27 lands at that commit. A different upstream landing requires a repin and
-renewed compatibility review. QObs retains ownership of revisioned I07 bundles,
+QObs pin to the accepted C00 owner revision merged by QObs PR #27. That
+enablement prerequisite is now satisfied. Any later owner revision requires a
+repin and renewed compatibility review. QObs retains ownership of revisioned I07 bundles,
 repair planning/coordinator behavior, and aggregate-query semantics. tl-mltl
 owns only temporal request/evaluation semantics and the explicit compatibility
 disposition at its boundary.
