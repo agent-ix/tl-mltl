@@ -24,6 +24,14 @@ relationships:
 | FR-017 | FR-017-AC-1 through FR-017-AC-3 | TC-081 through TC-083 | ✅ covered |
 | FR-018 | FR-018-AC-1 through FR-018-AC-6 | TC-084 | ✅ covered |
 | FR-019 | FR-019-AC-1 through FR-019-AC-3 | TC-085 | ✅ covered |
+| FR-027 | FR-027-AC-1 through FR-027-AC-3 | TC-086 | 🚧 planned |
+| FR-028 | FR-028-AC-1 through FR-028-AC-3 | TC-087 | 🚧 planned |
+| FR-029 | FR-029-AC-1 through FR-029-AC-3 | TC-088, TC-089 | 🚧 planned |
+
+FR-027 through FR-029 are bound to tl-mltl#68, the implementation ticket their
+routed scope now belongs to; TC-086 through TC-089 are planned rows exercised
+once a `tl-live` implementation exists, per tl-mltl#72's exit criterion that
+`spec/spec.md` and tl-mltl#68 agree.
 
 ## Stakeholder Requirement Coverage
 
@@ -90,3 +98,7 @@ relationships:
 | TC-083 | The recorded tl-parse cross-check is pinned and not a dependency, the corpus is consumed at the compiled tl-syntax revision, exported manifests name no external tool and carry the non-qualification limitation, and no source names FRETish | Integration | P0 | FR-017-AC-3 | ✅ implemented |
 | TC-084 | Strict-read, evaluate, report and map every temporal owner lane | Integration | P0 | FR-018-AC-1, FR-018-AC-2, FR-018-AC-3, FR-018-AC-4, FR-018-AC-5, FR-018-AC-6 | ✅ implemented |
 | TC-085 | Bind QObs C00 and preserve temporal dispatch while refusing repair and query semantics | Integration | P0 | FR-019-AC-1, FR-019-AC-2, FR-019-AC-3 | ✅ implemented |
+| TC-086 | Confirm no tl-mltl entry point accepts `UnboundedInterval` or `tl-syntax.formula-unbounded/v1`, `spec/spec.md` names `tl-live` as the infinite-trace owner, and every existing FR-001 through FR-019 case is unaffected | Integration | P1 | FR-027-AC-1, FR-027-AC-2, FR-027-AC-3 | 🚧 planned |
+| TC-087 | Confirm no tl-mltl source registers against `tl-syntax.liveness/v1` and every existing verdict, report, and CLI schema stays byte-identical | Integration | P1 | FR-028-AC-1, FR-028-AC-2, FR-028-AC-3 | 🚧 planned |
+| TC-088 | Confirm the recorded dependency order (tl-syntax#73, quire-specification#112, `tl-live`) authorizes no work ahead of tl-syntax FR-289/FR-290's own acceptance gates | Inspection | P1 | FR-029-AC-1, FR-029-AC-3 | 🚧 planned |
+| TC-089 | Confirm tl-mltl#68's scope is recorded as routed to `tl-live` and `spec/spec.md` no longer disagrees with it | Inspection | P1 | FR-029-AC-2 | 🚧 planned |
