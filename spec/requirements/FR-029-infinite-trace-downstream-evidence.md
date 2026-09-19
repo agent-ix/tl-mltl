@@ -19,9 +19,9 @@ relationships:
 
 tl-mltl issue [#68](https://github.com/agent-ix/tl-mltl/issues/68)'s
 lasso-witness, fairness, and infinite-trace inductive-semantics scope shall be
-routed to a new `tl-live` implementation ticket, and its exit criterion shall
-no longer name tl-mltl's own `spec/spec.md` scope, which FR-027 excludes it
-from.
+tracked against the infinite-trace provider FR-027 allocates it to, and its
+exit criterion shall name that provider's boundary rather than tl-mltl's own
+bounded evaluator scope.
 
 ## Inputs
 
@@ -31,8 +31,9 @@ from.
 
 ## Outputs
 
-- A recorded dependency order from tl-syntax's admitted grammar through
-  `tl-live`'s registration, naming one owner and one predecessor per step.
+- A recorded dependency order from tl-syntax's admitted grammar through the
+  infinite-trace provider's registration, naming one owner and one predecessor
+  per step.
 - tl-mltl#68's scope brought into agreement with `spec/spec.md`, per this
   ticket's (tl-mltl#72) exit criterion.
 
@@ -46,29 +47,32 @@ Dependency order:
 2. [quire-specification#112](https://github.com/agent-ix/quire-specification/issues/112)
    mints the `quire.temporal.infinite-trace/v1` facet member tl-syntax admits
    under.
-3. A new `tl-live` implementation ticket, opened against a `tl-live` repository
-   this PR does not create, owns lasso-witness acceptance, fairness-restricted
-   admission, the FR-161-equivalent inductive semantics, and the
-   `tl-syntax.liveness/v1` registration FR-028 names. It replaces tl-mltl#68 as
-   the ticket that scope routes to; tl-mltl#68 is superseded by this routing
-   rather than implemented in this crate.
+3. The infinite-trace provider owns lasso-witness acceptance,
+   fairness-restricted admission, the FR-161-equivalent inductive semantics,
+   and the `tl-syntax.liveness/v1` registration FR-028 allocates to it.
+   tl-mltl#68 remains the ticket that scope is tracked under, with its exit
+   criterion read against the provider boundary FR-027 states; which crate
+   carries the provider is an owner decision recorded as an open question in
+   [AD-002](../assurance/AD-002.md).
 
 This requirement adds no new dependency onto tl-mltl's existing FR-001 through
 FR-019 evaluator; it records where work outside this crate's boundary is
 tracked so tl-mltl#68's own exit criterion can be brought into agreement with
-`spec/spec.md`, as tl-mltl#72 requires.
+`spec/spec.md`, as tl-mltl#72 requires. Each step names its predecessor as a
+hard dependency; these links route work and take effect only once the
+acceptance gates in tl-syntax FR-289 and FR-290 are satisfied.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-029-AC-1 | The stated dependency order names tl-syntax#73, quire-specification#112, and a `tl-live` implementation ticket, in that order, as the path from admitted grammar to registered liveness backend. | Inspection (TC-088) |
-| FR-029-AC-2 | tl-mltl#68's scope is recorded as routed to `tl-live`, not implemented in tl-mltl, and `spec/spec.md`'s scope statement and tl-mltl#68 no longer disagree. | Inspection (TC-089) |
-| FR-029-AC-3 | No dependency link in this requirement authorizes implementation ahead of tl-syntax FR-289/FR-290's own acceptance gates. | Inspection (TC-088) |
+| FR-029-AC-1 | The stated dependency order names tl-syntax#73, quire-specification#112, and the infinite-trace provider, in that order, as the path from admitted grammar to registered liveness backend. | Inspection (TC-088) |
+| FR-029-AC-2 | tl-mltl#68's scope is recorded as owned by the infinite-trace provider rather than by tl-mltl's bounded evaluator, and `spec/spec.md`'s scope statement and tl-mltl#68 agree. | Inspection (TC-089) |
+| FR-029-AC-3 | Each recorded dependency step takes effect only once tl-syntax FR-289/FR-290's own acceptance gates are satisfied. | Inspection (TC-088) |
 
 ## Dependencies
 
 Depends on FR-027's boundary statement and FR-028's registration routing.
 Depends on tl-syntax FR-291's downstream-evidence and dependency-order pattern,
-which this requirement extends by naming `tl-live` as the concrete step FR-291
-left as tl-mltl#68/#72's routing responsibility.
+which this requirement extends by naming the infinite-trace provider as the
+concrete step FR-291 left as tl-mltl#68/#72's routing responsibility.

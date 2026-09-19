@@ -17,43 +17,45 @@ relationships:
 
 ## Description
 
-tl-mltl shall evaluate only closed (FR-001) and prefix (FR-003) bounded finite
+tl-mltl shall evaluate closed (FR-001) and prefix (FR-003) bounded finite
 traces. Lasso-word acceptance, fairness-restricted admission, and the
 FR-161-equivalent inductive always/eventually/until/release and past-dual
-infinite-trace semantics are owned by a named provider crate, `tl-live`, and
-tl-mltl shall neither implement nor partially approximate them.
+infinite-trace semantics belong to a separate provider under the
+`quire.temporal.infinite-trace/v1` facet, which tl-mltl composes with rather
+than contains.
 
 ## Inputs
 
 - A bounded MLTL graph and finite trace, exactly as FR-001 and FR-003 already
-  accept.
-- A `tl-syntax.formula-unbounded/v1` document (tl-syntax
-  [FR-289](https://github.com/agent-ix/tl-syntax/blob/main/spec/requirements/FR-289-infinite-trace-interval-grammar.md)):
-  not an input this crate accepts at all.
+  accept: a `tl-syntax.formula/v1` document and its context-bound v2 records,
+  which together are the whole of tl-mltl's formula input surface.
 
 ## Outputs
 
 - The existing FR-001/FR-003 closed and prefix verdicts, unchanged.
-- No lasso witness, fairness admission, or infinite-trace disposition of any
-  kind; tl-mltl exposes no entry point that accepts an `UnboundedInterval` or a
-  `tl-syntax.formula-unbounded/v1` document.
+- Infinite-trace dispositions are the registered provider's, under FR-028; a
+  claim no registered backend can discharge settles `unsupported` with a
+  warning naming the required capability (`tl-syntax.liveness/v1`, tl-syntax
+  FR-290).
 
 ## Behavior
 
-A `tl-syntax.formula-unbounded/v1` document is a distinct, co-existing wire
-edition from the `tl-syntax.formula/v1` document tl-mltl's evaluator consumes
-(tl-syntax FR-289); tl-mltl's parsers and evaluator entry points admit only
-`tl-syntax.formula/v1` and its context-bound v2 records, so an unbounded
-document is never structurally reachable, not merely refused at evaluation
-time.
+`tl-syntax.formula-unbounded/v1` is a distinct, co-existing wire edition from
+the `tl-syntax.formula/v1` document tl-mltl's evaluator consumes (tl-syntax
+FR-289, tl-syntax [#73](https://github.com/agent-ix/tl-syntax/issues/73));
+tl-mltl's parsers and evaluator entry points admit `tl-syntax.formula/v1` and
+its context-bound v2 records, and that admitted surface is the whole of what is
+structurally reachable from this crate.
 
-`tl-live` is the named provider crate that owns lasso-word acceptance,
-fairness-restricted infinite-trace admission, and the inductive
-always/eventually/until/release and past-dual semantics tl-mltl#68 originally
-requested. `tl-live` consumes `tl-syntax.formula-unbounded/v1` graphs
-independently of tl-mltl; it does not extend, wrap, or depend on the tl-mltl
-crate to do so, matching the FR-006-through-FR-007 rule that each shared
-consumer binds only the exact upstream identities it needs.
+The infinite-trace provider owns lasso-word acceptance, fairness-restricted
+admission, and the inductive always/eventually/until/release and past-dual
+semantics tl-mltl [#68](https://github.com/agent-ix/tl-mltl/issues/68) tracks.
+It consumes `tl-syntax.formula-unbounded/v1` graphs independently of tl-mltl,
+matching the FR-006-through-FR-007 rule that each shared consumer binds only
+the exact upstream identities it needs. Which crate carries that provider is
+an owner decision, recorded as an open question in
+[AD-002](../assurance/AD-002.md); this requirement binds the boundary and the
+facet identity, not a crate name.
 
 tl-mltl's own bounded evaluator, horizon analysis, prefix semantics, and
 monitor mapping are unaffected: this requirement changes no existing FR-001
@@ -64,8 +66,8 @@ work-budget semantics remain exactly as already specified.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-027-AC-1 | tl-mltl's public API and CLI expose no entry point that accepts `UnboundedInterval` or a `tl-syntax.formula-unbounded/v1` document; only `tl-syntax.formula/v1` and its context-bound v2 records are reachable. | Test (TC-086) |
-| FR-027-AC-2 | `spec/spec.md` names `tl-live` as the owner of lasso-word, fairness, and infinite-trace inductive semantics, and states that tl-mltl evaluates only closed and prefix bounded traces. | Inspection (TC-086) |
+| FR-027-AC-1 | tl-mltl's public API and CLI admit `tl-syntax.formula/v1` documents and their context-bound v2 records as the whole of their formula input surface. | Test (TC-086) |
+| FR-027-AC-2 | `spec/spec.md` allocates lasso-word, fairness, and infinite-trace inductive semantics to a provider under the `quire.temporal.infinite-trace/v1` facet and states that tl-mltl evaluates closed and prefix bounded traces. | Inspection (TC-086) |
 | FR-027-AC-3 | Every existing FR-001 through FR-019 acceptance criterion continues to pass unchanged. | Test (TC-086) |
 
 ## Dependencies

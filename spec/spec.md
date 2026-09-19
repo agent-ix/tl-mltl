@@ -42,27 +42,25 @@ corpus bytes `corpus/tl-syntax-v1` retains.
 - W/M canonical-graph C2PO export and explicit target-profile refusal over the
   retained tl-syntax future-operator corpus.
 
-tl-mltl evaluates only closed (`mltl.closed-trace/v1`) and open-prefix
+tl-mltl evaluates closed (`mltl.closed-trace/v1`) and open-prefix
 (`mltl.online-prefix/v1`) bounded finite traces. Lasso-word acceptance,
 fairness-restricted admission, and the inductive infinite-trace semantics for
-always/eventually/until/release and their past duals are owned by a named
-provider crate, `tl-live`, which consumes tl-syntax's
-`quire.temporal.infinite-trace/v1`-facet `tl-syntax.formula-unbounded/v1`
-documents (tl-syntax
+always/eventually/until/release and their past duals belong to a separate
+provider under the `quire.temporal.infinite-trace/v1` facet, which consumes
+tl-syntax's `tl-syntax.formula-unbounded/v1` documents (tl-syntax
 [#75](https://github.com/agent-ix/tl-syntax/issues/75)) independently of this
 crate and registers against tl-syntax's `tl-syntax.liveness/v1` capability
-(tl-syntax
-[FR-290](https://github.com/agent-ix/tl-syntax/blob/main/spec/requirements/FR-290-liveness-capability-registration.md))
-on its own. See FR-027 through FR-029 and AD-002.
+(tl-syntax FR-290, tl-syntax
+[#73](https://github.com/agent-ix/tl-syntax/issues/73)) on its own. Which
+crate carries that provider is an owner decision, recorded as an open question
+in AD-002. See FR-027 through FR-029 and AD-002.
 
 ### Out of Scope
 
 - Parsing source text or rewriting formulas.
 - Signal-schema ownership, scalar predicate lowering, or contract-IR/FRETish
   translation.
-- Continuous time, unbounded LTL, probabilistic semantics, lasso-word
-  acceptance, fairness admission, or any other infinite-trace evaluation;
-  these are owned by the `tl-live` provider crate named above, not this crate.
+- Continuous time, unbounded LTL, or probabilistic semantics.
 - Reimplementing or qualifying R2U2 as a production monitor.
 - Treating a local or differential pass as a release decision.
 
@@ -103,14 +101,15 @@ aggregate-query inputs as typed unsupported outcomes instead of recreating
 their owner semantics. The upstream enablement prerequisite is satisfied.
 
 FR-027 through FR-029 settle where infinite-trace (lasso, fairness) semantics
-live, routing tl-mltl#68's scope to a named `tl-live` provider crate per
-tl-mltl#72. They change no existing FR-001 through FR-019 behavior.
+live, allocating tl-mltl#68's scope to a separate provider under the
+`quire.temporal.infinite-trace/v1` facet per tl-mltl#72. They change no
+existing FR-001 through FR-019 behavior.
 
 - [tl-mltl epic](https://github.com/agent-ix/tl-mltl/issues/7).
 - [Typed context child](https://github.com/agent-ix/tl-mltl/issues/24).
 - [Future FRETish consumer](https://github.com/agent-ix/quire-contract-ir/issues/57).
 - [Infinite-trace scope, tl-mltl#72](https://github.com/agent-ix/tl-mltl/issues/72).
-- [Superseded infinite-trace request, tl-mltl#68](https://github.com/agent-ix/tl-mltl/issues/68).
+- [Infinite-trace provider scope, tl-mltl#68](https://github.com/agent-ix/tl-mltl/issues/68).
 - [tl-syntax infinite-trace facet, tl-syntax#75](https://github.com/agent-ix/tl-syntax/issues/75).
 - [Liveness profile holes, quire-specification#112](https://github.com/agent-ix/quire-specification/issues/112).
 - [Pinned C2PO language](https://github.com/R2U2/r2u2/blob/336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a/compiler/docs/user/language.md).
