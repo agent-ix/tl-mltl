@@ -1081,36 +1081,10 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         "a mirror registry reference was not detected; the check matches nothing"
     );
 
-    // The compiled pin and the future-corpus basis are the two provenance
-    // facts `upstream_pin_mismatches` now tracks (TL-170 deleted the third,
-    // `corpus_basis`, along with the retained shared-corpus copy it described:
-    // that corpus is read via `tl_syntax::CORPUS_DIR` and there is nothing
-    // left for a collapsed-revision probe on it to distinguish). Collapsing
-    // the two that remain is refused, and the refusal is exercised rather
-    // than assumed.
-    let (code, stdout, stderr) = run(
-        &python,
-        &[
-            "-c",
-            "import json,sys;sys.path.insert(0,'scripts');\
-             import check_shared_pins as m;\
-             pins=json.load(open('assurance/pins.json'));\
-             pins['upstream_dependency']['future_corpus_basis']=\
-             pins['upstream_dependency']['compiled_revision'];\
-             print(json.dumps(m.upstream_pin_mismatches(pins)))",
-        ],
-    );
-    assert_eq!(
-        code, 0,
-        "the collapsed future-corpus probe failed: {stderr}"
-    );
-    let problems: Vec<String> = serde_json::from_str(stdout.trim()).unwrap();
-    assert!(
-        problems
-            .iter()
-            .any(|item| item.contains("two separate provenance facts")),
-        "collapsing the compiled and future-corpus revisions was not detected: {problems:?}"
-    );
+    // TL-170 and TL-171 delete both retained-corpus basis facts
+    // (corpus_basis, future_corpus_basis): the shared temporal corpus and the
+    // future-operator corpus are both read through tl_syntax::CORPUS_DIR now,
+    // so there is nothing left for a collapsed-revision probe to distinguish.
 
     // The current-facing prose is part of the dependency identity, not merely
     // an author-maintained explanation. Each stale compiled-pin spelling is
@@ -2245,7 +2219,11 @@ fn no_local_evidence_framework_remains() {
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
-        ("corpus", 35),
+        // TL-171 deletes corpus/past-history (5 files) and
+        // corpus/future-operators (20 files) the same way, leaving only
+        // corpus/README.md and the retained corpus/r2u2-v4.2 exchange (35 - 25
+        // = 10).
+        ("corpus", 10),
         // TL-170 adds examples/emit_shared_corpus_manifest.rs, the bridge
         // producer the chain driver reads its independent malformed-count
         // oracle from now that the manifest is no longer a vendored file.
@@ -2305,14 +2283,17 @@ fn no_local_evidence_framework_remains() {
 
     // CLA rollout (#76/#77) plus TL-170's deletion of the vendored
     // corpus/tl-syntax-v1 copy and its own emit_shared_corpus_manifest
-    // producer bring the reviewed non-exempt population to 239 tracked paths.
+    // producer brought the reviewed non-exempt population to 239 tracked
+    // paths. TL-171 deletes corpus/past-history (5 files) and
+    // corpus/future-operators (20 files) the same way, both now read via
+    // tl_syntax::CORPUS_DIR, bringing the population to 214 (239 - 25).
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 239,
-        "the source census population changed from the reviewed 239 tracked files \
+        inspected, 214,
+        "the source census population changed from the reviewed 214 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

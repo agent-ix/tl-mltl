@@ -13,7 +13,7 @@ use tl_syntax::{
     SemanticProfile, TemporalFamily,
 };
 
-const DIRECTORY: &str = "corpus/past-history";
+const DIRECTORY: &str = "past-history";
 const MANIFEST_SHA256: &str = "59b86e7c888bf850cdd4e49cf86b01ffb64a99887d7fd051dca6a7d9f0a56393";
 
 #[derive(Deserialize)]
@@ -170,7 +170,7 @@ fn history(value: &HistoryWire) -> PositionHistoryDocument {
 }
 
 fn load() -> (Manifest, Cases) {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join(DIRECTORY);
+    let root = Path::new(tl_syntax::CORPUS_DIR).join(DIRECTORY);
     let manifest_bytes = fs::read(root.join("manifest.json")).unwrap();
     assert_eq!(digest(&manifest_bytes), MANIFEST_SHA256);
     let manifest: Manifest = serde_json::from_slice(&manifest_bytes).unwrap();
@@ -332,7 +332,7 @@ fn exact_shared_corpus_replays_history_analysis_evaluation_and_corrections() {
 // Trace: TC-056, FR-012-AC-3, FR-013-AC-3
 #[test]
 fn corpus_digest_and_history_identity_mutations_are_detected() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join(DIRECTORY);
+    let root = Path::new(tl_syntax::CORPUS_DIR).join(DIRECTORY);
     let mut manifest = fs::read(root.join("manifest.json")).unwrap();
     manifest[0] ^= 1;
     assert_ne!(digest(&manifest), MANIFEST_SHA256);

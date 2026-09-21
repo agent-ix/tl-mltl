@@ -138,35 +138,25 @@ def mirror_references(pins: dict[str, Any]) -> list[str]:
 
 
 def upstream_pin_mismatches(pins: dict[str, Any]) -> list[str]:
-    """Check the tl-syntax pins this repository actually depends on.
-
-    Two different revisions, and conflating them is the mistake this guards.
+    """Check the tl-syntax pin this repository actually depends on.
 
     The COMPILED revision is what Cargo resolves and what the C2PO mapping
     manifest reports as `syntaxRevision`. Every current-facing record that
     names it must agree: a lockfile that drifted from `Cargo.toml`, or a
     `TL_SYNTAX_REVISION` constant that still names the old pin, would make the
     crate report a dependency identity it is not actually built from. The
-    shared temporal corpus is read straight out of this same compiled
-    dependency via `tl_syntax::CORPUS_DIR`, so there is no separate corpus
-    basis to track for it any more.
-
-    The FUTURE-OPERATORS corpus basis is the revision whose derived-future
-    fixtures were copied into `corpus/future-operators`. It does not move with
-    the compiled pin, because the retained bytes did not move; `corpus/README.md`
-    states it and the corpus's own SHA256SUMS is what enforces it.
+    shared temporal corpus and the future-operator corpus are both read
+    straight out of this same compiled dependency via `tl_syntax::CORPUS_DIR`,
+    so there is no separate corpus basis to track for either any more.
     """
     compiled = pins["upstream_dependency"]["compiled_revision"]
-    future_corpus = pins["upstream_dependency"]["future_corpus_basis"]
     problems: list[str] = []
     checks = {
         "Cargo.toml": f'rev = "{compiled}"',
         "Cargo.lock": f"#{compiled}",
         "src/lib.rs": f'TL_SYNTAX_REVISION: &str = "{compiled}"',
-        "src/lib.rs ": f'TL_SYNTAX_FUTURE_CORPUS_BASIS: &str = "{future_corpus}"',
         "README.md": f"`{compiled}`",
         "corpus/README.md": f"`{compiled}`",
-        "corpus/README.md ": f"`{future_corpus}`",
         "assurance/change-assurance.json": f"The compiled dependency moved to {compiled[:8]}",
     }
     for name, needle in checks.items():
@@ -182,10 +172,6 @@ def upstream_pin_mismatches(pins: dict[str, Any]) -> list[str]:
             path = ROOT / name
             if path.is_file() and superseded in path.read_text(encoding="utf-8"):
                 problems.append(f"{name}: still names superseded compiled revision {superseded}")
-    if compiled == future_corpus:
-        problems.append(
-            "compiled and future-corpus revisions must remain two separate provenance facts"
-        )
     return problems
 
 
