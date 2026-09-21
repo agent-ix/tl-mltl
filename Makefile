@@ -17,7 +17,7 @@
 #
 # Read this before trusting a green `make ci`. Measured in this repository, not
 # assumed: with a syntax error introduced into src/lib.rs, `make -k ci` exits 2
-# and 10 of the 14 `ci` prerequisites do not complete — fmt-check, lint, test,
+# and 10 of the 15 `ci` prerequisites do not complete — fmt-check, lint, test,
 # conformance, differential, cli-conformance, test-census, msrv, rustdoc and
 # assurance. Adding a single `.IGNORE:` line to this file makes all 10 report
 # success and `make ci` exits 0. Nothing here notices.

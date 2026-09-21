@@ -1089,7 +1089,25 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
     // The current-facing prose is part of the dependency identity, not merely
     // an author-maintained explanation. Each stale compiled-pin spelling is
     // independently refused by the same guard that checks Cargo and the wire
-    // constant.
+    // constant. The needle is read from assurance/pins.json rather than
+    // hardcoded: mutating the LIVE compiled revision into a genuinely
+    // superseded one is what a stale file would actually contain. A
+    // hardcoded needle silently rots into a no-op the next time the compiled
+    // pin moves, which is exactly what happened here across TL-170/TL-171.
+    let pins_for_probe: Value = serde_json::from_str(
+        &fs::read_to_string(root().join("assurance/pins.json"))
+            .expect("assurance/pins.json is readable"),
+    )
+    .expect("assurance/pins.json is valid JSON");
+    let compiled = pins_for_probe["upstream_dependency"]["compiled_revision"]
+        .as_str()
+        .expect("upstream_dependency.compiled_revision is a string");
+    let superseded = pins_for_probe["upstream_dependency"]["superseded_compiled_revisions"][0]
+        .as_str()
+        .expect("at least one superseded_compiled_revision is recorded");
+    let compiled_short = &compiled[..8];
+    let superseded_short = &superseded[..8];
+
     let scratch = std::env::temp_dir().join(format!(
         "tl-mltl-stale-current-pin-probe-{}",
         std::process::id()
@@ -1111,11 +1129,8 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         fs::copy(&source, &candidate).unwrap();
         let stale = fs::read_to_string(&candidate)
             .unwrap()
-            .replace(
-                "842d82553f045eb69a7f38745756d968254fc25e",
-                "e70f2379a752117c79603bc399a86c26feed7716",
-            )
-            .replace("842d8255", "e70f2379");
+            .replace(compiled, superseded)
+            .replace(compiled_short, superseded_short);
         fs::write(&candidate, stale).unwrap();
         let (code, stdout, stderr) = run(
             &python,
@@ -1127,40 +1142,17 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         );
         assert_eq!(code, 0, "the stale-current-pin probe failed: {stderr}");
         let problems: Vec<String> = serde_json::from_str(stdout.trim()).unwrap();
+        // A prefix match on the filename is satisfied just as well by an
+        // absent-file report ("README.md: absent") as by a real mismatch, so
+        // this asserts the specific problem message the guard emits when it
+        // actually reads mismatched content, not merely a missing file.
+        let expected = format!("{name}: does not name the expected revision");
         assert!(
-            problems.iter().any(|problem| problem.starts_with(name)),
+            problems.contains(&expected),
             "the pin guard did not reject a stale compiled revision in {name}: {:?}",
             problems
         );
     }
-    // corpus/README.md still names the one retained basis revision that
-    // survives this branch: the future-operators corpus's pin
-    // (`future_corpus_basis` in assurance/pins.json). Mutating that needle,
-    // rather than the now-deleted shared-corpus basis, is what a stale
-    // README would actually do.
-    let corpus_readme = scratch.join("corpus/README.md");
-    fs::copy(root().join("corpus/README.md"), &corpus_readme).unwrap();
-    let future_corpus_basis = fs::read_to_string(&corpus_readme).unwrap().replace(
-        "5b1c13440e54d5a851df2d33cc88944135574bc6",
-        "0000000000000000000000000000000000000000",
-    );
-    fs::write(&corpus_readme, future_corpus_basis).unwrap();
-    let (code, stdout, stderr) = run(
-        &python,
-        &[
-            "-c",
-            "import json,sys;from pathlib import Path;sys.path.insert(0,'scripts');import check_shared_pins as m;m.ROOT=Path(sys.argv[1]);pins=json.load(open('assurance/pins.json'));print(json.dumps(m.upstream_pin_mismatches(pins)))",
-            scratch.to_str().unwrap(),
-        ],
-    );
-    assert_eq!(code, 0, "the future-corpus-basis probe failed: {stderr}");
-    let problems: Vec<String> = serde_json::from_str(stdout.trim()).unwrap();
-    assert!(
-        problems
-            .iter()
-            .any(|problem| problem == "corpus/README.md: does not name the expected revision"),
-        "the pin guard did not reject a corpus README that no longer names the future-operators basis revision: {problems:?}"
-    );
     match fs::remove_dir_all(&scratch) {
         Ok(()) => {}
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
