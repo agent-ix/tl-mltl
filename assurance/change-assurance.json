@@ -140,8 +140,8 @@
           "source_ids": ["FR-004", "FR-005", "StR-002", "r2u2-corpus-manifest"]
         },
         {
-          "id": "PRESERVE-future-corpus-basis",
-          "statement": "The shared temporal corpus is read from the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR; corpus/tl-syntax-v1 is deleted and there is no separate corpus basis to track for it. corpus/future-operators stays its byte-identical 5b1c1344 copy, verified by its own SHA256SUMS. The compiled dependency moved to d52d8954 on tl-syntax main, which publishes CORPUS_DIR; the retained future-operators corpus did not move with it, and the two revisions remain separate declared facts.",
+          "id": "PRESERVE-corpus-basis",
+          "statement": "The shared temporal corpus, the future-operator corpus, and the past-history corpus are all read from the single compiled tl-syntax dependency via tl_syntax::CORPUS_DIR; corpus/tl-syntax-v1, corpus/future-operators, and corpus/past-history are all deleted and there is no separate corpus basis to track for any of them. The compiled dependency moved to d52d8954 on tl-syntax main, which publishes CORPUS_DIR, and each corpus tracks whatever revision that pin names.",
           "source_ids": ["NFR-002", "assurance-pins"]
         },
         {

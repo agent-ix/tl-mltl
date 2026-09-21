@@ -1,10 +1,12 @@
 //! W/M canonical interoperability and target loss evidence (FR-017).
 //!
-//! Replays the retained tl-syntax `corpus/future-operators` bytes through the
-//! real `FutureLoweringRequest` and the C2PO mapping. A lowered W/M graph is
-//! exported only as its canonical primitive graph, a target profile that cannot
-//! preserve the semantics is refused with no manifest, and nothing here counts
-//! a foreign parser or monitor as qualification evidence.
+//! Replays the pinned tl-syntax `future-operators` corpus — read from the
+//! compiled dependency via `tl_syntax::CORPUS_DIR`, not an in-repo path —
+//! through the real `FutureLoweringRequest` and the C2PO mapping. A lowered
+//! W/M graph is exported only as its canonical primitive graph, a target
+//! profile that cannot preserve the semantics is refused with no manifest,
+//! and nothing here counts a foreign parser or monitor as qualification
+//! evidence.
 
 use std::{fs, path::Path};
 
@@ -12,8 +14,7 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use tl_mltl::{
     map_to_c2po, map_to_c2po_with_context, ContextualMappingManifest, MappingError,
-    MappingManifest, MappingSourceIdentity, MappingSourceState, TL_SYNTAX_FUTURE_CORPUS_BASIS,
-    TL_SYNTAX_REVISION,
+    MappingManifest, MappingSourceIdentity, MappingSourceState, TL_SYNTAX_REVISION,
 };
 use tl_syntax::{
     Formula, FormulaDocument, FutureLoweringRefusal, FutureLoweringRequest, Node, NodeId,
@@ -21,12 +22,13 @@ use tl_syntax::{
     SignalCatalogDocument, SignalDomain, SignalId, FUTURE_LOWERING_REQUEST_V1,
 };
 
-/// Retained corpus directory, a byte-identical copy at [`TL_SYNTAX_FUTURE_CORPUS_BASIS`].
-const CORPUS: &str = "corpus/future-operators";
-/// SHA-256 of the retained `manifest.json`, which in turn pins every case file.
+/// Read from the compiled tl-syntax dependency via `tl_syntax::CORPUS_DIR`,
+/// joined with this subdirectory name.
+const CORPUS: &str = "future-operators";
+/// SHA-256 of the pinned `manifest.json`, which in turn pins every case file.
 const CORPUS_MANIFEST_SHA256: &str =
     "e38ef2a7bfc49631932c9c8527b9d08ba1087825e8ae3bccff5f326e74605172";
-/// Corpus identity and revision recorded by the retained manifest.
+/// Corpus identity and revision recorded by the pinned manifest.
 const CORPUS_IDENTITY: &str = "tl-syntax.future-operator-corpus/v1";
 const CORPUS_MANIFEST_REVISION: u64 = 1;
 /// tl-parse revision the corpus sources were cross-checked against upstream.
@@ -44,6 +46,11 @@ fn read(relative: &str) -> Vec<u8> {
     fs::read(&path).unwrap_or_else(|error| panic!("read {}: {error}", path.display()))
 }
 
+fn read_corpus(relative: &str) -> Vec<u8> {
+    let path = Path::new(tl_syntax::CORPUS_DIR).join(relative);
+    fs::read(&path).unwrap_or_else(|error| panic!("read {}: {error}", path.display()))
+}
+
 fn sha256_hex(bytes: &[u8]) -> String {
     Sha256::digest(bytes)
         .iter()
@@ -51,9 +58,9 @@ fn sha256_hex(bytes: &[u8]) -> String {
         .collect()
 }
 
-/// Verifies the retained corpus against its pinned manifest and returns the cases.
+/// Verifies the upstream corpus against its pinned manifest and returns the cases.
 fn pinned_cases() -> Vec<Value> {
-    let manifest_bytes = read(&format!("{CORPUS}/manifest.json"));
+    let manifest_bytes = read_corpus(&format!("{CORPUS}/manifest.json"));
     assert_eq!(sha256_hex(&manifest_bytes), CORPUS_MANIFEST_SHA256);
     let manifest: Value = serde_json::from_slice(&manifest_bytes).unwrap();
     assert_eq!(manifest["corpus"], CORPUS_IDENTITY);
@@ -63,12 +70,13 @@ fn pinned_cases() -> Vec<Value> {
     for file in files {
         let path = file["path"].as_str().unwrap();
         assert_eq!(
-            sha256_hex(&read(&format!("{CORPUS}/{path}"))),
+            sha256_hex(&read_corpus(&format!("{CORPUS}/{path}"))),
             file["sha256"].as_str().unwrap(),
             "{path} does not match the pinned corpus manifest"
         );
     }
-    let cases: Value = serde_json::from_slice(&read(&format!("{CORPUS}/cases.json"))).unwrap();
+    let cases: Value =
+        serde_json::from_slice(&read_corpus(&format!("{CORPUS}/cases.json"))).unwrap();
     assert_eq!(cases["corpus"], CORPUS_IDENTITY);
     cases["cases"].as_array().unwrap().clone()
 }
@@ -166,7 +174,7 @@ fn export_id(case: &Value) -> &str {
 
 fn map(case: &Value, formula: Formula<'_>) -> Result<MappingManifest, MappingError> {
     let expected = case["expected"].as_str().unwrap();
-    let formula_bytes = read(&format!("{CORPUS}/{expected}"));
+    let formula_bytes = read_corpus(&format!("{CORPUS}/{expected}"));
     map_to_c2po(
         formula,
         export_id(case),
@@ -201,7 +209,7 @@ fn map_with_context(
     catalog: &SignalCatalogDocument,
 ) -> Result<ContextualMappingManifest, MappingError> {
     let expected = case["expected"].as_str().unwrap();
-    let formula_bytes = read(&format!("{CORPUS}/{expected}"));
+    let formula_bytes = read_corpus(&format!("{CORPUS}/{expected}"));
     map_to_c2po_with_context(
         formula,
         export_id(case),
@@ -232,7 +240,7 @@ fn lowered_wm_graphs_export_to_c2po_exactly_as_direct_canonical_graphs() {
         let lowered = case_formula(derived, &lowered_nodes);
 
         // The exported graph is the pinned canonical document, spans aside.
-        let expected: FormulaDocument = serde_json::from_slice(&read(&format!(
+        let expected: FormulaDocument = serde_json::from_slice(&read_corpus(&format!(
             "{CORPUS}/{}",
             derived["expected"].as_str().unwrap()
         )))
@@ -367,7 +375,7 @@ fn unpreservable_targets_and_refused_lowerings_emit_no_manifest() {
 fn foreign_parser_and_monitor_acceptance_is_never_qualification_evidence() {
     let cases = pinned_cases();
     let manifest: Value =
-        serde_json::from_slice(&read(&format!("{CORPUS}/manifest.json"))).unwrap();
+        serde_json::from_slice(&read_corpus(&format!("{CORPUS}/manifest.json"))).unwrap();
     assert_eq!(manifest["source_cross_check"]["parser"], "tl-parse");
     assert_eq!(manifest["source_cross_check"]["revision"], PARSER_REVISION);
 
@@ -379,15 +387,6 @@ fn foreign_parser_and_monitor_acceptance_is_never_qualification_evidence() {
     assert!(
         !lock.contains("name = \"tl-parse\""),
         "tl-parse became a transitive dependency"
-    );
-    // The retained bytes keep their own historical basis after the dependency advances.
-    let corpus_readme = String::from_utf8(read("corpus/README.md")).unwrap();
-    let pinned_sentence = format!(
-        "`future-operators/` is a byte-identical copy of `corpus/future-operators` at\nrevision `{TL_SYNTAX_FUTURE_CORPUS_BASIS}`"
-    );
-    assert!(
-        corpus_readme.contains(&pinned_sentence),
-        "corpus/README.md does not contain: {pinned_sentence}"
     );
 
     for derived in derived_cases(&cases) {

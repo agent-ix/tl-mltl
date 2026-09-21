@@ -67,7 +67,7 @@ help:
 	@echo "  make lint             - Clippy with -D warnings"
 	@echo "  make test             - cargo test plus the shared-assurance tests"
 	@echo "  make kani-check       - Verify the bounded Kani horizon proof"
-	@echo "  make check-corpus     - Verify shared and R2U2 corpus bytes"
+	@echo "  make check-corpus     - Verify R2U2 corpus bytes"
 	@echo "  make conformance      - Replay the shared corpus through the evaluator"
 	@echo "  make differential     - Replay the retained R2U2 exchange"
 	@echo "  make cli-conformance  - Drive the built CLI over its declared requests"
@@ -123,8 +123,6 @@ test: assurance-inputs
 
 .PHONY: check-corpus
 check-corpus:
-	sha256sum --check corpus/future-operators/SHA256SUMS
-	sha256sum --check corpus/past-history/SHA256SUMS
 	cd corpus/r2u2-v4.2 && sha256sum --check SHA256SUMS
 
 .PHONY: conformance

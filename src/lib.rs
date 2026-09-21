@@ -79,22 +79,16 @@ pub use wire::{
 /// Exact tl-syntax source revision this crate is compiled against.
 ///
 /// This is the dependency identity `Cargo.toml` resolves and the value the C2PO
-/// mapping manifest reports as `syntaxRevision`. The shared corpus is read
-/// straight out of this same compiled dependency via `tl_syntax::CORPUS_DIR`,
-/// so unlike the retained future-operator corpus below, there is no separate
-/// basis revision to track: reading through the dependency means the corpus
+/// mapping manifest reports as `syntaxRevision`. The shared temporal corpus and
+/// the future-operator corpus are both read straight out of this same compiled
+/// dependency via `tl_syntax::CORPUS_DIR`, so there is no separate basis
+/// revision to track for either: reading through the dependency means each
 /// tracks whatever this revision names.
 pub const TL_SYNTAX_REVISION: &str = "d52d89549b0a6c0c429261bab912cd5396c4a19e";
 
 /// Exact Quire Observation owner revision whose constructor-private assertion
 /// views are accepted by the temporal request boundary.
 pub const QUIRE_OBSERVATION_REVISION: &str = "924006300f45b38483be1cbdf99b68f899b7d368";
-
-/// Exact tl-syntax revision whose future-operator corpus is retained here.
-///
-/// This third provenance fact names the source of the retained derived-future
-/// fixtures. Their bytes stay pinned when [`TL_SYNTAX_REVISION`] advances.
-pub const TL_SYNTAX_FUTURE_CORPUS_BASIS: &str = "5b1c13440e54d5a851df2d33cc88944135574bc6";
 
 /// Shared temporal corpus identity consumed by this crate.
 pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";

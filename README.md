@@ -18,11 +18,9 @@ Temporal owner requests additionally consume constructor-private Quire
 Observation clock, progress, closure, completeness, and availability views at
 accepted owner revision `924006300f45b38483be1cbdf99b68f899b7d368`
 from merged QObs PR #27. tl-mltl does not mirror or reconstruct those owner types. The
-shared temporal corpus is read directly from the compiled `tl-syntax` dependency
-via `tl_syntax::CORPUS_DIR`, tracking `TL_SYNTAX_REVISION`. The future-operator
-corpus is a byte-identical copy retained at the earlier revision
-`5b1c13440e54d5a851df2d33cc88944135574bc6`, not restamped; `TL_SYNTAX_REVISION`
-and `TL_SYNTAX_FUTURE_CORPUS_BASIS` name the two separate facts. `evaluate_closed` implements
+shared temporal corpus, the future-operator corpus, and the past-history
+corpus are all read directly from the compiled `tl-syntax` dependency via
+`tl_syntax::CORPUS_DIR`, tracking `TL_SYNTAX_REVISION`. `evaluate_closed` implements
 the declared all-false-after-closure profile at time zero, while
 `evaluate_closed_at` selects another verdict time. `evaluate_prefix` and
 `evaluate_prefix_at` preserve unknown future observations as `pending`.
@@ -74,16 +72,14 @@ gate, which installs the pinned Kani verifier before running the aggregate.
 
 ## Corpora
 
-- The shared temporal corpus is read straight out of the compiled `tl-syntax`
-  dependency via `tl_syntax::CORPUS_DIR`, tracking `TL_SYNTAX_REVISION`; there
-  is no retained copy of it in this repository.
+- The shared `tl-syntax-corpus/v1`, the W/M future-operator corpus, and the
+  past-history corpus are all read from the compiled `tl-syntax` dependency
+  via `tl_syntax::CORPUS_DIR`; none is retained as a copy in this repository.
+  Lowered W/M graphs map to C2PO only through the canonical graph; see FR-017.
 - `corpus/r2u2-v4.2/` retains a real differential run of canonical R2U2 tag
   `4.2-release` at commit `336a2453…`, including C2PO inputs, compiled binary,
   raw verdicts, exact tool/configuration digests, and 8/8 supported formula/time
   agreements across unary, Until, Release, nested, and nonzero-time cases.
-- `corpus/future-operators/` is a byte-identical copy of the tl-syntax W/M
-  future-operator corpus at the compiled revision. Lowered W/M graphs map to
-  C2PO only through the canonical graph; see FR-017.
 - Closed-profile mapping remains explicitly unsupported; it is not silently
   reinterpreted as online-prefix semantics.
 

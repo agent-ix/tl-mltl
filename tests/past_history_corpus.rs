@@ -13,7 +13,7 @@ use tl_syntax::{
     SemanticProfile, TemporalFamily,
 };
 
-const DIRECTORY: &str = "corpus/past-history";
+const DIRECTORY: &str = "past-history";
 const MANIFEST_SHA256: &str = "59b86e7c888bf850cdd4e49cf86b01ffb64a99887d7fd051dca6a7d9f0a56393";
 
 #[derive(Deserialize)]
@@ -169,9 +169,14 @@ fn history(value: &HistoryWire) -> PositionHistoryDocument {
     .unwrap()
 }
 
+fn read_corpus(root: &Path, relative: &str) -> Vec<u8> {
+    let path = root.join(relative);
+    fs::read(&path).unwrap_or_else(|error| panic!("read {}: {error}", path.display()))
+}
+
 fn load() -> (Manifest, Cases) {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join(DIRECTORY);
-    let manifest_bytes = fs::read(root.join("manifest.json")).unwrap();
+    let root = Path::new(tl_syntax::CORPUS_DIR).join(DIRECTORY);
+    let manifest_bytes = read_corpus(&root, "manifest.json");
     assert_eq!(digest(&manifest_bytes), MANIFEST_SHA256);
     let manifest: Manifest = serde_json::from_slice(&manifest_bytes).unwrap();
     let pins: BTreeMap<_, _> = manifest
@@ -182,13 +187,13 @@ fn load() -> (Manifest, Cases) {
     assert_eq!(pins.len(), 3);
     for pin in &manifest.files {
         assert_eq!(
-            digest(&fs::read(root.join(&pin.path)).unwrap()),
+            digest(&read_corpus(&root, &pin.path)),
             pin.sha256,
             "{}",
             pin.path
         );
     }
-    let cases = serde_json::from_slice(&fs::read(root.join("cases.json")).unwrap()).unwrap();
+    let cases = serde_json::from_slice(&read_corpus(&root, "cases.json")).unwrap();
     (manifest, cases)
 }
 
@@ -332,8 +337,8 @@ fn exact_shared_corpus_replays_history_analysis_evaluation_and_corrections() {
 // Trace: TC-056, FR-012-AC-3, FR-013-AC-3
 #[test]
 fn corpus_digest_and_history_identity_mutations_are_detected() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join(DIRECTORY);
-    let mut manifest = fs::read(root.join("manifest.json")).unwrap();
+    let root = Path::new(tl_syntax::CORPUS_DIR).join(DIRECTORY);
+    let mut manifest = read_corpus(&root, "manifest.json");
     manifest[0] ^= 1;
     assert_ne!(digest(&manifest), MANIFEST_SHA256);
 
