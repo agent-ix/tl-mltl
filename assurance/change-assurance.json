@@ -37,7 +37,6 @@
     "StR-002": "spec/requirements/StR-002-monitor-interoperability.md",
     "TM-001": "spec/test-matrix.md",
     "SUR-001": "spec/evidence/suites.md",
-    "shared-corpus-manifest": "corpus/tl-syntax-v1/manifest.json",
     "r2u2-corpus-manifest": "corpus/r2u2-v4.2/manifest.json",
     "cli-request-manifest": "tests/fixtures/cli-requests/manifest.json",
     "assurance-pins": "assurance/pins.json",
@@ -75,7 +74,6 @@
       { "source_id": "StR-002", "kind": "requirement" },
       { "source_id": "TM-001", "kind": "test" },
       { "source_id": "SUR-001", "kind": "test" },
-      { "source_id": "shared-corpus-manifest", "kind": "architecture" },
       { "source_id": "r2u2-corpus-manifest", "kind": "architecture" },
       { "source_id": "cli-request-manifest", "kind": "test" },
       { "source_id": "assurance-pins", "kind": "other" },
@@ -143,8 +141,8 @@
         },
         {
           "id": "PRESERVE-corpus-basis",
-          "statement": "corpus/tl-syntax-v1 stays a byte-identical copy of the shared temporal corpus at tl-syntax 740182f1 and corpus/future-operators stays its byte-identical 5b1c1344 copy, each verified by its own SHA256SUMS. The compiled dependency moved to 842d8255 on tl-syntax main for the exact typed syntax surface consumed by the temporal-owner boundary; neither retained corpus moved with it, and all three revisions are separate declared facts.",
-          "source_ids": ["NFR-002", "shared-corpus-manifest"]
+          "statement": "The shared temporal corpus is read from the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR; corpus/tl-syntax-v1 is deleted and there is no separate corpus basis to track for it. corpus/future-operators stays its byte-identical 5b1c1344 copy, verified by its own SHA256SUMS. The compiled dependency moved to d52d8954 on tl-syntax main, which publishes CORPUS_DIR; the retained future-operators corpus did not move with it, and the two revisions remain separate declared facts.",
+          "source_ids": ["NFR-002", "assurance-pins"]
         },
         {
           "id": "PRESERVE-no-external-execution",
@@ -164,11 +162,11 @@
           "obligation_ids": ["FR-006-AC-2"],
           "evidence_kind": "Integration",
           "command": {
-            "argv": ["cargo", "run", "--quiet", "--example", "reference_conformance", "--", "--manifest", "corpus/tl-syntax-v1/manifest.json"],
+            "argv": ["cargo", "run", "--quiet", "--example", "reference_conformance"],
             "working_directory": "."
           },
           "tool_identity": "tl-mltl-reference-conformance",
-          "configuration": "corpus/tl-syntax-v1/manifest.json"
+          "configuration": "Cargo.toml"
         },
         {
           "proof_id": "PROOF-r2u2-differential",

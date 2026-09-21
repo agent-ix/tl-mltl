@@ -23,8 +23,9 @@ results.
 PGM-01 at `ix://agent-ix/quire-contract-ir/PGM-01` governs compatibility,
 provenance, evidence, human authority, and qualification boundaries. Formula
 and profile identities come from the exact tl-syntax revisions declared in
-`assurance/pins.json`: the compiled dependency, and the separate revision whose
-corpus bytes `corpus/tl-syntax-v1` retains.
+`assurance/pins.json`: the compiled dependency, whose shared corpus this
+repository reads directly via `tl_syntax::CORPUS_DIR`, and the separate
+revision whose future-operator corpus bytes `corpus/future-operators` retains.
 
 ## Scope
 

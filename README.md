@@ -13,17 +13,16 @@ make spec
 ```
 
 The library requires Rust 1.98 or later and consumes validated `tl-syntax` formulas
-pinned to exact revision `842d82553f045eb69a7f38745756d968254fc25e`.
+pinned to exact revision `d52d89549b0a6c0c429261bab912cd5396c4a19e`.
 Temporal owner requests additionally consume constructor-private Quire
 Observation clock, progress, closure, completeness, and availability views at
 accepted owner revision `924006300f45b38483be1cbdf99b68f899b7d368`
 from merged QObs PR #27. tl-mltl does not mirror or reconstruct those owner types. The
-retained shared temporal corpus under `corpus/tl-syntax-v1` is a byte-identical
-copy taken at the earlier revision `740182f13b84858008d6f176f75136737d405c1b`
-and the future-operator corpus was copied at
-`5b1c13440e54d5a851df2d33cc88944135574bc6`. Neither retained corpus is
-restamped; `TL_SYNTAX_REVISION`, `TL_SYNTAX_CORPUS_BASIS`, and
-`TL_SYNTAX_FUTURE_CORPUS_BASIS` name the three separate facts. `evaluate_closed` implements
+shared temporal corpus is read directly from the compiled `tl-syntax` dependency
+via `tl_syntax::CORPUS_DIR`, tracking `TL_SYNTAX_REVISION`. The future-operator
+corpus is a byte-identical copy retained at the earlier revision
+`5b1c13440e54d5a851df2d33cc88944135574bc6`, not restamped; `TL_SYNTAX_REVISION`
+and `TL_SYNTAX_FUTURE_CORPUS_BASIS` name the two separate facts. `evaluate_closed` implements
 the declared all-false-after-closure profile at time zero, while
 `evaluate_closed_at` selects another verdict time. `evaluate_prefix` and
 `evaluate_prefix_at` preserve unknown future observations as `pending`.

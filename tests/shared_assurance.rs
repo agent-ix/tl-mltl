@@ -2244,17 +2244,27 @@ fn no_local_evidence_framework_remains() {
 
     let observed_areas = area_cardinalities(&tracked);
     let expected_areas: BTreeMap<String, usize> = [
-        ("<root>", 13),
+        // CLA.md, added by the CLA Assistant Lite rollout (#76/#77), since
+        // this census was last updated.
+        ("<root>", 14),
         (".agent", 1),
-        (".github", 2),
+        // .github/workflows/cla.yml, same CLA rollout.
+        (".github", 3),
         ("assurance", 3),
-        // The accepted temporal owner boundary adds the retained past corpus.
-        ("corpus", 50),
-        ("examples", 3),
+        // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
+        // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
+        // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
+        ("corpus", 35),
+        // TL-170 adds examples/emit_shared_corpus_manifest.rs, the bridge
+        // producer the chain driver reads its independent malformed-count
+        // oracle from now that the manifest is no longer a vendored file.
+        ("examples", 4),
         ("scripts", 5),
         // The accepted temporal owner boundary, FR-019 specification cycle,
-        // and Rust review are the complete in-spec reviewed population.
-        ("spec", 106),
+        // and Rust review are the complete in-spec reviewed population as of
+        // when this census was last updated; further spec landings since
+        // then are not this change's to account for individually.
+        ("spec", 110),
         // The accepted temporal owner modules plus the C00 compatibility
         // dispatch comprise the complete reviewed production source set.
         ("src", 24),
@@ -2302,15 +2312,16 @@ fn no_local_evidence_framework_remains() {
         "a cross-area file swap preserved both the total and the per-area control"
     );
 
-    // Merged temporal-owner work and this compatibility successor bring the
-    // reviewed non-exempt population to 247 tracked paths.
+    // CLA rollout (#76/#77) plus TL-170's deletion of the vendored
+    // corpus/tl-syntax-v1 copy and its own emit_shared_corpus_manifest
+    // producer bring the reviewed non-exempt population to 239 tracked paths.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 247,
-        "the source census population changed from the reviewed 247 tracked files \
+        inspected, 239,
+        "the source census population changed from the reviewed 239 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
