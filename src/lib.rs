@@ -63,15 +63,16 @@ pub use mapping::{
     MappingSourceState,
 };
 pub use past::{
-    analyze_required_history, evaluate_past, fixed_sample_instant, ClockBinding, ClockError,
-    ClockSample, ExactNumber, ExactNumberError, HistoryError, HistoryRequirementError,
-    HistoryRequirementReport, HistoryRequirementSchemaVersion, HistoryRequirementValidationError,
-    OwnerHistoryState, PastEvaluationError, PastEvaluationLimits, PastEvaluationRelationInput,
-    PastEvaluationReport, PastEvaluationSchemaVersion, PastEvaluationStats, PastEvaluatorIdentity,
-    PastResultFinality, PastResultReference, PastResultRelation, PastResultRelationKind,
-    PastResultValidationError, PositionHistoryDocument, PositionHistoryReference,
-    PositionHistorySchemaVersion, PositionHistorySource, PositionObservation, UnsupportedClockKind,
-    HISTORY_REQUIREMENT_V1, PAST_EVALUATION_V1, PAST_EVALUATOR_V1, POSITION_HISTORY_V1,
+    analyze_required_history, evaluate_past, evaluate_past_with_stats, fixed_sample_instant,
+    ClockBinding, ClockError, ClockSample, ExactNumber, ExactNumberError, HistoryError,
+    HistoryRequirementError, HistoryRequirementReport, HistoryRequirementSchemaVersion,
+    HistoryRequirementValidationError, OwnerHistoryState, PastEvaluationError,
+    PastEvaluationLimits, PastEvaluationRelationInput, PastEvaluationReport,
+    PastEvaluationSchemaVersion, PastEvaluationStats, PastEvaluatorIdentity, PastResultFinality,
+    PastResultReference, PastResultRelation, PastResultRelationKind, PastResultValidationError,
+    PositionHistoryDocument, PositionHistoryReference, PositionHistorySchemaVersion,
+    PositionHistorySource, PositionObservation, UnsupportedClockKind, HISTORY_REQUIREMENT_V1,
+    PAST_EVALUATION_V1, PAST_EVALUATOR_V1, POSITION_HISTORY_V1,
 };
 pub use wire::{
     CommandDocument, CommandSchemaVersion, Operation, TraceDocument, TraceSchemaVersion,
