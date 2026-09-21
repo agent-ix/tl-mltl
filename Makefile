@@ -17,10 +17,10 @@
 #
 # Read this before trusting a green `make ci`. Measured in this repository, not
 # assumed: with a syntax error introduced into src/lib.rs, `make -k ci` exits 2
-# and 10 of the 15 `ci` prerequisites do not complete — fmt-check, lint, test,
-# conformance, differential, cli-conformance, test-census, msrv, rustdoc and
-# assurance. Adding a single `.IGNORE:` line to this file makes all 10 report
-# success and `make ci` exits 0. Nothing here notices.
+# and 12 of the 15 `ci` prerequisites do not complete — fmt-check, lint,
+# kani-check, test, conformance, differential, cli-conformance, test-census,
+# spec, msrv, rustdoc and assurance. Adding a single `.IGNORE:` line to this
+# file makes all 12 report success and `make ci` exits 0. Nothing here notices.
 #
 # The structural backstop only goes so far. Quoin binds each retained input by
 # digest and the chain derives every attested result from the producer's own
