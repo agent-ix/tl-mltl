@@ -22,7 +22,7 @@ tl-syntax = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-syntax.g
 quire-observation = { version = "=0.1.0", git = "https://github.com/agent-ix/quire-observation", rev = "924006300f45b38483be1cbdf99b68f899b7d368" }
 
 [dev-dependencies]
-agent-ix-baseline-producer = { version = "=0.0.0", git = "https://github.com/agent-ix/filament-core-data", rev = "404288282402d60de007295ccbafa960532b955e" }
+agent-ix-baseline-producer = { version = "=0.0.0", git = "https://github.com/agent-ix/filament-core-data", rev = "a6fe662542770e6acbec4917cfe1772b349ee414" }
 serde_yaml_ng = "0.10"
 proptest = "=1.5.0"
 
