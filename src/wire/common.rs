@@ -197,11 +197,8 @@ pub struct OwnerReadError {
 }
 
 impl OwnerReadError {
-    pub(crate) const fn new(
-        code: OwnerReadErrorCode,
-        field: &'static str,
-        usage: OwnerUsage,
-    ) -> Self {
+    /// Constructs a typed owner-boundary refusal.
+    pub const fn new(code: OwnerReadErrorCode, field: &'static str, usage: OwnerUsage) -> Self {
         Self { code, field, usage }
     }
 
