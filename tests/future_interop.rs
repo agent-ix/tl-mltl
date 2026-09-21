@@ -1,10 +1,12 @@
 //! W/M canonical interoperability and target loss evidence (FR-017).
 //!
-//! Replays the retained tl-syntax `corpus/future-operators` bytes through the
-//! real `FutureLoweringRequest` and the C2PO mapping. A lowered W/M graph is
-//! exported only as its canonical primitive graph, a target profile that cannot
-//! preserve the semantics is refused with no manifest, and nothing here counts
-//! a foreign parser or monitor as qualification evidence.
+//! Replays the pinned tl-syntax `future-operators` corpus — read from the
+//! compiled dependency via `tl_syntax::CORPUS_DIR`, not an in-repo path —
+//! through the real `FutureLoweringRequest` and the C2PO mapping. A lowered
+//! W/M graph is exported only as its canonical primitive graph, a target
+//! profile that cannot preserve the semantics is refused with no manifest,
+//! and nothing here counts a foreign parser or monitor as qualification
+//! evidence.
 
 use std::{fs, path::Path};
 
@@ -20,12 +22,13 @@ use tl_syntax::{
     SignalCatalogDocument, SignalDomain, SignalId, FUTURE_LOWERING_REQUEST_V1,
 };
 
-/// Read from the compiled tl-syntax dependency via `tl_syntax::CORPUS_DIR`.
+/// Read from the compiled tl-syntax dependency via `tl_syntax::CORPUS_DIR`,
+/// joined with this subdirectory name.
 const CORPUS: &str = "future-operators";
-/// SHA-256 of the retained `manifest.json`, which in turn pins every case file.
+/// SHA-256 of the pinned `manifest.json`, which in turn pins every case file.
 const CORPUS_MANIFEST_SHA256: &str =
     "e38ef2a7bfc49631932c9c8527b9d08ba1087825e8ae3bccff5f326e74605172";
-/// Corpus identity and revision recorded by the retained manifest.
+/// Corpus identity and revision recorded by the pinned manifest.
 const CORPUS_IDENTITY: &str = "tl-syntax.future-operator-corpus/v1";
 const CORPUS_MANIFEST_REVISION: u64 = 1;
 /// tl-parse revision the corpus sources were cross-checked against upstream.
@@ -55,7 +58,7 @@ fn sha256_hex(bytes: &[u8]) -> String {
         .collect()
 }
 
-/// Verifies the retained corpus against its pinned manifest and returns the cases.
+/// Verifies the upstream corpus against its pinned manifest and returns the cases.
 fn pinned_cases() -> Vec<Value> {
     let manifest_bytes = read_corpus(&format!("{CORPUS}/manifest.json"));
     assert_eq!(sha256_hex(&manifest_bytes), CORPUS_MANIFEST_SHA256);
