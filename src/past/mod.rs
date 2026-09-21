@@ -2212,8 +2212,10 @@ pub fn evaluate_past<'history>(
     .0
 }
 
+/// Evaluates one validated past formula at an explicit complete-history
+/// anchor, also returning node-evaluation and recursion-depth statistics.
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn evaluate_past_with_stats<'history>(
+pub fn evaluate_past_with_stats<'history>(
     formula: Formula<'_>,
     formula_id: impl Into<String>,
     history_source: impl Into<PositionHistorySource<'history>>,

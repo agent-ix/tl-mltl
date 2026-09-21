@@ -1,7 +1,7 @@
 //! Canonical temporal owner documents and strict public readers.
 
 pub mod command;
-pub(crate) mod common;
+pub mod common;
 mod legacy;
 pub mod observation;
 pub mod report;

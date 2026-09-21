@@ -197,11 +197,8 @@ pub struct OwnerReadError {
 }
 
 impl OwnerReadError {
-    pub(crate) const fn new(
-        code: OwnerReadErrorCode,
-        field: &'static str,
-        usage: OwnerUsage,
-    ) -> Self {
+    /// Constructs a typed owner-boundary refusal.
+    pub const fn new(code: OwnerReadErrorCode, field: &'static str, usage: OwnerUsage) -> Self {
         Self { code, field, usage }
     }
 
@@ -259,12 +256,16 @@ impl<T> OwnerDocument<T> {
         self.usage
     }
 
-    pub(crate) fn into_parts(self) -> (T, Vec<u8>, OwnerUsage) {
+    /// Decomposes into the typed value, canonical bytes, and retained usage.
+    pub fn into_parts(self) -> (T, Vec<u8>, OwnerUsage) {
         (self.value, self.bytes, self.usage)
     }
 }
 
-pub(crate) fn produce<T: Serialize + Clone>(
+/// Produces a canonical [`OwnerDocument`] from `value`, enforcing `limits`
+/// against both the caller-supplied semantic usage and the lexical usage of
+/// the emitted bytes.
+pub fn produce<T: Serialize + Clone>(
     value: T,
     semantic_usage: OwnerUsage,
     limits: OwnerLimits,
@@ -360,7 +361,9 @@ where
     Ok((value, merge_usage(semantic, lexical)))
 }
 
-pub(crate) fn read_expected<T, F>(
+/// Reads and validates a canonical document, then requires the decoded value
+/// to equal `expected`.
+pub fn read_expected<T, F>(
     bytes: &[u8],
     expected: &T,
     limits: OwnerLimits,
@@ -381,7 +384,9 @@ where
     Ok((value, usage))
 }
 
-pub(crate) fn identity<T: Serialize>(
+/// Computes the stable content identity of `value` under `contract`,
+/// omitting the named `identity_field` from the preimage.
+pub fn identity<T: Serialize>(
     contract: &str,
     value: &T,
     identity_field: &str,
@@ -479,11 +484,13 @@ fn encoding_error(field: &'static str) -> OwnerReadError {
     OwnerReadError::new(OwnerReadErrorCode::Encoding, field, OwnerUsage::default())
 }
 
-pub(crate) fn raw_sha256(bytes: &[u8]) -> String {
+/// Lower-case hex SHA-256 digest of `bytes`.
+pub fn raw_sha256(bytes: &[u8]) -> String {
     hex(Sha256::digest(bytes))
 }
 
-pub(crate) fn is_sha256(value: &str) -> bool {
+/// Whether `value` is a syntactically valid lower-case hex SHA-256 digest.
+pub fn is_sha256(value: &str) -> bool {
     value.len() == 64
         && value
             .as_bytes()
