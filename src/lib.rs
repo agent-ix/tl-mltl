@@ -51,10 +51,11 @@ pub use future::{
     ContextualHorizonSchemaVersion, HorizonError, HorizonReport,
 };
 pub use future::{
-    evaluate_closed, evaluate_closed_at, evaluate_closed_with_context, evaluate_prefix,
-    evaluate_prefix_at, evaluate_prefix_with_context, ContextualEvaluationError,
+    evaluate_closed, evaluate_closed_at, evaluate_closed_at_with_stats,
+    evaluate_closed_with_context, evaluate_prefix, evaluate_prefix_at,
+    evaluate_prefix_at_with_stats, evaluate_prefix_with_context, ContextualEvaluationError,
     ContextualEvaluationReport, ContextualEvaluationSchemaVersion, EvaluationError,
-    EvaluationLimits, EvaluationReport, TruthValue,
+    EvaluationLimits, EvaluationReport, EvaluationStats, TruthValue,
 };
 pub use mapping::{
     map_to_c2po, map_to_c2po_with_context, ContextualMappingManifest,
@@ -95,3 +96,13 @@ pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";
 
 /// Merged PGM-01 policy revision governing evidence and qualification boundaries.
 pub const PGM01_POLICY_REVISION: &str = "7dac9d8c19952412b56a0347387666e2ca81e01d";
+
+/// Exact tl-mltl source revision this crate was built from, as set by
+/// `build.rs` via `TL_MLTL_SOURCE_REVISION` (the environment value when
+/// building outside a git checkout, otherwise the checked-out `HEAD`).
+///
+/// Call sites within this crate already read this through `env!` directly
+/// because `build.rs` runs for this crate; this constant exists for
+/// downstream crates (such as a future `quire-mltl`) that cannot invoke
+/// `env!` for a value only this crate's build script sets.
+pub const TL_MLTL_SOURCE_REVISION: &str = env!("TL_MLTL_SOURCE_REVISION");

@@ -325,9 +325,11 @@ struct Evaluator<'formula, 'trace> {
 
 /// Exact bounded work retained for owner-level result reporting.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub(crate) struct EvaluationStats {
-    pub(crate) node_evaluations: u64,
-    pub(crate) max_recursion_depth: u32,
+pub struct EvaluationStats {
+    /// Node evaluations performed.
+    pub node_evaluations: u64,
+    /// Deepest evaluator recursion entered.
+    pub max_recursion_depth: u32,
 }
 
 impl Evaluator<'_, '_> {
@@ -718,7 +720,9 @@ pub fn evaluate_closed_at(
     evaluate_closed_at_with_stats(formula, formula_id, trace, trace_id, verdict_time, limits).0
 }
 
-pub(crate) fn evaluate_closed_at_with_stats(
+/// Evaluates a complete trace at `verdict_time` under `mltl.closed-trace/v1`,
+/// also returning the bounded work retained during evaluation.
+pub fn evaluate_closed_at_with_stats(
     formula: Formula<'_>,
     formula_id: impl Into<String>,
     trace: &[Vec<PropositionId>],
@@ -867,7 +871,9 @@ pub fn evaluate_prefix_at(
     .0
 }
 
-pub(crate) fn evaluate_prefix_at_with_stats(
+/// Evaluates an open or closed prefix at `verdict_time`, also returning the
+/// bounded work retained during evaluation.
+pub fn evaluate_prefix_at_with_stats(
     formula: Formula<'_>,
     formula_id: impl Into<String>,
     trace: &[Vec<PropositionId>],
