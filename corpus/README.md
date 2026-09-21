@@ -1,18 +1,11 @@
 # tl-mltl conformance corpus
 
-`tl-syntax-v1/` is a byte-identical retained copy of the MIT OR Apache-2.0
-shared temporal corpus from `agent-ix/tl-syntax` revision
-`740182f13b84858008d6f176f75136737d405c1b`, path `corpus/`. Its own
-`SHA256SUMS` remains authoritative and is verified by `make check-corpus`.
-
-The copy is not restamped when the compiled `tl-syntax` dependency advances.
-The crate is built against `842d82553f045eb69a7f38745756d968254fc25e` on
-`tl-syntax` main after its strict owner readers were merged; these
-bytes were taken at `740182f13b84858008d6f176f75136737d405c1b`
-and the formula fixtures are identical between the two revisions. The compiled
-revision and the corpus basis are two separate declared facts, cross-checked by
-`scripts/check_shared_pins.py`, which refuses a tree in which they have been
-collapsed into one string.
+The MIT OR Apache-2.0 shared temporal corpus (formula fixtures, malformed
+cases, and their manifest) is read straight out of the compiled `tl-syntax`
+dependency via `tl_syntax::CORPUS_DIR`, currently
+`d52d89549b0a6c0c429261bab912cd5396c4a19e` on `tl-syntax` main. There is no
+retained copy of it in this repository and no separate corpus-basis revision
+to track: the corpus tracks whatever `TL_SYNTAX_REVISION` names.
 
 `future-operators/` is a byte-identical copy of `corpus/future-operators` at
 revision `5b1c13440e54d5a851df2d33cc88944135574bc6`, recorded separately as

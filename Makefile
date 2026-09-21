@@ -56,6 +56,7 @@ CLI_RESULT := $(ASSURANCE_DIR)/cli-conformance.jsonl
 CENSUS_RESULT := $(ASSURANCE_DIR)/test-census.json
 QUIRE_EXPORT := $(ASSURANCE_DIR)/quire-static-export.json
 MSRV_RESULT := $(ASSURANCE_DIR)/msrv.jsonl
+SHARED_CORPUS_MANIFEST_COPY := $(ASSURANCE_DIR)/shared-corpus-manifest.json
 REVISION ?= $(shell git rev-parse HEAD)
 
 .PHONY: help
@@ -122,15 +123,13 @@ test: assurance-inputs
 
 .PHONY: check-corpus
 check-corpus:
-	sha256sum --check corpus/tl-syntax-v1.sha256
 	sha256sum --check corpus/future-operators/SHA256SUMS
 	sha256sum --check corpus/past-history/SHA256SUMS
 	cd corpus/r2u2-v4.2 && sha256sum --check SHA256SUMS
 
 .PHONY: conformance
 conformance:
-	$(CARGO) run --quiet --example reference_conformance -- \
-		--manifest corpus/tl-syntax-v1/manifest.json
+	$(CARGO) run --quiet --example reference_conformance
 
 .PHONY: differential
 differential:
@@ -209,8 +208,8 @@ assurance-env: $(ASSURANCE_PYTHON)
 .PHONY: assurance-inputs
 assurance-inputs: assurance-env
 	mkdir -p $(ASSURANCE_DIR)
-	$(CARGO) run --quiet --example reference_conformance -- \
-		--manifest corpus/tl-syntax-v1/manifest.json > $(CONFORMANCE_RESULT)
+	$(CARGO) run --quiet --example emit_shared_corpus_manifest > $(SHARED_CORPUS_MANIFEST_COPY)
+	$(CARGO) run --quiet --example reference_conformance > $(CONFORMANCE_RESULT)
 	$(CARGO) run --quiet --example r2u2_differential -- \
 		--manifest corpus/r2u2-v4.2/manifest.json > $(DIFFERENTIAL_RESULT)
 	$(CARGO) build --quiet --bin tl-mltl

@@ -79,23 +79,16 @@ pub use wire::{
 /// Exact tl-syntax source revision this crate is compiled against.
 ///
 /// This is the dependency identity `Cargo.toml` resolves and the value the C2PO
-/// mapping manifest reports as `syntaxRevision`. It is a different fact from
-/// [`TL_SYNTAX_CORPUS_BASIS`], which names the revision whose corpus bytes were
-/// copied into `corpus/tl-syntax-v1`; the compiled pin moved onto tl-syntax
-/// `main` and the retained corpus bytes did not move with it.
-pub const TL_SYNTAX_REVISION: &str = "842d82553f045eb69a7f38745756d968254fc25e";
+/// mapping manifest reports as `syntaxRevision`. The shared corpus is read
+/// straight out of this same compiled dependency via `tl_syntax::CORPUS_DIR`,
+/// so unlike the retained future-operator corpus below, there is no separate
+/// basis revision to track: reading through the dependency means the corpus
+/// tracks whatever this revision names.
+pub const TL_SYNTAX_REVISION: &str = "d52d89549b0a6c0c429261bab912cd5396c4a19e";
 
 /// Exact Quire Observation owner revision whose constructor-private assertion
 /// views are accepted by the temporal request boundary.
 pub const QUIRE_OBSERVATION_REVISION: &str = "924006300f45b38483be1cbdf99b68f899b7d368";
-
-/// Exact tl-syntax revision whose shared corpus bytes are retained here.
-///
-/// `corpus/tl-syntax-v1` is a byte-identical copy taken at this revision and
-/// verified by its own `SHA256SUMS`. It is deliberately not updated when the
-/// compiled dependency advances: the retained bytes are what they are, and
-/// restating the newer revision would claim a copy nobody made.
-pub const TL_SYNTAX_CORPUS_BASIS: &str = "740182f13b84858008d6f176f75136737d405c1b";
 
 /// Exact tl-syntax revision whose future-operator corpus is retained here.
 ///

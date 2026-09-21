@@ -6,8 +6,10 @@
 //! assurance chain reads these rows, and a row this file does not emit is a
 //! result nothing downstream can invent.
 //!
-//! Every expectation comes from `corpus/tl-syntax-v1/manifest.json`, which is
-//! the upstream corpus declaration rather than anything this repository derived.
+//! Every expectation comes from `manifest.json` in `tl_syntax::CORPUS_DIR`,
+//! read straight out of the compiled dependency rather than a vendored copy,
+//! and is the upstream corpus declaration rather than anything this repository
+//! derived.
 //! A fixture whose expectation the manifest does not state is refused rather
 //! than skipped, because a skipped obligation and a discharged one must not
 //! print the same thing.
@@ -192,7 +194,9 @@ fn manifest_path(arguments: &[String]) -> Result<PathBuf, String> {
             return Ok(PathBuf::from(value));
         }
     }
-    Err("usage: reference_conformance --manifest PATH".to_owned())
+    // No `--manifest` override: read the shared corpus straight out of the
+    // compiled tl-syntax dependency instead of a vendored copy.
+    Ok(Path::new(tl_syntax::CORPUS_DIR).join("manifest.json"))
 }
 
 /// Deserialize and validate a fixture the manifest declares valid.

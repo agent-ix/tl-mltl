@@ -22,7 +22,7 @@ struct Fixture {
 }
 
 fn corpus_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("corpus/tl-syntax-v1")
+    PathBuf::from(tl_syntax::CORPUS_DIR)
 }
 
 // Trace: TC-005, FR-002-AC-1

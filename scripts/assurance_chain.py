@@ -44,8 +44,28 @@ ROOT = Path(__file__).resolve().parent.parent
 DECLARATION = ROOT / "assurance" / "change-assurance.json"
 ASSURANCE_DIR = ROOT / "target" / "assurance"
 STORE = ROOT / "target" / "assurance-store"
-SHARED_CORPUS_MANIFEST = ROOT / "corpus" / "tl-syntax-v1" / "manifest.json"
 R2U2_CORPUS_MANIFEST = ROOT / "corpus" / "r2u2-v4.2" / "manifest.json"
+
+
+def _shared_corpus_manifest() -> Path:
+    """The compiled tl-syntax dependency's `corpus/manifest.json` bytes.
+
+    This driver is forbidden from running a producer itself (see the
+    `_execution_boundary` audit hook below), and the manifest now lives inside
+    the compiled dependency's checkout rather than a vendored copy in this
+    repository, so it cannot resolve or read that path directly. Instead it
+    reads the copy `make assurance-inputs` writes via the
+    `emit_shared_corpus_manifest` producer — the same "absent input is an
+    error" contract as every other file `require_inputs` checks.
+    """
+    path = ASSURANCE_DIR / "shared-corpus-manifest.json"
+    if not path.is_file():
+        raise ChainError(
+            f"{path.relative_to(ROOT)} is absent. Run `make assurance-inputs`. "
+            "This driver consumes producer output and never creates it, so an "
+            "absent input is an error rather than a step it can quietly do itself."
+        )
+    return path
 
 DIFFERENTIAL_PROTOCOL = "tl-mltl.r2u2-differential/v1"
 CONFORMANCE_PROTOCOL = "tl-mltl.reference-conformance/v1"
@@ -318,10 +338,10 @@ def declared_malformed_fixtures() -> int:
     This is the oracle for the malformed count: it comes from the corpus
     declaration, not from the producer's own output, so a producer that stopped
     reporting malformed rows cannot also move the number it is checked against.
-    The manifest is the upstream tl-syntax corpus copy, which this repository
-    retains byte-identically and does not author.
+    The manifest is read from the compiled tl-syntax dependency, which this
+    repository does not author.
     """
-    manifest = json.loads(SHARED_CORPUS_MANIFEST.read_text(encoding="utf-8"))
+    manifest = json.loads(_shared_corpus_manifest().read_text(encoding="utf-8"))
     return sum(
         1 for case in manifest["fixtures"] if case.get("expected_validation") == "invalid"
     )
