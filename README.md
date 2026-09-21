@@ -74,7 +74,9 @@ gate, which installs the pinned Kani verifier before running the aggregate.
 
 ## Corpora
 
-- `corpus/tl-syntax-v1/` is the byte-pinned shared `tl-syntax-corpus/v1`.
+- The shared temporal corpus is read straight out of the compiled `tl-syntax`
+  dependency via `tl_syntax::CORPUS_DIR`, tracking `TL_SYNTAX_REVISION`; there
+  is no retained copy of it in this repository.
 - `corpus/r2u2-v4.2/` retains a real differential run of canonical R2U2 tag
   `4.2-release` at commit `336a2453…`, including C2PO inputs, compiled binary,
   raw verdicts, exact tool/configuration digests, and 8/8 supported formula/time

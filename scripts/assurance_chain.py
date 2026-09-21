@@ -51,7 +51,7 @@ def _shared_corpus_manifest() -> Path:
     """The compiled tl-syntax dependency's `corpus/manifest.json` bytes.
 
     This driver is forbidden from running a producer itself (see the
-    execution-boundary audit hook above), and the manifest now lives inside
+    `_execution_boundary` audit hook below), and the manifest now lives inside
     the compiled dependency's checkout rather than a vendored copy in this
     repository, so it cannot resolve or read that path directly. Instead it
     reads the copy `make assurance-inputs` writes via the

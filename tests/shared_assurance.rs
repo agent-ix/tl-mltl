@@ -1081,28 +1081,13 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         "a mirror registry reference was not detected; the check matches nothing"
     );
 
-    // The two tl-syntax revisions are two facts. The compiled pin moved onto
-    // main; the retained corpus basis did not. Collapsing them is refused, and
-    // the refusal is exercised rather than assumed.
-    let (code, stdout, stderr) = run(
-        &python,
-        &[
-            "-c",
-            "import json,sys;sys.path.insert(0,'scripts');\
-             import check_shared_pins as m;\
-             pins=json.load(open('assurance/pins.json'));\
-             pins['upstream_dependency']['corpus_basis']=\
-             pins['upstream_dependency']['compiled_revision'];\
-             print(json.dumps(m.upstream_pin_mismatches(pins)))",
-        ],
-    );
-    assert_eq!(code, 0, "the collapsed-revision probe failed: {stderr}");
-    let problems: Vec<String> = serde_json::from_str(stdout.trim()).unwrap();
-    assert!(
-        problems.iter().any(|item| item.contains("same string")),
-        "collapsing the compiled revision and the corpus basis was not detected: {problems:?}"
-    );
-
+    // The compiled pin and the future-corpus basis are the two provenance
+    // facts `upstream_pin_mismatches` now tracks (TL-170 deleted the third,
+    // `corpus_basis`, along with the retained shared-corpus copy it described:
+    // that corpus is read via `tl_syntax::CORPUS_DIR` and there is nothing
+    // left for a collapsed-revision probe on it to distinguish). Collapsing
+    // the two that remain is refused, and the refusal is exercised rather
+    // than assumed.
     let (code, stdout, stderr) = run(
         &python,
         &[
@@ -1123,7 +1108,7 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
     assert!(
         problems
             .iter()
-            .any(|item| item.contains("three separate provenance facts")),
+            .any(|item| item.contains("two separate provenance facts")),
         "collapsing the compiled and future-corpus revisions was not detected: {problems:?}"
     );
 
@@ -1174,12 +1159,18 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
             problems
         );
     }
+    // corpus/README.md still names the one retained basis revision that
+    // survives this branch: the future-operators corpus's pin
+    // (`future_corpus_basis` in assurance/pins.json). Mutating that needle,
+    // rather than the now-deleted shared-corpus basis, is what a stale
+    // README would actually do.
     let corpus_readme = scratch.join("corpus/README.md");
     fs::copy(root().join("corpus/README.md"), &corpus_readme).unwrap();
-    let corpus_basis = fs::read_to_string(&corpus_readme)
-        .unwrap()
-        .replace("740182f1", "6ad7499f");
-    fs::write(&corpus_readme, corpus_basis).unwrap();
+    let future_corpus_basis = fs::read_to_string(&corpus_readme).unwrap().replace(
+        "5b1c13440e54d5a851df2d33cc88944135574bc6",
+        "0000000000000000000000000000000000000000",
+    );
+    fs::write(&corpus_readme, future_corpus_basis).unwrap();
     let (code, stdout, stderr) = run(
         &python,
         &[
@@ -1188,13 +1179,13 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
             scratch.to_str().unwrap(),
         ],
     );
-    assert_eq!(code, 0, "the corpus-basis probe failed: {stderr}");
+    assert_eq!(code, 0, "the future-corpus-basis probe failed: {stderr}");
     let problems: Vec<String> = serde_json::from_str(stdout.trim()).unwrap();
     assert!(
         problems
             .iter()
             .any(|problem| problem == "corpus/README.md: does not name the expected revision"),
-        "the pin guard did not reject a corpus README that conflates the retained basis with the compiled revision: {problems:?}"
+        "the pin guard did not reject a corpus README that no longer names the future-operators basis revision: {problems:?}"
     );
     match fs::remove_dir_all(&scratch) {
         Ok(()) => {}
