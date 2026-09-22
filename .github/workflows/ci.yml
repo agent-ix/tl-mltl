@@ -1,9 +1,9 @@
 name: CI
 
 # Manual dispatch only, deliberately. There is no push or pull_request trigger:
-# local `make ci` is the iteration gate, and a hosted run is dispatched once for
-# a finalized revision so parallel pull-request work does not generate repeated
-# billable runs.
+# local `make guarded-ci` is the iteration gate, and a hosted run is dispatched
+# once for a finalized revision so parallel pull-request work does not generate
+# repeated billable runs.
 on:
   workflow_dispatch:
 
@@ -87,8 +87,15 @@ jobs:
           # canonical `make kani-check` recipe exactly once.
           command: 'true'
 
-      - name: Complete local gate
-        run: make ci
+      # The assured entry point (NFR-006): refuses to invoke Make at all if
+      # this repository's Makefile text or the runner's invocation
+      # environment could suppress prerequisite-failure propagation, and
+      # reconciles the gates that actually completed against the declared
+      # `ci` prerequisite set, independent of Make's own exit code. A bare
+      # `make ci` here would trust Make's own execution controls and exit
+      # code exactly as before.
+      - name: Complete local gate (guarded)
+        run: make guarded-ci
 
   licenses:
     name: License Check

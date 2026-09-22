@@ -8,7 +8,7 @@ pending-aware prefix semantics, and versioned R2U2/C2PO interoperability.
 ## Build
 
 ```bash
-make ci
+make guarded-ci
 make spec
 ```
 
@@ -63,8 +63,9 @@ cargo kani --lib \
 
 The harness proves the checked horizon-bound addition primitive for all `u32` /
 `u64` operands, including overflow refusal. It does not claim an unbounded MLTL
-evaluator proof. It is part of local `make ci` and the dispatch-only hosted
-gate, which installs the pinned Kani verifier before running the aggregate.
+evaluator proof. It is part of local `make guarded-ci` and the dispatch-only
+hosted gate, which installs the pinned Kani verifier before running the
+aggregate.
 
 ## Corpora
 

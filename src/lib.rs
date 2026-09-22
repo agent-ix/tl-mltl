@@ -27,6 +27,7 @@ macro_rules! deserialize_contextual_record {
     };
 }
 
+pub mod ci_guard;
 pub mod clock;
 mod context;
 mod differential;
