@@ -3,7 +3,7 @@ id: NFR-002
 title: Retain governance and qualification boundaries
 type: NFR
 relationships:
-  - target: ix://agent-ix/quire-contract-ir/PGM-01
+  - target: ix://agent-ix/tl-mltl/NFR-003
     type: references
 ---
 
@@ -12,7 +12,8 @@ relationships:
 ## Statement
 
 Every exchanged record shall use an explicit supported schema, exact source and
-corpus pins, contribution provenance, and canonical PGM-01 evidence boundaries.
+corpus pins, contribution provenance, and the explicit, fail-closed
+qualification boundary [NFR-003](./NFR-003-qualification-integrity.md) keeps.
 Contextual records shall preserve the exact shared signal and caller-context
 identities without claiming their truth. Agent results shall remain distinct
 from human approval and consuming-project validation.
@@ -52,14 +53,15 @@ re-derives which requirement-tagged tests Cargo actually runs.
 
 ## Dependencies
 
-Applies PGM-01 to FR-004, FR-005, and the repository release workflow. The
-generic evidence-collection controls this requirement formerly carried as
-NFR-002-AC-3 and NFR-002-AC-4 — host-scoped executable census, allowlisted
-collection environment, corroborated positive outputs, envelope self-attestation
-refusal, and Make execution-control policing — were removed with the local
-evidence framework. What survives of that intent, and what does not, is stated in
-NFR-003, which owns the shared-assurance intake path and records the measured
-cost of the removal.
+Applies these governance and qualification boundaries to FR-004, FR-005, and
+the repository release workflow. The generic evidence-collection controls this
+requirement formerly carried as NFR-002-AC-3 and NFR-002-AC-4 — host-scoped
+executable census, allowlisted collection environment, corroborated positive
+outputs, envelope self-attestation refusal, and Make execution-control
+policing — were removed with the local evidence framework. What survives of
+that intent, and what does not, is stated in
+[NFR-003](./NFR-003-qualification-integrity.md), which owns the
+shared-assurance intake path and records the measured cost of the removal.
 
 ## Historical identifier disclosure
 
