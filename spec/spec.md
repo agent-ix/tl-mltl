@@ -86,9 +86,13 @@ provenance, and qualification claims.
 
 ## References
 
-FR-018 adds the complete strict request/result/mapping owner boundary and the
-subsystem module topology required by the origin-complete ecosystem. It changes
-no existing future or past semantic profile.
+FR-018 publishes the five artifact contracts tl-mltl itself owns (`trace`,
+`command`, `position-history`, `history-requirement`, `past-evaluation`) with
+their immutable schema/digest and strict-reading discipline. It changes no
+existing future or past semantic profile. TL-179 removed the
+`quire-observation`-coupled request/result/mapping owner boundary FR-018
+previously described; that layer, and the QObs C00 compatibility dispatch
+FR-019 pinned it to, now live in `quire-mltl` unchanged in behavior.
 
 FR-019 pins that temporal owner boundary to accepted QObs C00 merge
 `2bdeb833a330bfa777c19eb4c28c423f856f3ba6` from merged QObs PR #27 and
@@ -100,7 +104,8 @@ FR-019 is now `status: superseded` by [quire-mltl
 FR-002](https://github.com/agent-ix/quire-mltl/blob/main/spec/requirements/FR-002-dispatch-qobs-c00-compatibility.md)
 per [ADR-001](decisions/ADR-001-retire-pgm01-citation-and-fr-019.md); this
 paragraph is retained as the historical record of what it specified while it
-governed `tl-mltl`'s own boundary.
+governed `tl-mltl`'s own boundary, and TL-179 has since removed the
+`wire::observation` implementation it describes.
 
 FR-027 through FR-029 settle where infinite-trace (lasso, fairness) semantics
 live, allocating tl-mltl#68's scope to a separate provider under the

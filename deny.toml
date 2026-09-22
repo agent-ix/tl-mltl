@@ -4,8 +4,6 @@ allow = [
     "MIT",
     "Apache-2.0",
     "Unicode-3.0",
-    "AGPL-3.0-only",
-    "AGPL-3.0-or-later",
 ]
 confidence-threshold = 0.9
 
@@ -19,12 +17,7 @@ version = 2
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-# Exact owner revisions are pinned in Cargo.toml and Cargo.lock. The TL owner
-# imports Quire Observation's constructor-private views instead of copying its
-# wire vocabulary. QObs C00 in turn admits typed producer bundles from the
-# exact-pinned Filament Core Data baseline producer.
+# Exact owner revision is pinned in Cargo.toml and Cargo.lock.
 allow-git = [
-    "https://github.com/agent-ix/filament-core-data",
     "https://github.com/agent-ix/tl-syntax.git",
-    "https://github.com/agent-ix/quire-observation",
 ]

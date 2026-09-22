@@ -13,11 +13,7 @@ make spec
 ```
 
 The library requires Rust 1.98 or later and consumes validated `tl-syntax` formulas
-pinned to exact revision `d52d89549b0a6c0c429261bab912cd5396c4a19e`.
-Temporal owner requests additionally consume constructor-private Quire
-Observation clock, progress, closure, completeness, and availability views at
-accepted owner revision `2bdeb833a330bfa777c19eb4c28c423f856f3ba6`
-from merged QObs PR #27. tl-mltl does not mirror or reconstruct those owner types. The
+pinned to exact revision `d52d89549b0a6c0c429261bab912cd5396c4a19e`. The
 shared temporal corpus, the future-operator corpus, and the past-history
 corpus are all read directly from the compiled `tl-syntax` dependency via
 `tl_syntax::CORPUS_DIR`, tracking `TL_SYNTAX_REVISION`. `evaluate_closed` implements
@@ -36,19 +32,19 @@ as typed errors, and emits immutable original/superseding/invalidating results.
 It never returns the future evaluator's `pending` value.
 
 The public subsystem layout is `future`,
-`past::{history,requirement,evaluate,result}`,
-`wire::{trace,command,observation,request,report}`,
-`clock`, and `mapping::{legacy,contract_ir}`. Each temporal owner contract
-publishes immutable schema bytes and a pinned digest. `wire::request::read`
-admits one exact future or past request against independently supplied owner
-views; `wire::report::{evaluate,read}` emits and revalidates one immutable
-result; and `mapping::contract_ir::{map,read}` derives a TL-owned value or typed
-non-value without importing Contract-IR vocabulary or coercing unavailable
-states to Boolean values. Existing root-level evaluation, history, and legacy
-mapping paths remain available as compatibility re-exports.
-`wire::observation` delegates supported temporal handoff to the bounded request
-adapter and reports QObs repair-plan and closed-population-query contracts as
-typed unsupported compatibility rows.
+`past::{history,requirement,evaluate,result}`, `wire::{trace,command}`,
+`clock`, and `mapping::legacy`. Each retained owner contract (`tl-mltl.trace/v1`,
+`tl-mltl.command/v1`, `tl-mltl.position-history/v1`,
+`tl-mltl.history-requirement/v1`, `tl-mltl.past-evaluation/v1`) publishes
+immutable schema bytes and a pinned digest through a bounded public
+`read(bytes, expected, limits)` returning a constructor-private validated
+view. Existing root-level evaluation, history, and legacy mapping paths
+remain available as compatibility re-exports. tl-mltl publishes no
+owner-assertion request/result contract of its own; binding this crate's
+future/past evaluators to an external owner's assertion views (for example
+Quire Observation) is left entirely to a dedicated integration crate, per the
+architect ruling that keeps every `tl-*` crate independent of the Quire
+ecosystem.
 
 The `tl-mltl` binary accepts one `tl-mltl.command/v1` JSON document, either by
 path or on stdin with `-`, and emits a versioned evaluation, horizon, or mapping
@@ -97,7 +93,4 @@ validate, accredit, or qualify R2U2, another monitor, or a consuming project.
 ## License
 
 Licensed under either of Apache License, Version 2.0 or MIT license at your
-option. The required `quire-observation` dependency is AGPL-3.0-or-later and its
-required `agent-ix-baseline-producer` dependency is AGPL-3.0-only; consumers
-and distributors of the combined dependency graph must comply with that
-dependency's license terms.
+option.
