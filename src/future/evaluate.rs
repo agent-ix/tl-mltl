@@ -3,8 +3,8 @@ use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
 use tl_syntax::{
-    Formula, NodeId, NodeKind, PropositionId, RequirementContextDocument, SemanticProfile,
-    SignalCatalogDocument,
+    Formula, Interval, NodeId, NodeKind, PropositionId, RequirementContextDocument,
+    SemanticProfile, SignalCatalogDocument,
 };
 
 use crate::{
@@ -384,59 +384,15 @@ impl Evaluator<'_, '_> {
             NodeKind::True => Ok(TruthValue::True),
             NodeKind::Proposition { proposition } => self.proposition(time, proposition),
             NodeKind::Not { operand } => Ok(self.at(operand, time, child_depth)?.not()),
-            NodeKind::And { left, right } => {
-                let left = self.at(left, time, child_depth)?;
-                if left == TruthValue::False {
-                    return Ok(left);
-                }
-                Ok(left.and(self.at(right, time, child_depth)?))
-            }
-            NodeKind::Or { left, right } => {
-                let left = self.at(left, time, child_depth)?;
-                if left == TruthValue::True {
-                    return Ok(left);
-                }
-                Ok(left.or(self.at(right, time, child_depth)?))
-            }
-            NodeKind::Implies { left, right } => {
-                let left = self.at(left, time, child_depth)?.not();
-                if left == TruthValue::True {
-                    return Ok(left);
-                }
-                Ok(left.or(self.at(right, time, child_depth)?))
-            }
-            NodeKind::Equivalent { left, right } => {
-                let left = self.at(left, time, child_depth)?;
-                let right = self.at(right, time, child_depth)?;
-                Ok(left.and(right).or(left.not().and(right.not())))
-            }
+            NodeKind::And { left, right } => self.and(left, right, time, child_depth),
+            NodeKind::Or { left, right } => self.or(left, right, time, child_depth),
+            NodeKind::Implies { left, right } => self.implies(left, right, time, child_depth),
+            NodeKind::Equivalent { left, right } => self.equivalent(left, right, time, child_depth),
             NodeKind::Future { interval, operand } => {
-                let (start, end) = self.temporal_endpoints(interval.start(), interval.end())?;
-                let mut result = TruthValue::False;
-                for offset in start..=end {
-                    let at = time
-                        .checked_add(offset)
-                        .ok_or(EvaluationError::TimeOverflow)?;
-                    result = result.or(self.at(operand, at, child_depth)?);
-                    if result == TruthValue::True {
-                        break;
-                    }
-                }
-                Ok(result)
+                self.future(interval, operand, time, child_depth)
             }
             NodeKind::Globally { interval, operand } => {
-                let (start, end) = self.temporal_endpoints(interval.start(), interval.end())?;
-                let mut result = TruthValue::True;
-                for offset in start..=end {
-                    let at = time
-                        .checked_add(offset)
-                        .ok_or(EvaluationError::TimeOverflow)?;
-                    result = result.and(self.at(operand, at, child_depth)?);
-                    if result == TruthValue::False {
-                        break;
-                    }
-                }
-                Ok(result)
+                self.globally(interval, operand, time, child_depth)
             }
             NodeKind::Until {
                 interval,
@@ -472,6 +428,115 @@ impl Evaluator<'_, '_> {
             | NodeKind::Since { .. }
             | NodeKind::Triggered { .. } => Err(EvaluationError::UnsupportedPastNode(node)),
         }
+    }
+
+    // Each binary/windowed operator below is deliberately its own (non-inlined
+    // in debug builds) call frame rather than an arm of `at`'s match. `at` is
+    // the function whose activation repeats once per recursion level, so its
+    // own frame size is what the `max_recursion_depth` guard is actually
+    // bounding against the native stack. Debug builds do not share stack
+    // slots across match arms, so folding every operator's locals directly
+    // into `at` made each of its frames large enough that a formula nested to
+    // exactly the configured recursion limit could overflow the stack before
+    // the depth check ever fired (see TL-200). Keeping `at` itself small and
+    // dispatching to leaf methods — which are only ever on the stack while
+    // their own operator is actually being evaluated — keeps per-level stack
+    // growth proportional to the operator actually being recursed through.
+
+    fn and(
+        &mut self,
+        left: NodeId,
+        right: NodeId,
+        time: u64,
+        child_depth: u32,
+    ) -> Result<TruthValue, EvaluationError> {
+        let left = self.at(left, time, child_depth)?;
+        if left == TruthValue::False {
+            return Ok(left);
+        }
+        Ok(left.and(self.at(right, time, child_depth)?))
+    }
+
+    fn or(
+        &mut self,
+        left: NodeId,
+        right: NodeId,
+        time: u64,
+        child_depth: u32,
+    ) -> Result<TruthValue, EvaluationError> {
+        let left = self.at(left, time, child_depth)?;
+        if left == TruthValue::True {
+            return Ok(left);
+        }
+        Ok(left.or(self.at(right, time, child_depth)?))
+    }
+
+    fn implies(
+        &mut self,
+        left: NodeId,
+        right: NodeId,
+        time: u64,
+        child_depth: u32,
+    ) -> Result<TruthValue, EvaluationError> {
+        let left = self.at(left, time, child_depth)?.not();
+        if left == TruthValue::True {
+            return Ok(left);
+        }
+        Ok(left.or(self.at(right, time, child_depth)?))
+    }
+
+    fn equivalent(
+        &mut self,
+        left: NodeId,
+        right: NodeId,
+        time: u64,
+        child_depth: u32,
+    ) -> Result<TruthValue, EvaluationError> {
+        let left = self.at(left, time, child_depth)?;
+        let right = self.at(right, time, child_depth)?;
+        Ok(left.and(right).or(left.not().and(right.not())))
+    }
+
+    fn future(
+        &mut self,
+        interval: Interval,
+        operand: NodeId,
+        time: u64,
+        child_depth: u32,
+    ) -> Result<TruthValue, EvaluationError> {
+        let (start, end) = self.temporal_endpoints(interval.start(), interval.end())?;
+        let mut result = TruthValue::False;
+        for offset in start..=end {
+            let at = time
+                .checked_add(offset)
+                .ok_or(EvaluationError::TimeOverflow)?;
+            result = result.or(self.at(operand, at, child_depth)?);
+            if result == TruthValue::True {
+                break;
+            }
+        }
+        Ok(result)
+    }
+
+    fn globally(
+        &mut self,
+        interval: Interval,
+        operand: NodeId,
+        time: u64,
+        child_depth: u32,
+    ) -> Result<TruthValue, EvaluationError> {
+        let (start, end) = self.temporal_endpoints(interval.start(), interval.end())?;
+        let mut result = TruthValue::True;
+        for offset in start..=end {
+            let at = time
+                .checked_add(offset)
+                .ok_or(EvaluationError::TimeOverflow)?;
+            result = result.and(self.at(operand, at, child_depth)?);
+            if result == TruthValue::False {
+                break;
+            }
+        }
+        Ok(result)
     }
 
     fn proposition(
