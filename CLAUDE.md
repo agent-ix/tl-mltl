@@ -23,11 +23,13 @@ make rustdoc          # build warning-free public docs
 make assurance-env    # create the pinned shared-assurance interpreter
 make assurance-inputs # run the producers and write their structured results
 make assurance        # pins + assurance-chain
-make ci               # complete local gate
+make ci               # complete local gate, unguarded (see Makefile header)
+make guarded-ci       # the assured entry point; run this, not 'make ci'
 ```
 
-GitHub Actions is intentionally `workflow_dispatch`-only. Use local `make ci`
-while iterating and dispatch hosted CI only for a finalized revision.
+GitHub Actions is intentionally `workflow_dispatch`-only. Use local `make
+guarded-ci` while iterating and dispatch hosted CI only for a finalized
+revision.
 
 ## Specification workflow
 
@@ -79,11 +81,24 @@ as a git tag.
 ## The Makefile is not a trust root
 
 Adding `.IGNORE:` to the `Makefile` makes recipes report success without running,
-and nothing here notices. Measured in this repository: with a syntax error in
-`src/lib.rs`, `make -k ci` exits 2 and 12 of the 15 `ci` prerequisites do not
-complete; with `.IGNORE:` added, all 12 report success and `make ci` exits 0. The structural
-backstop — Quoin binding each retained input by digest — covers only the six
-producers that feed the chain. Tracked as `agent-ix/tl-mltl#14`.
+and a bare `make ci` does not notice. Measured in this repository: with a syntax
+error in `src/lib.rs`, `make -k ci` exits 2 and 12 of the 15 `ci` prerequisites do
+not complete; with `.IGNORE:` added, all 12 report success and `make ci` exits 0.
+The structural backstop — Quoin binding each retained input by digest — covers
+only the six producers that feed the chain.
+
+**Run `make guarded-ci`, not a bare `make ci`.** This is remediated by
+`NFR-006-gate-set-integrity` (Linear TL-65, `agent-ix/tl-mltl#14`): a Rust
+program external to Make (`src/ci_guard.rs`, `src/bin/ci_guard.rs`) that
+refuses to invoke Make at all if the Makefile text or the invocation
+environment carries a state capable of suppressing prerequisite-failure
+propagation, and reconciles the declared `ci` prerequisite set against the
+gates that actually wrote a completion record, independent of Make's own
+exit code. `make ci` remains directly invocable for local convenience and is
+not itself the assured gate; a person who runs it directly instead of `make
+guarded-ci` bypasses the binding, and that residual is disclosed rather than
+solved by removing the convenience. See
+`spec/requirements/NFR-006-gate-set-integrity.md`.
 
 ## Safety scaffolding
 
