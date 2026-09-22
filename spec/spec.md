@@ -3,8 +3,6 @@ id: MRS-001
 title: tl-mltl v0.1 master requirements
 type: MasterRequirements
 relationships:
-  - target: ix://agent-ix/quire-contract-ir/PGM-01
-    type: depends_on
   - target: ix://agent-ix/tl-syntax/MRS-001
     type: depends_on
 ---
@@ -20,12 +18,10 @@ mapping, and differential evidence. When supplied, it also preserves the shared
 typed signal catalog and caller requirement context through those native
 results.
 
-PGM-01 at `ix://agent-ix/quire-contract-ir/PGM-01` governs compatibility,
-provenance, evidence, human authority, and qualification boundaries. Formula
-and profile identities come from the single compiled tl-syntax revision
-declared in `assurance/pins.json`, which this repository reads directly via
-`tl_syntax::CORPUS_DIR`: the shared temporal corpus, the future-operator
-corpus, and the past-history corpus alike.
+Formula and profile identities come from the single compiled tl-syntax
+revision declared in `assurance/pins.json`, which this repository reads
+directly via `tl_syntax::CORPUS_DIR`: the shared temporal corpus, the
+future-operator corpus, and the past-history corpus alike.
 
 ## Scope
 
@@ -116,4 +112,3 @@ existing FR-001 through FR-019 behavior.
 - [Pinned C2PO language](https://github.com/R2U2/r2u2/blob/336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a/compiler/docs/user/language.md).
 - [Pinned C2PO lexer](https://github.com/R2U2/r2u2/blob/336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a/compiler/c2po/parse_c2po.py).
 - [tl-syntax corpus](https://github.com/agent-ix/tl-syntax/tree/feat/tl-syntax-v0.1/corpus).
-- [PGM-01](https://github.com/agent-ix/quire-contract-ir/blob/main/spec/program/PGM-01-governance.md).

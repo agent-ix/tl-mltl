@@ -2,6 +2,7 @@
 id: FR-019
 title: Consume the pinned QObs C00 temporal boundary without semantic substitution
 type: FR
+status: superseded
 relationships:
   - target: ix://agent-ix/tl-mltl/StR-002
     type: implements
@@ -12,6 +13,8 @@ relationships:
   - target: ix://agent-ix/quire-observation/FR-010
     type: references
   - target: ix://agent-ix/quire-observation/FR-011
+    type: references
+  - target: ix://agent-ix/quire-mltl/FR-002
     type: references
 ---
 
@@ -85,3 +88,32 @@ repin and renewed compatibility review. QObs retains ownership of revisioned I07
 repair planning/coordinator behavior, and aggregate-query semantics. tl-mltl
 owns only temporal request/evaluation semantics and the explicit compatibility
 disposition at its boundary.
+
+## Supersession
+
+This requirement is superseded, not deleted or rewritten. The architect ruled,
+against Linear epic [TL-175](https://linear.app/agent-ix/issue/TL-175), that
+every TL-* crate — `tl-syntax`, `tl-parse`, `tl-mltl`, `tl-rewrite` — stays
+independent of the agent-ix/Quire ecosystem, and that only a dedicated
+integration crate may bridge one of them to Quire types. `quire-mltl` is that
+bridge (TL-176/TL-177); TL-178 ported this requirement's QObs C00
+compatibility-dispatch boundary there unchanged as
+[quire-mltl FR-002](ix://agent-ix/quire-mltl/FR-002). TL-180 retires this
+requirement in `tl-mltl`, removes MRS-001's `quire-contract-ir/PGM-01`
+`depends_on` edge, and removes NFR-002's PGM-01 reference, completing
+`tl-mltl`'s independence from Quire governance.
+
+The Description, Inputs, Outputs, Behavior, Constraints, and Acceptance
+Criteria above are retained unmodified as the historical record of what this
+requirement specified while it governed `tl-mltl`'s own QObs boundary; they no
+longer describe `tl-mltl`'s current or target behavior. The implementation
+they describe is not removed by this ticket — dropping the `quire-observation`
+dependency and the four wire/mapping source files is separate, tracked
+follow-up work (TL-179's PR B) — so `src/wire/observation.rs` and TC-085 still
+exist and still pass at the time this requirement is marked superseded.
+SR-044 through SR-051, which reviewed the prior FR-018/FR-019 implementation
+and PR [#67](https://github.com/agent-ix/tl-mltl/pull/67), are historical
+record and are not edited by this supersession; see
+[ADR-001](../decisions/ADR-001-retire-pgm01-citation-and-fr-019.md) and
+[SR-052](../reviews/SR-052-retire-pgm01-citation-and-fr-019.md) for the
+reversal itself.
