@@ -115,6 +115,9 @@ existing FR-001 through FR-019 behavior.
 - [Post-v0.1 corpus and interoperability campaign](./corpus-campaign.md)
   (MRS-002), scoped to the TL-owned corpus families only per
   [ADR-002](decisions/ADR-002-native-correspondence-lives-in-quire-mltl.md).
+- [Verification-effectiveness and bounded-proof campaign](./verification-effectiveness-campaign.md)
+  (MRS-003), which measures the TL crates' own property, fuzz, mutation, and
+  bounded-proof evidence and carries no cross-repository producer dependency.
 - [tl-mltl epic](https://github.com/agent-ix/tl-mltl/issues/7).
 - [Typed context child](https://github.com/agent-ix/tl-mltl/issues/24).
 - [Future FRETish consumer](https://github.com/agent-ix/quire-contract-ir/issues/57).
