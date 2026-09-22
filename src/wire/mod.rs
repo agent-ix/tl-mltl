@@ -3,9 +3,6 @@
 pub mod command;
 pub mod common;
 mod legacy;
-pub mod observation;
-pub mod report;
-pub mod request;
 pub mod trace;
 
 pub use command::ValidatedCommand;

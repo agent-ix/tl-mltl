@@ -1,6 +1,5 @@
 //! Temporal result mappings owned by tl-mltl.
 
-pub mod contract_ir;
 mod legacy;
 
 pub use legacy::{

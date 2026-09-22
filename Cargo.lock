@@ -3,16 +3,6 @@
 version = 4
 
 [[package]]
-name = "agent-ix-baseline-producer"
-version = "0.0.0"
-source = "git+https://github.com/agent-ix/filament-core-data?rev=a6fe662542770e6acbec4917cfe1772b349ee414#a6fe662542770e6acbec4917cfe1772b349ee414"
-dependencies = [
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -257,18 +247,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
 
 [[package]]
-name = "quire-observation"
-version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-observation?rev=2bdeb833a330bfa777c19eb4c28c423f856f3ba6#2bdeb833a330bfa777c19eb4c28c423f856f3ba6"
-dependencies = [
- "agent-ix-baseline-producer",
- "serde",
- "serde_json",
- "sha2",
- "thiserror",
-]
-
-[[package]]
 name = "quote"
 version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -386,7 +364,7 @@ checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn",
 ]
 
 [[package]]
@@ -438,17 +416,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "syn"
-version = "3.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12df2e0110f65b775f769bb17ef989067a1d931b2eb822bd4346631eeada89f9"
-dependencies = [
- "proc-macro2",
- "quote",
- "unicode-ident",
-]
-
-[[package]]
 name = "tempfile"
 version = "3.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -462,32 +429,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "thiserror"
-version = "2.0.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec86235f5fcc2a73650310756d2ac5b138a5780bbbdfae3eeccec992c435ba4f"
-dependencies = [
- "thiserror-impl",
-]
-
-[[package]]
-name = "thiserror-impl"
-version = "2.0.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc04cd3e1236dd4a98afca4569f2deb3f120e5422a4023be2cb683f8486292af"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 3.0.5",
-]
-
-[[package]]
 name = "tl-mltl"
 version = "0.1.0"
 dependencies = [
- "agent-ix-baseline-producer",
  "proptest",
- "quire-observation",
  "serde",
  "serde_json",
  "serde_yaml_ng",
@@ -597,7 +542,7 @@ checksum = "146c01f5ab44258da43cf276c74a2763db2ff3969c9c652c3f2de07041d0b2bc"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn",
 ]
 
 [[package]]

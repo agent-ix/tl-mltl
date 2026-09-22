@@ -2226,15 +2226,18 @@ fn no_local_evidence_framework_remains() {
         // when this census was last updated; further spec landings since
         // then are not this change's to account for individually.
         ("spec", 110),
-        // The accepted temporal owner modules plus the C00 compatibility
-        // dispatch comprise the complete reviewed production source set.
-        ("src", 24),
-        // The temporal owner suites and exact admitted-producer fixture are
-        // tracked test inputs rather than ambient sibling-repository state.
-        ("tests", 24),
-        // Active owner-wire schemas are production contracts; only the two
-        // legacy evidence schemas remain denied above.
-        ("schemas", 8),
+        // TL-179 deletes wire::request, wire::observation, wire::report, and
+        // mapping::contract_ir (4 files): the quire-observation-coupled
+        // request/result/mapping owner boundary now lives in quire-mltl.
+        ("src", 20),
+        // TL-179 deletes tests/tc_084_temporal_owner_wire.rs (1 file), the
+        // dedicated test for the request/result/mapping owner boundary it
+        // removed from src/.
+        ("tests", 23),
+        // TL-179 deletes the temporal-assessment-request-v1,
+        // temporal-assessment-result-v1, and contract-ir-result-map-v1
+        // schemas (3 files) alongside the Rust modules that published them.
+        ("schemas", 5),
         // PLAN-006 is deliberately retrospective and root-scoped so the formal
         // gap-analysis skill can audit one typed target without rewriting the
         // historical in-spec plans.
@@ -2279,13 +2282,16 @@ fn no_local_evidence_framework_remains() {
     // paths. TL-171 deletes corpus/past-history (5 files) and
     // corpus/future-operators (20 files) the same way, both now read via
     // tl_syntax::CORPUS_DIR, bringing the population to 214 (239 - 25).
+    // TL-179 deletes the quire-observation-coupled request/result/mapping
+    // owner boundary: 4 src/*.rs modules, 3 schemas/*.schema.json files, and
+    // 1 tests/*.rs file (8 total), bringing the population to 206 (214 - 8).
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 214,
-        "the source census population changed from the reviewed 214 tracked files \
+        inspected, 206,
+        "the source census population changed from the reviewed 206 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
