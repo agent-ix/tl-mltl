@@ -378,6 +378,68 @@ fn plus_dash_prefixed_recipe_is_refused() {
     assert!(!dir.path().join("target/ci-gates/gate-a.json").exists());
 }
 
+// Follow-up adversarial pass, reproduced end-to-end against the real
+// compiled binary: real GNU Make tolerates whitespace between recipe-prefix
+// characters and still applies them, so `@ -false` ignores the recipe's
+// failure exactly like `@-false` — a gap in the first fix, which stopped
+// its scan at the first space.
+// Trace: TC-135, NFR-006-AC-1, NFR-006-AC-6
+#[test]
+fn at_space_dash_prefixed_recipe_is_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    let guard = ci_guard_bin();
+    let makefile = format!(
+        ".PHONY: ci gate-a\n\
+         ci: gate-a\n\
+         \n\
+         gate-a:\n\
+         \t@ -false\n\
+         \t\"{guard}\" record gate-a\n"
+    );
+    fs::write(dir.path().join("Makefile"), makefile).unwrap();
+
+    let output = run_guard(dir.path());
+    assert!(
+        !output.status.success(),
+        "an '@ -false' error-ignoring recipe line must not report success"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("dash-prefixed-recipe"),
+        "expected the static scan to name dash-prefixed-recipe, got: {stderr}"
+    );
+    assert!(!dir.path().join("target/ci-gates/gate-a.json").exists());
+}
+
+// Same class with `+` as the leading prefix character instead of `@`.
+// Trace: TC-135, NFR-006-AC-1, NFR-006-AC-6
+#[test]
+fn plus_space_dash_prefixed_recipe_is_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    let guard = ci_guard_bin();
+    let makefile = format!(
+        ".PHONY: ci gate-a\n\
+         ci: gate-a\n\
+         \n\
+         gate-a:\n\
+         \t+ -false\n\
+         \t\"{guard}\" record gate-a\n"
+    );
+    fs::write(dir.path().join("Makefile"), makefile).unwrap();
+
+    let output = run_guard(dir.path());
+    assert!(
+        !output.status.success(),
+        "a '+ -false' error-ignoring recipe line must not report success"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("dash-prefixed-recipe"),
+        "expected the static scan to name dash-prefixed-recipe, got: {stderr}"
+    );
+    assert!(!dir.path().join("target/ci-gates/gate-a.json").exists());
+}
+
 // SR-055/FND-002, reproduced end-to-end against the real compiled binary:
 // `export MAKEFLAGS := -i` as the Makefile's first line genuinely
 // suppresses prerequisite-failure propagation for this `make` invocation —

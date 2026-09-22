@@ -284,23 +284,29 @@ fn has_bare_command_separator(body: &str) -> bool {
 }
 
 /// `true` if `body`'s leading run of GNU Make recipe-prefix characters
-/// (`@`, `-`, `+`, in any order and any repeat, immediately following each
-/// other with no space) includes `-` (ignore this line's exit status).
+/// (`@`, `-`, `+`, in any order and any repeat, interleaved with any amount
+/// of whitespace) includes `-` (ignore this line's exit status).
 ///
-/// Make does not require `-` to be the literal first character: `@-cmd` and
-/// `+-cmd` are exactly as error-ignoring as `-cmd`, just also silent or
-/// always-run respectively. A check anchored to `starts_with('-')` alone
-/// misses every ordering where `-` is not first, which is not a hypothetical
-/// — a recipe line reading `@-false` runs `false`, discards its failure via
-/// the `-` prefix, and reaches its own `ci_guard record` call exactly as if
-/// unprefixed, while `starts_with('-')` sees only the leading `@` and stays
-/// silent.
+/// Make does not require `-` to be the literal first character, and
+/// tolerates whitespace between/around the prefix characters while still
+/// applying them: `@-cmd`, `@ -cmd`, and even `@  @  -cmd` are all exactly
+/// as error-ignoring as `-cmd`, confirmed against real GNU Make. A check
+/// anchored to `starts_with('-')`, or one that stops at the first space
+/// inside the prefix run, misses every one of those forms, which is not a
+/// hypothetical — a recipe line reading `@ -false` runs `false`, discards
+/// its failure via the `-` prefix, and reaches its own `ci_guard record`
+/// call exactly as if unprefixed. The scan stops at the first character
+/// that is neither whitespace nor `@`/`-`/`+`, since that is where Make's
+/// own prefix recognition ends and the real command begins (leading
+/// whitespace alone, with no `-` among the prefix characters skipped, does
+/// not itself suppress a failure — also confirmed against real GNU Make).
 fn recipe_prefix_carries_dash(body: &str) -> bool {
     let mut has_dash = false;
-    for ch in body.trim_start().chars() {
+    for ch in body.chars() {
         match ch {
             '-' => has_dash = true,
             '@' | '+' => {}
+            c if c.is_whitespace() => {}
             _ => break,
         }
     }
@@ -783,6 +789,55 @@ mod tests {
     fn scan_does_not_flag_at_or_plus_prefix_without_dash() {
         let dir = tempfile::tempdir().unwrap();
         let path = write_temp(dir.path(), "Makefile", "ci:\n\t@+echo hi\n");
+        assert!(scan_makefile(&path).is_empty());
+    }
+
+    // Follow-up adversarial pass: confirmed against real GNU Make that
+    // whitespace between/around recipe-prefix characters is tolerated and
+    // `-` still applies — `@ -false` ignores the failure exactly like
+    // `@-false`. A scan that stops at the first non-`@`/`-`/`+` character,
+    // treating a space as "end of prefix," misses this.
+    // Trace: TC-130, NFR-006-AC-1
+    #[test]
+    fn scan_detects_dash_prefixed_recipe_with_space_before_dash() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_temp(dir.path(), "Makefile", "ci:\n\t@ -false\n");
+        assert!(scan_makefile(&path)
+            .iter()
+            .any(|v| v.kind == ViolationKind::DashPrefixedRecipe));
+    }
+
+    // Trace: TC-130, NFR-006-AC-1
+    #[test]
+    fn scan_detects_dash_prefixed_recipe_with_plus_space_dash() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_temp(dir.path(), "Makefile", "ci:\n\t+ -false\n");
+        assert!(scan_makefile(&path)
+            .iter()
+            .any(|v| v.kind == ViolationKind::DashPrefixedRecipe));
+    }
+
+    // Repeated prefix characters interleaved with multiple spaces are
+    // tolerated by real GNU Make the same way; confirm the scan keeps
+    // walking through them rather than stopping at the first space.
+    // Trace: TC-130, NFR-006-AC-1
+    #[test]
+    fn scan_detects_dash_prefixed_recipe_with_repeated_prefix_and_spaces() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_temp(dir.path(), "Makefile", "ci:\n\t@  @  -false\n");
+        assert!(scan_makefile(&path)
+            .iter()
+            .any(|v| v.kind == ViolationKind::DashPrefixedRecipe));
+    }
+
+    // Leading whitespace alone, with no `-` among the prefix characters
+    // skipped, does not itself suppress a failure and must not be flagged —
+    // confirmed against real GNU Make (`@ false` still fails the build).
+    // Trace: TC-130, NFR-006-AC-1
+    #[test]
+    fn scan_does_not_flag_whitespace_prefix_without_dash() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_temp(dir.path(), "Makefile", "ci:\n\t@ false\n");
         assert!(scan_makefile(&path).is_empty());
     }
 

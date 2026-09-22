@@ -76,3 +76,27 @@ description: "Lifecycle record for the tl-mltl NFR-006 gate-set-integrity bundle
   and dispositions posted as a Linear comment on TL-65; the standalone
   review-report file deleted after that (this repository's `spec/reviews/`
   SR convention — SR-053 — is unaffected and kept).
+- **2026-09-22** — Third adversarial pass found one further gap in the
+  FND-001 fix, empirically confirmed against real GNU Make (3.81) before
+  fixing: `recipe_prefix_carries_dash` stopped its scan at the first
+  character that was not `@`/`-`/`+`, including whitespace, but GNU Make
+  tolerates whitespace between and around recipe-prefix characters and
+  still applies them — `@ -false`, `+ -false`, and even `@  @  -false` all
+  ignore the recipe's failure exactly like `@-false` (verified directly
+  against system `make`, alongside true-negative controls: `@ false` and
+  ` false`, with no `-` among the skipped characters, are correctly *not*
+  ignored). Fixed by having the scan skip whitespace inline rather than
+  treating it as end-of-prefix, still breaking at the first character that
+  is neither whitespace nor `@`/`-`/`+`. Regression tests added at both
+  levels: unit (`scan_detects_dash_prefixed_recipe_with_space_before_dash`,
+  `..._with_plus_space_dash`, `..._with_repeated_prefix_and_spaces`, plus a
+  true-negative `scan_does_not_flag_whitespace_prefix_without_dash`) and
+  process (`at_space_dash_prefixed_recipe_is_refused`,
+  `plus_space_dash_prefixed_recipe_is_refused`). Re-verified clean:
+  `cargo test --lib` (68 passed), `cargo test --test ci_guard` (14
+  passed), `cargo fmt --check`, `cargo clippy -D warnings`, `make
+  test-census` (151 tagged tests). Manually re-ran the reported repro
+  (`@ -false`, `+ -false`) directly against the compiled binary — both
+  correctly refused. Real-HEAD `make guarded-ci` run reconfirmed
+  unchanged otherwise. Findings posted as a further Linear comment on
+  TL-65.
