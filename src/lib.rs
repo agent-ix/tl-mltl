@@ -90,7 +90,7 @@ pub const TL_SYNTAX_REVISION: &str = "d52d89549b0a6c0c429261bab912cd5396c4a19e";
 
 /// Exact Quire Observation owner revision whose constructor-private assertion
 /// views are accepted by the temporal request boundary.
-pub const QUIRE_OBSERVATION_REVISION: &str = "924006300f45b38483be1cbdf99b68f899b7d368";
+pub const QUIRE_OBSERVATION_REVISION: &str = "2bdeb833a330bfa777c19eb4c28c423f856f3ba6";
 
 /// Shared temporal corpus identity consumed by this crate.
 pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";
