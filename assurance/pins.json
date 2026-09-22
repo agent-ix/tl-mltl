@@ -4,9 +4,9 @@
   "matrix_authority": "engineering_assurance/compatibility-matrix.json in the installed distribution. scripts/check_shared_pins.py observes the local toolchain and delegates every verdict to engineering_assurance.compatibility.",
   "registry": "Every npm component resolves from the public npm registry (registry.npmjs.org). The internal npm.ix mirror must not appear in any requirement, pin, lockfile, or .npmrc, and is not an oracle for whether a release landed. Querying an @agent-ix package needs --@agent-ix:registry=https://registry.npmjs.org; a bare --registry does not override the scoped .npmrc entry.",
   "engineering_assurance": {
-    "version": "0.2.0",
-    "requirement": "engineering-assurance @ git+https://github.com/agent-ix/engineering-assurance@v0.2.0",
-    "release_form": "git tag v0.2.0, a source distribution; the tag is the released artifact",
+    "version": "0.2.1",
+    "requirement": "engineering-assurance @ git+https://github.com/agent-ix/engineering-assurance@v0.2.1",
+    "release_form": "git tag v0.2.1, a source distribution; the tag is the released artifact",
     "declared_in": "requirements-assurance.txt"
   },
   "repinned_workflow_component": {
@@ -14,6 +14,12 @@
     "was": "0.22.5",
     "now": "0.23.1",
     "why": "The hosted workflow pinned @agent-ix/quoin@0.22.5, which the packaged compatibility matrix names explicitly incompatible: it 'predates the `quoin change-assurance` surface; seal, intake, and receipt commands do not exist'. Every command this migration's chain runs is on that surface, so the old pin could not have worked. ix-flow@0.0.4 was absent from the workflow entirely and is now installed."
+  },
+  "repinned_ix_flow": {
+    "component": "ix-flow",
+    "was": "0.0.4",
+    "now": "0.2.3",
+    "why": "TL-192: the packaged compatibility matrix authoritative for this repository's pin (matrix_authority above) classified ix-flow strictly at the exact pinned version, so a locally-installed 0.2.3 against a v0.2.0 matrix pinning 0.0.4 classified as unknown, not compatible, and failed the local qualification gate. engineering-assurance v0.2.1 (release: accept ix-flow 0.2.3 matrix, agent-ix/engineering-assurance#47) re-pins the matrix to ix-flow 0.2.3 with human acceptance recorded (accepted_by Peter Krenesky, accepted_at 2026-09-10, after the local TC-107 gate passed against public ix-flow 0.2.3). This repository's engineering_assurance pin above was moved from v0.2.0 to v0.2.1 in the same change so the workflow literal and the matrix authority agree; quire-cli and quoin stay at their already-accepted versions, unchanged by this bump."
   },
   "consumed_artifacts_note": "Every digest-bearing entry here belonged to the compatibility view, which is deleted (issue #16). This repository now reads exactly one file out of the pinned distribution, and that file deliberately carries no local digest, so artifact_digest_mismatches currently has an empty population. Recorded as UNKNOWN-consumed-artifact-digests-now-vacuous in change-assurance.json rather than concealed by keeping digests for files nobody reads.",
   "consumed_artifacts": [
@@ -29,8 +35,8 @@
     "why": "The compiled pin moved to d52d8954, tl-syntax #82, which publishes tl_syntax::CORPUS_DIR so a dependent can read the shared corpus straight out of the compiled dependency instead of holding a copy. corpus/tl-syntax-v1 (TL-170) and corpus/past-history and corpus/future-operators (TL-171) are all deleted; every one of them is now read via tl_syntax::CORPUS_DIR and there is no separate corpus basis left to track for any of them."
   },
   "known_drift": [
-    "engineering-assurance v0.2.0 packages compatibility-matrix.json with accepted.state = pending_human_acceptance and ships no human_acceptance_recorded predicate. Both landed on main after the tag and no v0.2.1 was cut. Filed as agent-ix/engineering-assurance#20. scripts/check_shared_pins.py reports the acceptance state the installed package records and gates only on the local toolchain, so an absent field is never read as an approval in either direction.",
-    "The human acceptance itself is not in doubt: Peter Krenesky accepted the FR-012 matrix on 2026-09-01 and it is attributed on engineering-assurance main as ae50e13. What is missing is a release carrying it. Pinning a branch head to obtain it is exactly what FR-012-AC-1 forbids, so this repository does not.",
+    "Resolved by the TL-192 bump to v0.2.1: engineering-assurance v0.2.0 packaged compatibility-matrix.json with accepted.state = pending_human_acceptance and shipped no human_acceptance_recorded predicate (agent-ix/engineering-assurance#20). v0.2.1 (release: accept ix-flow 0.2.3 matrix, #47) carries accepted.state = accepted with accepted_by and accepted_at populated, so the record this repository now reads is a real release carrying the acceptance rather than a branch head.",
+    "Historical: the human acceptance itself was never in doubt: Peter Krenesky accepted the FR-012 matrix on 2026-09-01, attributed on engineering-assurance main as ae50e13, and the pinned release now carries it (see above).",
     "Quire resolves the spec-artifacts-process module from the machine's installed Filament modules, and nothing in this repository pins that module's revision. The installed default currently counts the 8 suite-registry rows and reports 118 counted, 116 backed: 65 requirement criteria, 45 test-matrix rows, and six of eight suite rows. SUITE-001 and SUITE-002 are deliberately non-runnable and their absence is asserted independently. Recorded under agent-ix/tl-mltl#47 rather than pinned, because the packaged compatibility matrix carries no module-revision entry to classify against."
   ]
 }

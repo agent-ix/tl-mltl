@@ -41,17 +41,23 @@ retained under it from that point is immutable.
 That is a real reduction in local detection, and its extent is stated rather
 than minimised. It was measured in this repository, not inherited from a sibling.
 
-With a syntax error introduced into `src/lib.rs`, `make -k ci` exits 2 and 10
-of the 14 `ci` prerequisites do not complete: `fmt-check`, `lint`, `test`,
-`conformance`, `differential`, `cli-conformance`, `test-census`, `msrv`,
-`rustdoc` and `assurance`. Four still complete: `check-corpus`, `deny`,
-`audit-unsafe` and `spec`. Adding a single `.IGNORE:` line to the `Makefile`
-makes all 10 report success and `make ci` exits 0, with every individual recipe
-error in the run log ignored — including `assurance-chain` exiting 2, which is
-the chain correctly refusing empty producer output. Nothing in this repository inspects Make's own execution
-controls to notice, because the parse-time guard block and
-`scripts/check_failure_propagation.py` that used to do so were removed with the
-collector they were protecting.
+With a syntax error introduced into `src/lib.rs`, `make -k ci` exits 2 and 12
+of the 15 `ci` prerequisites do not complete: `fmt-check`, `lint`,
+`kani-check`, `test`, `conformance`, `differential`, `cli-conformance`,
+`test-census`, `spec`, `msrv`, `rustdoc` and `assurance`. Three still complete:
+`check-corpus`, `deny` and `audit-unsafe`. Adding a single `.IGNORE:` line to
+the `Makefile` makes all 12 report success and `make ci` exits 0, with every
+individual recipe error in the run log ignored — including `assurance-chain`
+exiting 2, which is the chain correctly refusing empty producer output.
+Nothing in this repository inspects Make's own execution controls to notice,
+because the parse-time guard block and `scripts/check_failure_propagation.py`
+that used to do so were removed with the collector they were protecting.
+
+(This count was last re-measured for TL-65/TL-193: `kani-check` was added to
+`ci` and `spec` moved from the completing group to the non-completing group
+since this section was first written, taking the count from 10/14 to 12/15.
+Re-measure rather than trust this figure if `ci`'s prerequisite list changes
+again — see the reproduction in `agent-ix/tl-mltl#14`.)
 
 A structural backstop exists but covers only part of the gate set. Quoin binds
 each retained input by digest and every attested result is derived from the
@@ -80,7 +86,7 @@ claimed to be closed by the structural replacement.
 | Attested results not derived from producer bytes | 0 | 0 | Test |
 | Gates that execute the external monitor | 0 | 0 | Test |
 | Child processes the driver starts that are neither Quoin nor a version observation | 0 | 0 | Test |
-| Executable hosted-workflow tokens naming an ix-flow package other than `@agent-ix/ix-flow@0.0.4` after YAML comments are removed | 0 | 0 | Test |
+| Executable hosted-workflow tokens naming an ix-flow package other than `@agent-ix/ix-flow@0.2.3` after YAML comments are removed | 0 | 0 | Test |
 | Automatic hosted-workflow triggers | 0 | 0 | Test |
 | Automatic release decisions | 0 | 0 | Inspection |
 
@@ -119,7 +125,7 @@ spelled package token cannot silently run a different executable version.
 | NFR-003-AC-1 | Every attested proof result is derived from the producer's own structured output; a producer whose output is absent, empty, or unreadable is an error naming the target that writes it, and never a pass. Every test that reads or temporarily mutates shared assurance inputs holds the repository's private serialization guard for the full access. | Test (TC-018, TC-019, TC-024) |
 | NFR-003-AC-2 | Neither Quire nor Quoin executes a producer, and no gate executes R2U2 or C2PO. Demonstrated four ways, because no single one is sufficient: every producer on `PATH` replaced by a logging stub with the log required to be empty; a control that stubs Quoin and requires the chain to fail; every declared input moved aside in turn with the driver required to refuse rather than recreate it; and an audit hook inside the driver that refuses any child process which is neither the pinned Quoin CLI nor a version observation, exercised by injecting `quire coverage` into a copy of the driver. The injected-child refusal is paired with the unmodified driver succeeding in the same owned scratch, whose Quoin store is proved outside the repository store. A PATH shim alone cannot establish this, because Quoin legitimately runs `quire coverage` itself. | Test (TC-019) |
 | NFR-003-AC-3 | The twelve verification outcomes stay distinguishable, each demonstrated by a case that produced it and matched, with every negative paired with a positive control and a control naming a non-existent scenario refused. | Test (TC-022) |
-| NFR-003-AC-5 | Across semantic `jobs.*.steps[*].run` string scalars, independent of YAML spelling or style, a bare or path-qualified npm executable at command position after leading assignments, directly or through shell groups and a statically literal `sh`/`bash -c` script, using every documented npm-install alias (`install`, `add`, `i`, `in`, `ins`, `inst`, `insta`, `instal`, `isnt`, `isnta`, `isntal`, `isntall`) consumes exactly one executable ix-flow package, `@agent-ix/ix-flow@0.0.4`, and no other scoped, unscoped, alias-form, or identity-bearing alternate; any run script containing unquoted shell redirection, an unescaped shell expansion outside single quotes (`$` or backticks), or a GitHub workflow expression anywhere in the scalar, including shell comments and shell-quoted or backslash-escaped text, is rejected as unsupported rather than partially scanned. Npm- or shell-shaped data arguments and `sh`/`bash` invocations without `-c` are not nested commands and do not suppress later commands in the same scalar, YAML metadata and ordinary YAML/shell comments do not change that population, a `#` after any started word remains argument content, the semantic trigger set is exactly [`workflow_dispatch`], and the local qualification gate observes `ix-flow --version` as exactly `0.0.4`. | Test (TC-036) |
+| NFR-003-AC-5 | Across semantic `jobs.*.steps[*].run` string scalars, independent of YAML spelling or style, a bare or path-qualified npm executable at command position after leading assignments, directly or through shell groups and a statically literal `sh`/`bash -c` script, using every documented npm-install alias (`install`, `add`, `i`, `in`, `ins`, `inst`, `insta`, `instal`, `isnt`, `isnta`, `isntal`, `isntall`) consumes exactly one executable ix-flow package, `@agent-ix/ix-flow@0.2.3`, and no other scoped, unscoped, alias-form, or identity-bearing alternate; any run script containing unquoted shell redirection, an unescaped shell expansion outside single quotes (`$` or backticks), or a GitHub workflow expression anywhere in the scalar, including shell comments and shell-quoted or backslash-escaped text, is rejected as unsupported rather than partially scanned. Npm- or shell-shaped data arguments and `sh`/`bash` invocations without `-c` are not nested commands and do not suppress later commands in the same scalar, YAML metadata and ordinary YAML/shell comments do not change that population, a `#` after any started word remains argument content, the semantic trigger set is exactly [`workflow_dispatch`], and the local qualification gate observes `ix-flow --version` as exactly `0.2.3`. | Test (TC-036) |
 
 ## Qualification Boundary
 

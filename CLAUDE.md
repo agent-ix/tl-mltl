@@ -47,8 +47,8 @@ ix-flow contracts. It owns its domain producers and owns no evidence framework.
 |---|---|
 | quire-cli | 0.31.0 (engine 0.46.0) |
 | quoin | 0.23.1 |
-| ix-flow | 0.0.4 |
-| engineering-assurance | 0.2.0 (git tag) |
+| ix-flow | 0.2.3 |
+| engineering-assurance | 0.2.1 (git tag) |
 
 Three rules to keep in mind before changing anything under `assurance/`,
 `scripts/` or `examples/`:

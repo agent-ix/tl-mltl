@@ -436,7 +436,7 @@ fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
     let ix_flow_packages = ix_flow_package_tokens(&workflow).expect("classify hosted workflow");
     assert_eq!(
         ix_flow_packages,
-        ["@agent-ix/ix-flow@0.0.4".to_owned()],
+        ["@agent-ix/ix-flow@0.2.3".to_owned()],
         "hosted CI must install the released scoped package exactly once"
     );
 
@@ -452,7 +452,7 @@ fn hosted_ci_uses_the_released_scoped_ix_flow_package_and_stays_manual_only() {
     );
     assert_eq!(
         String::from_utf8_lossy(&output.stdout).trim(),
-        "0.0.4",
+        "0.2.3",
         "the local gate must exercise the same released version installed by hosted CI"
     );
 }
@@ -2256,8 +2256,15 @@ fn no_local_evidence_framework_remains() {
         ("src", 20),
         // TL-179 deletes tests/tc_084_temporal_owner_wire.rs (1 file), the
         // dedicated test for the request/result/mapping owner boundary it
-        // removed from src/.
-        ("tests", 23),
+        // removed from src/. TL-173 then deletes the two files that test left
+        // orphaned: tests/fixtures/fcd-static-bundle-1.2.json, a vendored
+        // AGPL-3.0-only fixture whose upstream source (filament-core-data's
+        // producer-interface-1.2 surface) was itself deliberately deleted
+        // upstream with nothing left to re-vendor from, and
+        // tests/fixtures/README.md, which existed only to document that one
+        // fixture's provenance. Neither was referenced by any remaining test
+        // or source file (23 - 2 = 21).
+        ("tests", 21),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2315,14 +2322,16 @@ fn no_local_evidence_framework_remains() {
     // moving this control, making the measured population 208. This campaign
     // adds 8 spec/ artifacts and the 10-file plan/PLAN-007 bundle, for 226; the
     // M5 campaign adds 12 spec/ artifacts and the 10-file plan/PLAN-008 bundle,
-    // for 248.
+    // for 248. TL-173 deletes the orphaned AGPL fixture and its README
+    // (tests/fixtures/fcd-static-bundle-1.2.json,
+    // tests/fixtures/README.md), bringing the population to 246 (248 - 2).
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 248,
-        "the source census population changed from the reviewed 248 tracked files \
+        inspected, 246,
+        "the source census population changed from the reviewed 246 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

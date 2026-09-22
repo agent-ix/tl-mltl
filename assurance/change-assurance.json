@@ -119,7 +119,7 @@
         },
         {
           "id": "NFR-003-AC-5",
-          "statement": "After YAML comment text beginning at an unquoted # is removed, the hosted workflow contains exactly one executable @agent-ix/ix-flow@0.0.4 package token and no other scoped, unscoped, or alias-form ix-flow package through any accepted npm install spelling; comment-only package spellings do not change that population, quoted hash characters remain part of their token, workflow_dispatch remains the only trigger, and the local qualification gate observes ix-flow --version as exactly 0.0.4.",
+          "statement": "After YAML comment text beginning at an unquoted # is removed, the hosted workflow contains exactly one executable @agent-ix/ix-flow@0.2.3 package token and no other scoped, unscoped, or alias-form ix-flow package through any accepted npm install spelling; comment-only package spellings do not change that population, quoted hash characters remain part of their token, workflow_dispatch remains the only trigger, and the local qualification gate observes ix-flow --version as exactly 0.2.3.",
           "source_ids": ["NFR-003", "TM-001", "hosted-ci", "assurance-pins"]
         }
       ],
@@ -232,8 +232,8 @@
       "unknowns": [
         {
           "id": "UNKNOWN-ea-acceptance-not-in-a-release",
-          "statement": "engineering-assurance v0.2.0 records accepted.state = pending_human_acceptance and ships no human_acceptance_recorded predicate; the human acceptance exists only on main. This repository reports the state the release records and does not gate on it. Filed as agent-ix/engineering-assurance#20.",
-          "disposition": "open",
+          "statement": "Resolved by the TL-192 bump to engineering-assurance v0.2.1 (release: accept ix-flow 0.2.3 matrix, agent-ix/engineering-assurance#47), which packages accepted.state = accepted with accepted_by and accepted_at populated. The prior gap — v0.2.0 recording accepted.state = pending_human_acceptance with the human acceptance landing only on main (agent-ix/engineering-assurance#20) — no longer applies to the pin this repository carries.",
+          "disposition": "resolved",
           "owner": "agent-ix/engineering-assurance"
         },
         {
@@ -244,7 +244,7 @@
         },
         {
           "id": "UNKNOWN-make-failure-propagation-guard-removed",
-          "statement": "scripts/check_failure_propagation.py and the Makefile parse-time guard block that policed Make's own execution controls are removed with the collector they protected. The class they guarded is real and was measured in this repository, not assumed: with a syntax error introduced into src/lib.rs, `make -k ci` exits 2 and 10 of the 14 `ci` prerequisites do not complete (fmt-check, lint, test, conformance, differential, cli-conformance, test-census, msrv, rustdoc, assurance) while 4 still do (check-corpus, deny, audit-unsafe, spec); adding a single `.IGNORE:` line makes all 10 report success and `make ci` exits 0, with every recipe error ignored including the chain's own exit-2 refusal, and nothing in the tree notices. What replaces the guard is structural rather than another guard — Quoin binds each retained input by digest and the chain derives every attested result from the producer's own bytes, so a producer that did not run yields an absent or empty input the chain names and refuses. That covers the six producers re-run inside `assurance-inputs`. It does not cover fmt-check, lint, check-corpus, deny, audit-unsafe, rustdoc, or the `quire validate` half of spec, which feed no input and are simply neutered; and `.IGNORE:` at the top of the file also suppresses the chain's own refusal, so the structural backstop does not close the class either. This is a genuine reduction in local detection and it is recorded rather than claimed away. Filed as agent-ix/tl-mltl#14.",
+          "statement": "scripts/check_failure_propagation.py and the Makefile parse-time guard block that policed Make's own execution controls are removed with the collector they protected. The class they guarded is real and was measured in this repository, not assumed: with a syntax error introduced into src/lib.rs, `make -k ci` exits 2 and 12 of the 15 `ci` prerequisites do not complete (fmt-check, lint, kani-check, test, conformance, differential, cli-conformance, test-census, spec, msrv, rustdoc, assurance) while 3 still do (check-corpus, deny, audit-unsafe); adding a single `.IGNORE:` line makes all 12 report success and `make ci` exits 0, with every recipe error ignored including the chain's own exit-2 refusal, and nothing in the tree notices. (Re-measured for TL-65/TL-193: kani-check was added to `ci` and `spec` moved from the completing group to the non-completing group since this was first recorded, taking the count from 10/14 to 12/15.) What replaces the guard is structural rather than another guard — Quoin binds each retained input by digest and the chain derives every attested result from the producer's own bytes, so a producer that did not run yields an absent or empty input the chain names and refuses. That covers the six producers re-run inside `assurance-inputs`. It does not cover fmt-check, lint, check-corpus, deny, audit-unsafe, rustdoc, or the `quire validate` half of spec, which feed no input and are simply neutered; and `.IGNORE:` at the top of the file also suppresses the chain's own refusal, so the structural backstop does not close the class either. This is a genuine reduction in local detection and it is recorded rather than claimed away. Filed as agent-ix/tl-mltl#14.",
           "disposition": "open",
           "owner": "agent-ix/tl-mltl"
         },
