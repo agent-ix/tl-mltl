@@ -311,3 +311,101 @@ fn bundled_makeflags_ignore_errors_is_refused_before_make_runs() {
     // Refused before Make ran at all: no completion records exist.
     assert!(!dir.path().join("target/ci-gates/gate-a.json").exists());
 }
+
+// SR-055/FND-001, reproduced end-to-end against the real compiled binary:
+// GNU Make accepts `@`/`-`/`+` recipe prefixes in any order, immediately
+// following each other. `@-false` is exactly as error-ignoring as `-false`
+// (just also silent), so Make continues past the failing check to the
+// `ci_guard record` call and a genuine, correct-run-id completion record
+// gets written for a gate whose own check failed — unless the static scan
+// recognizes `-` anywhere in the leading prefix run, not only as the
+// literal first character.
+// Trace: TC-135, NFR-006-AC-1, NFR-006-AC-6
+#[test]
+fn at_dash_prefixed_recipe_is_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    let guard = ci_guard_bin();
+    let makefile = format!(
+        ".PHONY: ci gate-a\n\
+         ci: gate-a\n\
+         \n\
+         gate-a:\n\
+         \t@-false\n\
+         \t\"{guard}\" record gate-a\n"
+    );
+    fs::write(dir.path().join("Makefile"), makefile).unwrap();
+
+    let output = run_guard(dir.path());
+    assert!(
+        !output.status.success(),
+        "an @-prefixed error-ignoring recipe line must not report success"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("dash-prefixed-recipe"),
+        "expected the static scan to name dash-prefixed-recipe, got: {stderr}"
+    );
+    assert!(!dir.path().join("target/ci-gates/gate-a.json").exists());
+}
+
+// The `+-` ordering (always-run, then ignore-errors) is the same class as
+// `@-`, with a different silent/always-run prefix character first.
+// Trace: TC-135, NFR-006-AC-1, NFR-006-AC-6
+#[test]
+fn plus_dash_prefixed_recipe_is_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    let guard = ci_guard_bin();
+    let makefile = format!(
+        ".PHONY: ci gate-a\n\
+         ci: gate-a\n\
+         \n\
+         gate-a:\n\
+         \t+-false\n\
+         \t\"{guard}\" record gate-a\n"
+    );
+    fs::write(dir.path().join("Makefile"), makefile).unwrap();
+
+    let output = run_guard(dir.path());
+    assert!(
+        !output.status.success(),
+        "a +-prefixed error-ignoring recipe line must not report success"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("dash-prefixed-recipe"),
+        "expected the static scan to name dash-prefixed-recipe, got: {stderr}"
+    );
+    assert!(!dir.path().join("target/ci-gates/gate-a.json").exists());
+}
+
+// SR-055/FND-002, reproduced end-to-end against the real compiled binary:
+// `export MAKEFLAGS := -i` as the Makefile's first line genuinely
+// suppresses prerequisite-failure propagation for this `make` invocation —
+// not only a sub-make — and is invisible to the calling-environment
+// MAKEFLAGS check because it is set from inside the Makefile rather than
+// inherited. The bare (non-`export`) form was already refused before this
+// fix, isolating `export` as the exact gap this test closes.
+// Trace: TC-135, NFR-006-AC-1, NFR-006-AC-6
+#[test]
+fn exported_makeflags_directive_is_refused_before_make_runs() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(
+        dir.path().join("Makefile"),
+        fixture_makefile("false", "export MAKEFLAGS := -i\n"),
+    )
+    .unwrap();
+
+    let output = run_guard(dir.path());
+    assert!(
+        !output.status.success(),
+        "an `export MAKEFLAGS := -i` directive must not report success"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("makeflags-assignment"),
+        "expected the static scan to name makeflags-assignment, got: {stderr}"
+    );
+
+    // Refused before Make ran at all: no completion records exist.
+    assert!(!dir.path().join("target/ci-gates/gate-a.json").exists());
+}

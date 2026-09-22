@@ -210,7 +210,7 @@ fn scan_recipe_line(
             detail,
         });
     };
-    if is_command_start && body.trim_start().starts_with('-') {
+    if is_command_start && recipe_prefix_carries_dash(body) {
         push(ViolationKind::DashPrefixedRecipe, body.trim().to_string());
     }
     if body.contains("|| true") || body.contains("|| :") {
@@ -283,6 +283,30 @@ fn has_bare_command_separator(body: &str) -> bool {
     false
 }
 
+/// `true` if `body`'s leading run of GNU Make recipe-prefix characters
+/// (`@`, `-`, `+`, in any order and any repeat, immediately following each
+/// other with no space) includes `-` (ignore this line's exit status).
+///
+/// Make does not require `-` to be the literal first character: `@-cmd` and
+/// `+-cmd` are exactly as error-ignoring as `-cmd`, just also silent or
+/// always-run respectively. A check anchored to `starts_with('-')` alone
+/// misses every ordering where `-` is not first, which is not a hypothetical
+/// — a recipe line reading `@-false` runs `false`, discards its failure via
+/// the `-` prefix, and reaches its own `ci_guard record` call exactly as if
+/// unprefixed, while `starts_with('-')` sees only the leading `@` and stays
+/// silent.
+fn recipe_prefix_carries_dash(body: &str) -> bool {
+    let mut has_dash = false;
+    for ch in body.trim_start().chars() {
+        match ch {
+            '-' => has_dash = true,
+            '@' | '+' => {}
+            _ => break,
+        }
+    }
+    has_dash
+}
+
 fn scan_directive_line(
     path: &Path,
     lineno: usize,
@@ -325,14 +349,36 @@ fn scan_directive_line(
     }
 }
 
+/// `true` if `line` assigns `name` via one of Make's assignment operators,
+/// with or without a leading `export` keyword (`export MAKEFLAGS := -i` is
+/// exactly as effective at suppressing failure propagation for the current
+/// `make` invocation as the bare `MAKEFLAGS := -i` form already caught, and
+/// unlike the bare form it is invisible to the separate calling-environment
+/// `MAKEFLAGS` check, since it is set from inside the Makefile rather than
+/// inherited — this repeats the same wide-boundary fix
+/// [`dangerous_makeflags`] applies to the environment vector, on the Makefile
+/// text vector instead).
 fn is_assignment(line: &str, name: &str) -> bool {
-    let Some(rest) = line.strip_prefix(name) else {
+    let candidate = strip_export_keyword(line);
+    let Some(rest) = candidate.strip_prefix(name) else {
         return false;
     };
     let rest = rest.trim_start();
     ["=", ":=", "?=", "+=", "!="]
         .iter()
         .any(|op| rest.starts_with(op))
+}
+
+/// Strip a leading `export` keyword followed by required whitespace, e.g.
+/// `export MAKEFLAGS := -i` -> `MAKEFLAGS := -i`. `export` must be a
+/// standalone word — `exportable := 1` (a differently named variable that
+/// merely starts with the same letters) is left untouched rather than
+/// misread as `export able := 1`.
+fn strip_export_keyword(line: &str) -> &str {
+    match line.strip_prefix("export") {
+        Some(rest) if rest.starts_with(|c: char| c.is_whitespace()) => rest.trim_start(),
+        _ => line,
+    }
 }
 
 fn include_target(line: &str) -> Option<&str> {
@@ -665,6 +711,36 @@ mod tests {
             .any(|v| v.kind == ViolationKind::MakeflagsAssignment));
     }
 
+    // SR-055/FND-002: `export MAKEFLAGS := -i` genuinely suppresses
+    // prerequisite-failure propagation for the current `make` invocation,
+    // not only a sub-make, and is invisible to the calling-environment
+    // MAKEFLAGS check because it is set from inside the Makefile. A bare
+    // (non-`export`) line in the same position was already caught before
+    // this fix, isolating `export` as the exact gap.
+    // Trace: TC-130, NFR-006-AC-1
+    #[test]
+    fn scan_detects_exported_makeflags_assignment() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_temp(
+            dir.path(),
+            "Makefile",
+            "export MAKEFLAGS := -i\nci:\n\tfalse\n",
+        );
+        assert!(scan_makefile(&path)
+            .iter()
+            .any(|v| v.kind == ViolationKind::MakeflagsAssignment));
+    }
+
+    // A variable that merely starts with the letters "export" is a
+    // different name and must not be misread as an exported assignment.
+    // Trace: TC-130, NFR-006-AC-1
+    #[test]
+    fn scan_does_not_misread_a_differently_named_variable_as_export() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_temp(dir.path(), "Makefile", "exportable := 1\nci:\n\tfalse\n");
+        assert!(scan_makefile(&path).is_empty());
+    }
+
     // Trace: TC-130, NFR-006-AC-1
     #[test]
     fn scan_detects_dash_prefixed_recipe() {
@@ -673,6 +749,41 @@ mod tests {
         assert!(scan_makefile(&path)
             .iter()
             .any(|v| v.kind == ViolationKind::DashPrefixedRecipe));
+    }
+
+    // SR-055/FND-001: GNU Make accepts `@`/`-`/`+` recipe prefixes in any
+    // order, immediately following each other; `@-false` and `+-false` are
+    // exactly as error-ignoring as `-false`, just also silent or
+    // always-run respectively. A check anchored to a literal leading `-`
+    // misses both orderings.
+    // Trace: TC-130, NFR-006-AC-1
+    #[test]
+    fn scan_detects_dash_prefixed_recipe_with_at_prefix_first() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_temp(dir.path(), "Makefile", "ci:\n\t@-false\n");
+        assert!(scan_makefile(&path)
+            .iter()
+            .any(|v| v.kind == ViolationKind::DashPrefixedRecipe));
+    }
+
+    // Trace: TC-130, NFR-006-AC-1
+    #[test]
+    fn scan_detects_dash_prefixed_recipe_with_plus_prefix_first() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_temp(dir.path(), "Makefile", "ci:\n\t+-false\n");
+        assert!(scan_makefile(&path)
+            .iter()
+            .any(|v| v.kind == ViolationKind::DashPrefixedRecipe));
+    }
+
+    // A recipe using only `@`/`+` (silent/always-run) without `-` does not
+    // ignore the command's own exit status and must not be flagged.
+    // Trace: TC-130, NFR-006-AC-1
+    #[test]
+    fn scan_does_not_flag_at_or_plus_prefix_without_dash() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_temp(dir.path(), "Makefile", "ci:\n\t@+echo hi\n");
+        assert!(scan_makefile(&path).is_empty());
     }
 
     // Regression: a `\`-continued recipe line whose wrapped text happens to
