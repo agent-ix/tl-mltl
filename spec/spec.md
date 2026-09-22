@@ -112,6 +112,9 @@ live, allocating tl-mltl#68's scope to a separate provider under the
 `quire.temporal.infinite-trace/v1` facet per tl-mltl#72. They change no
 existing FR-001 through FR-019 behavior.
 
+- [Post-v0.1 corpus and interoperability campaign](./corpus-campaign.md)
+  (MRS-002), scoped to the TL-owned corpus families only per
+  [ADR-002](decisions/ADR-002-native-correspondence-lives-in-quire-mltl.md).
 - [tl-mltl epic](https://github.com/agent-ix/tl-mltl/issues/7).
 - [Typed context child](https://github.com/agent-ix/tl-mltl/issues/24).
 - [Future FRETish consumer](https://github.com/agent-ix/quire-contract-ir/issues/57).
