@@ -2529,10 +2529,21 @@ fn no_local_evidence_framework_remains() {
     // reject the live special targets it warns about, and require one literal
     // `ci` declaration. This is deliberately not a replacement for issue #14's
     // full execution-control qualification work.
+    // The needles are matched against the comment block with its leading `# `
+    // markers and hard wraps folded away, so re-flowing the disclosure cannot
+    // silently retire this control the way #81 did: it reworded the measured
+    // count from 10 to 12 and re-wrapped the sentence, after which both
+    // single-line needles matched nothing and the assertion could no longer
+    // fail for the reason it exists.
     let makefile = fs::read_to_string(root.join("Makefile")).unwrap();
+    let disclosure = makefile
+        .lines()
+        .map(|line| line.trim_start().trim_start_matches('#').trim())
+        .collect::<Vec<_>>()
+        .join(" ");
     assert!(
-        makefile.contains("Adding a single `.IGNORE:` line to this file makes all 10 report")
-            && makefile.contains("success and `make ci` exits 0. Nothing here notices."),
+        disclosure.contains("Adding a single `.IGNORE:` line to this file makes all 12 report")
+            && disclosure.contains("success and `make ci` exits 0. Nothing here notices."),
         "the Makefile no longer states the measured execution-control limitation"
     );
     for line in makefile.lines() {
