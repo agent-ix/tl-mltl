@@ -1655,8 +1655,9 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     let text = String::from_utf8_lossy(&bytes);
     for requirement in [
         "FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "FR-008", "FR-009",
-        "FR-010", "FR-016", "FR-017", "FR-018", "FR-019", "NFR-001", "NFR-002", "NFR-003",
-        "NFR-004", "StR-001", "StR-002", "StR-003",
+        "FR-010", "FR-016", "FR-017", "FR-018", "FR-019", "FR-020", "FR-021", "FR-022", "FR-023",
+        "FR-024", "NFR-001", "NFR-002", "NFR-003", "NFR-004", "NFR-005", "StR-001", "StR-002",
+        "StR-003",
     ] {
         assert!(
             text.contains(requirement),
@@ -1674,8 +1675,8 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 159 is every row this repository declares: 89 requirement criteria, 62
-    // test-matrix rows across the two TestMatrix documents, and 8
+    // 214 is every row this repository declares: 118 requirement criteria, 88
+    // test-matrix rows across the three TestMatrix documents, and 8
     // suite-registry rows. Naming the population matters — "matrix rows" would
     // be wrong, because criteria and the authored suite registry are separate
     // declarations. SUITE-001 and SUITE-002 are the two intentionally
@@ -1687,25 +1688,29 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // NFR-004 are all declared-but-unimplemented, so `backed` has not equalled
     // `total` since #72 landed and the old `116` could not hold. The numbers
     // now record the measurement rather than an aspiration:
-    //   71 pre-campaign criteria + 18 campaign criteria (FR-008 5, FR-009 6,
-    //   FR-010 4, NFR-004 3) = 89;
+    //   71 pre-campaign criteria + 18 M4 criteria (FR-008 5, FR-009 6,
+    //   FR-010 4, NFR-004 3) + 29 M5 criteria (FR-020 through FR-024 and
+    //   NFR-005) = 118;
     //   49 spec/test-matrix.md rows + 13 spec/corpus-campaign-test-matrix.md
-    //   rows = 62;
+    //   rows + 26 spec/verification-effectiveness-test-matrix.md rows = 88;
     //   8 suite rows.
+    // Only TC rows are counted from a TestMatrix; its FR/NFR summary rows
+    // are not a separate declared population.
     // `backed` stays at 105: every campaign row is planned and deliberately
     // unbacked, exactly as TM-002 declares. An unbacked row that is NOT one of
     // those is a coverage regression, not a number to adjust here.
     assert_eq!(
-        totals["total"], 159,
-        "the declared-row population changed: {totals}. It is 89 requirement \
-         criteria + 62 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 214,
+        "the declared-row population changed: {totals}. It is 118 requirement \
+         criteria + 88 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
         totals["backed"], 105,
         "backed-row count changed: {totals}. The unbacked population is exactly \
-         FR-018, FR-019, FR-027 through FR-029, the 18 planned campaign criteria, \
-         the 13 planned TM-002 rows, the 6 planned spec/test-matrix.md rows, and \
-         the two deliberately non-runnable suite rows."
+         FR-018, FR-019, FR-027 through FR-029, the 18 planned M4 criteria, the 29 \
+         planned M5 criteria, the 13 planned TM-002 rows, the 26 planned TM-003 \
+         rows, the 6 planned spec/test-matrix.md rows, and the two deliberately \
+         non-runnable suite rows."
     );
     // The aggregate alone cannot identify which suite rows are absent, so check
     // the registry's own claim directly: every suite except SUITE-001 and
@@ -2240,8 +2245,11 @@ fn no_local_evidence_framework_remains() {
         // 110 was measured before TL-180 added ADR-001 and SR-052 (2 files)
         // without moving this control, making 112. This campaign adds 8:
         // corpus-campaign.md, corpus-campaign-test-matrix.md, FR-008, FR-009,
-        // FR-010, NFR-004, assurance/MP-002, and decisions/ADR-002.
-        ("spec", 120),
+        // FR-010, NFR-004, assurance/MP-002, and decisions/ADR-002. The M5
+        // campaign adds 12: verification-effectiveness-campaign.md,
+        // verification-effectiveness-test-matrix.md, FR-020 through FR-024,
+        // NFR-005, and assurance/MP-003 through MP-006.
+        ("spec", 132),
         // TL-179 deletes wire::request, wire::observation, wire::report, and
         // mapping::contract_ir (4 files): the quire-observation-coupled
         // request/result/mapping owner boundary now lives in quire-mltl.
@@ -2257,8 +2265,9 @@ fn no_local_evidence_framework_remains() {
         // PLAN-006 is deliberately retrospective and root-scoped so the formal
         // gap-analysis skill can audit one typed target without rewriting the
         // historical in-spec plans. PLAN-007 adds its own 10-file bundle
-        // (plan, index, log, and seven tasks) beside it.
-        ("plan", 15),
+        // (plan, index, log, and seven tasks) beside it, and PLAN-008 adds a
+        // further 10-file bundle of the same shape.
+        ("plan", 25),
         // The readiness and formal gap-analysis skill artifacts live at the
         // root review path required by their output contracts.
         ("reviews", 3),
@@ -2304,14 +2313,16 @@ fn no_local_evidence_framework_remains() {
     // 1 tests/*.rs file (8 total), bringing the population to 206 (214 - 8).
     // TL-180 then added spec/decisions/ADR-001 and spec/reviews/SR-052 without
     // moving this control, making the measured population 208. This campaign
-    // adds 8 spec/ artifacts and the 10-file plan/PLAN-007 bundle, for 226.
+    // adds 8 spec/ artifacts and the 10-file plan/PLAN-007 bundle, for 226; the
+    // M5 campaign adds 12 spec/ artifacts and the 10-file plan/PLAN-008 bundle,
+    // for 248.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 226,
-        "the source census population changed from the reviewed 226 tracked files \
+        inspected, 248,
+        "the source census population changed from the reviewed 248 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
