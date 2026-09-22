@@ -29,7 +29,7 @@ artifact.
 ## Inputs
 
 - The exact compiled `quire-observation` revision
-  `924006300f45b38483be1cbdf99b68f899b7d368`.
+  `2bdeb833a330bfa777c19eb4c28c423f856f3ba6`.
 - For the temporal path, the existing [FR-018](./FR-018-publish-temporal-owner-wire.md)
   request input containing constructor-private clock, progress, closure,
   completeness, and availability views plus caller-lowered owner limits.
@@ -74,7 +74,7 @@ artifact.
 |---|---|---|
 | FR-019-AC-1 | Given valid temporal owner views, dispatch produces bytes and resource usage identical to direct FR-018 request derivation under exact and one-over limits. | Test (TC-085) |
 | FR-019-AC-2 | Given the QObs repair-plan or closed-population-query contract selector, compatibility dispatch returns the corresponding typed unsupported contract and exact compiled revision with no value-bearing or artifact input/output. | Test (TC-085) |
-| FR-019-AC-3 | Cargo resolution, the public revision constant, request provenance, and compatibility outcomes all name `924006300f45b38483be1cbdf99b68f899b7d368`; the existing temporal owner suite remains unchanged in behavior. | Test (TC-085) |
+| FR-019-AC-3 | Cargo resolution, the public revision constant, request provenance, and compatibility outcomes all name `2bdeb833a330bfa777c19eb4c28c423f856f3ba6`; the existing temporal owner suite remains unchanged in behavior. | Test (TC-085) |
 
 ## Dependencies
 

@@ -1699,7 +1699,7 @@ fn tc_084_owner_evidence_contexts_cannot_be_cross_wired() {
 // Trace: TC-085, FR-019-AC-1, FR-019-AC-2, FR-019-AC-3
 #[test]
 fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
-    const C00_REVISION: &str = "924006300f45b38483be1cbdf99b68f899b7d368";
+    const C00_REVISION: &str = "2bdeb833a330bfa777c19eb4c28c423f856f3ba6";
 
     let decision = owner_views("decision-c00", 2);
     let surrounding = owner_views("surrounding-c00", 2);
