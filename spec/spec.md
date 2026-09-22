@@ -96,6 +96,11 @@ publishes explicit compatibility dispatch. It
 delegates the supported temporal path to FR-018 and reports QObs repair-plan and
 aggregate-query inputs as typed unsupported outcomes instead of recreating
 their owner semantics. The upstream enablement prerequisite is satisfied.
+FR-019 is now `status: superseded` by [quire-mltl
+FR-002](https://github.com/agent-ix/quire-mltl/blob/main/spec/requirements/FR-002-dispatch-qobs-c00-compatibility.md)
+per [ADR-001](decisions/ADR-001-retire-pgm01-citation-and-fr-019.md); this
+paragraph is retained as the historical record of what it specified while it
+governed `tl-mltl`'s own boundary.
 
 FR-027 through FR-029 settle where infinite-trace (lasso, fairness) semantics
 live, allocating tl-mltl#68's scope to a separate provider under the

@@ -32,27 +32,32 @@ directory did not exist before this ticket.
 
 `tl-mltl` merged PR [#67](https://github.com/agent-ix/tl-mltl/pull/67)
 ("Implement complete temporal evaluator owner boundary"), which added FR-018
-(the strict request/result/mapping owner boundary) and FR-019 (pinning that
-boundary to an accepted `quire-observation` C00 revision and publishing
-explicit QObs compatibility dispatch). That work was reviewed by SR-044
-through SR-051 and accepted. It also gave `spec/spec.md` (MRS-001) a
-`depends_on` edge to `ix://agent-ix/quire-contract-ir/PGM-01`, Purpose-section
-prose citing PGM-01 as governing "compatibility, provenance, evidence, human
-authority, and qualification boundaries," and a References-section link to
-the PGM-01 governance document. `NFR-002` picked up a parallel `references`
-edge to PGM-01 and prose citing "canonical PGM-01 evidence boundaries."
+(the strict request/result/mapping owner boundary) and was reviewed by SR-044
+through SR-046. It later merged PR
+[#70](https://github.com/agent-ix/tl-mltl/pull/70) ("Consume QObs C00 at the
+bounded temporal boundary"), which added FR-019 (pinning that boundary to an
+accepted `quire-observation` C00 revision and publishing explicit QObs
+compatibility dispatch) and was reviewed by SR-047 through SR-051. Both were
+accepted. Independently of either PR, `spec/spec.md` (MRS-001) had already
+carried a `depends_on` edge to `ix://agent-ix/quire-contract-ir/PGM-01`,
+Purpose-section prose citing PGM-01 as governing "compatibility, provenance,
+evidence, human authority, and qualification boundaries," and a
+References-section link to the PGM-01 governance document, since the
+repository's original spec commit (#9) — predating FR-018 and FR-019 alike.
+`NFR-002` carried a parallel `references` edge to PGM-01 and prose citing
+"canonical PGM-01 evidence boundaries" from that same origin.
 
 That arrangement directly contradicted the architect's intent for the TL-*
 crate family. Peter, as architect, ruled on epic TL-175:
 
 > "i was expecting the TL-\* crates to be ENTIRELY independent of Quire
-> ecosystem... the crates themselves were supposed to be independent"
+> ecosystem... the crates themselves were supposed to be independent."
 >
 > "we will use quire-observation and other things FOR THE OUTPUT FROM tl-\*
 > crates. BUT TL DOES NOT USE ANYTHING FROM AGENT-IX TO DO ITS THING"
 >
 > "now it is possible we need a quire-mltl integration crate, but that is it.
-> deps are still TL flowing IN to Quire ecosystem"
+> deps are still TL flowing IN to Quire ecosystem."
 >
 > "I AM THE ARCHITECT. MY INTENT IS WHAT YOU ARE BUILDING. MY WORD OVERRULES
 > ANY MISTAKEN DESIGN IN A SPEC"
@@ -88,7 +93,7 @@ erasing them:
   [NFR-003](../requirements/NFR-003-qualification-integrity.md) — which
   already owns the shared-assurance intake path this repository actually
   runs — instead of a governance program `tl-mltl` no longer cites.
-- **SR-044 through SR-051**, the frozen SpecReviews that covered PR #67 /
+- **SR-044 through SR-051**, the frozen SpecReviews that covered PR #67 / #70,
   FR-018 / FR-019, are not edited. This repository's convention, confirmed by
   precedent in `quire-contract-ir`'s own PGM-01-R08/R09 withdrawal notes (which
   amend policy in a dated, signed paragraph rather than rewriting the withdrawn
@@ -125,7 +130,7 @@ out, without waiting on that code removal to land first.
 ## Alternatives Considered
 
 - **Delete FR-019 outright.** Rejected: erases the historical record of what
-  `tl-mltl` actually implemented and shipped in PR #67, and of what SR-044
+  `tl-mltl` actually implemented and shipped in PR #70, and of what SR-044
   through SR-051 reviewed. Marking it `superseded` keeps that record readable
   while making clear it no longer governs current or target behavior.
 - **Edit SR-044 through SR-051 to reflect the reversal.** Rejected: this

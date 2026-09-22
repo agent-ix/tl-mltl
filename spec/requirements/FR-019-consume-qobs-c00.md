@@ -15,7 +15,7 @@ relationships:
   - target: ix://agent-ix/quire-observation/FR-011
     type: references
   - target: ix://agent-ix/quire-mltl/FR-002
-    type: references
+    type: superseded_by
 ---
 
 # FR-019: Consume the pinned QObs C00 temporal boundary without semantic substitution
