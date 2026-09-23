@@ -14,14 +14,14 @@ relationships:
 ## Description
 
 When the infinite provider accepts a request, it shall preserve the exact
-source, formula, trace, fairness, proposition-map, profile and event-position
+source, formula, subject kind/identity, trace, fairness, proposition-map, profile and event-position
 clock identities and enforce configured resource bounds before returning a
 complete result.
 
 ## Behavior
 
 Identity validation precedes semantic work. Every accepted result names the
-TL profile, feature-enabled provider revision, graph and trace identities,
+TL profile, feature-enabled provider revision, graph, subject and trace identities,
 selected event position, clock and ordered fairness premises. Checked
 arithmetic and explicit node, lasso, valuation, state, iteration and work
 limits prevent wrapping, uncontrolled allocation and partial success. Work

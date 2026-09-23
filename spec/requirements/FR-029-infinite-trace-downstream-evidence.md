@@ -19,7 +19,8 @@ relationships:
 
 When infinite-trace capability evidence is reported, tl-mltl shall attribute
 lasso, fairness and inductive-semantics results to `tl_mltl::infinite`, its
-exact feature-enabled source revision and `mltl.infinite-trace/v1` profile.
+exact feature-enabled source revision, `mltl.infinite-trace/v1` profile and
+the scope of the selected subject.
 
 ## Inputs
 
@@ -48,7 +49,7 @@ does not itself grant a source release or native parity decision.
 | ID | Criteria | Verification |
 |---|---|---|
 | FR-029-AC-1 | The dependency route names TL-207, STD-13, TL-210, TL-211, TL-212, TL-215, TL-13 and TL-7 with one owner and predecessor per step. | Inspection (TC-088) |
-| FR-029-AC-2 | Every infinite result names the exact module feature, provider revision, TL profile, graph and clock; bounded results are not reattributed. | Test (TC-089, TC-140) |
+| FR-029-AC-2 | Every infinite result names the exact module feature, provider revision, TL profile, graph, clock and subject scope; bounded results are not reattributed. | Test (TC-089, TC-140) |
 | FR-029-AC-3 | No infinite implementation or qualification claim is advanced before syntax and combined-review acceptance gates; a missing provider settles `unsupported`. | Inspection (TC-088) |
 
 ## Dependencies

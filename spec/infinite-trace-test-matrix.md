@@ -31,7 +31,7 @@ and derives no semantics from the production provider.
 | Test ID | Title | Type | Priority | Traces To | Status |
 |---|---|---|---|---|---|
 | TC-138 | Compare default and opt-in module visibility, bounded golden bytes, dependency and feature trees, and absence of bounded imports of `infinite` | Integration | P0 | FR-027-AC-1, FR-027-AC-2, FR-027-AC-3, FR-028-AC-3, FR-034-AC-3 | 🚧 planned |
-| TC-139 | Register one liveness backend, refuse a duplicate or identity mismatch, and preserve the feature-off absence settlement | Integration | P0 | FR-028-AC-1, FR-028-AC-2 | 🚧 planned |
+| TC-139 | Register one liveness backend, refuse a duplicate, identity mismatch or model request without model capability, and preserve feature-off absence | Integration | P0 | FR-028-AC-1, FR-028-AC-2 | 🚧 planned |
 | TC-140 | Retain provider revision, feature, profile, graph and clock attribution without reattributing bounded results | Integration | P0 | FR-029-AC-2 | 🚧 planned |
 | TC-141 | Compare complete Boolean valuations with the independent oracle on each lasso position | Property | P0 | FR-030-AC-1 | 🚧 planned |
 | TC-142 | Enumerate FR-160 possibilities for missing values using one common refinement per position | Property | P0 | FR-030-AC-1 | 🚧 planned |
@@ -47,7 +47,7 @@ and derives no semantics from the production provider.
 | TC-152 | Admit every valid lasso under an empty fairness set and require infinite visits for each complete-value premise | Property | P0 | FR-032-AC-2 | 🚧 planned |
 | TC-153 | Filter shared partial completions before claim evaluation and show weakening fairness cannot remove an admitted trace | Property | P0 | FR-032-AC-2 | 🚧 planned |
 | TC-154 | Refuse foreign or malformed fairness/lasso identities and classify empty fair admission without vacuous proof | Integration | P0 | FR-032-AC-3 | 🚧 planned |
-| TC-155 | Separate proved/refuted/inconclusive possibilities using independent complete and partial lasso cases | Property | P0 | FR-033-AC-1 | 🚧 planned |
+| TC-155 | Separate trace-scoped proved/refuted/inconclusive possibilities and refuse one-lasso model proof | Property | P0 | FR-033-AC-1 | 🚧 planned |
 | TC-156 | Validate witness and counterexample details against the admitted completion and full loop | Integration | P0 | FR-033-AC-1 | 🚧 planned |
 | TC-157 | Refute only continuation-invariant finite-prefix safety violations and never prove liveness from a prefix | Property | P0 | FR-033-AC-2 | 🚧 planned |
 | TC-158 | Map unsupported and both failed execution dispositions to the exact FR-341 axes without a Boolean fallback | Integration | P0 | FR-033-AC-3 | 🚧 planned |
