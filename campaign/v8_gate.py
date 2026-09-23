@@ -8,8 +8,7 @@ import platform
 import subprocess
 from pathlib import Path
 
-from v8_coverage import (CRATES, CRITICAL_PREFIXES, EXPECTED_CRITICAL, FEATURES,
-                         classify_export, tool_path)
+from v8_coverage import CRATES, FEATURES, classify_export, critical_census, tool_path
 
 
 def digest(data: bytes) -> str:
@@ -104,13 +103,7 @@ def verify(report_bytes: bytes, raw_dir: Path, graph: dict,
         measured = classify_export(export, Path(graph[f"tl-{name}"]["path"]))
         if row.get("coverage") != measured:
             raise ValueError(f"V8 production coverage tampered: {key}")
-        files = {file: details["branches"] for file, details in measured["files"].items()
-                 if any(file.startswith(prefix) for prefix in CRITICAL_PREFIXES[name])}
-        missing = [prefix for prefix in EXPECTED_CRITICAL[name][feature]
-                   if not any(file.startswith(prefix) for file in files)]
-        gaps = [{"file": file, **location}
-                for file, details in measured["files"].items() if file in files
-                for location in details["uncovered_branch_locations"]]
+        files, missing, gaps = critical_census(measured, name, feature)
         census = {"files": files, "missing_files": missing,
                   "count": sum(item["count"] for item in files.values()),
                   "covered": sum(item["covered"] for item in files.values())}

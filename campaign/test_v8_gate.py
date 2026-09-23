@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 import v8_gate
-from v8_coverage import CRATES, CRITICAL_PREFIXES, EXPECTED_CRITICAL, classify_export
+from v8_coverage import CRATES, CRITICAL_PREFIXES, classify_export, critical_census
 
 
 class V8GateTests(unittest.TestCase):
@@ -23,15 +23,17 @@ class V8GateTests(unittest.TestCase):
             repo = self.root / f"tl-{name}"
             files = []
             for prefix in CRITICAL_PREFIXES[name]:
-                relative = f"{prefix}mod.rs" if prefix.endswith("/") else prefix
-                file = repo / relative
-                file.parent.mkdir(parents=True, exist_ok=True)
-                file.write_text("fn check() {}\n")
-                files.append({"filename": str(file),
-                              "summary": {"lines": {"count": 1, "covered": 1},
-                                          "branches": {"count": 2, "covered": 2}},
-                              "branches": [[1, 2, 1, 12, 7, 8, 0, 0, 4],
-                                           [1, 2, 1, 12, 7, 8, 0, 0, 4]]})
+                relatives = (("src/wire/command.rs", "src/wire/common.rs",
+                              "src/wire/trace.rs") if prefix == "src/wire/" else (prefix,))
+                for relative in relatives:
+                    file = repo / relative
+                    file.parent.mkdir(parents=True, exist_ok=True)
+                    file.write_text("fn check() {}\n")
+                    files.append({"filename": str(file),
+                                  "summary": {"lines": {"count": 1, "covered": 1},
+                                              "branches": {"count": 2, "covered": 2}},
+                                  "branches": [[1, 2, 1, 12, 7, 8, 0, 0, 4],
+                                               [1, 2, 1, 12, 7, 8, 0, 0, 4]]})
             self.graph[f"tl-{name}"] = {
                 "revision": str(CRATES.index(name) + 1) * 40,
                 "cargo_lock_sha256": str(CRATES.index(name) + 5) * 64,
@@ -49,16 +51,11 @@ class V8GateTests(unittest.TestCase):
                 path.write_bytes(data)
                 files[kind] = {"path": str(path.resolve()), "sha256": v8_gate.digest(data)}
             coverage = classify_export(exports[name], Path(self.graph[f"tl-{name}"]["path"]))
-            critical_files = {file: details["branches"]
-                              for file, details in coverage["files"].items()
-                              if any(file.startswith(prefix) for prefix in
-                                     CRITICAL_PREFIXES[name])}
-            missing = [prefix for prefix in EXPECTED_CRITICAL[name][feature]
-                       if not any(file.startswith(prefix) for file in critical_files)]
+            critical_files, missing, gaps = critical_census(coverage, name, feature)
             rows.append({"id": key, "repo": name, "feature": feature,
                          "source_revision": self.graph[f"tl-{name}"]["revision"],
                          "argv": argv, "exit_code": 0, "raw": files,
-                         "coverage": coverage, "critical_uncovered": [],
+                         "coverage": coverage, "critical_uncovered": gaps,
                          "critical_branch_census": {
                              "files": critical_files, "missing_files": missing,
                              "count": sum(item["count"] for item in critical_files.values()),
@@ -80,6 +77,31 @@ class V8GateTests(unittest.TestCase):
     def verify(self, report=None):
         return v8_gate.verify(json.dumps(report or self.report).encode(),
                               self.raw_dir, self.graph, self.tools)
+
+    def restamp_export(self, index, export):
+        row = self.report["runs"][index]
+        path = self.raw_dir / f"{row['id']}.json"
+        path.write_text(json.dumps(export))
+        row["raw"]["export"]["sha256"] = v8_gate.digest(path.read_bytes())
+        measured = classify_export(export, Path(self.graph[f"tl-{row['repo']}"]["path"]))
+        row["coverage"] = measured
+        files, missing, gaps = critical_census(measured, row["repo"], row["feature"])
+        row["critical_uncovered"] = gaps
+        row["critical_branch_census"] = {
+            "files": files, "missing_files": missing,
+            "count": sum(item["count"] for item in files.values()),
+            "covered": sum(item["covered"] for item in files.values()),
+        }
+        row["status"] = "incomplete" if missing or gaps else "passed"
+        if missing:
+            row["reason"] = "critical_branches_not_instrumented"
+        elif gaps:
+            row["reason"] = "critical_branch_target_open"
+        else:
+            row.pop("reason", None)
+        self.report["status"] = ("passed" if all(item["status"] == "passed"
+                                               for item in self.report["runs"])
+                                 else "incomplete")
 
     def test_complete_raw_export_population_passes(self):
         status, population, artifacts = self.verify()
@@ -109,6 +131,34 @@ class V8GateTests(unittest.TestCase):
         first["raw"]["export"]["sha256"] = v8_gate.digest(export_path.read_bytes())
         with self.assertRaisesRegex(ValueError, "production coverage tampered"):
             self.verify(report)
+
+    def test_missing_wire_sibling_cannot_pass_even_when_report_is_restamped(self):
+        index = next(i for i, row in enumerate(self.report["runs"])
+                     if row["id"] == "mltl-default")
+        export_path = self.raw_dir / "mltl-default.json"
+        export = json.loads(export_path.read_text())
+        export["data"][0]["files"] = [file for file in export["data"][0]["files"]
+                                        if not file["filename"].endswith("/src/wire/command.rs")]
+        self.restamp_export(index, export)
+        status, _, _ = self.verify()
+        self.assertEqual(status, "incomplete")
+        self.assertIn("src/wire/command.rs", self.report["runs"][index]
+                      ["critical_branch_census"]["missing_files"])
+
+    def test_zero_branch_wire_file_cannot_pass(self):
+        index = next(i for i, row in enumerate(self.report["runs"])
+                     if row["id"] == "mltl-default")
+        export_path = self.raw_dir / "mltl-default.json"
+        export = json.loads(export_path.read_text())
+        command = next(file for file in export["data"][0]["files"]
+                       if file["filename"].endswith("/src/wire/command.rs"))
+        command["summary"]["branches"] = {"count": 0, "covered": 0}
+        command["branches"] = []
+        self.restamp_export(index, export)
+        status, _, _ = self.verify()
+        self.assertEqual(status, "incomplete")
+        self.assertIn("src/wire/command.rs", self.report["runs"][index]
+                      ["critical_branch_census"]["missing_files"])
 
 
 if __name__ == "__main__":

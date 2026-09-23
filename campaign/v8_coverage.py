@@ -38,8 +38,12 @@ EXPECTED_CRITICAL = {
                "serde": CRITICAL_PREFIXES["syntax"]},
     "parse": {"default": CRITICAL_PREFIXES["parse"]},
     "mltl": {"default": ("src/future/evaluate.rs", "src/past/evaluate.rs",
-                         "src/mapping/past.rs", "src/wire/"),
-             "infinite": CRITICAL_PREFIXES["mltl"]},
+                         "src/mapping/past.rs", "src/wire/command.rs",
+                         "src/wire/common.rs", "src/wire/trace.rs"),
+             "infinite": ("src/future/evaluate.rs", "src/past/evaluate.rs",
+                          "src/infinite/periodic.rs", "src/infinite/export.rs",
+                          "src/mapping/past.rs", "src/wire/command.rs",
+                          "src/wire/common.rs", "src/wire/trace.rs")},
     "rewrite": {"default": ("src/engine/future.rs", "src/engine/past.rs",
                             "src/report.rs", "src/replay.rs", "src/disposition.rs"),
                 "infinite": CRITICAL_PREFIXES["rewrite"]},
@@ -108,16 +112,30 @@ def classify_export(raw: dict, root: Path) -> dict:
             raise ValueError(f"impossible coverage counts: {relative}")
         if branches["count"] and not item["branches"]:
             raise ValueError(f"missing detailed branch population: {relative}")
-        uncovered = []
+        branch_sites = {}
         for branch in item["branches"]:
             if len(branch) != 9 or any(type(value) is not int for value in branch):
                 raise ValueError(f"malformed branch location: {relative}")
-            # LLVM export: line/column span, true and false counts, file IDs, kind.
-            if branch[4] == 0 or branch[5] == 0:
-                location = {"line": branch[0], "column": branch[1],
-                            "true_count": branch[4], "false_count": branch[5]}
-                if location not in uncovered:
-                    uncovered.append(location)
+            if branch[4] < 0 or branch[5] < 0:
+                raise ValueError(f"negative branch execution count: {relative}")
+            # LLVM repeats a source span for distinct instantiations. Sum those
+            # counts before deciding whether either side is uncovered.
+            site = tuple(branch[:4] + branch[6:])
+            counts = branch_sites.setdefault(site, [0, 0])
+            counts[0] += branch[4]
+            counts[1] += branch[5]
+        hit_sides = sum(int(true_count > 0) + int(false_count > 0)
+                        for true_count, false_count in branch_sites.values())
+        if branches["count"] > 2 * len(branch_sites) or branches["covered"] > hit_sides:
+            raise ValueError(f"branch summary exceeds detailed population: {relative}")
+        uncovered = []
+        if branches["count"]:
+            for site, (true_count, false_count) in branch_sites.items():
+                if true_count == 0 or false_count == 0:
+                    location = {"line": site[0], "column": site[1],
+                                "true_count": true_count, "false_count": false_count}
+                    if location not in uncovered:
+                        uncovered.append(location)
         if branches["covered"] < branches["count"] and not uncovered:
             raise ValueError(f"unlocated uncovered branch: {relative}")
         files[relative] = {"lines": {"count": lines["count"], "covered": lines["covered"]},
@@ -130,6 +148,18 @@ def classify_export(raw: dict, root: Path) -> dict:
         metric: {key: sum(file[metric][key] for file in files.values())
                  for key in ("count", "covered")}
         for metric in ("lines", "branches")}}
+
+
+def critical_census(coverage: dict, name: str, feature: str) -> tuple[dict, list, list]:
+    """Name each required critical source file and every uncovered branch."""
+    files = {file: details["branches"] for file, details in coverage["files"].items()
+             if any(file.startswith(prefix) for prefix in CRITICAL_PREFIXES[name])}
+    missing = [file for file in EXPECTED_CRITICAL[name][feature]
+               if file not in files or files[file]["count"] == 0]
+    gaps = [{"file": file, **location}
+            for file, details in coverage["files"].items() if file in files
+            for location in details["uncovered_branch_locations"]]
+    return files, missing, gaps
 
 
 def main() -> int:
@@ -204,15 +234,8 @@ def main() -> int:
                                              "sha256": digest(export)}
                 try:
                     result["coverage"] = classify_export(json.loads(export.read_text()), roots[name])
-                    critical = []
-                    critical_files = {}
-                    for file, details in result["coverage"]["files"].items():
-                        if any(file.startswith(prefix) for prefix in CRITICAL_PREFIXES[name]):
-                            critical_files[file] = details["branches"]
-                            critical.extend({"file": file, **location} for location in
-                                            details["uncovered_branch_locations"])
-                    missing = [prefix for prefix in EXPECTED_CRITICAL[name][feature]
-                               if not any(file.startswith(prefix) for file in critical_files)]
+                    critical_files, missing, critical = critical_census(
+                        result["coverage"], name, feature)
                     result["critical_uncovered"] = critical
                     result["critical_branch_census"] = {
                         "files": critical_files,
