@@ -12,8 +12,8 @@ make guarded-ci
 make spec
 ```
 
-The library requires Rust 1.98 or later and consumes validated `tl-syntax` formulas
-pinned to exact revision `d52d89549b0a6c0c429261bab912cd5396c4a19e`. The
+The library requires Rust 1.98.1 or later and consumes validated `tl-syntax` formulas
+pinned to exact revision `4a5614193d21e5ae99950ae683b04ba0ec931358`. The
 shared temporal corpus, the future-operator corpus, and the past-history
 corpus are all read directly from the compiled `tl-syntax` dependency via
 `tl_syntax::CORPUS_DIR`, tracking `TL_SYNTAX_REVISION`. `evaluate_closed` implements

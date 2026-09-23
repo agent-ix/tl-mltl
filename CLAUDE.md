@@ -104,7 +104,7 @@ solved by removing the convenience. See
 
 Backported from `agent-ix/ecaz`:
 
-- `clippy.toml` pins MSRV to `1.98` and caps cognitive complexity / arg count
+- `clippy.toml` pins MSRV to `1.98.1` and caps cognitive complexity / arg count
 - `deny.toml` allow-lists licenses and denies unknown registries/git sources
 - `scripts/check_unsafe_comments.sh` runs locally via `make audit-unsafe`. Every
   `unsafe {` block must have a `// SAFETY:` comment within the 3 preceding lines,

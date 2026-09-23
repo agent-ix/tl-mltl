@@ -473,16 +473,24 @@ class Chain:
             proof["proof_id"]: proof.pop("_configuration_path")
             for proof in body["definition"]["proof_obligations"]
         }
-        result = quoin(
-            "change-assurance",
-            "seal-record",
-            "--repo",
-            str(self.store),
-            "--input",
-            "-",
-            "--json",
-            stdin=json.dumps(body),
-        )
+        # The record is handed to Quoin as a file, not piped to `--input -`:
+        # quoin 0.23.1 fails to read a large record from a pipe with
+        # "cannot read --input -: EAGAIN: resource temporarily unavailable"
+        # (a non-blocking stdin read bug in quoin). The file holds exactly the
+        # bytes that would have been piped, and Quoin performs the identical
+        # seal over them.
+        with tempfile.TemporaryDirectory(prefix="tl-mltl-seal-record-") as scratch:
+            record_path = Path(scratch) / "record.json"
+            record_path.write_text(json.dumps(body), encoding="utf-8")
+            result = quoin(
+                "change-assurance",
+                "seal-record",
+                "--repo",
+                str(self.store),
+                "--input",
+                str(record_path),
+                "--json",
+            )
         if result.returncode != 0:
             raise ChainError(f"quoin refused the change-assurance record: {result.stderr.strip()}")
         digest = json.loads(result.stdout)["digest"]

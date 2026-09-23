@@ -23,7 +23,7 @@ relationships:
 | FR-016 | FR-016-AC-1 through FR-016-AC-6 | TC-076 through TC-080 | ✅ covered |
 | FR-017 | FR-017-AC-1 through FR-017-AC-3 | TC-081 through TC-083 | ✅ covered |
 | FR-018 | FR-018-AC-1 through FR-018-AC-3 | TC-090 | 🚧 planned |
-| FR-019 | FR-019-AC-1 through FR-019-AC-3 | TC-085 | 🚧 stale — TL-179 removed TC-085's backing test with `wire::observation`; TL-180 resolves FR-019's disposition |
+| FR-019 | FR-019-AC-1 through FR-019-AC-3 | TC-085 | ⛔ retired — superseded by quire-mltl FR-002 (TL-180); TL-179 removed TC-085's backing test with `wire::observation` |
 | FR-027 | FR-027-AC-1 through FR-027-AC-3 | TC-086 | 🚧 planned |
 | FR-028 | FR-028-AC-1 through FR-028-AC-3 | TC-087 | 🚧 planned |
 | FR-029 | FR-029-AC-1 through FR-029-AC-3 | TC-088, TC-089 | 🚧 planned |
@@ -98,7 +98,7 @@ agree.
 | TC-081 | Every digest-verified W/M corpus case lowers to its pinned canonical document, and each online-prefix lowered graph yields a C2PO manifest identical to its direct canonical pair with no W or M token | Integration | P0 | FR-017-AC-1 | ✅ implemented |
 | TC-082 | Every closed-trace W/M corpus case, lowered or direct, is refused for C2PO with no manifest, and every refused lowering yields its declared refusal code and no graph | Integration | P0 | FR-017-AC-2, NFR-002-AC-1 | ✅ implemented |
 | TC-083 | The recorded tl-parse cross-check is pinned and not a dependency, the corpus is consumed at the compiled tl-syntax revision, exported manifests name no external tool and carry the non-qualification limitation, and no source names FRETish | Integration | P0 | FR-017-AC-3 | ✅ implemented |
-| TC-085 | Bind QObs C00 and preserve temporal dispatch while refusing repair and query semantics | Integration | P0 | FR-019-AC-1, FR-019-AC-2, FR-019-AC-3 | 🚧 stale — test removed with `tests/tc_084_temporal_owner_wire.rs` (TL-179) |
+| TC-085 | Bind QObs C00 and preserve temporal dispatch while refusing repair and query semantics | Integration | P0 | FR-019-AC-1, FR-019-AC-2, FR-019-AC-3 | ⛔ retired — FR-019 is superseded by quire-mltl FR-002 (TL-180); its test was removed with `tests/tc_084_temporal_owner_wire.rs` (TL-179) |
 | TC-086 | Confirm tl-mltl's API and CLI admit `tl-syntax.formula/v1` and its context-bound v2 records as their whole formula input surface, `spec/spec.md` allocates infinite-trace semantics to a provider under the `quire.temporal.infinite-trace/v1` facet, and every existing FR-001 through FR-019 case is unaffected | Integration | P1 | FR-027-AC-1, FR-027-AC-2, FR-027-AC-3 | 🚧 planned |
 | TC-087 | Confirm every tl-syntax capability tl-mltl consults is the FR-001 `tl-syntax.formula/v1` consumption, the `tl-syntax.liveness/v1` registration is allocated to the infinite-trace provider, and every existing verdict, report, and CLI schema stays byte-identical | Integration | P1 | FR-028-AC-1, FR-028-AC-2, FR-028-AC-3 | 🚧 planned |
 | TC-088 | Confirm the recorded dependency order (tl-syntax#73, quire-specification#112, the infinite-trace provider) takes effect only once tl-syntax FR-289/FR-290's own acceptance gates are satisfied | Inspection | P1 | FR-029-AC-1, FR-029-AC-3 | 🚧 planned |
