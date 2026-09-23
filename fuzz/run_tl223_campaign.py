@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import gzip
 import hashlib
 import json
@@ -26,6 +27,15 @@ SOURCE_PATHS = (
     "fuzz/support/infinite.rs",
     "fuzz/run_tl223_campaign.py",
 )
+
+
+@dataclass(frozen=True)
+class NativeRequest:
+    target: str
+    runs: int
+    seconds: int
+    seed: int
+    corpus_files: int
 
 
 def digest(data: bytes) -> str:
@@ -60,20 +70,61 @@ def corpus_digests(target: str) -> dict[str, str]:
     return dict(sorted(result.items()))
 
 
+def native_completion(log: bytes, request: NativeRequest) -> tuple[int, int] | None:
+    """Require one coherent libFuzzer startup, progress, DONE and native footer."""
+    running = re.findall(rb"(?m)^\s+Running `([^`\n]+)`$", log)
+    seed = re.findall(rb"(?m)^INFO: Seed: (\d+)$", log)
+    files = re.findall(rb"(?m)^INFO:\s+(\d+) files found in .+$", log)
+    corpus = re.findall(rb"(?m)^INFO: seed corpus: files: (\d+)\b", log)
+    initialized = list(re.finditer(rb"(?m)^#(\d+)\s+INITED\b", log))
+    progress = list(re.finditer(rb"(?m)^#(\d+)\s+(?:NEW|REDUCE|pulse)\b", log))
+    done = list(re.finditer(rb"(?m)^#(\d+)\s+DONE\b", log))
+    footer = list(re.finditer(rb"(?m)^Done (\d+) runs in (\d+) second\(s\)$", log))
+    if not all(len(group) == 1 for group in (running, seed, files, corpus,
+                                               initialized, done, footer)) or not progress:
+        return None
+    binary = running[0].decode(errors="replace")
+    expected_flags = (
+        f"-runs={request.runs}", f"-seed={request.seed}",
+        f"-max_total_time={request.seconds}", "-max_len=256",
+    )
+    if not re.search(rf"(?:^|/)release/{re.escape(request.target)}(?: |$)", binary) or any(
+        flag not in binary.split() for flag in expected_flags
+    ):
+        return None
+    if (int(seed[0]) != request.seed or int(files[0]) != request.corpus_files
+            or int(corpus[0]) != request.corpus_files):
+        return None
+    initial = int(initialized[0].group(1))
+    actual = int(done[0].group(1))
+    native_seconds = int(footer[0].group(2))
+    if (actual != request.runs or int(footer[0].group(1)) != actual
+            or native_seconds > request.seconds
+            or not running[0] in log[:initialized[0].start()]
+            or not initialized[0].end() < progress[0].start()
+            or not progress[-1].end() < done[0].start() < footer[0].start()):
+        return None
+    positions = [initial, *(int(match.group(1)) for match in progress), actual]
+    if positions != sorted(positions) or initial > actual:
+        return None
+    return actual, native_seconds
+
+
 def classify(
-    exit_code: int, log: bytes, requested: int, artifacts: dict[str, str]
-) -> tuple[str, int | None, str]:
-    matches = re.findall(rb"(?m)^#(\d+)\s+DONE\b", log)
-    actual = int(matches[0]) if len(matches) == 1 else None
+    exit_code: int, log: bytes, request: NativeRequest, artifacts: dict[str, str]
+) -> tuple[str, int | None, str, int | None]:
+    native = native_completion(log, request)
+    actual = native[0] if native is not None else None
+    native_seconds = native[1] if native is not None else None
     if artifacts:
-        return "crash_requires_replay", actual, "artifact_present"
+        return "crash_requires_replay", actual, "artifact_present", native_seconds
     if exit_code != 0:
-        return "engine_failed", actual, "nonzero_exit"
-    if len(matches) != 1 or actual != requested:
-        return "incomplete", actual, "missing_or_short_done_count"
+        return "engine_failed", actual, "nonzero_exit", native_seconds
+    if native is None:
+        return "incomplete", actual, "native_transcript_incomplete", None
     if actual < MIN_EXECUTIONS:
-        return "smoke_only", actual, "below_linear_exit_budget"
-    return "complete", actual, "execution_budget"
+        return "smoke_only", actual, "below_linear_exit_budget", native_seconds
+    return "complete", actual, "execution_budget", native_seconds
 
 
 def run(target: str, output: Path, runs: int, seconds: int, seed: int) -> int:
@@ -124,7 +175,10 @@ def run(target: str, output: Path, runs: int, seconds: int, seed: int) -> int:
         path.name: digest(path.read_bytes())
         for path in sorted(artifacts_dir.iterdir()) if path.is_file()
     }
-    status, actual, stop = classify(exit_code, stdout + b"\n" + stderr, runs, artifacts)
+    status, actual, stop, native_seconds = classify(
+        exit_code, stdout + b"\n" + stderr,
+        NativeRequest(target, runs, seconds, seed, len(seeds)), artifacts
+    )
     report = {
         "schema": "tl-mltl.tl223-fuzz/v1",
         "target": target,
@@ -140,7 +194,8 @@ def run(target: str, output: Path, runs: int, seconds: int, seed: int) -> int:
         "command": argv,
         "budget": {"runs": runs, "seconds": seconds, "seed": seed},
         "observed": {"executions": actual, "exit_code": exit_code,
-                     "elapsed_seconds": round(elapsed, 3), "stop_reason": stop},
+                     "elapsed_seconds": round(elapsed, 3),
+                     "native_seconds": native_seconds, "stop_reason": stop},
         "raw_sha256": {name: digest(data) for name, data in raw.items()},
         "artifact_sha256": artifacts,
         "replay": {"required": bool(artifacts), "confirmed": False},
@@ -150,6 +205,39 @@ def run(target: str, output: Path, runs: int, seconds: int, seed: int) -> int:
     (output / "report.json").write_text(json.dumps(report, sort_keys=True, indent=2) + "\n")
     print(f"{target}: {status}, executions={actual}, exit={exit_code}")
     return 0 if status in {"complete", "smoke_only"} else 1
+
+
+def verify_metadata(report: dict, directory: Path, target: str) -> NativeRequest:
+    if report.get("engine") != "libFuzzer" or report.get("sanitizer") != "address":
+        raise ValueError("wrong fuzz engine or sanitizer")
+    versions = report.get("tool_versions")
+    if not isinstance(versions, dict) or set(versions) != {"cargo", "cargo_fuzz", "rustc"}:
+        raise ValueError("missing tool versions")
+    if (not re.search(r"(?m)^release: 1\.\d+\.\d+-nightly$", versions["rustc"])
+            or not versions["cargo"].startswith("cargo 1.")
+            or not versions["cargo_fuzz"].startswith("cargo-fuzz 0.")):
+        raise ValueError("tool versions do not identify a nightly fuzz lane")
+    budget = report.get("budget")
+    if not isinstance(budget, dict) or set(budget) != {"runs", "seconds", "seed"}:
+        raise ValueError("malformed native budget")
+    if any(type(budget[key]) is not int or budget[key] <= 0 for key in budget):
+        raise ValueError("invalid native budget")
+    request = NativeRequest(target, budget["runs"], budget["seconds"],
+                            budget["seed"], len(report["corpus_sha256"]))
+    argv = report.get("command")
+    if not isinstance(argv, list) or len(argv) != 13:
+        raise ValueError("wrong native command")
+    if argv[:6] != ["cargo", "fuzz", "run", "--sanitizer", "address", target]:
+        raise ValueError("wrong native command")
+    corpus = Path(argv[6])
+    if (not corpus.is_absolute() or corpus.name != "corpus"
+            or not corpus.parent.name.startswith(f"tl223-{target}-")):
+        raise ValueError("wrong native corpus path")
+    if argv[7:] != ["--", f"-runs={request.runs}", f"-seed={request.seed}",
+                    f"-max_total_time={request.seconds}", "-max_len=256",
+                    f"-artifact_prefix={directory / 'artifacts'}/"]:
+        raise ValueError("native command differs from recorded budget or artifacts")
+    return request
 
 
 def verify(directories: list[Path]) -> None:
@@ -175,6 +263,7 @@ def verify(directories: list[Path]) -> None:
             raise ValueError("corpus identity mismatch")
         if report["linear_min_executions"] != MIN_EXECUTIONS:
             raise ValueError("minimum execution count changed")
+        request = verify_metadata(report, directory, target)
         for name in ("stdout.log.gz", "stderr.log.gz"):
             if digest((directory / name).read_bytes()) != report["raw_sha256"][name]:
                 raise ValueError("raw stream digest mismatch")
@@ -187,20 +276,23 @@ def verify(directories: list[Path]) -> None:
             raise ValueError("artifact identity mismatch")
         stdout = gzip.decompress((directory / "stdout.log.gz").read_bytes())
         stderr = gzip.decompress((directory / "stderr.log.gz").read_bytes())
-        requested = report["budget"]["runs"]
-        if requested < MIN_EXECUTIONS:
+        if request.runs < MIN_EXECUTIONS:
             raise ValueError("budget below Linear exit criterion")
-        status, actual, stop = classify(
+        status, actual, stop, native_seconds = classify(
             report["observed"]["exit_code"], stdout + b"\n" + stderr,
-            requested, actual_artifacts
+            request, actual_artifacts
         )
-        if (status, actual, stop) != (
+        if (status, actual, stop, native_seconds) != (
             report["status"], report["observed"]["executions"],
-            report["observed"]["stop_reason"]
+            report["observed"]["stop_reason"], report["observed"].get("native_seconds")
         ) or status != "complete" or report["replay"] != {
             "required": False, "confirmed": False
         }:
             raise ValueError("fuzz execution did not meet the complete gate")
+        elapsed = report["observed"].get("elapsed_seconds")
+        if (type(elapsed) not in (int, float) or native_seconds is None
+                or elapsed < native_seconds or elapsed > request.seconds + 300):
+            raise ValueError("elapsed time contradicts native duration")
     if seen != set(TARGETS):
         raise ValueError("missing target receipt")
 
