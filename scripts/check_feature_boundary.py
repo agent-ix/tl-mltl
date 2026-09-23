@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TC-086/TC-087: exercise the public feature boundary as a Cargo consumer."""
+"""Exercise the public feature boundary as a Cargo consumer."""
 
 import json
 import os

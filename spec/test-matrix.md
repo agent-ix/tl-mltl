@@ -32,9 +32,11 @@ QObs C00 requirement. It was retired under TL-180 and superseded by
 quire-mltl FR-002. Its former TC-085 row is recorded below as history, not
 current functional coverage.
 
-FR-027 through FR-029 retain TC-086 through TC-089 as planned rows. TM-004
-adds the feature-boundary and infinite-semantics checks, including their
-shared rows. The TL-native profile is `mltl.infinite-trace/v1`.
+TC-086 and TC-087 execute the default/opt-in external consumer and bounded
+CLI byte comparison. TC-088 remains the Linear dependency and acceptance-gate
+inspection. TM-004 adds the feature-boundary and infinite-semantics checks,
+including their shared rows. The TL-native profile is
+`mltl.infinite-trace/v1`.
 
 ## Stakeholder Requirement Coverage
 

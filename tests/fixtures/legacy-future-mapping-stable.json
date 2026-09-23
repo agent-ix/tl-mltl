@@ -1,0 +1,37 @@
+{
+  "v1": {
+    "schemaVersion": "tl-mltl.monitor-mapping/v1",
+    "sourceRevision": "fixture-source",
+    "sourceState": "clean",
+    "formulaId": "overlay-response",
+    "semanticProfile": "mltl.online-prefix/v1",
+    "inputSha256": "af9412527b0dec8d4a1e3eb9ed9523dd774a66fd493fca67709330cf1548ab8a",
+    "expression": "(p7 -> F[0,2](p8))",
+    "outputSha256": "7f478c36d513a2558cea5c7e0ab1b7e60ce9cf4b742f6de67c47d87821487b6e",
+    "propositionIds": [7, 8],
+    "externalTool": null,
+    "limitation": "mapping evidence does not establish external monitor timing, memory, or qualification"
+  },
+  "v2": {
+    "schemaVersion": "tl-mltl.monitor-mapping/v2",
+    "sourceRevision": "fixture-source",
+    "sourceState": "clean",
+    "signalCatalogSha256": "68932fa884fdd1aeaea808b52db8c861af9eb76cb7ef9841f0236d9d1358f3c7",
+    "requirementContext": {
+      "anchor": "overlay-change-accepted-response-within-n",
+      "clause_id": "response-window",
+      "requirement_id": "agent-ix/quire-contract-ir#57",
+      "requirement_revision": "overlay-example-v1",
+      "schema_version": "tl-syntax.requirement-context/v1",
+      "source_span": {"start": 11, "end": 42}
+    },
+    "formulaId": "overlay-response",
+    "semanticProfile": "mltl.online-prefix/v1",
+    "inputSha256": "af9412527b0dec8d4a1e3eb9ed9523dd774a66fd493fca67709330cf1548ab8a",
+    "expression": "(overlay_change_accepted -> F[0,2](response_within_2_cycles))",
+    "outputSha256": "1f361cf54df7844ccea9b52b8f139750efb4933ea206b11d80ce661a286cf51f",
+    "propositionIds": [7, 8],
+    "externalTool": null,
+    "limitation": "mapping evidence does not establish external monitor timing, memory, or qualification"
+  }
+}

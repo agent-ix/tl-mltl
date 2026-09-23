@@ -535,7 +535,8 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(lanes["fuzz_replay"]["status"], "not_run")
         self.assertEqual(first["semantic_payload"]["aggregate_status"], "failed")
 
-    # TC-197/198: All eleven declared gates exist; one failing or stale lane
+    # Trace: TC-197, TC-198, FR-055-AC-1, FR-055-AC-2
+    # All eleven declared gates exist; one failing or stale lane
     # cannot turn the aggregate green or suppress passing sibling evidence.
     def test_gate_mapping_and_failed_stale_missing_siblings(self) -> None:
         self.manifest["lanes"] = [

@@ -17,6 +17,20 @@ use tl_syntax::{
     SignalCatalogDocument, SignalDomain, SignalId, SourceSpan, MAX_FORMULA_DOCUMENT_NODES,
 };
 
+fn stable_future_mapping_payload<T: serde::Serialize>(manifest: T) -> serde_json::Value {
+    let mut value = serde_json::to_value(manifest).unwrap();
+    let fields = value.as_object_mut().unwrap();
+    for field in [
+        "adapterVersion",
+        "syntaxRevision",
+        "requestSha256",
+        "resultSha256",
+    ] {
+        fields.remove(field);
+    }
+    value
+}
+
 fn overlay_nodes() -> Vec<Node> {
     vec![
         Node::new(NodeKind::Proposition {
@@ -411,6 +425,63 @@ fn legacy_records_round_trip_as_exact_v1_wires_and_refuse_v2_labels() {
     assert_stable_v1_wire::<MappingManifest>(mapping, "tl-mltl.monitor-mapping/v2");
     assert_stable_v1_wire::<ExternalVerdict>(external, "tl-mltl.external-verdict/v2");
     assert_stable_v1_wire::<DifferentialReport>(differential, "tl-mltl.differential/v2");
+}
+
+// Trace: TC-163, FR-038-AC-2
+#[test]
+fn past_mapping_addition_preserved_bounded_future_behavioral_payload() {
+    let nodes = overlay_nodes();
+    let formula = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(3), &nodes).unwrap();
+    let source = MappingSourceIdentity {
+        revision: "fixture-source".to_owned(),
+        state: MappingSourceState::Clean,
+    };
+    let v1 = map_to_c2po(
+        formula,
+        "overlay-response",
+        b"overlay-response",
+        source.clone(),
+        None,
+        100,
+    )
+    .unwrap();
+    let v2 = map_to_c2po_with_context(
+        formula,
+        "overlay-response",
+        b"overlay-response",
+        source,
+        None,
+        100,
+        &catalog(),
+        Some(&context()),
+    )
+    .unwrap();
+    let actual = serde_json::json!({
+        "v1": stable_future_mapping_payload(v1),
+        "v2": stable_future_mapping_payload(v2),
+    });
+    let golden: serde_json::Value =
+        serde_json::from_str(include_str!("fixtures/legacy-future-mapping-stable.json")).unwrap();
+    assert_eq!(actual, golden);
+
+    // The commit that added past mapping changed only these two functions'
+    // visibility in the legacy implementation. The fixture above keeps the
+    // rendered payload checked at the current release graph as well.
+    let root = env!("CARGO_MANIFEST_DIR");
+    let source_at = |revision: &str| {
+        let output = std::process::Command::new("git")
+            .current_dir(root)
+            .args(["show", &format!("{revision}:src/mapping/legacy.rs")])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        String::from_utf8(output.stdout).unwrap()
+    };
+    let before = source_at("9c3d99907c64ccc5ccf59f79bbc56bc9cf4233b1");
+    let after = source_at("878e4f8c64b0f19fbd03978cc3cee814fc3367e8")
+        .replace("pub(crate) fn is_c2po_identifier", "fn is_c2po_identifier")
+        .replace("pub(crate) fn sha256_hex", "fn sha256_hex");
+    assert_eq!(before, after, "past mapping changed legacy future logic");
 }
 
 // Trace: TC-028, FR-007-AC-4, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4

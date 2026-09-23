@@ -21,8 +21,11 @@ explicit dual construction if no direct C2PO form is available.
 
 A distinct past-profile mapping entry point consumes the validated formula-v2
 graph, event-position clock, signal catalog and origin contract. It emits a
-new versioned manifest and C2PO expression without changing v1/v2 bounded
-future mapping bytes. Export is admitted only when every node and interval
+new versioned manifest and C2PO expression without changing the v1/v2 bounded
+future mapping's source-independent behavioral payload for the same accepted
+future inputs. The explicit adapter, syntax and source identities, and v2
+request/result digests derived from them, continue to report the actual
+release and dependency graph. Export is admitted only when every node and interval
 has an exact representation, including Y at position zero and any bounded
 past interval lower/upper limits. T uses `not (not p S not q)` only when the
 selected target's negation and S behavior support that equivalence under the
@@ -34,9 +37,20 @@ produces a typed refusal and no expression or manifest.
 | ID | Criteria | Verification |
 |---|---|---|
 | FR-038-AC-1 | Admitted H/O/S/Y and guarded T exports have exact parsed C2PO forms and preserve graph, clock and source identities. | Test (TC-160, TC-161) |
-| FR-038-AC-2 | Unsupported node/interval/target combinations refuse without partial expression; legacy future manifests remain byte-identical. | Test (TC-162, TC-163) |
+| FR-038-AC-2 | Unsupported node/interval/target combinations refuse without partial expression; for fixed accepted future inputs, the legacy v1/v2 expression, proposition list, formula/input/output identities, context and qualification boundary retain their pre-past-mapping values while release/source identities and their derived digests reflect actual pins. | Test (TC-162, TC-163) |
 | FR-038-AC-3 | Per-step target observations are compared with the independent tl-mltl past evaluator on the pinned corpus, without treating replay as a target runtime run. | Test (TC-164) |
 
 ## Dependencies
 
 FR-004 owns existing future mapping; FR-027 keeps infinite input separate.
+
+## Change note
+
+The original criterion said the entire legacy future manifest would remain
+byte-identical after past mapping was added. That literal claim was impossible
+across a release or dependency repin: `adapterVersion` and `syntaxRevision`
+must change, and v2 `requestSha256`/`resultSha256` bind those identities. The
+corrected criterion preserves the behavioral payload while requiring honest
+provenance. TC-163 checks a pinned v1/v2 payload fixture and confirms the
+past-mapping introduction changed no legacy renderer logic beyond two
+`pub(crate)` visibility modifiers.
