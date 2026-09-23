@@ -741,8 +741,45 @@ fn persisted_past_result_refuses_typed_identity_work_and_lineage_mutations() {
     );
     refuses!(
         original,
+        |r: &mut PastEvaluationReport| r.stats.node_evaluations = 0,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.stats.steps += 1,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.limits.max_steps = r.stats.steps - 1,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
         |r: &mut PastEvaluationReport| r.stats.input_positions = 0,
         PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.limits.max_input_positions = r.stats.input_positions - 1,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.limits.max_recursion_depth = 0,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| {
+            r.stats.max_recursion_depth = u32::try_from(r.stats.node_evaluations).unwrap();
+        },
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.history.origin_position = 1,
+        PastResultValidationError::AnchorOutOfRange
     );
     refuses!(
         original,
@@ -787,8 +824,48 @@ fn persisted_past_result_refuses_typed_identity_work_and_lineage_mutations() {
     );
     refuses!(
         successor,
+        |r: &mut PastEvaluationReport| {
+            r.relation
+                .direct_predecessor
+                .as_mut()
+                .unwrap()
+                .result_revision = 0;
+        },
+        PastResultValidationError::PredecessorNotEarlier
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| {
+            r.relation
+                .direct_predecessor
+                .as_mut()
+                .unwrap()
+                .history_revision = 0;
+        },
+        PastResultValidationError::PredecessorNotEarlier
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| {
+            r.relation
+                .direct_predecessor
+                .as_mut()
+                .unwrap()
+                .history_revision = r.history.revision;
+        },
+        PastResultValidationError::PredecessorNotEarlier
+    );
+    refuses!(
+        successor,
         |r: &mut PastEvaluationReport| r.relation.direct_predecessor.as_mut().unwrap().history_id =
             "elsewhere".into(),
+        PastResultValidationError::PredecessorContextMismatch
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| {
+            r.relation.direct_predecessor.as_mut().unwrap().anchor = 0;
+        },
         PastResultValidationError::PredecessorContextMismatch
     );
     refuses!(
