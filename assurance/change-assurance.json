@@ -234,7 +234,8 @@
           "id": "UNKNOWN-ea-acceptance-not-in-a-release",
           "statement": "Resolved by the TL-192 bump to engineering-assurance v0.2.1 (release: accept ix-flow 0.2.3 matrix, agent-ix/engineering-assurance#47), which packages accepted.state = accepted with accepted_by and accepted_at populated. The prior gap — v0.2.0 recording accepted.state = pending_human_acceptance with the human acceptance landing only on main (agent-ix/engineering-assurance#20) — no longer applies to the pin this repository carries.",
           "disposition": "resolved",
-          "owner": "agent-ix/engineering-assurance"
+          "owner": "agent-ix/engineering-assurance",
+          "resolution": "engineering-assurance v0.2.1 (agent-ix/engineering-assurance#47), pinned by TL-192, records accepted.state = accepted with accepted_by and accepted_at populated."
         },
         {
           "id": "UNKNOWN-human-decision-absent",
