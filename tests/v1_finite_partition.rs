@@ -26,6 +26,12 @@ const FORMULAS: u64 = BOOL_PROFILES * (LEAVES + LEAVES + 4 * LEAVES * LEAVES)
 const WORD_POSITIONS: u64 = 2 + 2 * 4 + 3 * 8;
 const DECLARED: u64 = FORMULAS * WORD_POSITIONS;
 const SCOPE: &str = "depth1_atom1_closed0_2_words1_3";
+const EXTENDED_FORMULAS: u64 = 807;
+const EXTENDED_WORD_POSITIONS: u64 = 642;
+const EXTENDED_DECLARED: u64 = EXTENDED_FORMULAS * EXTENDED_WORD_POSITIONS;
+const FULL_CLOSED_FORMULAS: u64 = 1_031_120_211_193_068;
+const FULL_PAST_FORMULAS: u64 = 1_062_364_497_622_965;
+const FULL_DECLARED: u64 = (FULL_CLOSED_FORMULAS + FULL_PAST_FORMULAS) * EXTENDED_WORD_POSITIONS;
 
 #[derive(Clone, Copy)]
 enum Leaf {
@@ -83,7 +89,7 @@ fn binary(
     }
 }
 
-fn cases() -> Vec<Case> {
+fn cases(max_interval: u32) -> Vec<Case> {
     use OracleFormula as O;
     let leaves = [Leaf::False, Leaf::True, Leaf::P0];
     let mut out = Vec::new();
@@ -149,7 +155,7 @@ fn cases() -> Vec<Case> {
             }
         }
     }
-    for end in 0..=2_u32 {
+    for end in 0..=max_interval {
         for start in 0..=end {
             let interval = Interval::new(start, end).unwrap();
             let oracle_interval = OracleInterval::Closed {
@@ -255,6 +261,22 @@ fn cases() -> Vec<Case> {
     out
 }
 
+fn formula_count(max_depth: u32, interval_count: u64, past: bool) -> u64 {
+    let mut count = LEAVES;
+    for _ in 0..max_depth {
+        let unary_roots = 1 + 2 * interval_count + u64::from(past);
+        let binary_roots = 4 + 2 * interval_count;
+        count = LEAVES + unary_roots * count + binary_roots * count * count;
+    }
+    count
+}
+
+fn word_positions(max_length: usize) -> u64 {
+    (1..=max_length)
+        .map(|length| u64::try_from(length * (1_usize << length)).unwrap())
+        .sum()
+}
+
 #[derive(Debug, PartialEq, Eq)]
 enum LedgerError {
     OutOfDomain,
@@ -328,15 +350,13 @@ impl Ledger {
     }
 }
 
-// Trace: TC-177, TC-178; FR-044-AC-1, FR-044-AC-2, NFR-008-AC-1
-#[test]
-fn completed_depth_one_production_oracle_partition_emits_native_census() {
-    let cases = cases();
-    assert_eq!(u64::try_from(cases.len()).unwrap(), FORMULAS);
-    let mut ledger = Ledger::new(usize::try_from(DECLARED).unwrap());
+fn run_partition(cases: &[Case], max_length: usize) -> (Summary, u64) {
+    let positions = word_positions(max_length);
+    let declared = u64::try_from(cases.len()).unwrap() * positions;
+    let mut ledger = Ledger::new(usize::try_from(declared).unwrap());
     let mut id = 0;
     let mut position_count = 0;
-    for length in 1..=3_usize {
+    for length in 1..=max_length {
         for bits in 0..(1_usize << length) {
             let rows: Vec<Vec<PropositionId>> = (0..length)
                 .map(|position| {
@@ -370,7 +390,7 @@ fn completed_depth_one_production_oracle_partition_emits_native_census() {
             .unwrap();
             for position in 0..length {
                 position_count += 1;
-                for case in &cases {
+                for case in cases {
                     let root = NodeId(u32::try_from(case.nodes.len() - 1).unwrap());
                     let syntax = Formula::new(case.profile, root, &case.nodes).unwrap();
                     let expected = if case.profile == SemanticProfile::ClosedTraceV1 {
@@ -433,11 +453,22 @@ fn completed_depth_one_production_oracle_partition_emits_native_census() {
             }
         }
     }
-    assert_eq!(position_count, WORD_POSITIONS);
-    assert_eq!(u64::try_from(id).unwrap(), DECLARED);
+    assert_eq!(position_count, positions);
+    assert_eq!(u64::try_from(id).unwrap(), declared);
     let summary = ledger.finish().unwrap();
+    assert_eq!(summary.declared, declared);
+    assert_eq!(summary.visited, declared);
+    (summary, positions)
+}
+
+// Trace: TC-177, TC-178; FR-044-AC-1, FR-044-AC-2, NFR-008-AC-1
+#[test]
+fn completed_depth_one_production_oracle_partition_emits_native_census() {
+    let cases = cases(2);
+    assert_eq!(u64::try_from(cases.len()).unwrap(), FORMULAS);
+    let (summary, positions) = run_partition(&cases, 3);
+    assert_eq!(positions, WORD_POSITIONS);
     assert_eq!(summary.declared, DECLARED);
-    assert_eq!(summary.visited, DECLARED);
     println!(
         "TL_CAMPAIGN_POPULATION {}",
         serde_json::json!({
@@ -454,6 +485,51 @@ fn completed_depth_one_production_oracle_partition_emits_native_census() {
             "interval_max": 2,
             "trace_max_len": 3,
             "full_target_complete": false
+        })
+    );
+}
+
+// Trace: TC-177, TC-178; FR-044-AC-1, FR-044-AC-2
+#[test]
+fn extended_partition_reports_exact_full_domain_unvisited_count() {
+    let intervals = 15; // sum_{b=0}^4 (b + 1)
+    assert_eq!(formula_count(1, intervals, false), 402);
+    assert_eq!(formula_count(1, intervals, true), 405);
+    assert_eq!(formula_count(3, intervals, false), FULL_CLOSED_FORMULAS);
+    assert_eq!(formula_count(3, intervals, true), FULL_PAST_FORMULAS);
+    assert_eq!(word_positions(6), EXTENDED_WORD_POSITIONS);
+    let cases = cases(4);
+    assert_eq!(u64::try_from(cases.len()).unwrap(), EXTENDED_FORMULAS);
+    let (summary, positions) = run_partition(&cases, 6);
+    assert_eq!(positions, EXTENDED_WORD_POSITIONS);
+    assert_eq!(summary.declared, EXTENDED_DECLARED);
+    println!(
+        "TL_CAMPAIGN_FULL_DOMAIN {}",
+        serde_json::json!({
+            "schema": "tl-mltl.full-domain-census/v1",
+            "scope": "depth3_atom1_closed0_4_words1_6_with_depth1_partition",
+            "atom_basis": ["p0"],
+            "symmetry_reductions": [],
+            "grammar": "ordered_trees_all_boolean_and_applicable_temporal_roots",
+            "max_depth": 3,
+            "interval_max": 4,
+            "trace_max_len": 6,
+            "closed_formulas": FULL_CLOSED_FORMULAS,
+            "past_formulas": FULL_PAST_FORMULAS,
+            "word_positions": EXTENDED_WORD_POSITIONS,
+            "declared": FULL_DECLARED,
+            "visited": summary.visited,
+            "unvisited": FULL_DECLARED - summary.visited,
+            "refused": summary.refused,
+            "failed": summary.failed,
+            "completed_partition": {
+                "max_depth": 1,
+                "formulas": EXTENDED_FORMULAS,
+                "word_positions": positions,
+                "declared": summary.declared,
+                "visited": summary.visited,
+            },
+            "full_target_complete": false,
         })
     );
 }

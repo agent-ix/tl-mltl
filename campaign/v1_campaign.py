@@ -74,6 +74,10 @@ COMMAND_CONTRACTS = {
         "cargo", "test", "--locked", "--offline", "--test", "v1_finite_partition",
         "--", "--nocapture",
     ]),
+    "full_domain_census": ("tl-mltl", "cargo_full_domain_census", [
+        "cargo", "test", "--locked", "--offline", "--test", "v1_finite_partition",
+        "--", "--nocapture",
+    ]),
     "semantic_properties": ("tl-mltl", "cargo_properties", [
         "cargo", "test", "--locked", "--offline", "--all-features",
         "--test", "property", "--test", "infinite_trace", "--test", "infinite_oracle",
@@ -122,14 +126,12 @@ NATIVE_CONTRACTS = {
 # open. Extend COMMAND_CONTRACTS together with classify() and fault tests when
 # its producer emits a machine-checkable population; do not credit prose or a
 # copied success exit code.
-UNSUPPORTED_GATE_REASONS = {
-    "full_domain_census": "depth_three_interval_0_4_trace_1_6_population_not_run",
-}
+UNSUPPORTED_GATE_REASONS = {}
 assert set(COMMAND_CONTRACTS) | set(NATIVE_CONTRACTS) | set(UNSUPPORTED_GATE_REASONS) == {
     item for ids in REQUIRED.values() for item in ids
 }
 MEASUREMENT_LANES = {
-    "domain_cardinalities": "finite_small_partition",
+    "domain_cardinalities": "full_domain_census",
     "fuzz_populations": "fuzz_replay",
     "mutation_populations": "mutation_population",
     "proof_bounds": "bounded_proof",
@@ -566,6 +568,50 @@ def classify(raw: bytes, parser: str, exit_code: int) -> tuple[str, dict[str, An
             "law_cases": cases, "wire_checks": observed["wire_checks"],
             "native_test_count": sum(int(item[1]) for item in summaries),
         }
+    if parser == "cargo_full_domain_census":
+        summaries = CARGO_RESULT.findall(raw.decode(errors="replace"))
+        markers = re.findall(rb"TL_CAMPAIGN_FULL_DOMAIN (\{[^\r\n]*\})", raw)
+        if (len(summaries) != 1 or int(summaries[0][1]) < 3 or
+                summaries[0][0] != "ok" or int(summaries[0][2]) != 0 or
+                len(markers) != 1 or exit_code):
+            return "failed", {"reason": "missing_or_failed_full_domain_census"}
+        try:
+            observed = json.loads(markers[0], object_pairs_hook=unique_object)
+            expected = {
+                "schema": "tl-mltl.full-domain-census/v1",
+                "scope": "depth3_atom1_closed0_4_words1_6_with_depth1_partition",
+                "atom_basis": ["p0"],
+                "symmetry_reductions": [],
+                "grammar": "ordered_trees_all_boolean_and_applicable_temporal_roots",
+                "max_depth": 3,
+                "interval_max": 4,
+                "trace_max_len": 6,
+                "closed_formulas": 1_031_120_211_193_068,
+                "past_formulas": 1_062_364_497_622_965,
+                "word_positions": 642,
+                "declared": 1_344_017_183_059_893_186,
+                "visited": 518_094,
+                "unvisited": 1_344_017_183_059_375_092,
+                "refused": 0,
+                "failed": 0,
+                "completed_partition": {
+                    "max_depth": 1,
+                    "formulas": 807,
+                    "word_positions": 642,
+                    "declared": 518_094,
+                    "visited": 518_094,
+                },
+                "full_target_complete": False,
+            }
+            if observed != expected or any(type(observed[key]) is not int
+                                           for key in ("declared", "visited", "unvisited",
+                                                       "refused", "failed")):
+                raise ValueError("full domain or completed partition differs")
+            if observed["visited"] + observed["refused"] + observed["unvisited"] != observed["declared"]:
+                raise ValueError("full domain census does not reconcile")
+        except (ValueError, KeyError, TypeError, json.JSONDecodeError):
+            return "failed", {"reason": "malformed_full_domain_census"}
+        return "passed", observed | {"native_test_count": int(summaries[0][1])}
     if parser in ("population_json", "cargo_population"):
         try:
             if parser == "cargo_population":

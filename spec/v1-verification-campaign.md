@@ -37,7 +37,7 @@ as a new run.
 | Milestone | Required result |
 |---|---|
 | V1 | Independent tl-oracle, fault injection proving independence |
-| V2 | Bounded exhaustive and local/nightly population reports |
+| V2 | Complete 518,094-cell depth-one oracle partition; disclose literal depth-three cardinality and unvisited count |
 | V3 | Property laws and strict round-trips |
 | V4 | Per-crate fuzz targets and retained minimized corpus |
 | V5 | Mutation kill-rate and reviewed survivor outcomes |

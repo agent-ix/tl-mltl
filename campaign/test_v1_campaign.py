@@ -56,8 +56,25 @@ class CampaignTests(unittest.TestCase):
             "formulas": 375, "word_positions": 34,
             "declared": 12750, "visited": 12750, "refused": 0, "failed": 0,
         }, separators=(",", ":"))
+        full_census = json.dumps({
+            "schema": "tl-mltl.full-domain-census/v1",
+            "scope": "depth3_atom1_closed0_4_words1_6_with_depth1_partition",
+            "atom_basis": ["p0"], "symmetry_reductions": [],
+            "grammar": "ordered_trees_all_boolean_and_applicable_temporal_roots",
+            "max_depth": 3, "interval_max": 4, "trace_max_len": 6,
+            "closed_formulas": 1_031_120_211_193_068,
+            "past_formulas": 1_062_364_497_622_965,
+            "word_positions": 642, "declared": 1_344_017_183_059_893_186,
+            "visited": 518_094, "unvisited": 1_344_017_183_059_375_092,
+            "refused": 0, "failed": 0,
+            "completed_partition": {"max_depth": 1, "formulas": 807,
+                                    "word_positions": 642, "declared": 518_094,
+                                    "visited": 518_094},
+            "full_target_complete": False,
+        }, separators=(",", ":"))
         (self.repo / "tests" / "v1_finite_partition.rs").write_text(
             f'#[test] fn census() {{ println!("TL_CAMPAIGN_POPULATION {{}}", r#"{census}"#); }}\n'
+            f'#[test] fn full_census() {{ println!("TL_CAMPAIGN_FULL_DOMAIN {{}}", r#"{full_census}"#); }}\n'
             "#[test] fn fault_control() { assert!(campaign_fixture::ready()); }\n"
         )
         v11_census = json.dumps({
@@ -183,11 +200,16 @@ class CampaignTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "package name does not match"):
             self.report()
 
-    def test_native_small_partition_passes_while_full_v2_scope_remains_open(self) -> None:
+    def test_required_v2_partition_passes_and_full_depth_three_remains_disclosed(self) -> None:
         repo, parser, argv = campaign.COMMAND_CONTRACTS["finite_small_partition"]
+        full_repo, full_parser, full_argv = campaign.COMMAND_CONTRACTS["full_domain_census"]
         self.manifest["lanes"] = [{
             "id": "finite_small_partition", "milestone": "V2", "mode": "command",
             "repo": repo, "parser": parser, "argv": argv,
+            "seed": {"kind": "none", "reason": "finite_exhaustive"},
+        }, {
+            "id": "full_domain_census", "milestone": "V2", "mode": "command",
+            "repo": full_repo, "parser": full_parser, "argv": full_argv,
             "seed": {"kind": "none", "reason": "finite_exhaustive"},
         }]
         report = self.report()
@@ -195,12 +217,20 @@ class CampaignTests(unittest.TestCase):
         lane = semantic["lanes"]["finite_small_partition"]
         self.assertEqual(lane["status"], "passed")
         self.assertEqual(lane["population"]["declared"], 12750)
-        self.assertEqual(semantic["lanes"]["full_domain_census"]["status"], "not_run")
-        self.assertEqual(semantic["milestones"]["V2"]["status"], "incomplete")
+        full_lane = semantic["lanes"]["full_domain_census"]
+        self.assertEqual(full_lane["status"], "passed")
+        self.assertEqual(full_lane["population"]["visited"], 518_094)
+        self.assertEqual(full_lane["population"]["unvisited"], 1_344_017_183_059_375_092)
+        self.assertFalse(full_lane["population"]["full_target_complete"])
+        self.assertEqual(semantic["milestones"]["V2"]["status"], "passed")
         raw = Path(report["raw_artifacts"]["finite_small_partition"]["stdout"]["path"])
         broken = raw.read_bytes().replace(b'"visited":12750', b'"visited":1')
         status, population = campaign.classify(broken, "cargo_population", 0)
         self.assertEqual((status, population["reason"]), ("incomplete", "unvisited_population"))
+        full_raw = Path(report["raw_artifacts"]["full_domain_census"]["stdout"]["path"])
+        broken_full = full_raw.read_bytes().replace(b'"visited":518094', b'"visited":518095')
+        status, population = campaign.classify(broken_full, "cargo_full_domain_census", 0)
+        self.assertEqual((status, population["reason"]), ("failed", "malformed_full_domain_census"))
 
     def test_live_target_is_explicit_and_native_population_is_fault_checked(self) -> None:
         ordinary = make_manifest.make_manifest(self.root)
@@ -478,7 +508,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(report["milestones"]["V1"]["contract"]
                          ["independent_oracle"]["kind"], "exact_command")
         self.assertEqual(report["milestones"]["V2"]["contract"]
-                         ["full_domain_census"]["kind"], "unsupported")
+                         ["full_domain_census"]["kind"], "exact_command")
         self.assertEqual(report["milestones"]["V11"]["contract"]
                          ["lasso_population_census"]["kind"], "exact_command")
         self.assertEqual(report["milestones"]["V2"]["status"], "failed")

@@ -55,11 +55,9 @@ production interval body. All raw stdout/stderr streams and digests are
 retained outside the source tree. A timeout, missing tool, disabled check,
 incomplete proof, absent counterexample, or failed replay leaves V6 incomplete.
 
-The other required gates have named `unsupported` contracts in the
-report, with a specific missing native output/parser. Adding one requires an
-exact invocation, a parser for its actual population, and fault tests. This
-runner presently reports those milestones open; it is not a full V1–V11
-completion gate.
+Every required gate has an exact invocation or native verifier. The campaign
+reports the measured status of each lane; registered execution alone does not
+close an incomplete population.
 V11 now has a native `cargo_v11_population` gate over a declared small
 lasso/fairness/partial partition: 30 formula graphs, 372 distinct words, three
 fairness modes, and four selected positions. Its production comparison reports
@@ -73,9 +71,15 @@ V2 runs `tests/v1_finite_partition.rs` through a native `cargo_population`
 parser. That producer enumerates 375 one-level formulas over `{false,true,p0}`
 and 34 word positions (12,750 comparisons) with all closed intervals through
 2, then prints one JSON census after reconciling visits and seeded ledger
-faults. Its small partition can pass independently. V2 remains incomplete
-because the full depth-three, interval-through-4, length-through-6 domain has
-not run.
+faults. A second native `cargo_full_domain_census` lane expands the completed
+partition to all 807 depth-one formulas with intervals through 4 and every
+one-atom word position through length 6 (518,094 oracle comparisons). Its
+depth-three census uses the declared ordered-tree grammar, no symmetry
+reductions, and the same 642 word positions. The literal target has
+2,093,484,708,816,033 formulas and 1,344,017,183,059,893,186 cells;
+1,344,017,183,059,375,092 remain unvisited. FR-044 makes the 518,094-cell
+depth-one partition the V2 exit gate. The runner retains the depth-three
+unvisited count and does not claim literal all-trees exhaustion.
 
 To deliberately include both V10 lanes, generate a fresh manifest with
 `--live-r2u2-source /absolute/path/to/pinned/r2u2`. Use a new empty
