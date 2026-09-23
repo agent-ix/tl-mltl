@@ -336,6 +336,59 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(campaign.classify(false_as_number, parser, 0)[0], "failed")
         self.assertEqual(campaign.classify(complete + complete, parser, 0)[0], "failed")
         self.assertEqual(campaign.classify(complete, parser, 1)[0], "failed")
+    # TC-179/180, FR-045-AC-1/2, NFR-008-AC-1: the V3 parser must not
+    # credit a copied success summary with omitted criteria, a vacuous run,
+    # unexecuted examples, changed seed, or malformed wire population.
+    def test_native_properties_require_reconciled_criteria_and_fault_controls(self) -> None:
+        classes = {criterion: {"kind": "excluded", "evidence": "other lane: TC-190"}
+                   for criterion in campaign.v1_criterion_ids()}
+        classes["FR-045-AC-1"] = {"kind": "property", "evidence": "duality"}
+        classes["FR-045-AC-2"] = {"kind": "property", "evidence": "strict_round_trips"}
+        classes["FR-030-AC-1"] = {"kind": "example", "evidence": "cross_compare_small_lassos"}
+        marker = {
+            "schema": "tl-mltl.semantic-properties/v1",
+            "scope": "tl_mltl_v1_semantic_laws_and_owner_wires",
+            "seed_hex": "45" * 32,
+            "generated": 64, "accepted": 64, "rejected": 0,
+            "law_cases": {law: 64 for law in campaign.PROPERTY_LAWS},
+            "wire_checks": 24, "rewrite_equivalence_owner": "tl-rewrite",
+            "classifications": classes,
+        }
+
+        def raw(value: dict) -> bytes:
+            names = (
+                "native_semantic_laws_and_strict_round_trips",
+                "seeded_law_fault_is_detected",
+                "cross_compare_small_lassos",
+            )
+            return ("\n".join(f"test {name} ... ok" for name in names)
+                    + "\nTL_CAMPAIGN_PROPERTIES " + json.dumps(value, separators=(",", ":"))
+                    + "\n" + self.cargo_summary(3) + "\n").encode()
+
+        passed, population = campaign.classify(raw(marker), "cargo_properties", 0)
+        self.assertEqual(passed, "passed")
+        self.assertEqual(population["classified"], 61)
+        self.assertEqual(population["accepted"], 64)
+
+        altered = json.loads(json.dumps(marker))
+        altered["classifications"].pop("FR-033-AC-2")
+        self.assertEqual(campaign.classify(raw(altered), "cargo_properties", 0)[0], "failed")
+        for field, value in (("accepted", 0), ("rejected", 1),
+                             ("wire_checks", 23), ("seed_hex", "00" * 32)):
+            altered = marker | {field: value}
+            self.assertEqual(campaign.classify(raw(altered), "cargo_properties", 0)[0],
+                             "failed", field)
+        altered = json.loads(json.dumps(marker))
+        altered["law_cases"]["duality"] = 0
+        self.assertEqual(campaign.classify(raw(altered), "cargo_properties", 0)[0], "failed")
+        altered = json.loads(json.dumps(marker))
+        altered["classifications"]["FR-030-AC-1"]["evidence"] = "never_ran"
+        self.assertEqual(campaign.classify(raw(altered), "cargo_properties", 0)[0], "failed")
+        duplicate = raw(marker) + b"TL_CAMPAIGN_PROPERTIES {}\n"
+        self.assertEqual(campaign.classify(duplicate, "cargo_properties", 0)[0], "failed")
+        duplicate_key = raw(marker).replace(b'"accepted":64', b'"accepted":64,"accepted":64')
+        self.assertEqual(campaign.classify(duplicate_key, "cargo_properties", 0)[0], "failed")
+        self.assertEqual(campaign.classify(raw(marker), "cargo_properties", 1)[0], "failed")
 
     # TC-196: Identical deterministic runs have identical semantic payloads
     # even though raw paths may differ. Preserve refused, missing and failed.

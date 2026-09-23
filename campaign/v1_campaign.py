@@ -66,6 +66,11 @@ COMMAND_CONTRACTS = {
         "cargo", "test", "--locked", "--offline", "--test", "v1_finite_partition",
         "--", "--nocapture",
     ]),
+    "semantic_properties": ("tl-mltl", "cargo_properties", [
+        "cargo", "test", "--locked", "--offline", "--all-features",
+        "--test", "property", "--test", "infinite_trace", "--test", "infinite_oracle",
+        "--", "--nocapture", "--test-threads=1",
+    ]),
     "infinite_oracle": ("tl-mltl", "cargo_test", [
         "cargo", "test", "--locked", "--offline", "--features", "infinite-trace",
         "--test", "infinite_oracle",
@@ -92,7 +97,6 @@ COMMAND_CONTRACTS = {
 # copied success exit code.
 UNSUPPORTED_GATE_REASONS = {
     "full_domain_census": "depth_three_interval_0_4_trace_1_6_population_not_run",
-    "semantic_properties": "no_per_criterion_population_output",
     "fuzz_replay": "no_four_crate_fuzz_population_output",
     "mutation_population": "no_reviewed_mutant_population_parser",
     "bounded_proof": "no_bound_and_unwind_parser",
@@ -138,6 +142,32 @@ def live_target_source(path: str) -> tuple[Path, str | None]:
     except (OSError, subprocess.CalledProcessError):
         return source, "target_source_unreadable"
     return source, None
+V1_CRITERION_PREFIXES = tuple(
+    f"FR-{number:03d}-" for number in (*range(27, 35), *range(38, 56))
+)
+PROPERTY_LAWS = {
+    "duality", "bounded_embedding", "lasso_unrolling", "fairness_weakening",
+    "partial_information_monotonicity", "finite_prefix_refutation",
+}
+
+
+def v1_criterion_ids() -> set[str]:
+    requirements = Path(__file__).resolve().parent.parent / "spec" / "requirements"
+    ids = set()
+    for path in requirements.glob("FR-*.md"):
+        if not path.name.startswith(V1_CRITERION_PREFIXES):
+            continue
+        ids.update(re.findall(r"^\| (FR-\d+-AC-\d+) \|", path.read_text(), re.M))
+    return ids
+
+
+def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate property marker key: {key}")
+        result[key] = value
+    return result
 
 
 def sha256(data: bytes) -> str:
@@ -421,6 +451,67 @@ def classify(raw: bytes, parser: str, exit_code: int) -> tuple[str, dict[str, An
         if passed == 0 or ignored or filtered:
             return "incomplete", population
         return "passed", population
+    if parser == "cargo_properties":
+        decoded = raw.decode(errors="replace")
+        summaries = CARGO_RESULT.findall(decoded)
+        markers = re.findall(rb"TL_CAMPAIGN_PROPERTIES (\{[^\r\n]*\})", raw)
+        if exit_code or any(item[0] != "ok" or int(item[2]) for item in summaries):
+            return "failed", {"reason": "native_test_failure"}
+        if not summaries or sum(int(item[1]) for item in summaries) < 3 or len(markers) != 1:
+            return "failed", {"reason": "missing_or_duplicate_property_population"}
+        try:
+            observed = json.loads(markers[0], object_pairs_hook=unique_object)
+            cases = observed["law_cases"]
+            classes = observed["classifications"]
+            if not isinstance(cases, dict) or not isinstance(classes, dict):
+                raise ValueError("property cases and classifications must be objects")
+            expected = v1_criterion_ids()
+            if (
+                observed["schema"] != "tl-mltl.semantic-properties/v1"
+                or observed["scope"] != "tl_mltl_v1_semantic_laws_and_owner_wires"
+                or observed["seed_hex"] != "45" * 32
+                or type(observed["generated"]) is not int
+                or observed["generated"] != 64
+                or type(observed["accepted"]) is not int
+                or observed["accepted"] != 64
+                or type(observed["rejected"]) is not int
+                or observed["rejected"] != 0
+                or set(cases) != PROPERTY_LAWS
+                or any(type(count) is not int or count != 64 for count in cases.values())
+                or type(observed["wire_checks"]) is not int
+                or observed["wire_checks"] != 24
+                or observed["rewrite_equivalence_owner"] != "tl-rewrite"
+                or len(expected) != 61
+                or set(classes) != expected
+            ):
+                raise ValueError("property population or criterion scope differs")
+            passed_names = set(re.findall(r"^test (?:[\w]+::)*([\w]+) \.\.\. ok$", decoded, re.M))
+            if not {"native_semantic_laws_and_strict_round_trips", "seeded_law_fault_is_detected"} <= passed_names:
+                raise ValueError("native property or fault control did not run")
+            kinds = {"property": 0, "example": 0, "excluded": 0}
+            for classification in classes.values():
+                kind = classification["kind"]
+                evidence = classification["evidence"]
+                if kind not in kinds or not isinstance(evidence, str) or not evidence:
+                    raise ValueError("unclassified criterion")
+                if kind == "property" and evidence not in PROPERTY_LAWS | {"strict_round_trips"}:
+                    raise ValueError("unexecuted property")
+                if kind == "example" and evidence not in passed_names:
+                    raise ValueError("unexecuted example")
+                if kind == "excluded" and ":" not in evidence:
+                    raise ValueError("unjustified exclusion")
+                kinds[kind] += 1
+            if kinds["property"] == 0 or kinds["example"] == 0:
+                raise ValueError("vacuous classification")
+        except (ValueError, KeyError, TypeError, json.JSONDecodeError):
+            return "failed", {"reason": "malformed_property_population"}
+        return "passed", {
+            "declared": len(expected), "classified": len(classes),
+            "classification_kinds": kinds, "generated": observed["generated"],
+            "accepted": observed["accepted"], "rejected": observed["rejected"],
+            "law_cases": cases, "wire_checks": observed["wire_checks"],
+            "native_test_count": sum(int(item[1]) for item in summaries),
+        }
     if parser in ("population_json", "cargo_population"):
         try:
             if parser == "cargo_population":
