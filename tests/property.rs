@@ -139,6 +139,7 @@ mod v1_campaign {
         evaluate_closed, evaluate_past, ClockBinding, EvaluationLimits, PastEvaluationLimits,
         PastEvaluationRelationInput, PositionHistoryDocument, PositionObservation, TruthValue,
     };
+    use tl_oracle::{evaluate_documents, Limits as OracleLimits, Verdict};
     use tl_syntax::{
         FairnessPremisesDocument, Formula, FormulaDocument, InfiniteClock, InfiniteFormulaDocument,
         InfiniteNode, InfiniteNodeKind as K, Interval, LassoTraceDocument, Node, NodeId, NodeKind,
@@ -597,8 +598,6 @@ mod v1_campaign {
     fn unrolling_law(bits: [bool; 3]) -> Result<(), TestCaseError> {
         let prefix = [bool_value(bits[0])];
         let repeating = [bool_value(bits[1]), bool_value(bits[2])];
-        let original = lasso(&prefix, &repeating);
-        let unfolded = lasso(&[prefix[0], repeating[0], repeating[1]], &repeating);
         let mixed = graph(vec![
             p(),
             K::Once {
@@ -610,11 +609,47 @@ mod v1_campaign {
                 operand: NodeId(1),
             },
         ]);
-        for position in 0..9 {
-            prop_assert_eq!(
-                evaluate(&mixed, &original, None, position).disposition,
-                evaluate(&mixed, &unfolded, None, position).disposition
-            );
+        for loop_len in 1..=repeating.len() {
+            let loop_values = &repeating[..loop_len];
+            let original = lasso(&prefix, loop_values);
+            let unfolded = lasso(&[prefix.as_slice(), loop_values].concat(), loop_values);
+            let doubled = lasso(&prefix, &[loop_values, loop_values].concat());
+            let rotations: Vec<_> = (0..loop_len)
+                .map(|rotation| {
+                    let rotated_prefix = [prefix.as_slice(), &loop_values[..rotation]].concat();
+                    let rotated_loop =
+                        [&loop_values[rotation..], &loop_values[..rotation]].concat();
+                    lasso(&rotated_prefix, &rotated_loop)
+                })
+                .collect();
+            for position in 0..9 {
+                let baseline = evaluate(&mixed, &original, None, position).disposition;
+                let oracle = |trace: &LassoTraceDocument| {
+                    evaluate_documents(
+                        &mixed,
+                        trace,
+                        mixed.formula().root(),
+                        &[],
+                        position as usize,
+                        OracleLimits::default(),
+                    )
+                    .unwrap()
+                    .verdict
+                };
+                let expected = match oracle(&original) {
+                    Verdict::Proved => Disposition::Proved,
+                    Verdict::Refuted => Disposition::Refuted,
+                    Verdict::Inconclusive => Disposition::Inconclusive,
+                };
+                prop_assert_eq!(baseline, expected);
+                for equivalent in [&unfolded, &doubled].into_iter().chain(rotations.iter()) {
+                    prop_assert_eq!(
+                        evaluate(&mixed, equivalent, None, position).disposition,
+                        baseline
+                    );
+                    prop_assert_eq!(oracle(equivalent), oracle(&original));
+                }
+            }
         }
         Ok(())
     }
