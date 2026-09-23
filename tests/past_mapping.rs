@@ -235,3 +235,64 @@ fn absent_or_operator_incomplete_origin_evidence_refuses_without_artifact() {
         Err(PastMappingError::MissingOriginEvidence)
     );
 }
+
+// Trace: TC-162, TC-167; FR-038-AC-2, FR-039-AC-2
+#[test]
+fn each_target_origin_identity_field_is_required() {
+    let nodes = [p()];
+    let corruptions: [fn(&mut TargetOriginContract); 5] = [
+        |origin: &mut TargetOriginContract| origin.target.name.clear(),
+        |origin: &mut TargetOriginContract| origin.target.version.clear(),
+        |origin: &mut TargetOriginContract| origin.evidence_sha256 = "C".repeat(64),
+        |origin: &mut TargetOriginContract| origin.target.executable_sha256.clear(),
+        |origin: &mut TargetOriginContract| origin.target.configuration_sha256.clear(),
+    ];
+    for corrupt in corruptions {
+        let mut invalid = contract(&[]);
+        corrupt(&mut invalid);
+        assert_eq!(
+            render(&nodes, &invalid),
+            Err(PastMappingError::MissingOriginEvidence)
+        );
+    }
+}
+
+// Trace: TC-162, TC-167; FR-038-AC-2, FR-039-AC-2
+#[test]
+fn past_mapping_refuses_wrong_profile_and_exhausted_render_budget() {
+    let nodes = [p()];
+    let origin = contract(&[]);
+    let map = |profile, limit| {
+        let formula = Formula::new(profile, NodeId(0), &nodes).unwrap();
+        map_past_to_c2po(formula, "p", b"p", source(), &catalog(), &origin, limit)
+    };
+    assert_eq!(
+        map(SemanticProfile::ClosedTraceV1, 1),
+        Err(PastMappingError::UnsupportedProfile)
+    );
+    assert_eq!(
+        map(SemanticProfile::OriginCompleteHistoryV1, 0),
+        Err(PastMappingError::ResourceIncomplete)
+    );
+}
+
+// Trace: TC-162, TC-167; FR-038-AC-2, FR-039-AC-2
+#[test]
+fn past_mapping_refuses_signal_names_with_no_target_identifier() {
+    let nodes = [p()];
+    let formula =
+        Formula::new(SemanticProfile::OriginCompleteHistoryV1, NodeId(0), &nodes).unwrap();
+    let catalog = SignalCatalogDocument::new(
+        vec![OwnedSignalDeclaration::new(
+            SignalId(1),
+            "p.signal".to_owned(),
+            SignalDomain::Boolean,
+        )],
+        vec![PropositionBinding::new(PropositionId(0), SignalId(1))],
+    )
+    .unwrap();
+    assert_eq!(
+        map_past_to_c2po(formula, "p", b"p", source(), &catalog, &contract(&[]), 10),
+        Err(PastMappingError::UnsupportedSignal(PropositionId(0)))
+    );
+}

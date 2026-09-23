@@ -1,3 +1,7 @@
+use tl_mltl::wire::{
+    self, CommandDocument, CommandSchemaVersion, Operation, OwnerLimits, OwnerReadErrorCode,
+    TraceDocument, TraceSchemaVersion, ValidatedCommand, ValidatedTrace,
+};
 use tl_mltl::{
     analyze_horizon, analyze_horizon_with_context, compare_external, compare_external_with_context,
     evaluate_closed_with_context, evaluate_prefix, evaluate_prefix_with_context, map_to_c2po,
@@ -87,6 +91,116 @@ fn tool() -> ToolIdentity {
         executable_sha256: "a".repeat(64),
         configuration_sha256: "b".repeat(64),
     }
+}
+
+// Trace: TC-029, FR-007-AC-5, NFR-001-AC-1
+#[test]
+fn owner_command_round_trip_and_expected_identity_are_strict() {
+    let formula = FormulaDocument::new(
+        SemanticProfile::ClosedTraceV1,
+        NodeId(0),
+        vec![Node::new(NodeKind::Proposition {
+            proposition: PropositionId(7),
+        })],
+    )
+    .unwrap();
+    let trace = TraceDocument {
+        schema_version: TraceSchemaVersion::V1,
+        trace_id: "ordered".to_owned(),
+        closed: true,
+        instants: vec![vec![PropositionId(7), PropositionId(8)]],
+    };
+    let document = CommandDocument {
+        schema_version: CommandSchemaVersion::V1,
+        operation: Operation::Evaluate,
+        formula_id: "p".to_owned(),
+        formula,
+        trace: Some(trace),
+    };
+    let limits = OwnerLimits::owner_max();
+    let owner = wire::command::derive(&document, limits).unwrap();
+    let admitted = wire::command::read(owner.bytes(), &document, limits).unwrap();
+    assert_eq!(admitted.document(), &document);
+    assert_eq!(admitted.bytes(), owner.bytes());
+    assert_eq!(admitted.usage().formula_nodes, 1);
+    assert_eq!(admitted.usage().positions, 1);
+
+    let mut other = document.clone();
+    other.formula_id = "other".to_owned();
+    assert_eq!(
+        wire::command::read(owner.bytes(), &other, limits)
+            .unwrap_err()
+            .code(),
+        OwnerReadErrorCode::ExpectedMismatch
+    );
+    assert_eq!(
+        ValidatedCommand::from_json_bytes(&[&b" "[..], owner.bytes()].concat(), limits)
+            .unwrap_err()
+            .code(),
+        OwnerReadErrorCode::NonCanonical
+    );
+    other.formula_id.clear();
+    assert_eq!(
+        wire::command::derive(&other, limits).unwrap_err().code(),
+        OwnerReadErrorCode::InvalidCombination
+    );
+    assert_eq!(
+        wire::command::derive(
+            &document,
+            OwnerLimits {
+                max_output_bytes: 1,
+                ..limits
+            }
+        )
+        .unwrap_err()
+        .code(),
+        OwnerReadErrorCode::ResourceIncomplete
+    );
+}
+
+// Trace: TC-029, FR-007-AC-5, NFR-001-AC-1
+#[test]
+fn owner_trace_refuses_unsorted_and_over_budget_observations() {
+    let limits = OwnerLimits::owner_max();
+    let trace = TraceDocument {
+        schema_version: TraceSchemaVersion::V1,
+        trace_id: "trace".to_owned(),
+        closed: false,
+        instants: vec![vec![PropositionId(7), PropositionId(8)]],
+    };
+    let owner = wire::trace::derive(&trace, limits).unwrap();
+    let admitted = ValidatedTrace::from_json_bytes(owner.bytes(), limits).unwrap();
+    assert_eq!(admitted.document(), &trace);
+    assert_eq!(admitted.canonical_json_bytes(), owner.bytes());
+    assert_eq!(
+        wire::trace::read(owner.bytes(), &trace, limits).unwrap(),
+        admitted
+    );
+
+    let mut unsorted = trace.clone();
+    unsorted.instants[0].reverse();
+    assert_eq!(
+        wire::trace::derive(&unsorted, limits).unwrap_err().code(),
+        OwnerReadErrorCode::InvalidCombination
+    );
+    assert_eq!(
+        wire::trace::derive(
+            &trace,
+            OwnerLimits {
+                max_positions: 0,
+                ..limits
+            }
+        )
+        .unwrap_err()
+        .code(),
+        OwnerReadErrorCode::ResourceIncomplete
+    );
+    assert_eq!(
+        ValidatedTrace::from_json_bytes(&[0xff], limits)
+            .unwrap_err()
+            .code(),
+        OwnerReadErrorCode::InvalidUtf8
+    );
 }
 
 fn assert_stable_v1_wire<T>(record: T, v2_schema: &str)

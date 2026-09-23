@@ -258,6 +258,66 @@ fn safety_export_refuses_target_origin_mismatch_before_artifact() {
     );
 }
 
+// Trace: TC-166, TC-173; FR-039-AC-1, FR-041-AC-2
+#[test]
+fn safety_export_refuses_exhausted_work_and_unreviewed_past_operator() {
+    let safety = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Once {
+            interval: closed(),
+            operand: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
+    let observations = rows(PartialValue::True);
+    let graph_id = safety.content_identity().unwrap();
+    let request = PrefixRequest {
+        formula: &safety,
+        graph_id: &graph_id,
+        proposition_map_id: "map",
+        propositions: &[PropositionId(0)],
+        observations: &observations,
+        limit: EvaluationLimit::default(),
+    };
+    assert_eq!(
+        export_safety_monitor(&request, &catalog(), &contract(), 0),
+        Err(SafetyExportError::ResourceIncomplete)
+    );
+    let mut unreviewed = contract();
+    unreviewed.admitted_operators.clear();
+    assert_eq!(
+        export_safety_monitor(&request, &catalog(), &unreviewed, 100),
+        Err(SafetyExportError::TargetOrigin)
+    );
+}
+
+// Trace: TC-172, TC-173; FR-041-AC-1, FR-041-AC-2
+#[test]
+fn safety_export_refuses_unbounded_past_inside_the_finite_body() {
+    let safety = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Once {
+            interval: open(),
+            operand: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
+    assert_eq!(
+        export(&safety, &rows(PartialValue::True)),
+        Err(SafetyExportError::UnboundedPast)
+    );
+}
+
 // Trace: TC-169, TC-170; FR-040-AC-1 and FR-040-AC-2
 #[test]
 fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive() {
@@ -297,6 +357,22 @@ fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive(
     assert_eq!(
         replay_target_step(&manifest, &request, step(1, false)).unwrap(),
         SafetyReplayDisposition::Mismatch
+    );
+    let mut stale = manifest.clone();
+    stale.refutation_only = false;
+    assert_eq!(
+        replay_target_step(&stale, &request, step(0, false)),
+        Err(SafetyExportError::TargetMismatch)
+    );
+    let wrong_digest = TargetStepObservation {
+        target: &manifest.target,
+        expression_sha256: "0",
+        position: 0,
+        verdict: false,
+    };
+    assert_eq!(
+        replay_target_step(&manifest, &request, wrong_digest),
+        Err(SafetyExportError::TargetMismatch)
     );
 
     let true_rows = rows(PartialValue::True);
