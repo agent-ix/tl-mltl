@@ -2,7 +2,7 @@
 id: MP-004
 title: "TL retained fuzz-campaign effectiveness"
 type: MeasurementPlan
-status: proposed
+status: retired
 owner: tl-verification-campaign-owner
 metric: tl.fuzz-effectiveness
 definition_version: tl-mltl.fuzz-effectiveness/v1
@@ -23,6 +23,9 @@ relationships:
 ---
 
 # TL retained fuzz-campaign effectiveness
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Decision Use
 

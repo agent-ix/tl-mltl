@@ -2,6 +2,7 @@
 id: FR-010
 title: "Record explicit interoperability and loss dispositions"
 type: FR
+status: superseded
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-002
     type: implements
@@ -16,6 +17,9 @@ relationships:
 ---
 
 # FR-010: Record explicit interoperability and loss dispositions
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Description
 

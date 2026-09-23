@@ -79,8 +79,10 @@ infinite-trace crate boundary, FR-028 owns liveness-backend registration
 routing, and FR-029 owns infinite-trace downstream evidence and dependency
 order. FR-030 through FR-034 specify the opt-in evaluator semantics. FR-038
 through FR-042 own past C2PO mapping and the refutation-only infinite safety
-fragment. NFR-001 constrains determinism and resource failure; NFR-002
-constrains identity, provenance, and qualification claims.
+fragment. FR-043 through FR-055 and NFR-007 through NFR-009 own the
+executable V1 verification campaign in MRS-004. NFR-001 constrains
+determinism and resource failure; NFR-002 constrains identity, provenance,
+and qualification claims.
 
 ## References
 
@@ -110,12 +112,11 @@ live: the non-default `tl_mltl::infinite` provider selected by ADR-003 under
 `mltl.infinite-trace/v1`. They change no existing FR-001 through FR-019
 behavior in the bounded core.
 
-- [Post-v0.1 corpus and interoperability campaign](./corpus-campaign.md)
-  (MRS-002), scoped to the TL-owned corpus families only per
-  [ADR-002](decisions/ADR-002-native-correspondence-lives-in-quire-mltl.md).
-- [Verification-effectiveness and bounded-proof campaign](./verification-effectiveness-campaign.md)
-  (MRS-003), which measures the TL crates' own property, fuzz, mutation, and
-  bounded-proof evidence and carries no cross-repository producer dependency.
+- [V1 executable verification campaign](./v1-verification-campaign.md)
+  (MRS-004), replacing the historical
+  [corpus](./corpus-campaign.md) and
+  [verification-effectiveness](./verification-effectiveness-campaign.md)
+  paperwork while retaining their actual test and corpus evidence.
 - [TL ecosystem campaign](https://linear.app/agent-ix/issue/TL-88).
 - [Typed context child](https://github.com/agent-ix/tl-mltl/issues/24).
 - [Future FRETish consumer](https://github.com/agent-ix/quire-contract-ir/issues/57).

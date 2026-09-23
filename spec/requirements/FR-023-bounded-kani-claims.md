@@ -2,6 +2,7 @@
 id: FR-023
 title: "Constrain and retain bounded Kani claims"
 type: FR
+status: superseded
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-003
     type: implements
@@ -10,6 +11,9 @@ relationships:
 ---
 
 # FR-023: Constrain and retain bounded Kani claims
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Description
 

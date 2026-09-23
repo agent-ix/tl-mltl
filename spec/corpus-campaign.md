@@ -2,6 +2,7 @@
 id: MRS-002
 title: "MLTL corpus coverage and interoperability campaign"
 type: MasterRequirements
+status: superseded
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-001
     type: depends_on
@@ -14,6 +15,9 @@ relationships:
 ---
 
 # MLTL corpus coverage and interoperability campaign
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Purpose
 

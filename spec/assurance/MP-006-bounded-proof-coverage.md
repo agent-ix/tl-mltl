@@ -2,7 +2,7 @@
 id: MP-006
 title: "TL bounded Kani claim results"
 type: MeasurementPlan
-status: proposed
+status: retired
 owner: tl-verification-campaign-owner
 metric: tl.bounded-proof-result
 definition_version: tl-mltl.bounded-proof-result/v1
@@ -23,6 +23,9 @@ relationships:
 ---
 
 # TL bounded Kani claim results
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Decision Use
 
