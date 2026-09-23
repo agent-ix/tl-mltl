@@ -1676,7 +1676,8 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
     // V1 requirement and matrix authoring expands the exact Quire export to
-    // 347 declared rows; 166 have native trace backing at this source revision.
+    // 347 declared rows; 167 have native trace backing after TL-217's TC-191
+    // grid tests at this source revision.
     // Suite registry rows are included; the two intentionally non-runnable
     // suites are checked separately below. An unbacked row is not counted as
     // implemented merely because its requirement appears in the spec.
@@ -1685,7 +1686,7 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
         "the declared-row population changed: {totals}; review the exact Quire export."
     );
     assert_eq!(
-        totals["backed"], 166,
+        totals["backed"], 167,
         "backed-row count changed: {totals}; review the exact Quire export and trace tags."
     );
     // The aggregate alone cannot identify which suite rows are absent, so check
