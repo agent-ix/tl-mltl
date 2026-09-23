@@ -1,0 +1,8 @@
+
+running 1 test
+test strict_unbounded_reader_honors_lowered_node_and_depth_limits ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 1.06s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running tests/infinite_formula.rs (target/miri/aarch64-apple-darwin/debug/build/tl-syntax/b2e64c9e1d743fac/out/infinite_formula-b2e64c9e1d743fac)

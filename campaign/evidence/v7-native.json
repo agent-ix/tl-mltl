@@ -1,0 +1,370 @@
+{
+  "counts": {
+    "miri_passed": 8,
+    "paired_edges": 34,
+    "passed": 11,
+    "probes": 11,
+    "refusal_only_edges": 3
+  },
+  "embedded_scope": {
+    "std_only_crates": [
+      "parse",
+      "mltl",
+      "rewrite",
+      "oracle"
+    ],
+    "syntax_features": [
+      "core",
+      "alloc",
+      "serde"
+    ]
+  },
+  "miri_flags": "-Zmiri-strict-provenance -Zmiri-symbolic-alignment-check",
+  "not_run_under_miri": [
+    {
+      "path": "tl-syntax/tests/shared_assurance.rs",
+      "reason": "subprocess and external assurance orchestration outside in-process Miri probe"
+    },
+    {
+      "path": "tl-parse/tests/shared_assurance.rs",
+      "reason": "subprocess and external assurance orchestration outside in-process Miri probe"
+    },
+    {
+      "path": "tl-mltl/tests/shared_assurance.rs",
+      "reason": "subprocess and external assurance orchestration outside in-process Miri probe"
+    },
+    {
+      "path": "tl-rewrite/tests/shared_assurance.rs",
+      "reason": "subprocess and external assurance orchestration outside in-process Miri probe"
+    },
+    {
+      "path": "tl-oracle/tests/shared_assurance.rs",
+      "reason": "subprocess and external assurance orchestration outside in-process Miri probe"
+    },
+    {
+      "path": "thumbv7em-none-eabi execution",
+      "reason": "cross target is build checked, not executed by host Miri"
+    }
+  ],
+  "probes": [
+    {
+      "argv": [
+        "rustup",
+        "run",
+        "1.98.1",
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--target",
+        "thumbv7em-none-eabi",
+        "--no-default-features",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "feature": "core",
+      "kind": "build",
+      "name": "embedded_core",
+      "paired_edges": 0,
+      "raw_path": "tl-v7-raw/embedded_core.log",
+      "raw_sha256": "99f71393b9903dca098310bb446022a4bdee195ea9996f351a787195555210a6",
+      "refusal_only_edges": 0,
+      "repo": "syntax",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "rustup",
+        "run",
+        "1.98.1",
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--target",
+        "thumbv7em-none-eabi",
+        "--no-default-features",
+        "--features",
+        "alloc",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "feature": "alloc",
+      "kind": "build",
+      "name": "embedded_alloc",
+      "paired_edges": 0,
+      "raw_path": "tl-v7-raw/embedded_alloc.log",
+      "raw_sha256": "23b9a21bbaf189889e08dc27ed8eba521021280c5852db22205f721db08b2c7c",
+      "refusal_only_edges": 0,
+      "repo": "syntax",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "rustup",
+        "run",
+        "1.98.1",
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--target",
+        "thumbv7em-none-eabi",
+        "--no-default-features",
+        "--features",
+        "serde",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "feature": "serde",
+      "kind": "build",
+      "name": "embedded_serde",
+      "paired_edges": 0,
+      "raw_path": "tl-v7-raw/embedded_serde.log",
+      "raw_sha256": "76f58aa8023378f16cd5a971096e47c8c7ff254947c83a90ef37278cf5fc77a4",
+      "refusal_only_edges": 0,
+      "repo": "syntax",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "rustup",
+        "run",
+        "nightly",
+        "cargo",
+        "miri",
+        "test",
+        "--locked",
+        "--offline",
+        "--features",
+        "serde",
+        "--test",
+        "infinite_formula",
+        "strict_unbounded_reader_honors_lowered_node_and_depth_limits",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "feature": "serde",
+      "kind": "miri",
+      "name": "syntax_formula_limits",
+      "paired_edges": 3,
+      "raw_path": "tl-v7-raw/syntax_formula_limits.log",
+      "raw_sha256": "1b16ef5feb6ff2b9ef1c3f27401c1f2b819ae6a653412bb367f3edeacb502d94",
+      "refusal_only_edges": 0,
+      "repo": "syntax",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "rustup",
+        "run",
+        "nightly",
+        "cargo",
+        "miri",
+        "test",
+        "--locked",
+        "--offline",
+        "--features",
+        "serde",
+        "--test",
+        "typed_signal_context",
+        "borrowed_and_owned_catalogs_round_trip_with_distinct_identities",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "feature": "serde",
+      "kind": "miri",
+      "name": "syntax_borrowed_ownership",
+      "paired_edges": 0,
+      "raw_path": "tl-v7-raw/syntax_borrowed_ownership.log",
+      "raw_sha256": "8eeb984d48d69d0aea7ead590f141c7b63fb27234bf0cb9dffc5266d93794f27",
+      "refusal_only_edges": 0,
+      "repo": "syntax",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "rustup",
+        "run",
+        "nightly",
+        "cargo",
+        "miri",
+        "test",
+        "--locked",
+        "--offline",
+        "--test",
+        "versioned_dialects",
+        "parse_and_format_limits_are_exact_and_hostile_utf8_never_unwinds",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "feature": "default",
+      "kind": "miri",
+      "name": "parse_limits_utf8",
+      "paired_edges": 8,
+      "raw_path": "tl-v7-raw/parse_limits_utf8.log",
+      "raw_sha256": "d47ee9b94e682088e7d4f47fbc0820cf42a3ff0ec16cbf070d0d17f659ef2a88",
+      "refusal_only_edges": 0,
+      "repo": "parse",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "rustup",
+        "run",
+        "nightly",
+        "cargo",
+        "miri",
+        "test",
+        "--locked",
+        "--offline",
+        "--features",
+        "infinite-trace",
+        "--test",
+        "infinite_trace",
+        "every_lasso_resource_dimension_refuses_one_over_without_panic",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "feature": "infinite-trace",
+      "kind": "miri",
+      "name": "mltl_lasso_limits",
+      "paired_edges": 10,
+      "raw_path": "tl-v7-raw/mltl_lasso_limits.log",
+      "raw_sha256": "ae18d522f189ece386e6fd576591dfa52da8bace4bd31bc430175301a33119aa",
+      "refusal_only_edges": 0,
+      "repo": "mltl",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "rustup",
+        "run",
+        "nightly",
+        "cargo",
+        "miri",
+        "test",
+        "--locked",
+        "--offline",
+        "--features",
+        "infinite-trace",
+        "--test",
+        "infinite_trace",
+        "prefix_resource_dimensions_refuse_one_over_without_panic",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "feature": "infinite-trace",
+      "kind": "miri",
+      "name": "mltl_prefix_limits",
+      "paired_edges": 6,
+      "raw_path": "tl-v7-raw/mltl_prefix_limits.log",
+      "raw_sha256": "b937c875644c542679f0d0c2322a9e8cd90ac5ba364d9e5f31232fba9c61811a",
+      "refusal_only_edges": 0,
+      "repo": "mltl",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "rustup",
+        "run",
+        "nightly",
+        "cargo",
+        "miri",
+        "test",
+        "--locked",
+        "--offline",
+        "--test",
+        "rewrite",
+        "iteration_application_and_work_budgets_fail_closed",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "feature": "default",
+      "kind": "miri",
+      "name": "rewrite_budgets",
+      "paired_edges": 0,
+      "raw_path": "tl-v7-raw/rewrite_budgets.log",
+      "raw_sha256": "c99d85b30b34ca0967ecce7791b8dae62df384d52cb7530dd243f04f09696f63",
+      "refusal_only_edges": 3,
+      "repo": "rewrite",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "rustup",
+        "run",
+        "nightly",
+        "cargo",
+        "miri",
+        "test",
+        "--locked",
+        "--offline",
+        "--test",
+        "tc_053_profile_subsystems",
+        "tc_053_report_replay_and_all_work_limits_are_exact_and_fail_closed",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "feature": "default",
+      "kind": "miri",
+      "name": "rewrite_record_limits",
+      "paired_edges": 3,
+      "raw_path": "tl-v7-raw/rewrite_record_limits.log",
+      "raw_sha256": "d0ffa8d3eec707d4253cad77c7d5536dd3253444126d381b6d1ad17c97f94214",
+      "refusal_only_edges": 0,
+      "repo": "rewrite",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "rustup",
+        "run",
+        "nightly",
+        "cargo",
+        "miri",
+        "test",
+        "--locked",
+        "--offline",
+        "--test",
+        "reference",
+        "tc_188_oracle_limit_edges_are_typed",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "feature": "default",
+      "kind": "miri",
+      "name": "oracle_limits",
+      "paired_edges": 4,
+      "raw_path": "tl-v7-raw/oracle_limits.log",
+      "raw_sha256": "13a8c0cb4bbdd99b470da6a656f7cc9f23f5b6a3a3e02d0ec5218c51fccc79d4",
+      "refusal_only_edges": 0,
+      "repo": "oracle",
+      "status": "passed"
+    }
+  ],
+  "schema": "tl-mltl.v7-native/v1",
+  "source_revisions": {
+    "mltl": "36505503eadf80c876a6b038ca79f834f3a60fbd",
+    "oracle": "8776916251f51a129f697fbbcd12543f7217814f",
+    "parse": "947358693fd36364466c818aa31d040fe94b8dea",
+    "rewrite": "91d2976cd4a2316ab67b0d9996682b8fc52d76ae",
+    "syntax": "fed48a2fab3f5277131a7012e1a8d10993330cb1"
+  },
+  "status": "passed",
+  "target": "thumbv7em-none-eabi",
+  "tool_versions": {
+    "build_rustc": "/Users/peter/.rustup/toolchains/1.98.1-aarch64-apple-darwin/bin/rustc",
+    "miri": "miri 0.1.0 (1303417c41 2026-09-21)",
+    "nightly_rustc": "rustc 1.100.0-nightly (1303417c4 2026-09-21)",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)"
+  }
+}
