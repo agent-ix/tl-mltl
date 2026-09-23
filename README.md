@@ -99,5 +99,4 @@ validate, accredit, or qualify R2U2, another monitor, or a consuming project.
 
 ## License
 
-Licensed under either of Apache License, Version 2.0 or MIT license at your
-option.
+Licensed under the MIT license. See [LICENSE](LICENSE).

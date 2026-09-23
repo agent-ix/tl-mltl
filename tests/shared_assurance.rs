@@ -2129,7 +2129,7 @@ fn no_local_evidence_framework_remains() {
     // Enumerate the repository by Git identity, not by an extension allow-list.
     // The scan covers tracked and untracked-not-ignored paths; population and
     // area controls are tracked-only so local scratch files cannot pad them.
-    let denied = |path: &str| matches!(path, "Cargo.lock" | "LICENSE-APACHE" | "LICENSE-MIT");
+    let denied = |path: &str| matches!(path, "Cargo.lock" | "LICENSE");
     for included in [
         "GNUmakefile",
         "makefile",

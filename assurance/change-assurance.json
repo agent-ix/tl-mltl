@@ -11,7 +11,7 @@
     "Nothing else is filled in, defaulted, or discovered. A field this file does not state is a validation failure at seal time, which is the behaviour that makes the record a statement rather than a guess."
   ],
   "census_controls": {
-    "denied_paths": ["Cargo.lock", "LICENSE-APACHE", "LICENSE-MIT"],
+    "denied_paths": ["Cargo.lock", "LICENSE"],
     "deleted_reference_needles": [
       "check-failure-propagation",
       "check-tool-identities",

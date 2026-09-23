@@ -148,7 +148,7 @@ its user documentation omits reserved `TAU` and `T`.
 - Native contextual records may traverse the existing Quoin intake, but
   tl-mltl imports or executes no Quoin, Quire, Engineering Assurance,
   contract-IR, rewrite, parser, runner, collector, or retention runtime.
-- The crate remains `publish = false`, `MIT OR Apache-2.0`, and a reference and
+- The crate remains `publish = false`, `MIT`, and a reference and
   interoperability layer rather than a qualified production monitor.
 
 ## Acceptance Criteria
