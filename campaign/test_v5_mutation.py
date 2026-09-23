@@ -13,6 +13,7 @@ import v5_run
 
 TAIL = ["--lib", "--test", "infinite_trace"]
 ARGV = ["cargo", "test", "--package=tl-mltl@0.3.0", "--all-features", *TAIL]
+BUILD_ARGV = ["cargo", "test", "--no-run", "--all-features", *TAIL]
 
 
 def fixture() -> tuple[list[dict], list[dict], dict, list[dict]]:
@@ -20,15 +21,18 @@ def fixture() -> tuple[list[dict], list[dict], dict, list[dict]]:
                   for index in range(12)]
     selected = discovered[:10]
     outcomes = [{"scenario": "Baseline", "summary": "Success", "phase_results": [
-        {"phase": "Build", "process_status": "Success", "argv": ARGV[:-3]},
+        {"phase": "Build", "process_status": "Success", "argv": BUILD_ARGV},
         {"phase": "Test", "process_status": "Success", "argv": ARGV},
     ]}]
     for index, mutant in enumerate(selected):
         outcomes.append({
             "scenario": {"Mutant": mutant},
             "summary": "MissedMutant" if index == 9 else "CaughtMutant",
-            "phase_results": [{"phase": "Test", "process_status": "Success",
-                               "argv": ARGV}],
+            "phase_results": [
+                {"phase": "Build", "process_status": "Success", "argv": BUILD_ARGV},
+                {"phase": "Test", "process_status": "Success" if index == 9
+                 else {"Failure": 101}, "argv": ARGV},
+            ],
         })
     native = {"outcomes": outcomes, "total_mutants": 10, "caught": 9,
               "missed": 1, "timeout": 0, "unviable": 0,
@@ -51,6 +55,7 @@ class V5MutationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "fixed discovery filter"):
             v5.exact_selection(discovered, selected, "src/infinite/mod.rs", r"mutant-[0-9]+$")
         native["outcomes"][8]["summary"] = "MissedMutant"
+        native["outcomes"][8]["phase_results"][-1]["process_status"] = "Success"
         native["caught"] = 8
         native["missed"] = 2
         reviews.append({"name": "mutant-7", "disposition": "reviewed_limitation",
@@ -66,17 +71,45 @@ class V5MutationTests(unittest.TestCase):
             v5.classify(discovered, selected, native, TAIL, [])
         timeout = copy.deepcopy(native)
         timeout["outcomes"][-1]["summary"] = "Timeout"
+        timeout["outcomes"][-1]["phase_results"][-1]["process_status"] = "Timeout"
         timeout["missed"] = 0
         timeout["timeout"] = 1
         self.assertEqual(v5.classify(discovered, selected, timeout, TAIL, reviews)["status"],
                          "incomplete")
         altered = copy.deepcopy(native)
-        altered["outcomes"][1]["phase_results"][0]["argv"] = ["cargo", "test", "--lib"]
+        altered["outcomes"][1]["phase_results"][1]["argv"] = ["cargo", "test", "--lib"]
         with self.assertRaisesRegex(ValueError, "test selection changed"):
             v5.classify(discovered, selected, altered, TAIL, reviews)
         with self.assertRaisesRegex(ValueError, "exactly cover"):
             v5.classify(discovered, selected, native | {"outcomes": native["outcomes"][:-1]},
                         TAIL, reviews)
+
+        caught_without_failure = copy.deepcopy(native)
+        caught_without_failure["outcomes"][1]["phase_results"][-1]["process_status"] = "Success"
+        with self.assertRaisesRegex(ValueError, "contradicts summary"):
+            v5.classify(discovered, selected, caught_without_failure, TAIL, reviews)
+        caught_with_build_failure = copy.deepcopy(native)
+        caught_with_build_failure["outcomes"][1]["phase_results"][0]["process_status"] = {
+            "Failure": 101
+        }
+        with self.assertRaisesRegex(ValueError, "contradicts summary"):
+            v5.classify(discovered, selected, caught_with_build_failure, TAIL, reviews)
+        caught_without_phases = copy.deepcopy(native)
+        caught_without_phases["outcomes"][1]["phase_results"] = []
+        with self.assertRaisesRegex(ValueError, "missing native build phase"):
+            v5.classify(discovered, selected, caught_without_phases, TAIL, reviews)
+        reclassified_unviable = copy.deepcopy(native)
+        reclassified_unviable["outcomes"][-1]["summary"] = "Unviable"
+        reclassified_unviable["missed"] = 0
+        reclassified_unviable["unviable"] = 1
+        with self.assertRaisesRegex(ValueError, "contradicts summary"):
+            v5.classify(discovered, selected, reclassified_unviable, TAIL, [])
+        reclassified_timeout = copy.deepcopy(native)
+        reclassified_timeout["outcomes"][-1]["summary"] = "Timeout"
+        reclassified_timeout["missed"] = 0
+        reclassified_timeout["timeout"] = 1
+        with self.assertRaisesRegex(ValueError, "contradicts summary"):
+            v5.classify(discovered, selected, reclassified_timeout, TAIL, reviews)
 
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)
