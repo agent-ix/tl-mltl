@@ -32,7 +32,9 @@ class V8GateTests(unittest.TestCase):
                     file.write_text("fn check() {}\n")
                     files.append({"filename": str(file),
                                   "summary": {"lines": {"count": 1, "covered": 1},
-                                              "branches": {"count": 2, "covered": 2}},
+                                              "branches": {"count": 2, "covered": 2},
+                                              "functions": {"count": 1, "covered": 1},
+                                              "regions": {"count": 1, "covered": 1}},
                                   "branches": [[1, 2, 1, 12, 7, 8, 0, 0, 4],
                                                [1, 2, 1, 12, 7, 8, 0, 0, 4]]})
             self.graph[f"tl-{name}"] = {
@@ -199,6 +201,44 @@ class V8GateTests(unittest.TestCase):
         status, _, _ = self.verify()
         self.assertEqual(status, "incomplete")
         self.assertIn("src/wire/command.rs", self.report["runs"][index]
+                      ["critical_branch_census"]["missing_files"])
+
+    def test_zero_branch_const_policy_requires_executed_line_function_and_region(self):
+        for key, path in (("parse-default", "/src/dialect/v4.rs"),
+                          ("rewrite-default", "/src/disposition.rs")):
+            with self.subTest(key=key):
+                index = next(i for i, row in enumerate(self.report["runs"])
+                             if row["id"] == key)
+                export_path = self.raw_dir / f"{key}.json"
+                original = json.loads(export_path.read_text())
+                policy = next(file for file in original["data"][0]["files"]
+                              if file["filename"].endswith(path))
+                policy["summary"]["branches"] = {"count": 0, "covered": 0}
+                policy["branches"] = []
+                self.restamp_export(index, original)
+                self.assertEqual(self.verify()[0], "passed")
+                for metric in ("lines", "functions", "regions"):
+                    export = json.loads(export_path.read_text())
+                    policy = next(file for file in export["data"][0]["files"]
+                                  if file["filename"].endswith(path))
+                    policy["summary"][metric]["covered"] = 0
+                    self.restamp_export(index, export)
+                    self.assertEqual(self.verify()[0], "incomplete")
+                    self.assertIn(path.removeprefix("/"), self.report["runs"][index]
+                                  ["critical_branch_census"]["missing_files"])
+                    self.restamp_export(index, original)
+
+    def test_past_reexport_cannot_replace_evaluator_coverage(self):
+        index = next(i for i, row in enumerate(self.report["runs"])
+                     if row["id"] == "mltl-default")
+        export_path = self.raw_dir / "mltl-default.json"
+        export = json.loads(export_path.read_text())
+        past = next(file for file in export["data"][0]["files"]
+                    if file["filename"].endswith("/src/past/mod.rs"))
+        past["filename"] = past["filename"].replace("/mod.rs", "/evaluate.rs")
+        self.restamp_export(index, export)
+        self.assertEqual(self.verify()[0], "incomplete")
+        self.assertIn("src/past/mod.rs", self.report["runs"][index]
                       ["critical_branch_census"]["missing_files"])
 
 

@@ -25,7 +25,7 @@ CRITICAL_PREFIXES = {
     "syntax": ("src/future.rs", "src/formula/infinite.rs", "src/contracts/reader.rs"),
     "parse": ("src/parser.rs", "src/formatter.rs", "src/dialect/v4.rs",
               "src/infinite.rs", "src/lexer.rs"),
-    "mltl": ("src/future/evaluate.rs", "src/past/evaluate.rs",
+    "mltl": ("src/future/evaluate.rs", "src/past/mod.rs",
              "src/infinite/periodic.rs", "src/infinite/export.rs",
              "src/mapping/past.rs", "src/wire/"),
     "rewrite": ("src/engine/future.rs", "src/engine/past.rs",
@@ -37,10 +37,10 @@ EXPECTED_CRITICAL = {
                "alloc": CRITICAL_PREFIXES["syntax"][:2],
                "serde": CRITICAL_PREFIXES["syntax"]},
     "parse": {"default": CRITICAL_PREFIXES["parse"]},
-    "mltl": {"default": ("src/future/evaluate.rs", "src/past/evaluate.rs",
+    "mltl": {"default": ("src/future/evaluate.rs", "src/past/mod.rs",
                          "src/mapping/past.rs", "src/wire/command.rs",
                          "src/wire/common.rs", "src/wire/trace.rs"),
-             "infinite": ("src/future/evaluate.rs", "src/past/evaluate.rs",
+             "infinite": ("src/future/evaluate.rs", "src/past/mod.rs",
                           "src/infinite/periodic.rs", "src/infinite/export.rs",
                           "src/mapping/past.rs", "src/wire/command.rs",
                           "src/wire/common.rs", "src/wire/trace.rs")},
@@ -49,6 +49,7 @@ EXPECTED_CRITICAL = {
                 "infinite": CRITICAL_PREFIXES["rewrite"]},
 }
 TOOLCHAIN = "nightly"
+ZERO_BRANCH_POLICY_FILES = {"src/dialect/v4.rs", "src/disposition.rs"}
 
 
 def parse_prep_command() -> list[str]:
@@ -116,11 +117,18 @@ def classify_export(raw: dict, root: Path) -> dict:
         summary = item["summary"]
         lines = summary["lines"]
         branches = summary["branches"]
+        functions = summary.get("functions", {})
+        regions = summary.get("regions", {})
         if not all(isinstance(v, int) and v >= 0 for v in
                    (lines["count"], lines["covered"], branches["count"], branches["covered"])):
             raise ValueError(f"malformed coverage counts: {relative}")
         if lines["covered"] > lines["count"] or branches["covered"] > branches["count"]:
             raise ValueError(f"impossible coverage counts: {relative}")
+        for metric, counts in (("functions", functions), ("regions", regions)):
+            if counts and (not all(type(counts.get(key)) is int and counts[key] >= 0
+                                   for key in ("count", "covered")) or
+                           counts["covered"] > counts["count"]):
+                raise ValueError(f"impossible {metric} coverage counts: {relative}")
         if branches["count"] and not item["branches"]:
             raise ValueError(f"missing detailed branch population: {relative}")
         branch_sites = {}
@@ -171,6 +179,10 @@ def classify_export(raw: dict, root: Path) -> dict:
         files[relative] = {"lines": {"count": lines["count"], "covered": lines["covered"]},
                            "branches": {"count": branches["count"],
                                         "covered": branches["covered"]},
+                           "functions": {key: functions.get(key, 0)
+                                         for key in ("count", "covered")},
+                           "regions": {key: regions.get(key, 0)
+                                       for key in ("count", "covered")},
                            "uncovered_branch_locations": uncovered}
     if not files or not any(item["branches"]["count"] for item in files.values()):
         raise ValueError("no production branches were measured")
@@ -184,8 +196,19 @@ def critical_census(coverage: dict, name: str, feature: str) -> tuple[dict, list
     """Name each required critical source file and every uncovered branch."""
     files = {file: details["branches"] for file, details in coverage["files"].items()
              if any(file.startswith(prefix) for prefix in CRITICAL_PREFIXES[name])}
-    missing = [file for file in EXPECTED_CRITICAL[name][feature]
-               if file not in files or files[file]["count"] == 0]
+    missing = []
+    for file in EXPECTED_CRITICAL[name][feature]:
+        detail = coverage["files"].get(file)
+        if detail is None:
+            missing.append(file)
+        elif detail["branches"]["count"] == 0:
+            # LLVM emits no branch records for these const match policy files.
+            # Require executed functions, regions, and lines instead of treating
+            # an unmeasured file as complete.
+            if file not in ZERO_BRANCH_POLICY_FILES or any(
+                detail[metric]["covered"] == 0 for metric in ("lines", "functions", "regions")
+            ):
+                missing.append(file)
     gaps = [{"file": file, **location}
             for file, details in coverage["files"].items() if file in files
             for location in details["uncovered_branch_locations"]]
