@@ -2288,7 +2288,8 @@ fn no_local_evidence_framework_remains() {
         // or source file (23 - 2 = 21). TL-65 adds tests/ci_guard.rs (22).
         // Stage 1 adds infinite, safety export, owner corpus, past mapping,
         // pinned corpus replay and public tl-oracle differential tests.
-        ("tests", 30),
+        // V2 adds one native finite production/oracle partition.
+        ("tests", 31),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2359,14 +2360,14 @@ fn no_local_evidence_framework_remains() {
     // four retained target-origin counterexample files and the tl-oracle
     // integration tests for infinite and finite/past profiles, for 342. The
     // V1 campaign runner, manifest builder, tests and instructions bring this
-    // to 346.
+    // to 346. The V2 finite partition integration test brings this to 347.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 346,
-        "the source census population changed from the reviewed 346 tracked files \
+        inspected, 347,
+        "the source census population changed from the reviewed 347 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

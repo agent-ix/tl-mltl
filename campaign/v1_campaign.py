@@ -20,8 +20,8 @@ SOURCE_NAMES = ("tl-syntax", "tl-parse", "tl-rewrite", "tl-mltl", "tl-oracle")
 REQUIRED = {
     "V1": ("independent_oracle", "oracle_fault_injection",
            "oracle_dependency_boundary", "production_finite_faults",
-           "production_infinite_faults"),
-    "V2": ("exhaustive_partition",),
+           "production_infinite_faults", "finite_lasso_oracle"),
+    "V2": ("finite_small_partition", "full_domain_census"),
     "V3": ("semantic_properties",),
     "V4": ("fuzz_replay",),
     "V5": ("mutation_population",),
@@ -57,6 +57,14 @@ COMMAND_CONTRACTS = {
         "cargo", "test", "--locked", "--offline", "--features", "infinite-trace",
         "--test", "infinite_rules",
     ]),
+    "finite_lasso_oracle": ("tl-mltl", "cargo_test", [
+        "cargo", "test", "--locked", "--offline", "--features", "infinite-trace",
+        "--test", "infinite_oracle",
+    ]),
+    "finite_small_partition": ("tl-mltl", "cargo_population", [
+        "cargo", "test", "--locked", "--offline", "--test", "v1_finite_partition",
+        "--", "--nocapture",
+    ]),
     "infinite_oracle": ("tl-mltl", "cargo_test", [
         "cargo", "test", "--locked", "--offline", "--features", "infinite-trace",
         "--test", "infinite_oracle",
@@ -74,7 +82,7 @@ COMMAND_CONTRACTS = {
 # its producer emits a machine-checkable population; do not credit prose or a
 # copied success exit code.
 UNSUPPORTED_GATE_REASONS = {
-    "exhaustive_partition": "no_unified_enumeration_census_output",
+    "full_domain_census": "depth_three_interval_0_4_trace_1_6_population_not_run",
     "semantic_properties": "no_per_criterion_population_output",
     "fuzz_replay": "no_four_crate_fuzz_population_output",
     "mutation_population": "no_reviewed_mutant_population_parser",
@@ -89,7 +97,7 @@ assert set(COMMAND_CONTRACTS) | set(UNSUPPORTED_GATE_REASONS) == {
     item for ids in REQUIRED.values() for item in ids
 }
 MEASUREMENT_LANES = {
-    "domain_cardinalities": "exhaustive_partition",
+    "domain_cardinalities": "finite_small_partition",
     "fuzz_populations": "fuzz_replay",
     "mutation_populations": "mutation_population",
     "proof_bounds": "bounded_proof",
@@ -208,14 +216,44 @@ def classify(raw: bytes, parser: str, exit_code: int) -> tuple[str, dict[str, An
         if passed == 0 or ignored or filtered:
             return "incomplete", population
         return "passed", population
-    if parser == "population_json":
+    if parser in ("population_json", "cargo_population"):
         try:
-            observed = json.loads(raw)
+            if parser == "cargo_population":
+                summaries = CARGO_RESULT.findall(raw.decode(errors="replace"))
+                markers = re.findall(
+                    rb"TL_CAMPAIGN_POPULATION (\{[^\r\n]*\})", raw
+                )
+                if len(summaries) != 1 or int(summaries[0][1]) < 2 or len(markers) != 1:
+                    raise ValueError("missing or duplicated native census/test summary")
+                if summaries[0][0] != "ok" or int(summaries[0][2]) != 0:
+                    return "failed", {"reason": "native_test_failure"}
+                observed = json.loads(markers[0])
+                if (
+                    observed.get("schema") != "tl-mltl.finite-partition/v1"
+                    or observed.get("scope") != "depth1_atom1_closed0_2_words1_3"
+                    or observed.get("atom_basis") != ["p0"]
+                    or observed.get("max_depth") != 1
+                    or observed.get("interval_max") != 2
+                    or observed.get("trace_max_len") != 3
+                    or observed.get("full_target_complete") is not False
+                    or observed.get("formulas") != 375
+                    or observed.get("word_positions") != 34
+                    or observed.get("declared") != 375 * 34
+                ):
+                    raise ValueError("wrong finite partition scope")
+            else:
+                observed = json.loads(raw)
             counts = {key: observed[key] for key in ("declared", "visited", "refused", "failed")}
             if any(type(value) is not int or value < 0 for value in counts.values()):
                 raise ValueError("non-natural population")
         except (ValueError, KeyError, TypeError):
             return "failed", {"reason": "malformed_population"}
+        if parser == "cargo_population":
+            counts["scope"] = observed["scope"]
+            counts["formulas"] = observed["formulas"]
+            counts["word_positions"] = observed["word_positions"]
+            counts["full_target_complete"] = False
+            counts["native_test_count"] = int(summaries[0][1])
         if counts["visited"] + counts["refused"] > counts["declared"]:
             return "failed", counts | {"reason": "duplicate_or_excess_visits"}
         if counts["failed"] or exit_code:

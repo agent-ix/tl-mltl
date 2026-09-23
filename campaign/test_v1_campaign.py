@@ -46,6 +46,18 @@ class CampaignTests(unittest.TestCase):
             (self.repo / "tests" / f"{name}.rs").write_text(
                 "#[test] fn evidence() { assert!(campaign_fixture::ready()); }\n"
             )
+        census = json.dumps({
+            "schema": "tl-mltl.finite-partition/v1",
+            "scope": "depth1_atom1_closed0_2_words1_3",
+            "atom_basis": ["p0"], "max_depth": 1, "interval_max": 2,
+            "trace_max_len": 3, "full_target_complete": False,
+            "formulas": 375, "word_positions": 34,
+            "declared": 12750, "visited": 12750, "refused": 0, "failed": 0,
+        }, separators=(",", ":"))
+        (self.repo / "tests" / "v1_finite_partition.rs").write_text(
+            f'#[test] fn census() {{ println!("TL_CAMPAIGN_POPULATION {{}}", r#"{census}"#); }}\n'
+            "#[test] fn fault_control() { assert!(campaign_fixture::ready()); }\n"
+        )
         subprocess.run(["cargo", "generate-lockfile", "--offline"], cwd=self.repo,
                        capture_output=True, check=True)
         subprocess.run(["git", "add", "."], cwd=self.repo, check=True)
@@ -122,6 +134,25 @@ class CampaignTests(unittest.TestCase):
                     for path in make_manifest.corpus_paths(self.repo)}
         self.assertEqual(selected, {"corpus/trace.csv", "fuzz/corpus/seed"})
 
+    def test_native_small_partition_passes_while_full_v2_scope_remains_open(self) -> None:
+        repo, parser, argv = campaign.COMMAND_CONTRACTS["finite_small_partition"]
+        self.manifest["lanes"] = [{
+            "id": "finite_small_partition", "milestone": "V2", "mode": "command",
+            "repo": repo, "parser": parser, "argv": argv,
+            "seed": {"kind": "none", "reason": "finite_exhaustive"},
+        }]
+        report = self.report()
+        semantic = report["semantic_payload"]
+        lane = semantic["lanes"]["finite_small_partition"]
+        self.assertEqual(lane["status"], "passed")
+        self.assertEqual(lane["population"]["declared"], 12750)
+        self.assertEqual(semantic["lanes"]["full_domain_census"]["status"], "not_run")
+        self.assertEqual(semantic["milestones"]["V2"]["status"], "incomplete")
+        raw = Path(report["raw_artifacts"]["finite_small_partition"]["stdout"]["path"])
+        broken = raw.read_bytes().replace(b'"visited":12750', b'"visited":1')
+        status, population = campaign.classify(broken, "cargo_population", 0)
+        self.assertEqual((status, population["reason"]), ("incomplete", "unvisited_population"))
+
     # TC-196: Identical deterministic runs have identical semantic payloads
     # even though raw paths may differ. Preserve refused, missing and failed.
     def test_repeated_semantics_and_population_classes(self) -> None:
@@ -160,7 +191,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(report["milestones"]["V1"]["contract"]
                          ["independent_oracle"]["kind"], "exact_command")
         self.assertEqual(report["milestones"]["V2"]["contract"]
-                         ["exhaustive_partition"]["kind"], "unsupported")
+                         ["full_domain_census"]["kind"], "unsupported")
         self.assertEqual(report["milestones"]["V11"]["contract"]
                          ["lasso_population_census"]["kind"], "unsupported")
         self.assertEqual(report["milestones"]["V2"]["status"], "failed")

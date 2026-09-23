@@ -10,7 +10,8 @@ Imported records remain incomplete as milestone gates even when the captured
 bytes show a passing test. The registered executable commands cover the
 finite/past oracle comparison, oracle seeded-fault and dependency-boundary
 tests, both finite and infinite rewrite wrong-rule controls, the infinite
-oracle, infinite behavior, and oracle semantic-law tests; an
+oracle (also required for V1 lasso coverage), infinite behavior, and oracle
+semantic-law tests; an
 arbitrary command with a plausible test summary cannot complete their gates.
 The other required gates have named `unsupported` contracts in the
 report, with a specific missing native output/parser. Adding one requires an
@@ -19,6 +20,13 @@ runner presently reports those milestones open; it is not a full V1–V11
 completion gate.
 V11 remains open until a complete generated lasso/fairness/partial population
 is reported and reconciled, even when its three selected test suites pass.
+V2 runs `tests/v1_finite_partition.rs` through a native `cargo_population`
+parser. That producer enumerates 375 one-level formulas over `{false,true,p0}`
+and 34 word positions (12,750 comparisons) with all closed intervals through
+2, then prints one JSON census after reconciling visits and seeded ledger
+faults. Its small partition can pass independently. V2 remains incomplete
+because the full depth-three, interval-through-4, length-through-6 domain has
+not run.
 
 Run `python3 -m unittest discover -s campaign -p 'test_*.py'` for the
 TC-195–199 fault tests. Generate a manifest with
@@ -39,7 +47,8 @@ python3 campaign/v1_campaign.py \
 ```
 
 Each lane names an `id`, `milestone`, and `mode`. A `command` lane also names
-`repo`, argument-vector `argv`, `parser` (`cargo_test` or `population_json`),
+`repo`, argument-vector `argv`, `parser` (`cargo_test`, `cargo_population`, or
+`population_json`),
 an explicit fixed or deterministic `seed`, and an optional timeout. `record`
 lanes name a receipt JSON with exact source
 revisions, input digests, parser, exit code, and paths and SHA-256 digests for
