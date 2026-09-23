@@ -2337,13 +2337,17 @@ fn no_local_evidence_framework_remains() {
     // for 248. TL-173 deletes the orphaned AGPL fixture and its README
     // (tests/fixtures/fcd-static-bundle-1.2.json,
     // tests/fixtures/README.md), bringing the population to 246 (248 - 2).
+    // TL-65 (#90) adds src/ci_guard.rs, src/bin/ci_guard.rs,
+    // tests/ci_guard.rs, NFR-006 and its spec review SR-053, and the 10-file
+    // plan/PLAN-009 bundle (15 files), for 261; the 0.3.0 release adds
+    // CHANGELOG.md, for 262.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 246,
-        "the source census population changed from the reviewed 246 tracked files \
+        inspected, 262,
+        "the source census population changed from the reviewed 262 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
