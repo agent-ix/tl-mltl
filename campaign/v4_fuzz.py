@@ -7,6 +7,7 @@ import hashlib
 import json
 import re
 import subprocess
+import tomllib
 from pathlib import Path
 
 TARGETS = {
@@ -16,6 +17,7 @@ TARGETS = {
     "tl-mltl": "c2po_map",
 }
 REPORT = Path("fuzz/evidence/v4-2026-09-23/report.json")
+EVAL_REPORT = Path("fuzz/evidence/v4-eval-2026-09-23/report.json")
 HEX = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -36,11 +38,10 @@ def git_bytes(root: Path, revision: str, relative: str) -> bytes:
     return result.stdout
 
 
-def verify_one(name: str, entry: dict) -> tuple[dict, dict]:
+def verify_one(name: str, entry: dict, target: str, report_path: Path) -> tuple[dict, dict]:
     root = Path(entry["path"])
-    target = TARGETS[name]
-    evidence = root / REPORT.parent
-    report_bytes = (root / REPORT).read_bytes()
+    evidence = root / report_path.parent
+    report_bytes = (root / report_path).read_bytes()
     report = json.loads(report_bytes)
     if report.get("schema") != "tl-v4.libfuzzer-campaign/v1" or report.get("crate") != name:
         raise ValueError("wrong V4 report schema or crate")
@@ -66,8 +67,21 @@ def verify_one(name: str, entry: dict) -> tuple[dict, dict]:
         checked_digest(report.get(key), current, relative)
         if git_bytes(root, measured, relative) != current:
             raise ValueError(f"{relative}: changed since measured run")
-    for relative in ("fuzz/Cargo.toml", "fuzz/run_v4_campaign.py",
-                     f"fuzz/fuzz_targets/{target}.rs"):
+    measured_manifest = tomllib.loads(git_bytes(root, measured, "fuzz/Cargo.toml").decode())
+    current_manifest = tomllib.loads((root / "fuzz/Cargo.toml").read_text())
+    # Adding another target does not change a measured target's dependencies
+    # or executable path; compare its bin contract and every non-bin field.
+    for manifest in (measured_manifest, current_manifest):
+        bins = [item for item in manifest.pop("bin", []) if item.get("name") == target]
+        if len(bins) != 1 or bins[0].get("path") != f"fuzz_targets/{target}.rs":
+            raise ValueError("missing exact measured fuzz target bin")
+        manifest["selected_bin"] = bins[0]
+    if measured_manifest != current_manifest:
+        raise ValueError("fuzz target manifest or dependencies changed")
+    checked_sources = ["fuzz/run_v4_campaign.py", f"fuzz/fuzz_targets/{target}.rs"]
+    if target == "closed_eval":
+        checked_sources.append("fuzz/run_v4_eval_campaign.py")
+    for relative in checked_sources:
         if git_bytes(root, measured, relative) != (root / relative).read_bytes():
             raise ValueError(f"{relative}: measured target changed")
     seeds = report.get("seed_files_sha256")
@@ -102,7 +116,7 @@ def verify_one(name: str, entry: dict) -> tuple[dict, dict]:
                 "--", "-runs=1000", "-seed=181", "-max_total_time=30", "-max_len=4096"]
             or not argv[12].startswith("-artifact_prefix=")):
         raise ValueError("unreviewed fuzz invocation")
-    raw = {"report": {"path": str(root / REPORT), "sha256": digest(report_bytes)}}
+    raw = {"report": {"path": str(root / report_path), "sha256": digest(report_bytes)}}
     streams = {}
     for stream in ("stdout", "stderr"):
         filename = f"{stream}.log.gz"
@@ -143,18 +157,20 @@ def verify_one(name: str, entry: dict) -> tuple[dict, dict]:
 
 
 def verify_four(graph: dict) -> tuple[str, dict, dict]:
+    targets = [(name, target, REPORT, name) for name, target in TARGETS.items()]
+    targets.append(("tl-mltl", "closed_eval", EVAL_REPORT, "tl-mltl/closed_eval"))
     crates, raw = {}, {}
-    for name in TARGETS:
+    for name, target, report_path, lane_name in targets:
         try:
-            crates[name], raw[name] = verify_one(name, graph[name])
+            crates[lane_name], raw[lane_name] = verify_one(name, graph[name], target, report_path)
         except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
                 gzip.BadGzipFile) as error:
-            crates[name] = {"status": "incomplete", "reason": str(error)}
-            raw[name] = {}
+            crates[lane_name] = {"status": "incomplete", "reason": str(error)}
+            raw[lane_name] = {}
     status = "passed" if all(item["status"] == "passed" for item in crates.values()) else "incomplete"
     return status, {"schema": "tl-mltl.v4-fuzz-population/v1",
-                    "scope": "four_checked_targets_1000_executions_each",
-                    "crate_count": len(crates),
+                    "scope": "five_checked_targets_1000_executions_each",
+                    "crate_count": len(TARGETS), "target_count": len(crates),
                     "observed_executions": sum(item.get("executions", 0) for item in crates.values()),
                     "crates": crates,
                     "claim_boundary": "bounded_no_crash_observation"}, raw
