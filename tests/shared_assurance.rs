@@ -2252,7 +2252,7 @@ fn no_local_evidence_framework_remains() {
         // producer the chain driver reads its independent malformed-count
         // oracle from now that the manifest is no longer a vendored file.
         ("examples", 4),
-        ("fuzz", 26),
+        ("fuzz", 29),
         ("scripts", 5),
         // 110 was measured before TL-180 added ADR-001 and SR-052 (2 files)
         // without moving this control, making 112. This campaign adds 8:
@@ -2366,8 +2366,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 363,
-        "the source census population changed from the reviewed 363 tracked files \
+        inspected, 366,
+        "the source census population changed from the reviewed 366 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
