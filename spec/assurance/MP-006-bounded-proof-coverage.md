@@ -55,12 +55,15 @@ counterexample before routing it as a regression.
 
 ## Interpretation
 
-`statistical_design.decision_rule` evaluates only the count of applicable
-rows that lack a permitted bounded claim -- an assertion, partition cover,
-supported-path, or applicable unwind check that has not succeeded, or a
-loop-free unwind census that has not been retained; it holds only when that
-count is exactly zero for the rows a bounded claim is sought for. Report
-every candidate and state without a proof-coverage fraction.
+`statistical_design.decision_rule` evaluates only the count of applicable rows
+that carry a bounded claim they are not permitted: a row reported
+`proved_within_bounds` while any assertion, partition cover, supported-path, or
+applicable unwind check has not succeeded at the exact identities, or while its
+loop-free unwind is marked not-applicable without a retained exact census. It
+holds only when that count is exactly zero. A row that does not meet those
+conditions is not a violation: it keeps its specific result, exclusion, or
+blocked state, and a counterexample or other non-proof outcome does not fail
+the rule. Report every candidate and state without a proof-coverage fraction.
 `proved_within_bounds` means exactly the proposition written for exactly the admitted finite domain.
 Timeout, unknown, vacuity, partial execution, unsupported paths, or unchecked
 unwinding remain visible and confer no proof credit.

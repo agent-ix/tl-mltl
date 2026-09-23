@@ -55,14 +55,16 @@ baseline, control, enumeration, isolation, or restoration failure.
 
 ## Interpretation
 
-`statistical_design.decision_rule` evaluates only the count of missed or
-timed-out mutants that still lack one reviewed disposition, or whose
-restoration check has not passed; it holds -- and campaign closure is
-permitted -- only when that count is exactly zero. The caught/(caught +
-missed + timeout) mutation score itself remains descriptive and is never the
-evaluated quantity. Report raw populations, outcomes, and the missed/timeout
-queue before a killed fraction. The fraction describes only a complete
-selected viable population,
-with timeout conservatively counted as a non-kill and still reported separately.
+`statistical_design.decision_rule` evaluates only a count of closure blockers:
+the missed or timed-out mutants that still lack one reviewed disposition, plus
+the executed mutants, of any outcome, whose restoration check has not passed. It
+holds -- and campaign closure is permitted -- only when that count is exactly
+zero. The caught/(caught + missed + timeout) mutation score remains descriptive
+and is never the evaluated quantity. No score is published when execution is
+partial, that is, when any selected mutant lacks an execution state, or when the
+viable denominator is zero. Report raw populations, outcomes, exclusions,
+dispositions, and the missed/timeout queue before a killed fraction. The
+fraction describes only a complete selected viable population, with timeout
+conservatively counted as a non-kill and still reported separately.
 A missed mutant is actionable evidence, not proof that the requirement or test
 is wrong until its reviewed disposition establishes the cause.

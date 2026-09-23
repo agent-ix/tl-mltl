@@ -57,6 +57,14 @@ and environment identities.
 
 ## Interpretation
 
+The `proportion` estimate is covered applicable cells divided by all applicable
+cells. A cell is covered only when it has exactly one canonical,
+independently-oracled fixture that passed its named checks. The corpus gate
+fails when `statistical_design.decision_rule` does not hold, and it also fails
+when any excluded or blocked cell lacks its required reason and dependency; that
+second condition is a validity check on the census itself, applied before the
+ratio is read, because excluded and blocked cells are outside its denominator.
+
 Report raw counts and identities for every stratum before any ratio. A 100%
 applicable-cell result means only that the declared finite class model is
 populated and passed its named checks. Excluded, blocked, unavailable,

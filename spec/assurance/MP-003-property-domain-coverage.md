@@ -57,6 +57,15 @@ may be reused as a reviewed template but does not govern a sibling repository.
 
 ## Interpretation
 
+The `proportion` estimate is completely grounded applicable criteria divided by
+all applicable criteria. A row is completely grounded only when its grounding,
+discriminating oracle control, finite budget, execution record, and limitation
+are all complete. An applicable row that is not completely grounded is blocked
+from advancing regardless of the aggregate, and
+`statistical_design.decision_rule` holds only when no applicable row is blocked.
+Per-domain accepted, discarded, class, failure, and shrink populations are
+reported separately and never enter the estimate.
+
 Report every population and per-seed observation before the grounding fraction.
 A fully grounded row means the declared finite/generated domain and independent
 oracle were exercised as specified. It says nothing about values outside that
