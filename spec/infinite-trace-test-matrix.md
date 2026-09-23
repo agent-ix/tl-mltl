@@ -40,7 +40,7 @@ Implementation statuses below reflect only traced tests. Independent
 | TC-146 | Check U/R induction, duality and nonzero lower-bound obligations on repeated loops | Property | P0 | FR-031-AC-1 | 🚧 planned |
 | TC-147 | Check O/H origin and lower-bound semantics without backward loop wrap | Property | P0 | FR-031-AC-2 | ✅ implemented |
 | TC-148 | Check S/T/Y and mixed future/past nesting with independent origin-based oracle | Property | P0 | FR-031-AC-2 | ✅ implemented |
-| TC-149 | Check Boolean and temporal duals, bounded embedding, W/M lowering and TL `[a,)` to QSL `[a,*]` denotation correspondence | Property | P0 | FR-031-AC-3 | 🚧 planned |
+| TC-149 | Check Boolean and temporal duals, bounded embedding, W/M lowering and TL `[a,)` to QSL `[a,*]` denotation correspondence | Property | P0 | FR-031-AC-3 | ✅ implemented |
 | TC-150 | Replay empty-prefix and nonempty-prefix lassos with exact loop-entry boundaries | Integration | P0 | FR-032-AC-1 | ✅ implemented |
 | TC-151 | Compare repeated loop observations and event-position mapping against an independent infinite-word oracle | Property | P0 | FR-032-AC-1 | ✅ implemented |
 | TC-152 | Admit every valid lasso under an empty fairness set and require infinite visits for each complete-value premise | Property | P0 | FR-032-AC-2 | 🚧 planned |
