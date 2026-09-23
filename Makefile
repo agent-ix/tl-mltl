@@ -64,14 +64,8 @@ QUOIN ?= quoin
 # local iteration, outside `make guarded-ci`), it is a deliberate no-op.
 CI_GUARD ?= $(CARGO) run --quiet --bin ci_guard --
 
-# The shared-assurance lane runs in its own interpreter. Nothing in this
-# repository imports jsonschema once the local evidence machinery is gone, so
-# there is no version conflict left to resolve; the environment exists because
-# engineering-assurance is pinned as a git tag, and resolving a git dependency
-# into the system interpreter would make the pin depend on whatever else that
-# interpreter happens to have.
-ASSURANCE_VENV ?= .venv-assurance
-ASSURANCE_PYTHON ?= $(ASSURANCE_VENV)/bin/python
+# The shared-assurance script asks the exact tagged native Engineering
+# Assurance CLI for its verdict. It has no Python package dependency.
 
 ASSURANCE_DIR := target/assurance
 CONFORMANCE_RESULT := $(ASSURANCE_DIR)/reference-conformance.jsonl
@@ -103,7 +97,6 @@ help:
 	@echo "  make rustdoc          - Build warning-free public documentation"
 	@echo "  make build            - Release build"
 	@echo "  make clean            - cargo clean and drop the assurance environment"
-	@echo "  make assurance-env    - Create the pinned shared-assurance interpreter"
 	@echo "  make assurance-inputs - Write the structured results the assurance chain reads"
 	@echo "  make pins             - Classify the toolchain through the shared matrix"
 	@echo "  make assurance-chain  - Seal, retain, and verify through Quoin"
@@ -188,7 +181,6 @@ build:
 .PHONY: clean
 clean:
 	$(CARGO) clean
-	rm -rf $(ASSURANCE_VENV)
 
 # =============================================================================
 # Supply chain & safety
@@ -225,25 +217,13 @@ rustdoc:
 # Shared assurance
 # =============================================================================
 
-# Rebuilt when the pin changes. Without this prerequisite, editing the pinned
-# release never rebuilds the environment and the toolchain keeps whatever it
-# already had.
-$(ASSURANCE_PYTHON): requirements-assurance.txt
-	rm -rf $(ASSURANCE_VENV)
-	$(PYTHON) -m venv $(ASSURANCE_VENV)
-	$(ASSURANCE_VENV)/bin/pip install --quiet --disable-pip-version-check \
-		-r requirements-assurance.txt
-
-.PHONY: assurance-env
-assurance-env: $(ASSURANCE_PYTHON)
-
 # The only target that WRITES THE CHAIN'S INPUTS. `conformance`,
 # `differential`, `cli-conformance`, `test-census` and `spec` run producers
 # too — they are the same producers, run as ordinary gates. What is unique
 # here is that these are the bytes the chain reads, and everything
 # downstream consumes them and refuses to create them.
 .PHONY: assurance-inputs
-assurance-inputs: assurance-env
+assurance-inputs:
 	mkdir -p $(ASSURANCE_DIR)
 	$(CARGO) run --quiet --example emit_shared_corpus_manifest > $(SHARED_CORPUS_MANIFEST_COPY)
 	$(CARGO) run --quiet --example reference_conformance > $(CONFORMANCE_RESULT)
@@ -258,8 +238,8 @@ assurance-inputs: assurance-env
 		--message-format=json > $(MSRV_RESULT)
 
 .PHONY: pins
-pins: assurance-env
-	$(ASSURANCE_PYTHON) scripts/check_shared_pins.py
+pins:
+	$(PYTHON) scripts/check_shared_pins.py
 
 .PHONY: assurance-chain
 assurance-chain: assurance-inputs

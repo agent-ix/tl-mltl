@@ -5,9 +5,10 @@
   "registry": "Every npm component resolves from the public npm registry (registry.npmjs.org). The internal npm.ix mirror must not appear in any requirement, pin, lockfile, or .npmrc, and is not an oracle for whether a release landed. Querying an @agent-ix package needs --@agent-ix:registry=https://registry.npmjs.org; a bare --registry does not override the scoped .npmrc entry.",
   "engineering_assurance": {
     "version": "0.3.2",
-    "requirement": "engineering-assurance @ git+https://github.com/agent-ix/engineering-assurance@v0.3.2",
+    "requirement": "cargo +1.98.1 install --git https://github.com/agent-ix/engineering-assurance --tag v0.3.2 --locked --bin engineering-assurance",
+    "module_install": "quoin module install github:agent-ix/engineering-assurance//engineering_assurance@v0.3.2",
     "release_form": "planned git tag v0.3.2, a source distribution; this candidate migration is not merged until the accepted tag exists",
-    "declared_in": "requirements-assurance.txt"
+    "declared_in": ".github/workflows/ci.yml"
   },
   "repinned_workflow_component": {
     "component": "quoin",
@@ -22,8 +23,7 @@
     "why": "TL-192: the packaged compatibility matrix authoritative for this repository's pin (matrix_authority above) classified ix-flow strictly at the exact pinned version, so a locally-installed 0.2.3 against a v0.2.0 matrix pinning 0.0.4 classified as unknown, not compatible, and failed the local qualification gate. engineering-assurance v0.2.1 (release: accept ix-flow 0.2.3 matrix, agent-ix/engineering-assurance#47) re-pins the matrix to ix-flow 0.2.3 with human acceptance recorded (accepted_by Peter Krenesky, accepted_at 2026-09-10, after the local TC-107 gate passed against public ix-flow 0.2.3). At TL-192, this repository's engineering_assurance pin moved from v0.2.0 to v0.2.1 so the workflow literal and the matrix authority agreed; the then-current quire-cli and quoin versions were unchanged by that historical bump."
   },
   "stage1_ea_adoption": "This candidate moves the active assurance lane to the reviewed Engineering Assurance 0.3.2 matrix, Quire CLI 0.33.0 (engine 0.47.1), and Quoin 0.24.1 while retaining ix-flow 0.2.3. The matrix is the only compatibility authority. The V1 campaign AP-002/MP-007 records the source-bound eleven-milestone release measurement; Quoin 0.24.1 has no independent measurement-verdict checker, so AP-002 recommends rather than requires checker promotion, while the executable campaign gate still requires eleven passes. This migration is not a release claim until the matrix has named human acceptance and v0.3.2 is tagged.",
-  "consumed_artifacts_note": "The pinned native CLI embeds and classifies the compatibility matrix. This repository consumes its structured result through the CLI protocol and reads no separate file from the Engineering Assurance Python distribution. Artifact digest checks therefore have an empty population; the tagged CLI and its named matrix acceptance are the authority. The prior reduction in digest-bearing file consumers remains recorded in change-assurance.json.",
-  "consumed_artifacts": [],
+  "consumed_artifacts_note": "The pinned native CLI embeds and classifies the compatibility matrix. This repository consumes its structured result through the CLI protocol and reads no separate file from an EA Python distribution. The tagged CLI and its named matrix acceptance are the authority. Historical digest-consumer reductions remain recorded in change-assurance.json.",
   "upstream_dependency": {
     "component": "tl-syntax",
     "compiled_revision": "9de638dc4d14d0ae62a6825473a3a9bb6a9e57ac",

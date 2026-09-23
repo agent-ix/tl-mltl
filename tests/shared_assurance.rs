@@ -23,14 +23,18 @@ fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
-/// The interpreter `make assurance-env` builds. Its absence is an error.
+/// The dependency-free adapter runs with the selected Python interpreter.
 fn assurance_python() -> PathBuf {
     let path = std::env::var_os("ASSURANCE_PYTHON")
         .map(PathBuf::from)
-        .unwrap_or_else(|| root().join(".venv-assurance/bin/python"));
+        .unwrap_or_else(|| PathBuf::from("python3"));
     assert!(
-        path.is_file(),
-        "the pinned assurance interpreter is missing at {}. Run `make assurance-env`. \
+        Command::new(&path)
+            .arg("--version")
+            .output()
+            .map(|result| result.status.success())
+            .unwrap_or(false),
+        "the assurance Python interpreter is unavailable at {}. \
          This is a failure and not a skip: a gate that stands down when its dependency \
          is absent reports the same green as one that ran.",
         path.display()
@@ -1043,7 +1047,6 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         );
     }
     assert_eq!(report["accepted"], true);
-    assert!(report["artifact_mismatches"].as_array().unwrap().is_empty());
     assert!(report["mirror_references"].as_array().unwrap().is_empty());
     assert!(
         report["upstream_pin_mismatches"]
@@ -2026,8 +2029,7 @@ fn the_r2u2_differential_is_a_comparison_and_never_a_boolean() {
 // Trace: TC-017, NFR-002-AC-3, SUITE-008
 #[test]
 fn every_requirement_tagged_test_is_a_test_cargo_compiles_and_runs() {
-    // Deliberately unguarded: this census touches neither `target/assurance`
-    // nor `requirements-assurance.txt`.
+    // Deliberately unguarded: this census does not touch `target/assurance`.
     let report = json_gate(
         Path::new("python3"),
         &["scripts/rust_test_census.py", "--json"],
@@ -2365,14 +2367,14 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 425,
-        "the source census population changed from the reviewed 425 tracked files \
+        inspected, 424,
+        "the source census population changed from the reviewed 424 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
-    // The byte census reads every tracked non-exempt file, including
-    // `requirements-assurance.txt`; serialize that access with the probe that
-    // temporarily rewrites the same shared input. Passing the private token to
+    // The byte census reads every tracked non-exempt file, including the CI
+    // workflow; serialize that access with the probe that temporarily rewrites
+    // that same shared input. Passing the private token to
     // the byte-scanning helpers makes this acquisition compile-time load-bearing.
     let inputs = assurance_inputs_guard();
     let scanned = scanned_paths(&root, &tracked);
@@ -2823,12 +2825,12 @@ fn mirror_scan_with_staged_requirement(_inputs: &AssuranceInputsGuard) -> (i32, 
             "-c",
             "import json,sys,pathlib;sys.path.insert(0,'scripts');\
              import check_shared_pins as m;\
-             original=pathlib.Path('requirements-assurance.txt').read_text();\
-             pathlib.Path('requirements-assurance.txt').write_text(\
+             original=pathlib.Path('.github/workflows/ci.yml').read_text();\
+             pathlib.Path('.github/workflows/ci.yml').write_text(\
              original+'\\n--registry=https://npm.ix/\\n');\
              pins=json.load(open('assurance/pins.json'));\
              found=m.mirror_references(pins);\
-             pathlib.Path('requirements-assurance.txt').write_text(original);\
+             pathlib.Path('.github/workflows/ci.yml').write_text(original);\
              print(json.dumps(found))",
         ],
     )
@@ -2847,15 +2849,15 @@ fn the_mirror_scan_refuses_a_registry_reference_in_a_real_file() {
     assert!(
         offenders
             .iter()
-            .any(|entry| entry.starts_with("requirements-assurance.txt:")),
+            .any(|entry| entry.starts_with(".github/workflows/ci.yml:")),
         "a mirror reference written into a scanned FILE was not detected; the \
          file-scan branch matches nothing. Detected: {offenders:?}"
     );
 
     // And the file must be restored, or this test has dirtied the tree.
-    let restored = fs::read_to_string(root().join("requirements-assurance.txt")).unwrap();
+    let restored = fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
     assert!(
         !restored.contains("npm.ix/"),
-        "the probe left a mirror reference in requirements-assurance.txt"
+        "the probe left a mirror reference in the CI workflow"
     );
 }

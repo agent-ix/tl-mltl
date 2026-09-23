@@ -20,7 +20,6 @@ make audit-unsafe     # check that every unsafe block has a // SAFETY: comment
 make spec             # validate specs and strict coverage
 make msrv             # check all targets and features with Rust 1.98.1
 make rustdoc          # build warning-free public docs
-make assurance-env    # create the pinned shared-assurance interpreter
 make assurance-inputs # run the producers and write their structured results
 make assurance        # pins + assurance-chain
 make ci               # complete local gate, unguarded (see Makefile header)
@@ -73,10 +72,8 @@ Three rules to keep in mind before changing anything under `assurance/`,
   `corpus/r2u2-v4.2/` is retained and pinned by digest; every claim is a replay
   against those bytes.
 
-`.venv-assurance/` is built by `make assurance-env` from
-`requirements-assurance.txt` and is ignored. The shared-assurance lane runs there
-rather than in the system interpreter, because `engineering-assurance` is pinned
-as a git tag.
+The shared-assurance lane uses system `python3` for its dependency-free adapter
+and the exact tagged Engineering Assurance native CLI for compatibility verdicts.
 
 ## The Makefile is not a trust root
 

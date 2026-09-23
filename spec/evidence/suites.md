@@ -17,7 +17,7 @@ type: SuiteRegistry
 | SUITE-005 | CLI conformance | `cargo run --example cli_conformance -- --requests tests/fixtures/cli-requests/manifest.json` | tl-mltl CLI conformance producer | Integration |
 | SUITE-006 | R2U2 differential replay | `cargo run --example r2u2_differential -- --manifest corpus/r2u2-v4.2/manifest.json` | tl-mltl R2U2 differential producer | Integration |
 | SUITE-008 | Compiled Rust test census | `python3 scripts/rust_test_census.py` | tl-mltl test census | Static |
-| SUITE-009 | Shared pin classification | `.venv-assurance/bin/python scripts/check_shared_pins.py` | engineering-assurance 0.2.0 | Analysis |
+| SUITE-009 | Shared pin classification | `python3 scripts/check_shared_pins.py` | engineering-assurance 0.3.2 native classifier | Analysis |
 
 ## What backs these rows, and what does not
 

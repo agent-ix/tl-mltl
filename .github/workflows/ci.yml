@@ -64,13 +64,6 @@ jobs:
       - name: Install pinned Engineering Assurance classifier
         run: cargo +1.98.1 install --git https://github.com/agent-ix/engineering-assurance --tag v0.3.2 --locked --bin engineering-assurance
 
-      # The shared-assurance lane is its own interpreter, built by
-      # `make assurance-env` from requirements-assurance.txt. There is no second
-      # Python lane: the scripts that imported jsonschema were part of the local
-      # evidence machinery this migration removed.
-      - name: Build the pinned assurance environment
-        run: make assurance-env
-
       - name: Install cargo-deny
         uses: taiki-e/install-action@v2
         with:
