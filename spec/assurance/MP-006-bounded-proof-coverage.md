@@ -5,16 +5,20 @@ type: MeasurementPlan
 status: proposed
 owner: tl-verification-campaign-owner
 metric: tl.bounded-proof-result
-definition_version: tl-mltl.bounded-proof-result/v1
+definition_version: tl-mltl.bounded-proof-result/v2
 stage: baseline
+objective:
+  direction: zero
 statistical_design:
   population: every exact proof-candidate-ledger row classified as applicable, excluded, or blocked, including rationale, harness, proposition, assumptions, finite domains, bounds, checks, and explicit non-claims when applicable
   sampling: complete classification of the candidate ledger and complete execution of every applicable harness under exact verifier, solver, toolchain, configuration, timeout, and memory identities
   repetitions: 1
-  estimator: an identity-keyed categorical result vector with no aggregate proof ratio; each candidate remains proved-within-bounds, counterexample, unwind-incomplete, solver-unknown, vacuous, timed-out, unsupported, tool-error, not-run, excluded, or blocked
+  estimator: count
   error_model: stale harness or candidate, hidden assumptions, uncovered partitions, disabled unwind checks, insufficient bounds, unsupported constructs, solver/tool drift, timeout, semantic forks, and claim widening
   uncertainty: a conclusive result applies only to the explicitly finite domain and assumptions; no inference is made to larger formulas, traces, histories, arithmetic domains, callers, or unbounded MLTL
-  decision_rule: permit a bounded claim for one applicable row only when every assertion, partition cover, supported-path, and applicable unwind check succeeds at the exact identities and loop-free unwind is not-applicable only after a retained exact census; otherwise preserve the specific result, exclusion, or blocked state
+  decision_rule:
+    comparator: eq
+    threshold: 0
 relationships:
   - target: ix://agent-ix/tl-mltl/FR-023
     type: measures
@@ -51,7 +55,15 @@ counterexample before routing it as a regression.
 
 ## Interpretation
 
-Report every candidate and state without a proof-coverage fraction.
+`statistical_design.decision_rule` evaluates only the count of applicable rows
+that carry a bounded claim they are not permitted: a row reported
+`proved_within_bounds` while any assertion, partition cover, supported-path, or
+applicable unwind check has not succeeded at the exact identities, or while its
+loop-free unwind is marked not-applicable without a retained exact census. It
+holds only when that count is exactly zero. A row that does not meet those
+conditions is not a violation: it keeps its specific result, exclusion, or
+blocked state, and a counterexample or other non-proof outcome does not fail
+the rule. Report every candidate and state without a proof-coverage fraction.
 `proved_within_bounds` means exactly the proposition written for exactly the admitted finite domain.
 Timeout, unknown, vacuity, partial execution, unsupported paths, or unchecked
 unwinding remain visible and confer no proof credit.

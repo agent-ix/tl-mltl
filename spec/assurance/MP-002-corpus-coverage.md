@@ -5,16 +5,20 @@ type: MeasurementPlan
 status: proposed
 owner: tl-mltl-corpus-owner
 metric: tl-mltl.corpus-coverage
-definition_version: tl-mltl.corpus-coverage/v1
+definition_version: tl-mltl.corpus-coverage/v2
 stage: gate
+objective:
+  direction: higher
 statistical_design:
   population: every cell in the closed tl-mltl.corpus-campaign/v1 catalog, stratified as applicable, excluded, or blocked
   sampling: complete deterministic enumeration of declared cells; generated property and fuzz inputs are reported separately
   repetitions: 1
-  estimator: covered applicable cells divided by all applicable cells, with raw identities and excluded/blocked populations reported separately
+  estimator: proportion
   error_model: omitted or duplicate cells, denominator shrinkage, stale profile or oracle identity, digest drift, self-oracling, generated-fixture substitution, and collapsed target states
   uncertainty: no sampling interval for the deterministic census; unenumerated value-space and unavailable external targets remain explicit limitations
-  decision_rule: fail the corpus gate when any applicable cell lacks exactly one canonical independently-oracled fixture or any excluded/blocked cell lacks its required reason and dependency
+  decision_rule:
+    comparator: ge
+    threshold: 1
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-002
     type: measures
@@ -52,6 +56,14 @@ collection records exact repository, dependency, corpus, tool, configuration,
 and environment identities.
 
 ## Interpretation
+
+The `proportion` estimate is covered applicable cells divided by all applicable
+cells. A cell is covered only when it has exactly one canonical,
+independently-oracled fixture that passed its named checks. The corpus gate
+fails when `statistical_design.decision_rule` does not hold, and it also fails
+when any excluded or blocked cell lacks its required reason and dependency; that
+second condition is a validity check on the census itself, applied before the
+ratio is read, because excluded and blocked cells are outside its denominator.
 
 Report raw counts and identities for every stratum before any ratio. A 100%
 applicable-cell result means only that the declared finite class model is
