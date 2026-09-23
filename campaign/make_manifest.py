@@ -26,7 +26,7 @@ def corpus_paths(repo: Path) -> list[Path]:
     return sorted(selected)
 
 
-def make_manifest(repos_root: Path) -> dict:
+def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None) -> dict:
     sources = {}
     inputs = {}
     for name in SOURCE_NAMES:
@@ -42,12 +42,17 @@ def make_manifest(repos_root: Path) -> dict:
         for lane_id in lane_ids:
             if lane_id not in COMMAND_CONTRACTS:
                 continue
+            if lane_id == "live_r2u2" and live_r2u2_source is None:
+                continue
             repo, parser, argv = COMMAND_CONTRACTS[lane_id]
-            lanes.append({
+            lane = {
                 "id": lane_id, "milestone": milestone, "mode": "command",
                 "repo": repo, "parser": parser, "argv": argv,
                 "seed": {"kind": "none", "reason": "deterministic_cargo_test"},
-            })
+            }
+            if lane_id == "live_r2u2":
+                lane["target_source"] = str(live_r2u2_source.resolve())
+            lanes.append(lane)
     return {
         "schema": "tl-mltl.v1-campaign-manifest/v1",
         "sources": sources,
@@ -60,8 +65,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repos-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--live-r2u2-source", type=Path,
+        help="Explicitly opt into the exact-pin foreign target run",
+    )
     args = parser.parse_args()
-    manifest = make_manifest(args.repos_root)
+    manifest = make_manifest(args.repos_root, args.live_r2u2_source)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
 
