@@ -2229,8 +2229,8 @@ fn no_local_evidence_framework_remains() {
     let observed_areas = area_cardinalities(&tracked);
     let expected_areas: BTreeMap<String, usize> = [
         // CLA.md, added by the CLA Assistant Lite rollout (#76/#77), since
-        // this census was last updated.
-        ("<root>", 14),
+        // this census was last updated. The 0.3.0 release adds CHANGELOG.md.
+        ("<root>", 15),
         (".agent", 1),
         // .github/workflows/cla.yml, same CLA rollout.
         (".github", 3),
