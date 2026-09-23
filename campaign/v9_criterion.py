@@ -298,7 +298,8 @@ def report(args: argparse.Namespace) -> int:
                                             for row in cases) else
                   "repeat_required" if any(row["status"] == "repeat_required"
                                             for row in cases) else
-                  "inconclusive_noise" if any(row["status"] == "inconclusive_overlap"
+                  "inconclusive_noise" if any(row["status"] in {
+                      "inconclusive_overlap", "one_run_spike"}
                                               for row in cases) else "passed")
         result = {"schema": "tl-mltl.v9-criterion-report/v1", "status": status,
                   "threshold": THRESHOLD, "required_pairs": 2,

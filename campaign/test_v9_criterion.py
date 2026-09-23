@@ -67,6 +67,11 @@ class V9CriterionTests(unittest.TestCase):
         third = self.pair(3, 130.0)
         self.assertEqual(self.report(first, second, third)["status"], "finding_required")
 
+    def test_one_spike_in_three_pairs_remains_inconclusive(self) -> None:
+        result = self.report(self.pair(1, 130.0), self.pair(2), self.pair(3))
+        self.assertEqual(result["status"], "inconclusive_noise")
+        self.assertEqual(result["cases"][0]["status"], "one_run_spike")
+
     def test_host_mismatch_is_inconclusive(self) -> None:
         result = self.report(self.pair(1), self.pair(2, host_node="host-b"))
         self.assertEqual(result["status"], "inconclusive_host")
