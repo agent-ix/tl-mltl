@@ -7,6 +7,7 @@ import io
 import os
 import re
 import subprocess
+import sys
 import tarfile
 import tempfile
 import tomllib
@@ -186,6 +187,8 @@ def run_v6(graph: dict, raw_dir: Path) -> tuple[str, dict, dict]:
             "cargo": version(["cargo", "-V"], mltl, env),
             "rustc": version(["rustc", "-Vv"], mltl, env),
             "cargo_path": toolchain_cargo,
+            "python": sys.version,
+            "git": version(["git", "--version"], mltl, env),
         }
         if "Kani Rust Verifier 0.68.0" not in population["tool_versions"]["kani"]:
             raise ValueError("unreviewed Kani version")
