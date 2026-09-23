@@ -8,7 +8,8 @@ use tl_syntax::{
 };
 
 fuzz_target!(|data: &[u8]| {
-    let Ok(document) = FormulaDocument::from_json_bytes(data, SyntaxArtifactLimits::default()) else {
+    let Ok(document) = FormulaDocument::from_json_bytes(data, SyntaxArtifactLimits::default())
+    else {
         return;
     };
     if document.schema_version() != FormulaSchemaVersion::V2
@@ -16,8 +17,12 @@ fuzz_target!(|data: &[u8]| {
     {
         return;
     }
-    let formula = Formula::new(document.semantic_profile(), document.root(), document.nodes())
-        .expect("strict syntax reader admitted an invalid formula graph");
+    let formula = Formula::new(
+        document.semantic_profile(),
+        document.root(),
+        document.nodes(),
+    )
+    .expect("strict syntax reader admitted an invalid formula graph");
     let trace = [
         vec![PropositionId(0)],
         vec![PropositionId(1)],

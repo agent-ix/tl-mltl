@@ -15,11 +15,12 @@ tests, both finite and infinite rewrite wrong-rule controls, the infinite
 oracle (also required for V1 lasso coverage), infinite behavior, and oracle
 semantic-law tests; an
 arbitrary command with a plausible test summary cannot complete their gates.
-V4 has a fixed native gate that reconciles all four checked-in libFuzzer
-reports against their measured source ancestors, unchanged targets and lock
+V4 has a fixed native gate that reconciles five checked-in libFuzzer reports
+across the four production crates, including both mlTL mapping and evaluation.
+It checks their measured source ancestors, unchanged targets and lock
 files, checked corpus digests, lossless raw streams, actual 1,000-execution
 `DONE` markers, and crash-artifact state. A clean outcome is a bounded
-observation for those four named targets. The manifest builder adds this lane
+observation for those five named targets. The manifest builder adds this lane
 automatically with seed 181; stale or missing per-crate evidence leaves V4
 incomplete. The other required gates have named `unsupported` contracts in the
 report, with a specific missing native output/parser. Adding one requires an

@@ -80,7 +80,7 @@ COMMAND_CONTRACTS = {
     ]),
 }
 NATIVE_CONTRACTS = {
-    "fuzz_replay": "four_source_pinned_libfuzzer_reports_and_raw_streams",
+    "fuzz_replay": "four_crates_five_source_pinned_libfuzzer_targets_and_raw_streams",
 }
 # A gate without a native output parser and exact invocation is intentionally
 # open. Extend COMMAND_CONTRACTS together with classify() and fault tests when
