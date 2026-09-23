@@ -20,5 +20,12 @@ test = false
 doc = false
 bench = false
 
+[[bin]]
+name = "closed_eval"
+path = "fuzz_targets/closed_eval.rs"
+test = false
+doc = false
+bench = false
+
 [workspace]
 members = ["."]
