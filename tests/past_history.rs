@@ -616,6 +616,227 @@ fn results_bind_all_dimensions_and_validate_direct_corrections() {
     );
 }
 
+// Trace: FR-012-AC-3, FR-012-AC-4, FR-050-AC-1
+#[test]
+fn persisted_past_result_refuses_typed_identity_work_and_lineage_mutations() {
+    let nodes = unary_nodes(|operand| NodeKind::Once {
+        interval: Interval::new(0, 1).unwrap(),
+        operand,
+    });
+    let first_history = event_history(&[(false, false), (true, false)], 1);
+    let original = evaluate_past(
+        formula(&nodes),
+        "formula-a",
+        &first_history,
+        1,
+        "map-a",
+        1,
+        PastEvaluationRelationInput::Original,
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    let corrected_history = first_history
+        .corrected(2, 1, first_history.observations().to_vec())
+        .unwrap();
+    let successor = evaluate_past(
+        formula(&nodes),
+        "formula-a",
+        &corrected_history,
+        1,
+        "map-a",
+        2,
+        PastEvaluationRelationInput::Superseding(&original),
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    original.validate().unwrap();
+    successor
+        .validate_with_predecessor(Some(&original))
+        .unwrap();
+
+    macro_rules! refuses {
+        ($base:expr, $mutation:expr, $expected:expr) => {{
+            let mut report = $base.clone();
+            $mutation(&mut report);
+            assert_eq!(report.validate(), Err($expected));
+        }};
+    }
+
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.result_revision = 0,
+        PastResultValidationError::ResultRevisionZero
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.formula_id.clear(),
+        PastResultValidationError::IdentityMismatch { field: "formulaId" }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.history.history_id.clear(),
+        PastResultValidationError::IdentityMismatch { field: "historyId" }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.proposition_map_id.clear(),
+        PastResultValidationError::IdentityMismatch {
+            field: "propositionMapId"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.evaluator_revision.clear(),
+        PastResultValidationError::IdentityMismatch {
+            field: "evaluatorRevision"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.result_sha256 = "bad".into(),
+        PastResultValidationError::MalformedDigest {
+            field: "resultSha256"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.formula_sha256 = "bad".into(),
+        PastResultValidationError::MalformedDigest {
+            field: "formulaSha256"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.history.history_sha256 = "bad".into(),
+        PastResultValidationError::MalformedDigest {
+            field: "historySha256"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.history.revision = 0,
+        PastResultValidationError::IdentityMismatch {
+            field: "historyRevision"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.limits.max_steps = u64::MAX,
+        PastResultValidationError::LimitsNotClamped
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.history.through_position = u64::MAX,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.stats.temporal_iterations = u64::MAX,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.stats.steps = 0,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.stats.input_positions = 0,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.anchor = 2,
+        PastResultValidationError::AnchorOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.relation.corrected_history = Some(r.history.clone()),
+        PastResultValidationError::RelationShape
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.verdict = !r.verdict,
+        PastResultValidationError::StaleResultDigest
+    );
+
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r.relation.direct_predecessor = None,
+        PastResultValidationError::RelationShape
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r.relation.corrected_history = None,
+        PastResultValidationError::RelationShape
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r.relation.corrected_history.as_mut().unwrap().revision = 1,
+        PastResultValidationError::CorrectedHistoryMismatch
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r
+            .relation
+            .direct_predecessor
+            .as_mut()
+            .unwrap()
+            .result_revision = 2,
+        PastResultValidationError::PredecessorNotEarlier
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r.relation.direct_predecessor.as_mut().unwrap().history_id =
+            "elsewhere".into(),
+        PastResultValidationError::PredecessorContextMismatch
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r
+            .relation
+            .direct_predecessor
+            .as_mut()
+            .unwrap()
+            .result_sha256 = "bad".into(),
+        PastResultValidationError::MalformedDigest {
+            field: "predecessorResultSha256"
+        }
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r
+            .relation
+            .direct_predecessor
+            .as_mut()
+            .unwrap()
+            .history_sha256 = "bad".into(),
+        PastResultValidationError::MalformedDigest {
+            field: "predecessorHistorySha256"
+        }
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r
+            .relation
+            .direct_predecessor
+            .as_mut()
+            .unwrap()
+            .result_sha256 = r.result_sha256.clone(),
+        PastResultValidationError::SelfPredecessor
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r
+            .relation
+            .direct_predecessor
+            .as_mut()
+            .unwrap()
+            .history_sha256 = r.history.history_sha256.clone(),
+        PastResultValidationError::PredecessorNotEarlier
+    );
+}
+
 // Trace: TC-052, FR-012-AC-2
 #[test]
 fn required_history_uses_checked_recursive_equations_and_ignores_spans() {

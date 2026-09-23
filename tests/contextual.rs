@@ -203,6 +203,114 @@ fn owner_trace_refuses_unsorted_and_over_budget_observations() {
     );
 }
 
+// Trace: FR-050-AC-1, NFR-001-AC-1
+#[test]
+fn owner_semantic_limits_admit_the_boundary_and_type_one_over() {
+    use tl_mltl::wire::common::{produce, OwnerUsage};
+
+    macro_rules! boundary {
+        ($limit:ident, $usage:ident, $field:literal) => {{
+            let limits = OwnerLimits {
+                $limit: 1,
+                ..OwnerLimits::owner_max()
+            };
+            let usage = OwnerUsage {
+                $usage: 1,
+                ..OwnerUsage::default()
+            };
+            assert!(produce((), usage, limits).is_ok(), "{} at limit", $field);
+            let over = OwnerUsage { $usage: 2, ..usage };
+            let error = produce((), over, limits).unwrap_err();
+            assert_eq!(error.code(), OwnerReadErrorCode::ResourceIncomplete);
+            assert_eq!(error.field(), $field);
+        }};
+    }
+
+    boundary!(max_formula_nodes, formula_nodes, "formulaNodes");
+    boundary!(max_formula_depth, formula_depth, "formulaDepth");
+    boundary!(max_positions, positions, "positions");
+    boundary!(max_propositions, propositions, "propositions");
+    boundary!(max_support, support, "support");
+    boundary!(max_history_span, history_span, "historySpan");
+    boundary!(max_evaluation_steps, evaluation_steps, "evaluationSteps");
+    boundary!(max_recursion_depth, recursion_depth, "recursionDepth");
+}
+
+// Trace: FR-050-AC-1, NFR-001-AC-1
+#[test]
+fn owner_trace_limits_bind_wire_shape_and_expected_identity() {
+    let trace = TraceDocument {
+        schema_version: TraceSchemaVersion::V1,
+        trace_id: "edge".to_owned(),
+        closed: true,
+        instants: vec![vec![PropositionId(7), PropositionId(8)]],
+    };
+    let max = OwnerLimits::owner_max();
+    let bytes = wire::trace::derive(&trace, max).unwrap().bytes().to_vec();
+    let usage = ValidatedTrace::from_json_bytes(&bytes, max)
+        .unwrap()
+        .usage();
+    let bounded = OwnerLimits {
+        max_input_bytes: bytes.len(),
+        max_depth: usage.depth,
+        max_string_bytes: usage.string_bytes,
+        max_visited_fields: usage.visited_fields,
+        ..max
+    };
+    assert_eq!(
+        wire::trace::read(&bytes, &trace, bounded)
+            .unwrap()
+            .document(),
+        &trace
+    );
+    for (limits, field) in [
+        (
+            OwnerLimits {
+                max_input_bytes: bytes.len() - 1,
+                ..bounded
+            },
+            "inputBytes",
+        ),
+        (
+            OwnerLimits {
+                max_depth: usage.depth - 1,
+                ..bounded
+            },
+            "depth",
+        ),
+        (
+            OwnerLimits {
+                max_string_bytes: usage.string_bytes - 1,
+                ..bounded
+            },
+            "stringBytes",
+        ),
+        (
+            OwnerLimits {
+                max_visited_fields: usage.visited_fields - 1,
+                ..bounded
+            },
+            "visitedFields",
+        ),
+    ] {
+        let error = ValidatedTrace::from_json_bytes(&bytes, limits).unwrap_err();
+        assert_eq!(error.code(), OwnerReadErrorCode::ResourceIncomplete);
+        assert_eq!(error.field(), field);
+    }
+
+    let mut other = trace.clone();
+    other.trace_id = "other".to_owned();
+    let error = wire::trace::read(&bytes, &other, bounded).unwrap_err();
+    assert_eq!(error.code(), OwnerReadErrorCode::ExpectedMismatch);
+    assert_eq!(error.field(), "trace");
+
+    let mut nameless = trace.clone();
+    nameless.trace_id.clear();
+    let error = wire::trace::derive(&nameless, max).unwrap_err();
+    assert_eq!(error.code(), OwnerReadErrorCode::InvalidCombination);
+    assert_eq!(error.field(), "traceId");
+}
+
 fn assert_stable_v1_wire<T>(record: T, v2_schema: &str)
 where
     T: serde::Serialize + serde::de::DeserializeOwned + Eq + core::fmt::Debug,
