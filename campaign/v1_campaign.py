@@ -18,6 +18,7 @@ from typing import Any
 from v4_fuzz import verify_four
 from v6_kani import run_v6
 import v7_gate
+import v8_gate
 
 SOURCE_NAMES = ("tl-syntax", "tl-parse", "tl-rewrite", "tl-mltl", "tl-oracle")
 # Every milestone names an executable lane. Additional campaign lanes can be
@@ -78,6 +79,9 @@ COMMAND_CONTRACTS = {
     "embedded_miri_limits": ("tl-mltl", "v7_native", [
         sys.executable, "campaign/v7_native.py",
     ]),
+    "coverage": ("tl-mltl", "v8_native", [
+        sys.executable, "campaign/v8_coverage.py",
+    ]),
     "infinite_oracle": ("tl-mltl", "cargo_test", [
         "cargo", "test", "--locked", "--offline", "--features", "infinite-trace",
         "--test", "infinite_oracle",
@@ -109,7 +113,6 @@ NATIVE_CONTRACTS = {
 UNSUPPORTED_GATE_REASONS = {
     "full_domain_census": "depth_three_interval_0_4_trace_1_6_population_not_run",
     "mutation_population": "no_reviewed_mutant_population_parser",
-    "coverage": "no_four_crate_branch_coverage_parser",
     "performance": "no_four_crate_paired_benchmark_parser",
 }
 assert set(COMMAND_CONTRACTS) | set(NATIVE_CONTRACTS) | set(UNSUPPORTED_GATE_REASONS) == {
@@ -648,6 +651,8 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
         target_raw_dir = None
         v7_raw_dir = None
         v7_report_path = None
+        v8_raw_dir = None
+        v8_report_path = None
         executed_argv = argv
         if lane_id == "live_r2u2":
             target_source = lane.get("target_source")
@@ -678,6 +683,22 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
                 "--cargo-home", str(Path(cargo_home).resolve()),
                 "--raw-dir", str(v7_raw_dir.resolve()),
                 "--output", str(v7_report_path.resolve()),
+            ]
+        if lane_id == "coverage":
+            cargo_home = lane.get("cargo_home")
+            if (not isinstance(cargo_home, str) or not Path(cargo_home).is_absolute() or
+                    not Path(cargo_home).is_dir()):
+                return base | {"status": "blocked", "reason": "v8_cargo_home_required"}, {}
+            v8_raw_dir = raw_dir / "coverage-native"
+            v8_report_path = raw_dir / "coverage-native.json"
+            if v8_report_path.exists() or v8_raw_dir.exists():
+                return base | {"status": "incomplete", "reason": "v8_raw_dir_not_empty"}, {}
+            executed_argv = argv + [
+                *[piece for name in ("syntax", "parse", "mltl", "rewrite")
+                  for piece in (f"--{name}", graph[f"tl-{name}"]["path"])],
+                "--cargo-home", str(Path(cargo_home).resolve()),
+                "--raw-dir", str(v8_raw_dir.resolve()),
+                "--output", str(v8_report_path.resolve()),
             ]
         try:
             result = subprocess.run(
@@ -714,6 +735,19 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
                     status = "passed"
                 except (OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired):
                     status, population = "failed", {"reason": "malformed_v7_native_evidence"}
+        elif lane_id == "coverage":
+            assert v8_report_path is not None and v8_raw_dir is not None
+            try:
+                tools = v8_gate.tool_versions()
+                status, population, native_artifacts = v8_gate.verify(
+                    v8_report_path.read_bytes(), v8_raw_dir, graph, tools
+                )
+                if code not in (0, 1) or (status == "passed") != (code == 0):
+                    raise ValueError("V8 process/coverage status mismatch")
+                paths["native_artifacts"] = native_artifacts
+            except (OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired,
+                    subprocess.CalledProcessError, json.JSONDecodeError):
+                status, population = "failed", {"reason": "malformed_v8_native_evidence"}
         else:
             status, population = classify(stdout + b"\n" + stderr, parser, code)
         if lane_id == "live_r2u2" and status == "passed":

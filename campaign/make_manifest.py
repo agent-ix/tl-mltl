@@ -27,7 +27,8 @@ def corpus_paths(repo: Path) -> list[Path]:
 
 
 def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
-                  v7_cargo_home: Path | None = None) -> dict:
+                  v7_cargo_home: Path | None = None,
+                  v8_cargo_home: Path | None = None) -> dict:
     sources = {}
     inputs = {}
     for name in SOURCE_NAMES:
@@ -55,6 +56,8 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                 continue
             if lane_id == "embedded_miri_limits" and v7_cargo_home is None:
                 continue
+            if lane_id == "coverage" and v8_cargo_home is None:
+                continue
             repo, parser, argv = COMMAND_CONTRACTS[lane_id]
             lane = {
                 "id": lane_id, "milestone": milestone, "mode": "command",
@@ -66,6 +69,9 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
             if lane_id == "embedded_miri_limits":
                 lane["cargo_home"] = str(v7_cargo_home.resolve())
                 lane["timeout_seconds"] = 3600
+            if lane_id == "coverage":
+                lane["cargo_home"] = str(v8_cargo_home.resolve())
+                lane["timeout_seconds"] = 7200
             lanes.append(lane)
     return {
         "schema": "tl-mltl.v1-campaign-manifest/v1",
@@ -87,8 +93,13 @@ def main() -> None:
         "--v7-cargo-home", type=Path,
         help="Explicitly opt into fresh embedded/Miri probes with a provisioned Cargo home",
     )
+    parser.add_argument(
+        "--v8-cargo-home", type=Path,
+        help="Explicitly opt into fresh four-crate llvm-cov with a provisioned Cargo home",
+    )
     args = parser.parse_args()
-    manifest = make_manifest(args.repos_root, args.live_r2u2_source, args.v7_cargo_home)
+    manifest = make_manifest(args.repos_root, args.live_r2u2_source,
+                             args.v7_cargo_home, args.v8_cargo_home)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
 
