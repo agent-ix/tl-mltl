@@ -89,7 +89,7 @@ pub use wire::{
 /// dependency via `tl_syntax::CORPUS_DIR`, so there is no separate basis
 /// revision to track for either: reading through the dependency means each
 /// tracks whatever this revision names.
-pub const TL_SYNTAX_REVISION: &str = "fed48a2fab3f5277131a7012e1a8d10993330cb1";
+pub const TL_SYNTAX_REVISION: &str = "9a4316e75d8fda6d50330d2211832c2607d6d62a";
 
 /// Shared temporal corpus identity consumed by this crate.
 pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";
