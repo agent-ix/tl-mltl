@@ -149,6 +149,9 @@ def source_graph(manifest: dict[str, Any]) -> dict[str, dict[str, str]]:
     sources = manifest["sources"]
     if set(sources) != set(SOURCE_NAMES):
         raise ValueError("report requires exactly four production sources and tl-oracle")
+    paths = [Path(sources[name]["path"]).resolve() for name in SOURCE_NAMES]
+    if len(set(paths)) != len(paths):
+        raise ValueError("source repositories must have distinct paths")
     graph = {}
     for name in SOURCE_NAMES:
         source = sources[name]
@@ -164,6 +167,8 @@ def source_graph(manifest: dict[str, Any]) -> dict[str, dict[str, str]]:
         cargo_toml = (path / "Cargo.toml").read_bytes()
         cargo_lock = (path / "Cargo.lock").read_bytes()
         cargo = tomllib.loads(cargo_toml.decode())
+        if cargo.get("package", {}).get("name") != name:
+            raise ValueError(f"{name}: Cargo package name does not match source label")
         dependencies = {}
         for section in ("dependencies", "dev-dependencies", "build-dependencies"):
             for dependency, pin in sorted(cargo.get(section, {}).items()):
@@ -177,6 +182,7 @@ def source_graph(manifest: dict[str, Any]) -> dict[str, dict[str, str]]:
                     dependencies[f"{section}.{dependency}"] = {"version": pin}
         graph[name] = {
             "revision": actual, "path": str(path),
+            "package_name": name,
             "cargo_toml_sha256": sha256(cargo_toml),
             "cargo_lock_sha256": sha256(cargo_lock),
             "feature_declarations": cargo.get("features", {}),
@@ -448,7 +454,7 @@ def build_report(manifest: dict, raw_dir: Path) -> dict:
         "source_revisions": {name: entry["revision"] for name, entry in graph.items()},
         "source_pins": {
             name: {key: entry[key] for key in
-                   ("cargo_toml_sha256", "cargo_lock_sha256", "feature_declarations",
+                   ("package_name", "cargo_toml_sha256", "cargo_lock_sha256", "feature_declarations",
                     "direct_dependency_pins")}
             for name, entry in graph.items()
         },

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -19,7 +20,7 @@ class CampaignTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.repo = self.root / "source"
+        self.repo = self.root / "tl-mltl"
         self.repo.mkdir()
         subprocess.run(["git", "init", "-q", str(self.repo)], check=True)
         (self.repo / "source.txt").write_text("candidate source\n")
@@ -29,7 +30,8 @@ class CampaignTests(unittest.TestCase):
         (self.repo / "fuzz" / "corpus" / "seed").write_bytes(b"\x00\x01")
         (self.repo / ".gitignore").write_text("target/\n")
         (self.repo / "Cargo.toml").write_text(
-            '[package]\nname="campaign-fixture"\nversion="0.1.0"\nedition="2021"\n'
+            '[package]\nname="tl-mltl"\nversion="0.1.0"\nedition="2021"\n'
+            '[lib]\nname="campaign_fixture"\n'
             '[features]\ninfinite-trace=[]\n'
         )
         (self.repo / "src").mkdir()
@@ -66,11 +68,31 @@ class CampaignTests(unittest.TestCase):
              "commit", "-qm", "source"], cwd=self.repo, check=True
         )
         self.revision = campaign.git_revision(self.repo)
+        self.repos = {"tl-mltl": self.repo}
+        self.revisions = {"tl-mltl": self.revision}
+        for name in campaign.SOURCE_NAMES:
+            if name == "tl-mltl":
+                continue
+            repo = self.root / name
+            shutil.copytree(self.repo, repo, ignore=shutil.ignore_patterns(".git", "target"))
+            cargo = (repo / "Cargo.toml")
+            cargo.write_text(cargo.read_text().replace('name="tl-mltl"', f'name="{name}"', 1))
+            subprocess.run(["git", "init", "-q", str(repo)], check=True)
+            subprocess.run(["cargo", "generate-lockfile", "--offline"], cwd=repo,
+                           capture_output=True, check=True)
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                 "commit", "-qm", "source"], cwd=repo, check=True
+            )
+            self.repos[name] = repo
+            self.revisions[name] = campaign.git_revision(repo)
         self.input = self.root / "input.txt"
         self.input.write_text("p0 U[1,2] q0\n")
         self.manifest = {
             "schema": "tl-mltl.v1-campaign-manifest/v1",
-            "sources": {name: {"path": str(self.repo), "revision": self.revision}
+            "sources": {name: {"path": str(self.repos[name]),
+                               "revision": self.revisions[name]}
                         for name in campaign.SOURCE_NAMES},
             "inputs": {"formula": {"path": str(self.input),
                                    "sha256": hashlib.sha256(self.input.read_bytes()).hexdigest()}},
@@ -117,14 +139,14 @@ class CampaignTests(unittest.TestCase):
                          hashlib.sha256(stdout.read_bytes()).hexdigest())
         self.assertEqual(report["semantic_payload"]["source_pins"]["tl-syntax"]
                          ["cargo_toml_sha256"],
-                         hashlib.sha256((self.repo / "Cargo.toml").read_bytes()).hexdigest())
+                         hashlib.sha256((self.repos["tl-syntax"] / "Cargo.toml").read_bytes()).hexdigest())
         self.assertIn("cargo", report["semantic_payload"]["tool_versions"])
         self.assertEqual(report["semantic_payload"]["measurements"]
                          ["mutation_populations"]["status"], "not_run")
         self.manifest["sources"]["tl-syntax"]["revision"] = "0" * 40
         with self.assertRaisesRegex(ValueError, "stale source revision"):
             self.report()
-        self.manifest["sources"]["tl-syntax"]["revision"] = self.revision
+        self.manifest["sources"]["tl-syntax"]["revision"] = self.revisions["tl-syntax"]
         self.input.write_text("changed\n")
         with self.assertRaisesRegex(ValueError, "stale input digest"):
             self.report()
@@ -133,6 +155,21 @@ class CampaignTests(unittest.TestCase):
         selected = {path.relative_to(self.repo).as_posix()
                     for path in make_manifest.corpus_paths(self.repo)}
         self.assertEqual(selected, {"corpus/trace.csv", "fuzz/corpus/seed"})
+
+    def test_source_labels_require_distinct_matching_cargo_packages(self) -> None:
+        self.manifest["sources"]["tl-syntax"] = self.manifest["sources"]["tl-mltl"].copy()
+        with self.assertRaisesRegex(ValueError, "distinct paths"):
+            self.report()
+        self.manifest["sources"]["tl-syntax"] = {
+            "path": str(self.repos["tl-parse"]),
+            "revision": self.revisions["tl-parse"],
+        }
+        self.manifest["sources"]["tl-parse"] = {
+            "path": str(self.repos["tl-syntax"]),
+            "revision": self.revisions["tl-syntax"],
+        }
+        with self.assertRaisesRegex(ValueError, "package name does not match"):
+            self.report()
 
     def test_native_small_partition_passes_while_full_v2_scope_remains_open(self) -> None:
         repo, parser, argv = campaign.COMMAND_CONTRACTS["finite_small_partition"]
@@ -210,7 +247,7 @@ class CampaignTests(unittest.TestCase):
         err.write_bytes(b"")
         receipt = self.root / "receipt.json"
         record = {
-            "source_revisions": {name: self.revision for name in campaign.SOURCE_NAMES},
+            "source_revisions": self.revisions.copy(),
             "input_sha256": {"formula": self.manifest["inputs"]["formula"]["sha256"]},
             "parser": "cargo_test", "exit_code": 0,
             "stdout": {"path": str(out), "sha256": campaign.sha256(out.read_bytes())},
@@ -232,7 +269,7 @@ class CampaignTests(unittest.TestCase):
         receipt.write_text(json.dumps(record))
         self.assertEqual(self.report()["semantic_payload"]["lanes"]["independent_oracle"]["status"],
                          "incomplete")
-        record["source_revisions"]["tl-oracle"] = self.revision
+        record["source_revisions"]["tl-oracle"] = self.revisions["tl-oracle"]
         record["nested"] = {"human": {"accepted": True}}
         receipt.write_text(json.dumps(record))
         lane = self.report()["semantic_payload"]["lanes"]["independent_oracle"]

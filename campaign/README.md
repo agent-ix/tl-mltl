@@ -6,6 +6,8 @@ one JSON report plus raw stdout/stderr files. A recorded external lane is
 admitted only when its receipt names the same five source commits and input
 hashes and its captured bytes still match their digests. The runner derives
 status from those bytes and exit code; a claimed status in a receipt is ignored.
+Each source label must resolve to a distinct clean repository with a matching
+Cargo package name, so one repository cannot stand in for another crate.
 Imported records remain incomplete as milestone gates even when the captured
 bytes show a passing test. The registered executable commands cover the
 finite/past oracle comparison, oracle seeded-fault and dependency-boundary
