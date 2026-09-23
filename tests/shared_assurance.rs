@@ -2221,7 +2221,8 @@ fn no_local_evidence_framework_remains() {
         // TL-170 adds examples/emit_shared_corpus_manifest.rs, the bridge
         // producer the chain driver reads its independent malformed-count
         // oracle from now that the manifest is no longer a vendored file.
-        ("examples", 5),
+        // TL-217 adds the live past-time operator/interval/trace grid.
+        ("examples", 6),
         ("fuzz", 29),
         // Criterion inputs and runner for the V9 evaluator workloads.
         ("benches", 3),
@@ -2338,8 +2339,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 405,
-        "the source census population changed from the reviewed 405 tracked files \
+        inspected, 406,
+        "the source census population changed from the reviewed 406 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
