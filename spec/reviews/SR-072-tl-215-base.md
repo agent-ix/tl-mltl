@@ -13,6 +13,9 @@ review_set: all
 
 Reviewed the four V1 spec branches against ID, link, acceptance-criterion and six-rule Test Matrix checks. Quire validation is grammar-clean in all four repositories; the new TC rows are planned with red stubs, not implementation evidence.
 
+The main cross-crate review index is `SR-110` at
+`tl-syntax/spec/reviews/SR-110-tl-215-combined-v1-review.md`, as TL-215 directs.
+
 ## Findings
 
 | ID | Severity | Summary | Refs |
