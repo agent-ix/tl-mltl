@@ -24,15 +24,13 @@ relationships:
 | FR-017 | FR-017-AC-1 through FR-017-AC-3 | TC-081 through TC-083 | ✅ covered |
 | FR-018 | FR-018-AC-1 through FR-018-AC-3 | TC-090 | 🚧 planned |
 | FR-019 | FR-019-AC-1 through FR-019-AC-3 | TC-085 | ⛔ retired — superseded by quire-mltl FR-002 (TL-180); TL-179 removed TC-085's backing test with `wire::observation` |
-| FR-027 | FR-027-AC-1 through FR-027-AC-3 | TC-086 | 🚧 planned |
-| FR-028 | FR-028-AC-1 through FR-028-AC-3 | TC-087 | 🚧 planned |
-| FR-029 | FR-029-AC-1 through FR-029-AC-3 | TC-088, TC-089 | 🚧 planned |
+| FR-027 | FR-027-AC-1 through FR-027-AC-3 | TC-086, TC-138 | 🚧 planned |
+| FR-028 | FR-028-AC-1 through FR-028-AC-3 | TC-087, TC-138, TC-139 | 🚧 planned |
+| FR-029 | FR-029-AC-1 through FR-029-AC-3 | TC-088, TC-089, TC-140 | 🚧 planned |
 
-FR-027 through FR-029 are bound to tl-mltl#68, the ticket their allocated
-scope is tracked under; TC-086 through TC-089 are planned rows exercised once
-an infinite-trace provider exists under the `quire.temporal.infinite-trace/v1`
-facet, per tl-mltl#72's exit criterion that `spec/spec.md` and tl-mltl#68
-agree.
+FR-027 through FR-029 retain TC-086 through TC-089 as planned rows. TM-004
+adds the feature-boundary and infinite-semantics checks, including their
+shared rows. The TL-native profile is `mltl.infinite-trace/v1`.
 
 ## Stakeholder Requirement Coverage
 
@@ -99,10 +97,10 @@ agree.
 | TC-082 | Every closed-trace W/M corpus case, lowered or direct, is refused for C2PO with no manifest, and every refused lowering yields its declared refusal code and no graph | Integration | P0 | FR-017-AC-2, NFR-002-AC-1 | ✅ implemented |
 | TC-083 | The recorded tl-parse cross-check is pinned and not a dependency, the corpus is consumed at the compiled tl-syntax revision, exported manifests name no external tool and carry the non-qualification limitation, and no source names FRETish | Integration | P0 | FR-017-AC-3 | ✅ implemented |
 | TC-085 | Bind QObs C00 and preserve temporal dispatch while refusing repair and query semantics | Integration | P0 | FR-019-AC-1, FR-019-AC-2, FR-019-AC-3 | ⛔ retired — FR-019 is superseded by quire-mltl FR-002 (TL-180); its test was removed with `tests/tc_084_temporal_owner_wire.rs` (TL-179) |
-| TC-086 | Confirm tl-mltl's API and CLI admit `tl-syntax.formula/v1` and its context-bound v2 records as their whole formula input surface, `spec/spec.md` allocates infinite-trace semantics to a provider under the `quire.temporal.infinite-trace/v1` facet, and every existing FR-001 through FR-019 case is unaffected | Integration | P1 | FR-027-AC-1, FR-027-AC-2, FR-027-AC-3 | 🚧 planned |
-| TC-087 | Confirm every tl-syntax capability tl-mltl consults is the FR-001 `tl-syntax.formula/v1` consumption, the `tl-syntax.liveness/v1` registration is allocated to the infinite-trace provider, and every existing verdict, report, and CLI schema stays byte-identical | Integration | P1 | FR-028-AC-1, FR-028-AC-2, FR-028-AC-3 | 🚧 planned |
-| TC-088 | Confirm the recorded dependency order (tl-syntax#73, quire-specification#112, the infinite-trace provider) takes effect only once tl-syntax FR-289/FR-290's own acceptance gates are satisfied | Inspection | P1 | FR-029-AC-1, FR-029-AC-3 | 🚧 planned |
-| TC-089 | Confirm tl-mltl#68's scope is recorded as owned by the infinite-trace provider and `spec/spec.md` agrees with it | Inspection | P1 | FR-029-AC-2 | 🚧 planned |
+| TC-086 | Compare existing bounded API and golden bytes in default and feature-enabled builds | Integration | P0 | FR-027-AC-1, FR-027-AC-3 | 🚧 planned |
+| TC-087 | Check feature-off capability absence and bounded result/CLI byte stability | Integration | P0 | FR-028-AC-1, FR-028-AC-3 | 🚧 planned |
+| TC-088 | Inspect Linear dependency order and TL-215 acceptance gate before implementation or qualification | Inspection | P1 | FR-029-AC-1, FR-029-AC-3 | 🚧 planned |
+| TC-089 | Bind infinite evidence to the exact provider, TL profile, graph and clock identities | Integration | P0 | FR-029-AC-2 | 🚧 planned |
 | TC-090 | Confirm every retained TL-owned wire contract (`trace/v1`, `command/v1`, `position-history/v1`, `history-requirement/v1`, `past-evaluation/v1`) publishes immutable schema bytes/digest, strictly rejects malformed/noncanonical input under enforced `OwnerLimits`, and that removing the QObs-coupled request/result/mapping layer (TL-179) leaves existing future/past/CLI/legacy-mapping behavior unchanged | Inspection | P1 | FR-018-AC-1, FR-018-AC-2, FR-018-AC-3 | 🚧 planned |
 | TC-130 | Static inspector rejects each of `SHELL`, `.SHELLFLAGS`, `MAKEFLAGS`, `.ONESHELL:`, `.DEFAULT:`, `.IGNORE:`, `.SILENT:`, a `-`-prefixed recipe line, `\|\| true`/`\|\| :`, a stderr-to-`/dev/null` redirect, `$(eval`, a bare `;` command separator (including a quoted-value/trailing-comment MAKEFLAGS variation and a check-and-record chain), and a surface inside a recursively scanned `include`d file; a clean control and `for`/`while`/`if`/`case` control-flow semicolons are accepted without a false positive | Unit | P0 | NFR-006-AC-1 | ✅ implemented |
 | TC-131 | Entry point invoked with `MAKEFLAGS` set to an `-i`/`-k`/`-S`-equivalent value, including a bundled short-flag token in both `ik` and `-ik` form, in the environment is refused before Make starts; a clean environment is not; `\|\| true` is detected wherever it appears on a recipe line, including immediately before a trailing `;` and further commands | Unit | P0 | NFR-006-AC-2 | ✅ implemented |

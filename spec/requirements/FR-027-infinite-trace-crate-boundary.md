@@ -1,6 +1,6 @@
 ---
 id: FR-027
-title: State the infinite-trace crate boundary
+title: Keep bounded entry points separate from the opt-in infinite provider
 type: FR
 relationships:
   - target: ix://agent-ix/tl-mltl/StR-001
@@ -9,72 +9,51 @@ relationships:
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-003
     type: depends_on
-  - target: ix://agent-ix/quire-specification/AD-002
+  - target: ix://agent-ix/tl-mltl/decisions/ADR-003
     type: references
 ---
 
-# FR-027: State the infinite-trace crate boundary
+# FR-027: Keep bounded entry points separate from the opt-in infinite provider
 
 ## Description
 
-tl-mltl shall evaluate closed (FR-001) and prefix (FR-003) bounded finite
-traces. Lasso-word acceptance, fairness-restricted admission, and the
-FR-161-equivalent inductive always/eventually/until/release and past-dual
-infinite-trace semantics belong to a separate provider under the
-`quire.temporal.infinite-trace/v1` facet, which tl-mltl composes with rather
-than contains.
+When the `infinite-trace` Cargo feature is disabled, tl-mltl shall expose only
+its existing bounded evaluator entry points. When it is explicitly enabled,
+`tl_mltl::infinite` shall expose a distinct provider for
+`mltl.infinite-trace/v1` without changing those bounded entry points.
 
 ## Inputs
 
-- A bounded MLTL graph and finite trace, exactly as FR-001 and FR-003 already
-  accept: a `tl-syntax.formula/v1` document and its context-bound v2 records,
-  which together are the whole of tl-mltl's formula input surface.
+- Existing formula v1/v2 and finite closed, prefix or origin-complete history
+  inputs for the bounded API.
+- Formula-unbounded/v1, lasso, fairness and partial-valuation documents for
+  the feature-gated provider.
 
 ## Outputs
 
-- The existing FR-001/FR-003 closed and prefix verdicts, unchanged.
-- Infinite-trace dispositions are the registered provider's, under FR-028; a
-  claim no registered backend can discharge settles `unsupported` with a
-  warning naming the required capability (`tl-syntax.liveness/v1`, tl-syntax
-  FR-290).
+- Existing bounded verdicts unchanged, and a separate infinite result type
+  only when the feature is enabled.
 
 ## Behavior
 
-`tl-syntax.formula-unbounded/v1` is a distinct, co-existing wire edition from
-the `tl-syntax.formula/v1` document tl-mltl's evaluator consumes (tl-syntax
-FR-289, tl-syntax [#73](https://github.com/agent-ix/tl-syntax/issues/73));
-tl-mltl's parsers and evaluator entry points admit `tl-syntax.formula/v1` and
-its context-bound v2 records, and that admitted surface is the whole of what is
-structurally reachable from this crate.
-
-The infinite-trace provider owns lasso-word acceptance, fairness-restricted
-admission, and the inductive always/eventually/until/release and past-dual
-semantics tl-mltl [#68](https://github.com/agent-ix/tl-mltl/issues/68) tracks.
-It consumes `tl-syntax.formula-unbounded/v1` graphs independently of tl-mltl,
-matching the FR-006-through-FR-007 rule that each shared consumer binds only
-the exact upstream identities it needs. Which crate carries that provider is
-an owner decision, recorded as an open question in
-[AD-002](../assurance/AD-002.md); this requirement binds the boundary and the
-facet identity, not a crate name.
-
-tl-mltl's own bounded evaluator, horizon analysis, prefix semantics, and
-monitor mapping are unaffected: this requirement changes no existing FR-001
-through FR-019 behavior, and closure-as-false, pending-verdict, and
-work-budget semantics remain exactly as already specified.
+The bounded core does not import `infinite::*` or infer an infinite profile from
+unbounded text. The provider does not route an infinite request through
+closure-as-false, bounded horizon or finite-prefix pending logic. Both paths
+use their exact owner graph and clock identities. The default build excludes
+provider-only dependencies and public APIs. The feature-enabled build retains
+all existing bounded behavior and wire bytes. A consumer's Cargo feature
+selection is explicit and inspected in its resolved dependency graph. The
+baseline crate is std-only; this feature does not assert `no_std` support.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-027-AC-1 | tl-mltl's public API and CLI admit `tl-syntax.formula/v1` documents and their context-bound v2 records as the whole of their formula input surface. | Test (TC-086) |
-| FR-027-AC-2 | `spec/spec.md` allocates lasso-word, fairness, and infinite-trace inductive semantics to a provider under the `quire.temporal.infinite-trace/v1` facet and states that tl-mltl evaluates closed and prefix bounded traces. | Inspection (TC-086) |
-| FR-027-AC-3 | Every existing FR-001 through FR-019 acceptance criterion continues to pass unchanged. | Test (TC-086) |
+| FR-027-AC-1 | Default builds expose existing bounded APIs but no infinite provider; opt-in builds expose `tl_mltl::infinite` and retain bounded API and wire bytes. | Test (TC-086, TC-138) |
+| FR-027-AC-2 | Module-import and dependency-tree checks show no bounded import of `infinite`, no provider-only dependency when disabled, and no implicit feature selection from tl-rewrite. | Test (TC-138) |
+| FR-027-AC-3 | Every existing FR-001 through FR-019 criterion and golden byte remains valid in both feature sets. | Test (TC-086, TC-138) |
 
 ## Dependencies
 
-Depends on FR-001's closed evaluation and FR-003's prefix semantics, the two
-bounded entry points this requirement bounds. References
-quire-specification AD-002's provider-independent infinite-trace model, the
-architectural pattern this boundary follows. FR-028 supplies the liveness
-capability registration boundary; FR-029 supplies downstream evidence and
-dependency order.
+FR-001 and FR-003 own bounded semantics. ADR-003 records the feature decision;
+FR-028 owns the provider's liveness registration.
