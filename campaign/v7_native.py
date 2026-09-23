@@ -159,6 +159,9 @@ def main() -> int:
         "miri": checked(("rustup", "run", "nightly", "cargo", "miri", "--version"),
                         paths["syntax"], env, 10),
     }
+    build_rustc = checked(("rustup", "which", "rustc", "--toolchain", "1.98.1"),
+                          paths["syntax"], env, 10)
+    tools["build_rustc"] = build_rustc
     targets = checked(("rustup", "target", "list", "--installed"),
                       paths["syntax"], env, 10).splitlines()
     if TARGET not in targets:
@@ -166,8 +169,12 @@ def main() -> int:
     args.raw_dir.mkdir(parents=True, exist_ok=True)
     outcomes = []
     for probe in PROBES:
+        probe_env = env.copy()
+        if probe.kind == "build":
+            probe_env["RUSTC"] = build_rustc
+            probe_env["PATH"] = f"{Path(build_rustc).parent}:{env['PATH']}"
         try:
-            process = subprocess.run(probe.args, cwd=paths[probe.repo], env=env,
+            process = subprocess.run(probe.args, cwd=paths[probe.repo], env=probe_env,
                                      capture_output=True, timeout=args.timeout, check=False)
             stdout, stderr, code = process.stdout, process.stderr, process.returncode
             status = classify(probe, code, (stdout + stderr).decode(errors="replace"))
