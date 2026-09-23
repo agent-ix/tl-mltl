@@ -595,9 +595,14 @@ mod v1_campaign {
         Ok(())
     }
 
-    fn unrolling_law(bits: [bool; 3]) -> Result<(), TestCaseError> {
+    fn unrolling_law(bits: [bool; 3], extra: [bool; 3]) -> Result<(), TestCaseError> {
         let prefix = [bool_value(bits[0])];
-        let repeating = [bool_value(bits[1]), bool_value(bits[2])];
+        let repeating = [
+            bool_value(bits[1]),
+            bool_value(bits[2]),
+            bool_value(extra[0]),
+            bool_value(extra[1]),
+        ];
         let mixed = graph(vec![
             p(),
             K::Once {
@@ -905,7 +910,7 @@ mod v1_campaign {
                     duality_law(bits, false)?;
                     binary_duality_law(bits, [d, e, f])?;
                     embedding_law(bits)?;
-                    unrolling_law(bits)?;
+                    unrolling_law(bits, [d, e, f])?;
                     fairness_law(bits)?;
                     monotonicity_law(bits)?;
                     prefix_refutation_law(c)?;
