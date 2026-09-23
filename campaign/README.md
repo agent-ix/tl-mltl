@@ -76,6 +76,16 @@ target artifacts against the example's reported hashes before giving V10 credit.
 An absent source leaves V10 not run; a missing or changed pinned source cannot
 pass. The external example runs only through this explicit campaign lane.
 
+V7 is also opt in. Add `--v7-cargo-home /absolute/path/to/provisioned/home`
+when creating the manifest and use a fresh empty campaign raw directory. The
+registered command runs `v7_native.py` against the manifest's five current,
+clean source revisions. The campaign independently checks all eleven exact
+probe commands and feature selections, three target builds, eight Miri tests,
+34 paired limit edges, three refusal-only edges, six explicit Miri exclusions,
+and each raw log digest. The retained `campaign/evidence/v7-native.json`
+measures its listed earlier commits; importing that report cannot pass V7 for
+a later source graph.
+
 V3 uses the native `cargo_properties` lane from `tests/property.rs`. A fixed
 ChaCha seed drives 64 accepted production-evaluator cases for duality,
 bounded embedding, loop unrolling, fairness weakening, partial-information
@@ -109,7 +119,7 @@ Each lane names an `id`, `milestone`, and `mode`. V4 uses the fixed `native`
 mode with `{ "kind": "fixed", "value": 181 }` as its seed identity; it accepts
 no caller-selected command or parser. A `command` lane also names
 `repo`, argument-vector `argv`, `parser` (`cargo_test`, `cargo_population`,
-`cargo_properties`, `cargo_live_target`, `cargo_v11_population`, or
+`cargo_properties`, `cargo_live_target`, `cargo_v11_population`, `v7_native`, or
 `population_json`),
 an explicit fixed or deterministic `seed`, and an optional timeout. `record`
 lanes name a receipt JSON with exact source
