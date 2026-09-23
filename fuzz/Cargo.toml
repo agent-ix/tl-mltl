@@ -12,8 +12,8 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4"
 sha2 = "=0.10.9"
 tl-mltl = { path = "..", features = ["infinite-trace"] }
-tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "43dcd3646d14922e20dee1be17b258be00ebf027", default-features = false, features = ["alloc", "serde"] }
-tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "b767e13a36980c98686223965b6f71516d64246d" }
+tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "08c23fa319a0ed2cf4535367b3670aa1f2033acd", default-features = false, features = ["alloc", "serde"] }
+tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "92864c6838ef77022d4b6886e27f2be48a55d396" }
 
 [[bin]]
 name = "c2po_map"

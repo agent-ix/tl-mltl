@@ -59,10 +59,10 @@ jobs:
         run: |
           npm install --global '@agent-ix/quire-cli@0.33.0' '@agent-ix/quoin@0.24.1' '@agent-ix/ix-flow@0.2.3'
           quoin module ensure-defaults
-          quoin module install github:agent-ix/engineering-assurance//engineering_assurance@v0.3.2
+          quoin module install github:agent-ix/engineering-assurance//engineering_assurance@v0.4.1
 
       - name: Install pinned Engineering Assurance classifier
-        run: cargo +1.98.1 install --git https://github.com/agent-ix/engineering-assurance --tag v0.3.2 --locked --bin engineering-assurance
+        run: cargo +1.98.1 install --git https://github.com/agent-ix/engineering-assurance --tag v0.4.1 --locked --bin engineering-assurance
 
       - name: Install cargo-deny
         uses: taiki-e/install-action@v2

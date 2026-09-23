@@ -13,7 +13,7 @@ make spec
 ```
 
 The library requires Rust 1.98.1 or later and consumes validated `tl-syntax` formulas
-pinned to exact revision `43dcd3646d14922e20dee1be17b258be00ebf027`. The
+pinned to exact revision `08c23fa319a0ed2cf4535367b3670aa1f2033acd`. The
 shared temporal corpus, the future-operator corpus, and the past-history
 corpus are all read directly from the compiled `tl-syntax` dependency via
 `tl_syntax::CORPUS_DIR`, tracking `TL_SYNTAX_REVISION`. `evaluate_closed` implements

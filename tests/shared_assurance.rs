@@ -1074,7 +1074,7 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
              import check_shared_pins as m;\
              print(json.dumps(m.classify_with_ea({'quire-cli':'0.33.0',\
              'quoin':'0.22.5','ix-flow':'0.2.3',\
-             'engineering-assurance':'0.3.2'})))",
+             'engineering-assurance':'0.4.1'})))",
         ],
     );
     assert_eq!(code, 0, "negative classifier probe failed: {stderr}");
