@@ -31,7 +31,7 @@ Implementation statuses below reflect only traced tests. Independent
 |---|---|---|---|---|---|
 | TC-138 | Compare default and opt-in module visibility, bounded golden bytes, dependency and feature trees, and absence of bounded imports of `infinite` | Integration | P0 | FR-027-AC-1, FR-027-AC-2, FR-027-AC-3, FR-028-AC-3, FR-034-AC-3 | 🚧 planned |
 | TC-139 | Register one liveness backend, refuse a duplicate, identity mismatch or model request without model capability, and preserve feature-off absence | Integration | P0 | FR-028-AC-1, FR-028-AC-2 | 🚧 planned |
-| TC-140 | Retain provider revision, feature, profile, graph and clock attribution without reattributing bounded results | Integration | P0 | FR-029-AC-2 | 🚧 planned |
+| TC-140 | Retain provider revision, feature, profile, graph and clock attribution without reattributing bounded results | Integration | P0 | FR-029-AC-2 | ✅ implemented |
 | TC-141 | Compare complete Boolean valuations with the independent oracle on each lasso position | Property | P0 | FR-030-AC-1 | ✅ implemented |
 | TC-142 | Enumerate FR-160 possibilities for missing values using one common refinement per position | Property | P0 | FR-030-AC-1 | 🚧 planned |
 | TC-143 | Preserve missing/conflicting reason and closure behavior over equal possibility sets, refuse an empty set, and never flip a conclusive result when information is added | Property | P0 | FR-030-AC-2 | 🚧 planned |
