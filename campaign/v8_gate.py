@@ -8,7 +8,8 @@ import platform
 import subprocess
 from pathlib import Path
 
-from v8_coverage import CRATES, FEATURES, classify_export, critical_census, tool_path
+from v8_coverage import (CRATES, FEATURES, classify_export, critical_census,
+                         parse_prep_binary, parse_prep_command, tool_path)
 
 
 def digest(data: bytes) -> str:
@@ -79,6 +80,33 @@ def verify(report_bytes: bytes, raw_dir: Path, graph: dict,
                 row.get("source_revision") != revisions[name] or row.get("argv") != argv or
                 type(row.get("exit_code")) is not int):
             raise ValueError(f"V8 run identity mismatch: {key}")
+        if name == "parse":
+            prep = row.get("prep")
+            if (not isinstance(prep, dict) or prep.get("argv") != parse_prep_command() or
+                    type(prep.get("exit_code")) is not int or
+                    not isinstance(prep.get("raw"), dict) or
+                    set(prep["raw"]) != {"stdout", "stderr"}):
+                raise ValueError(f"V8 parse preparation identity mismatch: {key}")
+            for kind in ("stdout", "stderr"):
+                path = raw_dir / f"{key}.prep.{kind}"
+                record = {"path": str(path.resolve()), "sha256": digest(path.read_bytes())}
+                if prep["raw"][kind] != record:
+                    raise ValueError(f"V8 parse preparation log changed: {key}/{kind}")
+                artifacts[f"{key}.prep.{kind}"] = record
+            binary = parse_prep_binary(raw_dir / f"{key}.target")
+            if prep["exit_code"] == 0 and "binary" in prep:
+                record = {"path": str(binary.resolve()), "sha256": digest(binary.read_bytes())}
+                if prep["binary"] != record:
+                    raise ValueError(f"V8 parse preparation binary changed: {key}")
+                artifacts[f"{key}.prep.binary"] = record
+            else:
+                if ("binary" in prep or row["exit_code"] != 125 or
+                        row.get("status") != "failed" or
+                        row.get("reason") != "parse_example_prep_failed" or
+                        "export" in row.get("raw", {})):
+                    raise ValueError(f"V8 failed parse preparation claimed coverage: {key}")
+        elif "prep" in row:
+            raise ValueError(f"V8 unexpected preparation: {key}")
         expected_raw = {kind: raw_dir / f"{key}.{suffix}" for kind, suffix in
                         (("stdout", "stdout"), ("stderr", "stderr"), ("export", "json"))}
         records = row.get("raw")

@@ -51,6 +51,17 @@ EXPECTED_CRITICAL = {
 TOOLCHAIN = "nightly"
 
 
+def parse_prep_command() -> list[str]:
+    """Build the example invoked by parse's shared-assurance tests."""
+    return ["cargo", "build", "--example", "fuzz_campaign", "--all-features",
+            "--locked", "--offline"]
+
+
+def parse_prep_binary(target: Path) -> Path:
+    return target / "debug" / "examples" / ("fuzz_campaign.exe" if os.name == "nt" else
+                                           "fuzz_campaign")
+
+
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -124,9 +135,13 @@ def classify_export(raw: dict, root: Path) -> dict:
             counts = branch_sites.setdefault(site, [0, 0])
             counts[0] += branch[4]
             counts[1] += branch[5]
-        hit_sides = sum(int(true_count > 0) + int(false_count > 0)
-                        for true_count, false_count in branch_sites.values())
-        if branches["count"] > 2 * len(branch_sites) or branches["covered"] > hit_sides:
+        # One source span can represent multiple monomorphized branches. LLVM's
+        # summary counts those instances, so unique source sites are not an
+        # upper bound on the summary population.
+        raw_hit_sides = sum(int(branch[4] > 0) + int(branch[5] > 0)
+                            for branch in item["branches"])
+        if (branches["count"] > 2 * len(item["branches"]) or
+                branches["covered"] > raw_hit_sides):
             raise ValueError(f"branch summary exceeds detailed population: {relative}")
         uncovered = []
         if branches["count"]:
@@ -137,7 +152,22 @@ def classify_export(raw: dict, root: Path) -> dict:
                     if location not in uncovered:
                         uncovered.append(location)
         if branches["covered"] < branches["count"] and not uncovered:
-            raise ValueError(f"unlocated uncovered branch: {relative}")
+            # Aggregation can make both sides positive even when separate
+            # instantiations each miss one side. Locate the summary gap at the
+            # source span using the minimum per-instance counts. A fully
+            # covered summary is authoritative and does not report zero-count
+            # uninstantiated detail rows as gaps.
+            for site in branch_sites:
+                records = [branch for branch in item["branches"]
+                           if tuple(branch[:4] + branch[6:]) == site]
+                true_count = min(branch[4] for branch in records)
+                false_count = min(branch[5] for branch in records)
+                if true_count == 0 or false_count == 0:
+                    uncovered.append({"line": site[0], "column": site[1],
+                                      "true_count": true_count,
+                                      "false_count": false_count})
+            if not uncovered:
+                raise ValueError(f"unlocated uncovered branch: {relative}")
         files[relative] = {"lines": {"count": lines["count"], "covered": lines["covered"]},
                            "branches": {"count": branches["count"],
                                         "covered": branches["covered"]},
@@ -214,7 +244,45 @@ def main() -> int:
             stderr = args.raw_dir / f"{key}.stderr"
             command = ("cargo", "llvm-cov", "--branch", "--json", "--output-path",
                        str(export), "--lib", "--tests", *flags, "--locked", "--offline")
-            lane_env = env | {"CARGO_TARGET_DIR": str(args.raw_dir / f"{key}.target")}
+            target = args.raw_dir / f"{key}.target"
+            lane_env = env | {"CARGO_TARGET_DIR": str(target)}
+            prep = None
+            if name == "parse":
+                prep_argv = parse_prep_command()
+                prep_stdout = args.raw_dir / f"{key}.prep.stdout"
+                prep_stderr = args.raw_dir / f"{key}.prep.stderr"
+                try:
+                    prepared = subprocess.run(prep_argv, cwd=roots[name], env=lane_env,
+                                              capture_output=True, timeout=args.timeout)
+                    prep_code, prep_out, prep_err = (prepared.returncode,
+                                                     prepared.stdout, prepared.stderr)
+                except subprocess.TimeoutExpired as failure:
+                    prep_code, prep_out, prep_err = (124, failure.stdout or b"",
+                                                    failure.stderr or b"")
+                prep_stdout.write_bytes(prep_out)
+                prep_stderr.write_bytes(prep_err)
+                prep = {"argv": prep_argv, "exit_code": prep_code,
+                        "raw": {kind: {"path": str(path.resolve()),
+                                       "sha256": digest(path)}
+                                for kind, path in (("stdout", prep_stdout),
+                                                   ("stderr", prep_stderr))}}
+                binary = parse_prep_binary(target)
+                if prep_code == 0 and binary.is_file():
+                    prep["binary"] = {"path": str(binary.resolve()),
+                                      "sha256": digest(binary)}
+                else:
+                    stdout.write_bytes(b"")
+                    stderr.write_bytes(b"")
+                    results.append({"id": key, "repo": name, "feature": feature,
+                                    "source_revision": revisions[name], "argv": command,
+                                    "exit_code": 125,
+                                    "raw": {kind: {"path": str(path.resolve()),
+                                                   "sha256": digest(path)}
+                                            for kind, path in (("stdout", stdout),
+                                                               ("stderr", stderr))},
+                                    "prep": prep, "status": "failed",
+                                    "reason": "parse_example_prep_failed"})
+                    continue
             try:
                 run = subprocess.run(command, cwd=roots[name], env=lane_env,
                                      capture_output=True, timeout=args.timeout)
@@ -229,6 +297,8 @@ def main() -> int:
                                                         "sha256": digest(path)}
                                                      for kind, path in (("stdout", stdout),
                                                                         ("stderr", stderr))}}
+            if prep is not None:
+                result["prep"] = prep
             if code == 0 and export.is_file():
                 result["raw"]["export"] = {"path": str(export.resolve()),
                                              "sha256": digest(export)}

@@ -95,6 +95,44 @@ class CoverageExportTests(unittest.TestCase):
             self.assertEqual(measured["files"]["src/future.rs"]
                              ["uncovered_branch_locations"], [])
 
+    def test_summary_gap_survives_opposite_instantiation_outcomes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            file = root / "src" / "future.rs"
+            file.parent.mkdir()
+            file.write_text("fn check() {}\n")
+            export = {"type": "llvm.coverage.json.export", "data": [{"files": [{
+                "filename": str(file),
+                "summary": {"lines": {"count": 1, "covered": 1},
+                            "branches": {"count": 4, "covered": 2}},
+                "branches": [[1, 2, 1, 12, 0, 7, 0, 0, 4],
+                             [1, 2, 1, 12, 3, 0, 0, 0, 4]],
+            }]}]}
+            measured = classify_export(export, root)
+            self.assertEqual(measured["files"]["src/future.rs"]
+                             ["uncovered_branch_locations"], [
+                                 {"line": 1, "column": 2, "true_count": 0,
+                                  "false_count": 0}])
+
+    def test_summary_counts_monomorphized_branches_beyond_unique_sites(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            file = root / "src" / "future.rs"
+            file.parent.mkdir()
+            file.write_text("fn check() {}\n")
+            export = {"type": "llvm.coverage.json.export", "data": [{"files": [{
+                "filename": str(file),
+                "summary": {"lines": {"count": 1, "covered": 0},
+                            "branches": {"count": 4, "covered": 0}},
+                "branches": [[1, 2, 1, 12, 0, 0, 0, 0, 4],
+                             [1, 2, 1, 12, 0, 0, 0, 0, 4]],
+            }]}]}
+            measured = classify_export(export, root)
+            self.assertEqual(measured["files"]["src/future.rs"]
+                             ["uncovered_branch_locations"], [
+                                 {"line": 1, "column": 2, "true_count": 0,
+                                  "false_count": 0}])
+
     def test_zero_summary_may_have_uninstantiated_detail(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

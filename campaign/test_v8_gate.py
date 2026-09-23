@@ -7,7 +7,8 @@ import unittest
 from pathlib import Path
 
 import v8_gate
-from v8_coverage import CRATES, CRITICAL_PREFIXES, classify_export, critical_census
+from v8_coverage import (CRATES, CRITICAL_PREFIXES, classify_export, critical_census,
+                         parse_prep_binary, parse_prep_command)
 
 
 class V8GateTests(unittest.TestCase):
@@ -52,7 +53,7 @@ class V8GateTests(unittest.TestCase):
                 files[kind] = {"path": str(path.resolve()), "sha256": v8_gate.digest(data)}
             coverage = classify_export(exports[name], Path(self.graph[f"tl-{name}"]["path"]))
             critical_files, missing, gaps = critical_census(coverage, name, feature)
-            rows.append({"id": key, "repo": name, "feature": feature,
+            row = {"id": key, "repo": name, "feature": feature,
                          "source_revision": self.graph[f"tl-{name}"]["revision"],
                          "argv": argv, "exit_code": 0, "raw": files,
                          "coverage": coverage, "critical_uncovered": gaps,
@@ -60,7 +61,22 @@ class V8GateTests(unittest.TestCase):
                              "files": critical_files, "missing_files": missing,
                              "count": sum(item["count"] for item in critical_files.values()),
                              "covered": sum(item["covered"] for item in critical_files.values())},
-                         "status": "passed"})
+                         "status": "passed"}
+            if name == "parse":
+                binary = parse_prep_binary(self.raw_dir / f"{key}.target")
+                binary.parent.mkdir(parents=True)
+                binary.write_bytes(b"pinned parse example binary")
+                prep_raw = {}
+                for kind in ("stdout", "stderr"):
+                    path = self.raw_dir / f"{key}.prep.{kind}"
+                    path.write_bytes(f"parse preparation {kind}\n".encode())
+                    prep_raw[kind] = {"path": str(path.resolve()),
+                                      "sha256": v8_gate.digest(path.read_bytes())}
+                row["prep"] = {"argv": parse_prep_command(), "exit_code": 0,
+                               "raw": prep_raw,
+                               "binary": {"path": str(binary.resolve()),
+                                          "sha256": v8_gate.digest(binary.read_bytes())}}
+            rows.append(row)
         self.tools = {"rustc": "rustc fixture", "llvm_cov": "llvm-cov fixture",
                       "llvm_profdata": "llvm-profdata fixture",
                       "cargo_llvm_cov": "cargo-llvm-cov fixture"}
@@ -110,7 +126,32 @@ class V8GateTests(unittest.TestCase):
                     for row in self.report["runs"])
         self.assertEqual(population["production_branches"],
                          {"count": total, "covered": total})
-        self.assertEqual(len(artifacts), 25)
+        self.assertEqual(len(artifacts), 28)
+
+    def test_parse_preparation_command_and_binary_are_bound(self):
+        report = json.loads(json.dumps(self.report))
+        index = next(i for i, row in enumerate(report["runs"])
+                     if row["id"] == "parse-default")
+        report["runs"][index]["prep"]["argv"].append("--release")
+        with self.assertRaisesRegex(ValueError, "preparation identity mismatch"):
+            self.verify(report)
+        binary = parse_prep_binary(self.raw_dir / "parse-default.target")
+        binary.write_bytes(b"substituted example binary")
+        with self.assertRaisesRegex(ValueError, "preparation binary changed"):
+            self.verify()
+
+    def test_parse_preparation_logs_and_failure_cannot_claim_coverage(self):
+        log = self.raw_dir / "parse-default.prep.stderr"
+        log.write_bytes(b"changed build log")
+        with self.assertRaisesRegex(ValueError, "preparation log changed"):
+            self.verify()
+        log.write_bytes(b"parse preparation stderr\n")
+        report = json.loads(json.dumps(self.report))
+        index = next(i for i, row in enumerate(report["runs"])
+                     if row["id"] == "parse-default")
+        report["runs"][index]["prep"]["exit_code"] = 1
+        with self.assertRaisesRegex(ValueError, "failed parse preparation claimed coverage"):
+            self.verify(report)
 
     def test_missing_export_and_restamped_critical_result_fail(self):
         report = json.loads(json.dumps(self.report))
