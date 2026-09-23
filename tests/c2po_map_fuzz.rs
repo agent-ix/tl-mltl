@@ -13,7 +13,11 @@ use tl_syntax::{
 #[test]
 fn every_fuzz_seed_reaches_the_strict_reader_and_real_c2po_mapper() {
     let root = "fuzz/corpus/c2po_map";
-    let seeds: Vec<_> = fs::read_dir(root).unwrap().map(Result::unwrap).collect();
+    let seeds: Vec<_> = fs::read_dir(root)
+        .unwrap()
+        .map(Result::unwrap)
+        .filter(|entry| entry.file_name() != "SHA256SUMS")
+        .collect();
     assert_eq!(seeds.len(), 8);
     let catalog = SignalCatalogDocument::new(
         vec![
