@@ -2295,7 +2295,7 @@ fn no_local_evidence_framework_remains() {
         // Stage 1 adds infinite, safety export, owner corpus, past mapping,
         // pinned corpus replay and public tl-oracle differential tests.
         // V2 adds one native finite production/oracle partition.
-        ("tests", 36),
+        ("tests", 37),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2372,14 +2372,15 @@ fn no_local_evidence_framework_remains() {
     // boundary control adds one script, bringing it to 442; executable
     // owner/CI inspection evidence adds one test, bringing it to 443. The
     // Quire-bound feature control adds one script and the historical mapping
-    // payload fixture adds one test fixture, bringing it to 445.
+    // payload fixture adds one test fixture, bringing it to 445. The
+    // generated infinite semantic law test brings it to 446.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 445,
-        "the source census population changed from the reviewed 445 tracked files \
+        inspected, 446,
+        "the source census population changed from the reviewed 446 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

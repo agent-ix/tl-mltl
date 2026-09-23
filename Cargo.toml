@@ -26,14 +26,14 @@ required-features = ["infinite-trace"]
 serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.151"
 sha2 = "=0.10.9"
-tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "66d012cb37508d9ed9e8a91b5b92ef440cbe81a7", default-features = false, features = ["alloc", "serde"] }
+tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "43dcd3646d14922e20dee1be17b258be00ebf027", default-features = false, features = ["alloc", "serde"] }
 
 [dev-dependencies]
 criterion = { version = "=0.5.1", default-features = false }
 serde_yaml_ng = "0.10"
 proptest = "=1.5.0"
 tempfile = "=3.10.1"
-tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "fae80cbcfa67bbaecf0ddaf1267f0af8f42a8e34" }
+tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "b767e13a36980c98686223965b6f71516d64246d" }
 
 [[bench]]
 name = "v9_workloads"
