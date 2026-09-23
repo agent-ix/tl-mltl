@@ -147,6 +147,8 @@ class V5MutationTests(unittest.TestCase):
                                        "a" * 40, TAIL)
         with self.assertRaisesRegex(ValueError, "green control failed"):
             v5.verify_restored_control(restored | {"exit_code": 1}, "a" * 40, TAIL)
+        with self.assertRaisesRegex(ValueError, "green control failed"):
+            v5.verify_restored_control(restored | {"exit_code": False}, "a" * 40, TAIL)
 
         archive = Path("/tmp/v5/raw/native.tar.gz")
         entry = {"source_revision": "a" * 40, "source_file": "src/infinite/mod.rs",
@@ -165,6 +167,9 @@ class V5MutationTests(unittest.TestCase):
                                  {"missed": 1, "timeout": 0})
         with self.assertRaisesRegex(ValueError, "exit code contradicts"):
             v5.verify_invocation(invocation, entry, archive, {"missed": 0, "timeout": 0})
+        with self.assertRaisesRegex(ValueError, "exit code contradicts"):
+            v5.verify_invocation(invocation | {"exit_code": False}, entry, archive,
+                                 {"missed": 0, "timeout": 0})
         with self.assertRaisesRegex(ValueError, "test selection or output command differs"):
             v5.verify_invocation(invocation | {"mutation_command": ["cargo", "mutants"]},
                                  entry, archive, {"missed": 1, "timeout": 0})
