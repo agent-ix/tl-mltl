@@ -15,6 +15,8 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+import v7_gate
+
 SOURCE_NAMES = ("tl-syntax", "tl-parse", "tl-rewrite", "tl-mltl", "tl-oracle")
 # Every milestone names an executable lane. Additional campaign lanes can be
 # recorded independently, but cannot replace these required gates.
@@ -71,6 +73,9 @@ COMMAND_CONTRACTS = {
         "--test", "property", "--test", "infinite_trace", "--test", "infinite_oracle",
         "--", "--nocapture", "--test-threads=1",
     ]),
+    "embedded_miri_limits": ("tl-mltl", "v7_native", [
+        sys.executable, "campaign/v7_native.py",
+    ]),
     "infinite_oracle": ("tl-mltl", "cargo_test", [
         "cargo", "test", "--locked", "--offline", "--features", "infinite-trace",
         "--test", "infinite_oracle",
@@ -100,7 +105,6 @@ UNSUPPORTED_GATE_REASONS = {
     "fuzz_replay": "no_four_crate_fuzz_population_output",
     "mutation_population": "no_reviewed_mutant_population_parser",
     "bounded_proof": "no_bound_and_unwind_parser",
-    "embedded_miri_limits": "no_combined_target_miri_limit_parser",
     "coverage": "no_four_crate_branch_coverage_parser",
     "performance": "no_four_crate_paired_benchmark_parser",
 }
@@ -623,6 +627,9 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
             raise ValueError(f"invalid timeout for {lane_id}")
         environment = None
         target_raw_dir = None
+        v7_raw_dir = None
+        v7_report_path = None
+        executed_argv = argv
         if lane_id == "live_r2u2":
             target_source = lane.get("target_source")
             if not isinstance(target_source, str) or not Path(target_source).is_absolute():
@@ -637,9 +644,25 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
             environment = os.environ.copy()
             environment["TL_MLTL_C2PO_SOURCE"] = str(source)
             environment["TL_MLTL_LIVE_RAW_DIR"] = str(target_raw_dir.resolve())
+        if lane_id == "embedded_miri_limits":
+            cargo_home = lane.get("cargo_home")
+            if (not isinstance(cargo_home, str) or not Path(cargo_home).is_absolute() or
+                    not Path(cargo_home).is_dir()):
+                return base | {"status": "blocked", "reason": "v7_cargo_home_required"}, {}
+            v7_raw_dir = raw_dir / "embedded_miri_limits_native"
+            v7_report_path = raw_dir / "embedded_miri_limits_native.json"
+            if v7_report_path.exists() or v7_raw_dir.exists():
+                return base | {"status": "incomplete", "reason": "v7_raw_dir_not_empty"}, {}
+            executed_argv = argv + [
+                *[piece for name in ("syntax", "parse", "mltl", "rewrite", "oracle")
+                  for piece in (f"--{name}", graph[f"tl-{name}"]["path"])],
+                "--cargo-home", str(Path(cargo_home).resolve()),
+                "--raw-dir", str(v7_raw_dir.resolve()),
+                "--output", str(v7_report_path.resolve()),
+            ]
         try:
             result = subprocess.run(
-                argv, cwd=graph[repo]["path"], capture_output=True,
+                executed_argv, cwd=graph[repo]["path"], capture_output=True,
                 timeout=timeout, env=environment,
             )
             stdout, stderr, code = result.stdout, result.stderr, result.returncode
@@ -658,7 +681,22 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
             path = raw_dir / f"{lane_id}.{stream}"
             path.write_bytes(data)
             paths[stream] = {"path": str(path.resolve()), "sha256": sha256(data)}
-        status, population = classify(stdout + b"\n" + stderr, parser, code)
+        if lane_id == "embedded_miri_limits":
+            assert v7_report_path is not None
+            if code:
+                status, population = "failed", {"reason": "v7_native_process_failed"}
+            else:
+                try:
+                    tools = v7_gate.current_tools(Path(graph[repo]["path"]))
+                    population, native_artifacts = v7_gate.verify(
+                        v7_report_path.read_bytes(), stdout, raw_dir, graph, tools
+                    )
+                    paths["native_artifacts"] = native_artifacts
+                    status = "passed"
+                except (OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired):
+                    status, population = "failed", {"reason": "malformed_v7_native_evidence"}
+        else:
+            status, population = classify(stdout + b"\n" + stderr, parser, code)
         if lane_id == "live_r2u2" and status == "passed":
             assert target_raw_dir is not None
             target_paths = {}
@@ -685,10 +723,14 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
             "status": status, "parser": parser, "argv": argv, "repo": repo,
             "exit_code": code, "population": population,
         }
+        if lane_id == "embedded_miri_limits":
+            semantic["executed_argv"] = executed_argv
         if lane_id == "live_r2u2":
             semantic["target_source"] = lane["target_source"]
         return semantic, paths
     if mode == "record":
+        if lane_id == "embedded_miri_limits":
+            return base | {"status": "incomplete", "reason": "v7_requires_live_execution"}, {}
         try:
             stdout, stderr, code, paths = read_record(Path(lane["receipt"]), graph, inputs, parser)
         except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as error:

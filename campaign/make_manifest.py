@@ -26,7 +26,8 @@ def corpus_paths(repo: Path) -> list[Path]:
     return sorted(selected)
 
 
-def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None) -> dict:
+def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
+                  v7_cargo_home: Path | None = None) -> dict:
     sources = {}
     inputs = {}
     for name in SOURCE_NAMES:
@@ -44,6 +45,8 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None) -> dic
                 continue
             if lane_id == "live_r2u2" and live_r2u2_source is None:
                 continue
+            if lane_id == "embedded_miri_limits" and v7_cargo_home is None:
+                continue
             repo, parser, argv = COMMAND_CONTRACTS[lane_id]
             lane = {
                 "id": lane_id, "milestone": milestone, "mode": "command",
@@ -52,6 +55,9 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None) -> dic
             }
             if lane_id == "live_r2u2":
                 lane["target_source"] = str(live_r2u2_source.resolve())
+            if lane_id == "embedded_miri_limits":
+                lane["cargo_home"] = str(v7_cargo_home.resolve())
+                lane["timeout_seconds"] = 3600
             lanes.append(lane)
     return {
         "schema": "tl-mltl.v1-campaign-manifest/v1",
@@ -69,8 +75,12 @@ def main() -> None:
         "--live-r2u2-source", type=Path,
         help="Explicitly opt into the exact-pin foreign target run",
     )
+    parser.add_argument(
+        "--v7-cargo-home", type=Path,
+        help="Explicitly opt into fresh embedded/Miri probes with a provisioned Cargo home",
+    )
     args = parser.parse_args()
-    manifest = make_manifest(args.repos_root, args.live_r2u2_source)
+    manifest = make_manifest(args.repos_root, args.live_r2u2_source, args.v7_cargo_home)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
 
