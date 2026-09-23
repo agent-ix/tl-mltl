@@ -91,8 +91,8 @@ def selection(path: Path, graph: dict) -> dict:
 
 
 def valid_native_exit(code: int, counts: dict) -> bool:
-    """cargo-mutants 27 returns 2 for completed missed/timeout populations."""
-    expected = 2 if counts["missed"] or counts["timed_out"] else 0
+    """cargo-mutants 27 exits 3 on timeout, 2 on miss, and 0 when green."""
+    expected = 3 if counts["timed_out"] else 2 if counts["missed"] else 0
     return type(code) is int and code == expected
 
 

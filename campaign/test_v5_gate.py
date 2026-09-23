@@ -50,9 +50,12 @@ class V5SelectionTests(unittest.TestCase):
     def test_native_exit_requires_the_completed_population_code(self):
         caught = {"missed": 0, "timed_out": 0}
         missed = {"missed": 1, "timed_out": 0}
+        timed_out = {"missed": 0, "timed_out": 1}
         self.assertTrue(v5_gate.valid_native_exit(0, caught))
         self.assertTrue(v5_gate.valid_native_exit(2, missed))
-        for code, counts in ((-9, caught), (1, caught), (2, caught), (0, missed)):
+        self.assertTrue(v5_gate.valid_native_exit(3, timed_out))
+        for code, counts in ((-9, caught), (1, caught), (2, caught), (0, missed),
+                             (2, timed_out), (0, timed_out), (3, missed)):
             self.assertFalse(v5_gate.valid_native_exit(code, counts))
 
 
