@@ -73,7 +73,9 @@ lane, and retain the campaign report and raw artifacts with their SHA-256
 digests. Record the exact manifest and report bytes, five source revisions,
 tool identities, eleven statuses, and the passed count as one Quoin measurement
 collection. Check the collection against this plan and the protected apparatus
-before promotion.
+when an independent checker is available. Until then, preserve the campaign
+gate result and its source-bound raw evidence as the executable promotion
+input; a Quoin report is a view, not a checker verdict.
 
 ## Interpretation
 
