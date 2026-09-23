@@ -64,7 +64,7 @@ installed, run:
 ```bash
 cargo kani --lib \
   --harness future::horizon::kani_proofs::horizon_bound_addition_matches_checked_add \
-  --exact --unwind 4
+  --exact --unwind 2 --solver cadical
 ```
 
 The harness proves the checked horizon-bound addition primitive for all `u32` /

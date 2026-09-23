@@ -216,11 +216,15 @@ mod kani_proofs {
         let child: u64 = kani::any();
         let actual = add_bound(NodeId(0), bound, child);
         match child.checked_add(u64::from(bound)) {
-            Some(expected) => assert!(matches!(actual, Ok(value) if value == expected)),
-            None => assert!(matches!(
-                actual,
-                Err(HorizonError::ArithmeticOverflow { node: NodeId(0) })
-            )),
+            Some(expected) => {
+                assert!(matches!(actual, Ok(value) if value == expected));
+            }
+            None => {
+                assert!(matches!(
+                    actual,
+                    Err(HorizonError::ArithmeticOverflow { node: NodeId(0) })
+                ));
+            }
         }
     }
 }

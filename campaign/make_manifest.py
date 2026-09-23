@@ -41,9 +41,11 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None) -> dic
     for milestone, lane_ids in REQUIRED.items():
         for lane_id in lane_ids:
             if lane_id in NATIVE_CONTRACTS:
+                seed = ({"kind": "fixed", "value": 181} if lane_id == "fuzz_replay"
+                        else {"kind": "none", "reason": "symbolic_no_random_seed"})
                 lanes.append({
                     "id": lane_id, "milestone": milestone, "mode": "native",
-                    "seed": {"kind": "fixed", "value": 181},
+                    "seed": seed,
                 })
                 continue
             if lane_id not in COMMAND_CONTRACTS:

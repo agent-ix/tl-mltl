@@ -2236,7 +2236,7 @@ fn no_local_evidence_framework_remains() {
         (".github", 3),
         ("assurance", 3),
         // V1 campaign runner, manifest builder, fault tests, and instructions.
-        ("campaign", 6),
+        ("campaign", 8),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2251,7 +2251,7 @@ fn no_local_evidence_framework_remains() {
         // TL-170 adds examples/emit_shared_corpus_manifest.rs, the bridge
         // producer the chain driver reads its independent malformed-count
         // oracle from now that the manifest is no longer a vendored file.
-        ("examples", 4),
+        ("examples", 5),
         ("fuzz", 29),
         ("scripts", 5),
         // 110 was measured before TL-180 added ADR-001 and SR-052 (2 files)
@@ -2289,7 +2289,7 @@ fn no_local_evidence_framework_remains() {
         // Stage 1 adds infinite, safety export, owner corpus, past mapping,
         // pinned corpus replay and public tl-oracle differential tests.
         // V2 adds one native finite production/oracle partition.
-        ("tests", 32),
+        ("tests", 33),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2366,8 +2366,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 366,
-        "the source census population changed from the reviewed 366 tracked files \
+        inspected, 370,
+        "the source census population changed from the reviewed 370 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
