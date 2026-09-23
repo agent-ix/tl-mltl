@@ -121,6 +121,32 @@ class V8GateTests(unittest.TestCase):
                                                for item in self.report["runs"])
                                  else "incomplete")
 
+    def reviewed_gap(self):
+        index = next(i for i, row in enumerate(self.report["runs"])
+                     if row["id"] == "mltl-default")
+        export_path = self.raw_dir / "mltl-default.json"
+        export = json.loads(export_path.read_text())
+        past = next(file for file in export["data"][0]["files"]
+                    if file["filename"].endswith("/src/past/mod.rs"))
+        past["summary"]["branches"]["covered"] = 1
+        for branch in past["branches"]:
+            branch[5] = 0
+        self.restamp_export(index, export)
+        row = self.report["runs"][index]
+        self.assertEqual(len(row["critical_uncovered"]), 1)
+        gap = row["critical_uncovered"][0]
+        source = Path(self.graph["tl-mltl"]["path"]) / gap["file"]
+        review = {"run": row["id"], **gap,
+                  "source_file_sha256": v8_gate.digest(source.read_bytes()),
+                  "reason": ("The false side requires a report with an impossible "
+                             "predecessor state after public validation."),
+                  "reviewer": "Ada Reviewer"}
+        self.report["reviewed_infeasibility"] = [review]
+        row["status"] = "passed"
+        row.pop("reason", None)
+        self.report["status"] = "passed"
+        return review, source
+
     def test_complete_raw_export_population_passes(self):
         status, population, artifacts = self.verify()
         self.assertEqual(status, "passed")
@@ -240,6 +266,66 @@ class V8GateTests(unittest.TestCase):
         self.assertEqual(self.verify()[0], "incomplete")
         self.assertIn("src/past/mod.rs", self.report["runs"][index]
                       ["critical_branch_census"]["missing_files"])
+
+    def test_exact_source_bound_review_keeps_uncovered_location_visible(self):
+        review, _ = self.reviewed_gap()
+        status, population, _ = self.verify()
+        self.assertEqual(status, "passed")
+        self.assertEqual(population["reviewed_infeasibility"], [review])
+        self.assertEqual(len(population["critical_uncovered"]), 1)
+        self.assertEqual(population["critical_uncovered"][0]["file"], "src/past/mod.rs")
+        self.assertLess(population["production_branches"]["covered"],
+                        population["production_branches"]["count"])
+        self.assertEqual(v8_gate.verify(
+            json.dumps(self.report).encode(), self.raw_dir, self.graph, self.tools,
+            expected_review_bytes=json.dumps([review]).encode(),
+        )[0], "passed")
+        with self.assertRaisesRegex(ValueError, "reviews differ from declared input"):
+            v8_gate.verify(json.dumps(self.report).encode(), self.raw_dir,
+                           self.graph, self.tools, expected_review_bytes=b"[]")
+
+    def test_stale_unknown_duplicate_or_weak_review_cannot_pass(self):
+        review, source = self.reviewed_gap()
+        for field, replacement, message in (
+            ("line", review["line"] + 1, "unknown or stale gap"),
+            ("false_count", 4, "unknown or stale gap"),
+            ("source_file_sha256", "0" * 64, "source file digest is stale"),
+            ("reason", "unreachable", "substantive infeasibility reason"),
+            ("reviewer", "unknown", "named reviewer"),
+        ):
+            with self.subTest(field=field):
+                original = review[field]
+                review[field] = replacement
+                with self.assertRaisesRegex(ValueError, message):
+                    self.verify()
+                review[field] = original
+        self.report["reviewed_infeasibility"].append(dict(review))
+        with self.assertRaisesRegex(ValueError, "duplicate V8 review"):
+            self.verify()
+        self.report["reviewed_infeasibility"].pop()
+        source.write_text("fn revised_source() {}\n")
+        with self.assertRaisesRegex(ValueError, "source file digest is stale"):
+            self.verify()
+
+    def test_unreviewed_gap_and_missing_file_cannot_claim_reviewed_pass(self):
+        self.reviewed_gap()
+        self.report["reviewed_infeasibility"] = []
+        with self.assertRaisesRegex(ValueError, "critical target status mismatch"):
+            self.verify()
+        self.reviewed_gap()
+        index = next(i for i, row in enumerate(self.report["runs"])
+                     if row["id"] == "mltl-default")
+        export_path = self.raw_dir / "mltl-default.json"
+        export = json.loads(export_path.read_text())
+        export["data"][0]["files"] = [
+            file for file in export["data"][0]["files"]
+            if not file["filename"].endswith("/src/wire/common.rs")]
+        self.restamp_export(index, export)
+        self.report["runs"][index]["status"] = "passed"
+        self.report["runs"][index].pop("reason", None)
+        self.report["status"] = "passed"
+        with self.assertRaisesRegex(ValueError, "critical target status mismatch"):
+            self.verify()
 
 
 if __name__ == "__main__":

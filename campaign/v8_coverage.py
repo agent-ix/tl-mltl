@@ -50,6 +50,60 @@ EXPECTED_CRITICAL = {
 }
 TOOLCHAIN = "nightly"
 ZERO_BRANCH_POLICY_FILES = {"src/dialect/v4.rs", "src/disposition.rs"}
+REVIEW_FIELDS = {"run", "file", "line", "column", "true_count", "false_count",
+                 "source_file_sha256", "reason", "reviewer"}
+
+
+def unique_pairs(pairs: list[tuple[str, object]]) -> dict:
+    """Reject duplicate JSON keys, including in a supplied review record."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate V8 review key: {key}")
+        result[key] = value
+    return result
+
+
+def gap_key(gap: dict) -> tuple:
+    """Bind a review to one run, source location, and measured missing side."""
+    return tuple(gap[field] for field in
+                 ("run", "file", "line", "column", "true_count", "false_count"))
+
+
+def validate_reviews(reviews: object, gaps: list[dict], roots: dict[str, Path]) -> set[tuple]:
+    """Check explicit human infeasibility decisions against the live source graph."""
+    if type(reviews) is not list:
+        raise ValueError("V8 reviews must be a list")
+    observed = {gap_key(gap) for gap in gaps}
+    accepted = set()
+    for review in reviews:
+        if type(review) is not dict or set(review) != REVIEW_FIELDS:
+            raise ValueError("V8 review shape mismatch")
+        if (type(review["run"]) is not str or type(review["file"]) is not str or
+                any(type(review[field]) is not int or review[field] < 0 for field in
+                    ("line", "column", "true_count", "false_count"))):
+            raise ValueError("V8 review location malformed")
+        key = gap_key(review)
+        if key not in observed:
+            raise ValueError("V8 review names unknown or stale gap")
+        if key in accepted:
+            raise ValueError("duplicate V8 review")
+        reason = review["reason"]
+        reviewer = review["reviewer"]
+        if (type(reason) is not str or reason != reason.strip() or len(reason) < 40 or
+                len(reason.split()) < 6 or
+                any(marker in reason.lower() for marker in ("tbd", "todo", "placeholder"))):
+            raise ValueError("V8 review needs a substantive infeasibility reason")
+        if (type(reviewer) is not str or reviewer != reviewer.strip() or
+                len(reviewer) < 3 or len(reviewer) > 128 or
+                reviewer.lower() in ("unknown", "anonymous", "reviewer", "tbd")):
+            raise ValueError("V8 review needs a named reviewer")
+        source = roots[review["run"].split("-", 1)[0]] / review["file"]
+        source_digest = hashlib.sha256(source.read_bytes()).hexdigest()
+        if review["source_file_sha256"] != source_digest:
+            raise ValueError("V8 review source file digest is stale")
+        accepted.add(key)
+    return accepted
 
 
 def parse_prep_command() -> list[str]:
@@ -223,6 +277,8 @@ def main() -> int:
     parser.add_argument("--raw-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--timeout", type=int, default=1800)
+    parser.add_argument("--reviews", type=Path,
+                        help="JSON list of named, source-bound infeasibility reviews")
     parser.add_argument("--only", choices=[f"{name}-{feature}" for name in CRATES
                                             for feature, _ in FEATURES[name]])
     args = parser.parse_args()
@@ -353,10 +409,28 @@ def main() -> int:
            digest(root / "Cargo.lock") != cargo_locks[name]
            for name, root in roots.items()):
         raise ValueError("source graph changed during coverage run")
+    reviews = (json.loads(args.reviews.read_text(), object_pairs_hook=unique_pairs)
+               if args.reviews else [])
+    gaps = [{"run": row["id"], **gap} for row in results
+            for gap in row.get("critical_uncovered", [])]
+    reviewed = validate_reviews(reviews, gaps, roots)
+    for row in results:
+        if "critical_branch_census" not in row:
+            continue
+        missing = row["critical_branch_census"]["missing_files"]
+        unreviewed = any(gap_key({"run": row["id"], **gap}) not in reviewed
+                         for gap in row["critical_uncovered"])
+        complete = all(item["count"] == item["covered"] or any(
+            gap["file"] == file for gap in row["critical_uncovered"]
+        ) for file, item in row["critical_branch_census"]["files"].items())
+        if not missing and not unreviewed and complete:
+            row["status"] = "passed"
+            row.pop("reason", None)
     report = {"schema": "tl-mltl.v8-coverage/v1", "source_revisions": revisions,
               "cargo_lock_sha256": cargo_locks,
               "tools": tools, "profile": "test", "test_selection": ["lib", "tests"],
               "host": {"system": platform.system(), "machine": platform.machine()},
+              "reviewed_infeasibility": reviews,
               "runs": results, "status": "passed" if len(results) == 8 and all(
                   item["status"] == "passed" for item in results) else "incomplete"}
     args.output.parent.mkdir(parents=True, exist_ok=True)

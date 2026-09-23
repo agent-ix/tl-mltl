@@ -9,7 +9,8 @@ import subprocess
 from pathlib import Path
 
 from v8_coverage import (CRATES, FEATURES, classify_export, critical_census,
-                         parse_prep_binary, parse_prep_command, tool_path)
+                         gap_key, parse_prep_binary, parse_prep_command, tool_path,
+                         validate_reviews)
 
 
 def digest(data: bytes) -> str:
@@ -48,13 +49,20 @@ def expected_runs(raw_dir: Path) -> list[tuple[str, str, str, list[str]]]:
 
 
 def verify(report_bytes: bytes, raw_dir: Path, graph: dict,
-           tools: dict[str, str]) -> tuple[str, dict, dict]:
+           tools: dict[str, str],
+           expected_review_bytes: bytes | None = None) -> tuple[str, dict, dict]:
     report = json.loads(report_bytes, object_pairs_hook=unique_pairs)
-    if not isinstance(report, dict) or set(report) != {
+    expected_fields = {
         "schema", "source_revisions", "cargo_lock_sha256", "tools", "profile",
         "test_selection", "host", "runs", "status",
-    }:
+    }
+    if (not isinstance(report, dict) or
+            set(report) not in (expected_fields, expected_fields | {"reviewed_infeasibility"})):
         raise ValueError("V8 report shape mismatch")
+    if expected_review_bytes is not None:
+        expected_reviews = json.loads(expected_review_bytes, object_pairs_hook=unique_pairs)
+        if report.get("reviewed_infeasibility") != expected_reviews:
+            raise ValueError("V8 report reviews differ from declared input")
     revisions = {name: graph[f"tl-{name}"]["revision"] for name in CRATES}
     locks = {name: graph[f"tl-{name}"]["cargo_lock_sha256"] for name in CRATES}
     if (report["schema"] != "tl-mltl.v8-coverage/v1" or
@@ -74,6 +82,7 @@ def verify(report_bytes: bytes, raw_dir: Path, graph: dict,
     line_covered = 0
     line_total = 0
     failures = []
+    successful = []
     for row, (key, name, feature, argv) in zip(report["runs"], expected_runs(raw_dir), strict=True):
         if (not isinstance(row, dict) or row.get("id") != key or
                 row.get("repo") != name or row.get("feature") != feature or
@@ -137,20 +146,28 @@ def verify(report_bytes: bytes, raw_dir: Path, graph: dict,
                   "covered": sum(item["covered"] for item in files.values())}
         if row.get("critical_branch_census") != census or row.get("critical_uncovered") != gaps:
             raise ValueError(f"V8 critical branch census tampered: {key}")
-        expected_status = "passed" if not missing and not gaps and all(
-            item["count"] == item["covered"] for item in files.values()
+        successful.append((row, key, files, missing, gaps))
+        total += measured["totals"]["branches"]["count"]
+        covered += measured["totals"]["branches"]["covered"]
+        line_total += measured["totals"]["lines"]["count"]
+        line_covered += measured["totals"]["lines"]["covered"]
+        critical_uncovered.extend({"run": key, **gap} for gap in gaps)
+    reviews = report.get("reviewed_infeasibility", [])
+    reviewed = validate_reviews(reviews, critical_uncovered,
+                                {name: Path(graph[f"tl-{name}"]["path"]) for name in CRATES})
+    for row, key, files, missing, gaps in successful:
+        unreviewed = any(gap_key({"run": key, **gap}) not in reviewed for gap in gaps)
+        expected_status = "passed" if not missing and not unreviewed and all(
+            item["count"] == item["covered"] or any(
+                gap["file"] == file for gap in gaps
+            ) for file, item in files.items()
         ) else "incomplete"
         expected_reason = (None if expected_status == "passed" else
                            "critical_branches_not_instrumented" if missing else
                            "critical_branch_target_open")
         if row.get("status") != expected_status or row.get("reason") != expected_reason:
             raise ValueError(f"V8 critical target status mismatch: {key}")
-        total += measured["totals"]["branches"]["count"]
-        covered += measured["totals"]["branches"]["covered"]
-        line_total += measured["totals"]["lines"]["count"]
-        line_covered += measured["totals"]["lines"]["covered"]
-        critical_uncovered.extend({"run": key, **gap} for gap in gaps)
-    expected_status = "passed" if not failures and not critical_uncovered and all(
+    expected_status = "passed" if not failures and all(
         row["status"] == "passed" for row in report["runs"]) else "incomplete"
     if report["status"] != expected_status:
         raise ValueError("V8 aggregate status mismatch")
@@ -158,6 +175,7 @@ def verify(report_bytes: bytes, raw_dir: Path, graph: dict,
                   "production_branches": {"count": total, "covered": covered},
                   "production_lines": {"count": line_total, "covered": line_covered},
                   "critical_uncovered": critical_uncovered,
+                  "reviewed_infeasibility": reviews,
                   "run_failures": failures, "source_revisions": revisions,
                   "cargo_lock_sha256": locks, "tools": tools}
     return expected_status, population, artifacts

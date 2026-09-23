@@ -154,6 +154,24 @@ and named measurement slots for domain counts, fuzz and mutation populations,
 proof bounds, coverage, performance, and the live target. Unrun measurement
 slots remain explicitly `not_run`.
 
+V8 lists every uncovered critical branch even when a reviewer concludes that
+the branch cannot be reached through the public owner boundary. The standalone
+`v8_coverage.py` producer accepts an optional `--reviews /path/reviews.json`.
+For a V1 aggregate, pass the same file with `make_manifest.py --v8-reviews`;
+the manifest declares its exact path and SHA-256, and the runner checks the
+bytes before and after native measurement and against the emitted V8 report.
+That JSON file is a list of records with exactly `run`, `file`, `line`,
+`column`, `true_count`, `false_count`, `source_file_sha256`, `reason`, and
+`reviewer`. The location and counts must match one measured gap in that run;
+the SHA-256 must match the exact production source file. The reason must
+explain the infeasibility, and `reviewer` names the person who checked it.
+An empty list records no decisions. Unknown, duplicate, stale, or cursory
+records are rejected. The native gate recomputes all reviews against the raw
+LLVM export and source bytes; an unreviewed gap or missing critical file keeps
+V8 incomplete. A reviewed branch remains in `critical_uncovered` and in the
+measured count, so review never masquerades as executed coverage. Do not add
+a review record without an actual human review of that exact source branch.
+
 The retained campaign manifest/report, when present, identify their measured
 source commits. A report committed after the run is an artifact of those
 commits; it does not retroactively claim to have measured the artifact commit.

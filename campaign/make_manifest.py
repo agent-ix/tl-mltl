@@ -30,7 +30,8 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                   v7_cargo_home: Path | None = None,
                   v8_cargo_home: Path | None = None,
                   v5_selection: Path | None = None,
-                  v9_pair_dirs: list[Path] | None = None) -> dict:
+                  v9_pair_dirs: list[Path] | None = None,
+                  v8_reviews: Path | None = None) -> dict:
     sources = {}
     inputs = {}
     for name in SOURCE_NAMES:
@@ -45,6 +46,10 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
         selected = v5_selection.resolve()
         inputs["v5_selection"] = {"path": str(selected),
                                   "sha256": sha256(selected.read_bytes())}
+    if v8_reviews is not None:
+        selected = v8_reviews.resolve()
+        inputs["v8_reviews"] = {"path": str(selected),
+                                "sha256": sha256(selected.read_bytes())}
     for index, pair in enumerate(v9_pair_dirs or []):
         path = pair.resolve() / "pair.json"
         inputs[f"v9_pair_{index}"] = {"path": str(path.resolve()),
@@ -86,6 +91,8 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
             if lane_id == "coverage":
                 lane["cargo_home"] = str(v8_cargo_home.resolve())
                 lane["timeout_seconds"] = 7200
+                if v8_reviews is not None:
+                    lane["reviews_path"] = str(v8_reviews.resolve())
             if lane_id == "mutation_population":
                 lane["selection_path"] = str(v5_selection.resolve())
                 lane["timeout_seconds"] = 7200
@@ -120,6 +127,10 @@ def main() -> None:
         help="Explicitly opt into fresh four-crate llvm-cov with a provisioned Cargo home",
     )
     parser.add_argument(
+        "--v8-reviews", type=Path,
+        help="Optional exact-input JSON of named reviews for measured V8 branch gaps",
+    )
+    parser.add_argument(
         "--v5-selection", type=Path,
         help="Opt into fresh four-crate mutation with a fixed source-pinned selection JSON",
     )
@@ -130,7 +141,7 @@ def main() -> None:
     args = parser.parse_args()
     manifest = make_manifest(args.repos_root, args.live_r2u2_source,
                              args.v7_cargo_home, args.v8_cargo_home, args.v5_selection,
-                             args.v9_pair_dir)
+                             args.v9_pair_dir, args.v8_reviews)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
 

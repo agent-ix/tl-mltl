@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import make_manifest
 import v1_campaign as campaign
@@ -231,6 +232,47 @@ class CampaignTests(unittest.TestCase):
         broken_full = full_raw.read_bytes().replace(b'"visited":518094', b'"visited":518095')
         status, population = campaign.classify(broken_full, "cargo_full_domain_census", 0)
         self.assertEqual((status, population["reason"]), ("failed", "malformed_full_domain_census"))
+
+    def test_v8_review_input_is_explicit_pinned_and_checked_after_measurement(self) -> None:
+        cargo_home = self.root / "cargo-home"
+        cargo_home.mkdir()
+        reviews = self.root / "v8-reviews.json"
+        reviews.write_text("[]\n")
+        ordinary = make_manifest.make_manifest(self.root, v8_cargo_home=cargo_home)
+        self.assertNotIn("v8_reviews", ordinary["inputs"])
+        ordinary_lane = next(lane for lane in ordinary["lanes"]
+                             if lane["id"] == "coverage")
+        self.assertNotIn("reviews_path", ordinary_lane)
+
+        manifest = make_manifest.make_manifest(self.root, v8_cargo_home=cargo_home,
+                                               v8_reviews=reviews)
+        lane = next(lane for lane in manifest["lanes"] if lane["id"] == "coverage")
+        self.assertEqual(lane["reviews_path"], str(reviews.resolve()))
+        self.assertEqual(manifest["inputs"]["v8_reviews"], {
+            "path": str(reviews.resolve()),
+            "sha256": campaign.sha256(reviews.read_bytes()),
+        })
+        graph = campaign.source_graph(manifest)
+        inputs = campaign.input_graph(manifest)
+        wrong = dict(lane, reviews_path=str((self.root / "other.json").resolve()))
+        (self.root / "other.json").write_text("[]\n")
+        result, _ = campaign.run_lane(wrong, graph, inputs, self.raw)
+        self.assertEqual((result["status"], result["reason"]),
+                         ("incomplete", "v8_reviews_not_pinned"))
+
+        def changed_during_measurement(argv, **_kwargs):
+            reviews.write_text("[{}]\n")
+            return subprocess.CompletedProcess(argv, 0, b"", b"")
+
+        with patch.object(campaign.subprocess, "run", side_effect=changed_during_measurement):
+            result, _ = campaign.run_lane(lane, graph, inputs, self.raw)
+        self.assertEqual((result["status"], result["population"]["reason"]),
+                         ("failed", "malformed_v8_native_evidence"))
+        with self.assertRaisesRegex(ValueError, "v8_reviews: stale input digest"):
+            campaign.input_graph(manifest)
+        reviews.unlink()
+        with self.assertRaises(FileNotFoundError):
+            campaign.input_graph(manifest)
 
     def test_live_target_is_explicit_and_native_population_is_fault_checked(self) -> None:
         ordinary = make_manifest.make_manifest(self.root)

@@ -742,6 +742,7 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
         v7_report_path = None
         v8_raw_dir = None
         v8_report_path = None
+        v8_reviews_path = None
         v5_output_dir = None
         v5_selection_path = None
         v9_report_path = None
@@ -793,6 +794,21 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
                 "--raw-dir", str(v8_raw_dir.resolve()),
                 "--output", str(v8_report_path.resolve()),
             ]
+            reviews_path = lane.get("reviews_path")
+            if reviews_path is not None:
+                if not isinstance(reviews_path, str) or not Path(reviews_path).is_absolute():
+                    return base | {"status": "incomplete",
+                                   "reason": "v8_reviews_path_invalid"}, {}
+                v8_reviews_path = Path(reviews_path).resolve()
+                try:
+                    review_digest = sha256(v8_reviews_path.read_bytes())
+                except OSError:
+                    return base | {"status": "blocked", "reason": "v8_reviews_unreadable"}, {}
+                if inputs.get("v8_reviews") != {"path": str(v8_reviews_path),
+                                                 "sha256": review_digest}:
+                    return base | {"status": "incomplete",
+                                   "reason": "v8_reviews_not_pinned"}, {}
+                executed_argv += ["--reviews", str(v8_reviews_path)]
         if lane_id == "mutation_population":
             selected = lane.get("selection_path")
             if not isinstance(selected, str) or not Path(selected).is_absolute():
@@ -877,9 +893,15 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
         elif lane_id == "coverage":
             assert v8_report_path is not None and v8_raw_dir is not None
             try:
+                review_bytes = None
+                if v8_reviews_path is not None:
+                    review_bytes = v8_reviews_path.read_bytes()
+                    if sha256(review_bytes) != inputs["v8_reviews"]["sha256"]:
+                        raise ValueError("V8 review input changed during coverage run")
                 tools = v8_gate.tool_versions()
                 status, population, native_artifacts = v8_gate.verify(
-                    v8_report_path.read_bytes(), v8_raw_dir, graph, tools
+                    v8_report_path.read_bytes(), v8_raw_dir, graph, tools,
+                    expected_review_bytes=review_bytes,
                 )
                 if code not in (0, 1) or (status == "passed") != (code == 0):
                     raise ValueError("V8 process/coverage status mismatch")
