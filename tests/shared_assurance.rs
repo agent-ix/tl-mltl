@@ -2579,7 +2579,10 @@ fn no_local_evidence_framework_remains() {
         .join(" ");
     assert!(
         disclosure.contains("Adding a single `.IGNORE:` line to this file makes all 12 report")
-            && disclosure.contains("success and `make ci` exits 0. Nothing here notices."),
+            && disclosure.contains(
+                "success and `make ci` exits 0. `make guarded-ci` against the same \
+                 `.IGNORE:`-prepended file refuses before Make ever runs."
+            ),
         "the Makefile no longer states the measured execution-control limitation"
     );
     for line in makefile.lines() {
