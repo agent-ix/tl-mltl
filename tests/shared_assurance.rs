@@ -2235,6 +2235,8 @@ fn no_local_evidence_framework_remains() {
         // .github/workflows/cla.yml, same CLA rollout.
         (".github", 3),
         ("assurance", 3),
+        // V1 campaign runner, manifest builder, fault tests, and instructions.
+        ("campaign", 4),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2355,14 +2357,16 @@ fn no_local_evidence_framework_remains() {
     // adds four source modules and five integration tests, then five retained
     // target exchange files, one fuzz-seed test, and 13 fuzz-lane files, plus
     // four retained target-origin counterexample files and the tl-oracle
-    // integration tests for infinite and finite/past profiles, for 342.
+    // integration tests for infinite and finite/past profiles, for 342. The
+    // V1 campaign runner, manifest builder, tests and instructions bring this
+    // to 346.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 342,
-        "the source census population changed from the reviewed 342 tracked files \
+        inspected, 346,
+        "the source census population changed from the reviewed 346 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
