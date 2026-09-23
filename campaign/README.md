@@ -20,8 +20,15 @@ report, with a specific missing native output/parser. Adding one requires an
 exact invocation, a parser for its actual population, and fault tests. This
 runner presently reports those milestones open; it is not a full V1–V11
 completion gate.
-V11 remains open until a complete generated lasso/fairness/partial population
-is reported and reconciled, even when its three selected test suites pass.
+V11 now has a native `cargo_v11_population` gate over a declared small
+lasso/fairness/partial partition: 30 formula graphs, 372 distinct words, three
+fairness modes, and four selected positions. Its production comparison reports
+133,920 cases, with 108,720 admitted and 25,200 empty-fair refusals. The
+parser checks the exact axes, source command, complete ledger counts, and raw
+test result; malformed or missing cases cannot pass. The marker explicitly
+sets `full_target_complete` to false because longer lassos, deeper formulas,
+and other intervals remain outside this partition. A V11 milestone pass means
+all four named local gates passed for this declared scope.
 V2 runs `tests/v1_finite_partition.rs` through a native `cargo_population`
 parser. That producer enumerates 375 one-level formulas over `{false,true,p0}`
 and 34 word positions (12,750 comparisons) with all closed intervals through
@@ -49,8 +56,8 @@ python3 campaign/v1_campaign.py \
 ```
 
 Each lane names an `id`, `milestone`, and `mode`. A `command` lane also names
-`repo`, argument-vector `argv`, `parser` (`cargo_test`, `cargo_population`, or
-`population_json`),
+`repo`, argument-vector `argv`, `parser` (`cargo_test`, `cargo_population`,
+`cargo_v11_population`, or `population_json`),
 an explicit fixed or deterministic `seed`, and an optional timeout. `record`
 lanes name a receipt JSON with exact source
 revisions, input digests, parser, exit code, and paths and SHA-256 digests for

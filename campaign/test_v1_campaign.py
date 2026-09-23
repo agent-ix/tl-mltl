@@ -60,6 +60,18 @@ class CampaignTests(unittest.TestCase):
             f'#[test] fn census() {{ println!("TL_CAMPAIGN_POPULATION {{}}", r#"{census}"#); }}\n'
             "#[test] fn fault_control() { assert!(campaign_fixture::ready()); }\n"
         )
+        v11_census = json.dumps({
+            "schema": "tl-mltl.v11-lasso-partition/v1",
+            "scope": "formulas30_words372_fair3_anchors4",
+            "formula_count": 30,
+            "complete_words": 228, "single_unknown_words": 136, "mixed_words": 8,
+            "word_count": 372, "fairness_modes": 3, "anchors": [0, 1, 3, 6],
+            "declared": 133920, "visited": 108720, "refused": 25200, "failed": 0,
+            "max_materialized_lasso_len": 3, "full_target_complete": False,
+        }, separators=(",", ":"))
+        (self.repo / "tests" / "v11_lasso_partition.rs").write_text(
+            f'#[test] fn census() {{ println!("TL_CAMPAIGN_V11_POPULATION {{}}", r#"{v11_census}"#); }}\n'
+        )
         subprocess.run(["cargo", "generate-lockfile", "--offline"], cwd=self.repo,
                        capture_output=True, check=True)
         subprocess.run(["git", "add", "."], cwd=self.repo, check=True)
@@ -190,6 +202,40 @@ class CampaignTests(unittest.TestCase):
         status, population = campaign.classify(broken, "cargo_population", 0)
         self.assertEqual((status, population["reason"]), ("incomplete", "unvisited_population"))
 
+    # TC-193/194: V11's real command and native census parser accept exactly
+    # its declared small partition and reject missing, altered, or excess data.
+    def test_native_v11_population_and_seeded_parser_faults(self) -> None:
+        repo, parser, argv = campaign.COMMAND_CONTRACTS["lasso_population_census"]
+        self.manifest["lanes"] = [{
+            "id": "lasso_population_census", "milestone": "V11", "mode": "command",
+            "repo": repo, "parser": parser, "argv": argv,
+            "seed": {"kind": "none", "reason": "declared_exhaustive_partition"},
+        }]
+        report = self.report()
+        semantic = report["semantic_payload"]
+        lane = semantic["lanes"]["lasso_population_census"]
+        self.assertEqual(lane["status"], "passed")
+        self.assertEqual(lane["population"]["declared"], 133920)
+        self.assertEqual(lane["population"]["visited"], 108720)
+        self.assertEqual(lane["population"]["refused"], 25200)
+        self.assertEqual(semantic["milestones"]["V11"]["contract"]
+                         ["lasso_population_census"]["kind"], "exact_command")
+        raw = Path(report["raw_artifacts"]["lasso_population_census"]["stdout"]["path"])
+        complete = raw.read_bytes()
+        self.assertEqual(campaign.classify(complete, parser, 0)[0], "passed")
+        missing = complete.replace(b'"visited":108720', b'"visited":1')
+        self.assertEqual(campaign.classify(missing, parser, 0)[0], "incomplete")
+        wrong_split = complete.replace(b'"visited":108720', b'"visited":108719').replace(
+            b'"refused":25200', b'"refused":25201')
+        self.assertEqual(campaign.classify(wrong_split, parser, 0)[0], "failed")
+        wrong_axis = complete.replace(b'"word_count":372', b'"word_count":371')
+        self.assertEqual(campaign.classify(wrong_axis, parser, 0)[0], "failed")
+        false_as_number = complete.replace(b'"full_target_complete":false',
+                                           b'"full_target_complete":0')
+        self.assertEqual(campaign.classify(false_as_number, parser, 0)[0], "failed")
+        self.assertEqual(campaign.classify(complete + complete, parser, 0)[0], "failed")
+        self.assertEqual(campaign.classify(complete, parser, 1)[0], "failed")
+
     # TC-196: Identical deterministic runs have identical semantic payloads
     # even though raw paths may differ. Preserve refused, missing and failed.
     def test_repeated_semantics_and_population_classes(self) -> None:
@@ -230,7 +276,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(report["milestones"]["V2"]["contract"]
                          ["full_domain_census"]["kind"], "unsupported")
         self.assertEqual(report["milestones"]["V11"]["contract"]
-                         ["lasso_population_census"]["kind"], "unsupported")
+                         ["lasso_population_census"]["kind"], "exact_command")
         self.assertEqual(report["milestones"]["V2"]["status"], "failed")
         self.assertEqual(report["milestones"]["V3"]["status"], "incomplete")
         self.assertEqual(report["lanes"]["semantic_properties"]["reason"],

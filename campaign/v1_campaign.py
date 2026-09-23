@@ -76,6 +76,10 @@ COMMAND_CONTRACTS = {
     "oracle_semantic_laws": ("tl-oracle", "cargo_test", [
         "cargo", "test", "--locked", "--offline", "--test", "semantic_laws",
     ]),
+    "lasso_population_census": ("tl-mltl", "cargo_v11_population", [
+        "cargo", "test", "--locked", "--offline", "--features", "infinite-trace",
+        "--test", "v11_lasso_partition", "--", "--nocapture",
+    ]),
 }
 # A gate without a native output parser and exact invocation is intentionally
 # open. Extend COMMAND_CONTRACTS together with classify() and fault tests when
@@ -91,7 +95,6 @@ UNSUPPORTED_GATE_REASONS = {
     "coverage": "no_four_crate_branch_coverage_parser",
     "performance": "no_four_crate_paired_benchmark_parser",
     "live_r2u2": "no_fresh_target_receipt_parser",
-    "lasso_population_census": "no_complete_lasso_fairness_partial_population_output",
 }
 assert set(COMMAND_CONTRACTS) | set(UNSUPPORTED_GATE_REASONS) == {
     item for ids in REQUIRED.values() for item in ids
@@ -204,6 +207,53 @@ def input_graph(manifest: dict[str, Any]) -> dict[str, dict[str, str]]:
 
 def classify(raw: bytes, parser: str, exit_code: int) -> tuple[str, dict[str, Any]]:
     """Derive status only from captured bytes and process exit, never a receipt verdict."""
+    if parser == "cargo_v11_population":
+        decoded = raw.decode(errors="replace")
+        summaries = CARGO_RESULT.findall(decoded)
+        markers = re.findall(rb"TL_CAMPAIGN_V11_POPULATION (\{[^\r\n]*\})", raw)
+        if len(summaries) != 1 or len(markers) != 1:
+            return "failed", {"reason": "missing_or_duplicate_native_v11_census"}
+        summary = summaries[0]
+        if (summary[0] != "ok" or int(summary[1]) < 1 or
+                any(int(value) for value in summary[2:]) or exit_code):
+            return "failed", {"reason": "native_v11_test_failure"}
+        try:
+            observed = json.loads(markers[0])
+            expected_axes = {
+                "schema": "tl-mltl.v11-lasso-partition/v1",
+                "scope": "formulas30_words372_fair3_anchors4",
+                "formula_count": 30,
+                "complete_words": 228,
+                "single_unknown_words": 136,
+                "mixed_words": 8,
+                "word_count": 372,
+                "fairness_modes": 3,
+                "anchors": [0, 1, 3, 6],
+                "max_materialized_lasso_len": 3,
+                "full_target_complete": False,
+            }
+            if any(type(observed.get(key)) is not type(value) or observed.get(key) != value
+                   for key, value in expected_axes.items()):
+                raise ValueError("wrong V11 partition scope")
+            if any(type(anchor) is not int for anchor in observed["anchors"]):
+                raise ValueError("non-integer V11 anchor")
+            counts = {key: observed[key] for key in ("declared", "visited", "refused", "failed")}
+            if any(type(value) is not int or value < 0 for value in counts.values()):
+                raise ValueError("non-natural V11 population")
+        except (ValueError, KeyError, TypeError):
+            return "failed", {"reason": "malformed_v11_population"}
+        counts |= {"scope": observed["scope"], "full_target_complete": False,
+                   "native_test_count": int(summary[1])}
+        if counts["declared"] != 133_920:
+            return "failed", counts | {"reason": "wrong_v11_declared_population"}
+        accounted = counts["visited"] + counts["refused"]
+        if counts["failed"] or accounted > counts["declared"]:
+            return "failed", counts | {"reason": "failed_or_excess_v11_cases"}
+        if accounted < counts["declared"]:
+            return "incomplete", counts | {"reason": "unvisited_v11_population"}
+        if counts["visited"] != 108_720 or counts["refused"] != 25_200:
+            return "failed", counts | {"reason": "wrong_v11_admission_partition"}
+        return "passed", counts
     if parser == "cargo_test":
         matches = CARGO_RESULT.findall(raw.decode(errors="replace"))
         if not matches:

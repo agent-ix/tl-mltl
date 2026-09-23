@@ -28,7 +28,7 @@ tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.g
 serde_yaml_ng = "0.10"
 proptest = "=1.5.0"
 tempfile = "=3.10.1"
-tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "1ab90f4ed6d81932c3b8b284ec3ab44592ade397" }
+tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "e8d2647b4e8acd2862f24f4cf0abb9426321f197" }
 
 [profile.release]
 lto = "thin"
