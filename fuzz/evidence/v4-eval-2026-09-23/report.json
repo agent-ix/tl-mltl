@@ -12,30 +12,30 @@
     "--sanitizer",
     "address",
     "closed_eval",
-    "/private/tmp/tl-v4-fuzz-qgir8qz0/corpus",
+    "/private/tmp/tl-v4-fuzz-iga1b6qy/corpus",
     "--",
     "-runs=1000",
     "-seed=181",
     "-max_total_time=30",
     "-max_len=4096",
-    "-artifact_prefix=/private/tmp/tl-mltl-v4-fuzz/fuzz/evidence/v4-eval-2026-09-23/artifacts/"
+    "-artifact_prefix=/private/tmp/tl-v4-final-mltl-eval-cd3825f/artifacts/"
   ],
   "crash_artifacts_sha256": {},
   "crate": "tl-mltl",
   "engine": "libFuzzer",
-  "fuzz_lock_sha256": "55c9ae7948e499767cf2a3ca4a14ddbf001b278973f09028ed5c358d1b0697a1",
+  "fuzz_lock_sha256": "c49e8b7d74bf966bd66c9b5866dcfebdfdc9168ef981f04dac1762727fa31e27",
   "observed": {
-    "elapsed_seconds": 12.61,
+    "elapsed_seconds": 1.082,
     "executions": 1000,
     "exit_code": 0,
     "stop_reason": "run_budget"
   },
   "raw_output_sha256": {
-    "stderr.log.gz": "669ad4920f996796253fcbd84fa45a15d286bb73f8d60ae1aa53e4f9cc056e55",
+    "stderr.log.gz": "e4a1896e342b6b9193ef7f2e4d64f79bcb358bc9f116a9df84ca403098e33820",
     "stdout.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
   },
   "raw_stream_sha256": {
-    "stderr": "7fea532b9f8264bc061a5cf8cdac8abd7d96fc4b2c4e848369efab175293f0f8",
+    "stderr": "d71a39370cb59773a0a454506f1ae5a87a3911f5332f933d019d0a54dcc84f6e",
     "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   "replay": {
@@ -43,7 +43,7 @@
     "minimized_artifact_sha256": null,
     "required": false
   },
-  "root_lock_sha256": "389db0173c37b642706b90d38d40c08e88ddf08f871b1635d5daa3b6c712ea1b",
+  "root_lock_sha256": "74bfc2e00884b6a6884d9a2ae0fc96f5e241cb425465d72b3c583ef7e3cc48c4",
   "sanitizer": "address",
   "schema": "tl-v4.libfuzzer-campaign/v1",
   "scope": "bounded observation; no four-crate V4 or correctness claim",
@@ -53,7 +53,7 @@
     "malformed": "842fbc236383d8e62b60e6da88ed0fa3d8e7116c700162b05dfb6d1e1b078ed6",
     "until-lower-bound": "2479f5171261480903b24ca68113f209abd2f674228ccf8afe73b16fecb7058e"
   },
-  "source_revision": "170e12f9c8fc5540ddf4a0a73476fdf40cbe7a87",
+  "source_revision": "cd3825f4e45644b506ed51ca6e1833ed51ebca36",
   "starting_corpus_sha256": "8adb923a29a2d010e625634f2eff5323a904048f283a78edc3742602dcd33a8f",
   "status": "bounded_no_crash",
   "target": "closed_eval",
