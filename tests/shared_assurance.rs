@@ -2231,8 +2231,10 @@ fn no_local_evidence_framework_remains() {
         // .github/workflows/cla.yml, same CLA rollout.
         (".github", 3),
         ("assurance", 3),
-        // V1 native campaign producers, raw gates, fault controls and instructions.
-        ("campaign", 43),
+        // V1 native campaign producers, raw gates, fault controls and instructions;
+        // twelve V4/V5/V8/V9 native helpers and reviews were added since the
+        // earlier 43-file census.
+        ("campaign", 55),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2267,8 +2269,8 @@ fn no_local_evidence_framework_remains() {
         // kept off the start of these comment lines: Quire reads a line-leading
         // id as a trace tag, and this test backs none of them.)
         // The V1 spec cycle adds its requirements, matrices, decisions and
-        // combined review documents before implementation begins.
-        ("spec", 178),
+        // combined review documents; AP-002 and MP-007 add two Stage 1 plans.
+        ("spec", 180),
         // TL-179 deletes wire::request, wire::observation, wire::report, and
         // mapping::contract_ir (4 files): the quire-observation-coupled
         // request/result/mapping owner boundary now lives in quire-mltl.
@@ -2290,7 +2292,7 @@ fn no_local_evidence_framework_remains() {
         // Stage 1 adds infinite, safety export, owner corpus, past mapping,
         // pinned corpus replay and public tl-oracle differential tests.
         // V2 adds one native finite production/oracle partition.
-        ("tests", 33),
+        ("tests", 34),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2367,8 +2369,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 424,
-        "the source census population changed from the reviewed 424 tracked files \
+        inspected, 439,
+        "the source census population changed from the reviewed 439 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
