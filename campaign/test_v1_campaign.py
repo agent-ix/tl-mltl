@@ -205,10 +205,14 @@ class CampaignTests(unittest.TestCase):
     def test_live_target_is_explicit_and_native_population_is_fault_checked(self) -> None:
         ordinary = make_manifest.make_manifest(self.root)
         self.assertNotIn("live_r2u2", {lane["id"] for lane in ordinary["lanes"]})
+        self.assertNotIn("live_past_grid", {lane["id"] for lane in ordinary["lanes"]})
         opted_in = make_manifest.make_manifest(self.root, self.root / "r2u2-source")
         live = next(lane for lane in opted_in["lanes"] if lane["id"] == "live_r2u2")
         self.assertEqual(live["target_source"], str((self.root / "r2u2-source").resolve()))
         self.assertEqual(live["argv"], campaign.COMMAND_CONTRACTS["live_r2u2"][2])
+        grid = next(lane for lane in opted_in["lanes"] if lane["id"] == "live_past_grid")
+        self.assertEqual(grid["target_source"], live["target_source"])
+        self.assertEqual(grid["argv"], campaign.COMMAND_CONTRACTS["live_past_grid"][2])
 
         artifacts = {
             f"{case}.{kind}": "a" * 64
@@ -303,6 +307,20 @@ class CampaignTests(unittest.TestCase):
         report = self.report()["semantic_payload"]
         self.assertEqual(report["lanes"]["live_r2u2"]["status"], "blocked")
         self.assertEqual(report["milestones"]["V10"]["status"], "blocked")
+
+    def test_live_grid_requires_exact_command_and_target(self) -> None:
+        repo, parser, argv = campaign.COMMAND_CONTRACTS["live_past_grid"]
+        lane = {"id": "live_past_grid", "milestone": "V10", "mode": "command",
+                "repo": repo, "parser": parser, "argv": argv,
+                "target_source": str(self.root / "missing-target"),
+                "seed": {"kind": "none", "reason": "deterministic_live_run"}}
+        self.manifest["lanes"] = [lane]
+        semantic = self.report()["semantic_payload"]
+        self.assertEqual(semantic["lanes"]["live_past_grid"]["status"], "blocked")
+        self.assertEqual(semantic["milestones"]["V10"]["status"], "blocked")
+        lane["argv"] = ["python3", "-c", "print('all grid cells passed')"]
+        semantic = self.report()["semantic_payload"]
+        self.assertEqual(semantic["lanes"]["live_past_grid"]["status"], "incomplete")
     # TC-193/194: V11's real command and native census parser accept exactly
     # its declared small partition and reject missing, altered, or excess data.
     def test_native_v11_population_and_seeded_parser_faults(self) -> None:

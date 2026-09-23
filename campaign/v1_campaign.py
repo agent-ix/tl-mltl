@@ -21,6 +21,7 @@ import v7_gate
 import v8_gate
 import v5_gate
 import v9_gate
+import tl217_grid_gate
 
 SOURCE_NAMES = ("tl-syntax", "tl-parse", "tl-rewrite", "tl-mltl", "tl-oracle")
 # Every milestone names an executable lane. Additional campaign lanes can be
@@ -37,7 +38,7 @@ REQUIRED = {
     "V7": ("embedded_miri_limits",),
     "V8": ("coverage",),
     "V9": ("performance",),
-    "V10": ("live_r2u2",),
+    "V10": ("live_r2u2", "live_past_grid"),
     "V11": ("infinite_oracle", "infinite_trace_behavior",
             "oracle_semantic_laws", "lasso_population_census"),
 }
@@ -97,6 +98,9 @@ COMMAND_CONTRACTS = {
     "live_r2u2": ("tl-mltl", "cargo_live_target", [
         "cargo", "run", "--locked", "--offline", "--features", "infinite-trace",
         "--example", "v1_live_r2u2",
+    ]),
+    "live_past_grid": ("tl-mltl", "tl217_live_grid", [
+        "cargo", "run", "--locked", "--offline", "--example", "tl217_live_past_grid",
     ]),
     "infinite_trace_behavior": ("tl-mltl", "cargo_test", [
         "cargo", "test", "--locked", "--offline", "--features", "infinite-trace",
@@ -670,14 +674,14 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
         v9_report_path = None
         v9_pair_dirs = None
         executed_argv = argv
-        if lane_id == "live_r2u2":
+        if lane_id in ("live_r2u2", "live_past_grid"):
             target_source = lane.get("target_source")
             if not isinstance(target_source, str) or not Path(target_source).is_absolute():
                 return base | {"status": "incomplete", "reason": "explicit_target_source_required"}, {}
             source, reason = live_target_source(target_source)
             if reason:
                 return base | {"status": "blocked", "reason": reason}, {}
-            target_raw_dir = raw_dir / "live_r2u2_target"
+            target_raw_dir = raw_dir / f"{lane_id}_target"
             if target_raw_dir.exists() and any(target_raw_dir.iterdir()):
                 return base | {"status": "incomplete", "reason": "target_raw_dir_not_empty"}, {}
             target_raw_dir.mkdir(parents=True, exist_ok=True)
@@ -834,6 +838,25 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
             except (OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired,
                     subprocess.CalledProcessError, json.JSONDecodeError):
                 status, population = "failed", {"reason": "malformed_v9_native_evidence"}
+        elif lane_id == "live_past_grid":
+            assert target_raw_dir is not None
+            try:
+                tl217_grid_gate.verify_target_source(Path(lane["target_source"]))
+                population = tl217_grid_gate.verify(
+                    stdout, target_raw_dir, graph["tl-mltl"]["revision"],
+                    graph["tl-mltl"]["cargo_lock_sha256"],
+                )
+                if code != 0:
+                    raise ValueError("live grid producer failed")
+                status = "passed"
+                parsed = json.loads(stdout.split(tl217_grid_gate.MARKER, 1)[1])
+                paths["target_artifacts"] = {
+                    name: {"path": str((target_raw_dir / name).resolve()), "sha256": digest}
+                    for name, digest in parsed["artifacts"].items()
+                }
+            except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError,
+                    subprocess.CalledProcessError):
+                status, population = "failed", {"reason": "malformed_live_past_grid"}
         else:
             status, population = classify(stdout + b"\n" + stderr, parser, code)
         if lane_id == "live_r2u2" and status == "passed":
@@ -864,12 +887,14 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
         }
         if lane_id == "embedded_miri_limits":
             semantic["executed_argv"] = executed_argv
-        if lane_id == "live_r2u2":
+        if lane_id in ("live_r2u2", "live_past_grid"):
             semantic["target_source"] = lane["target_source"]
         return semantic, paths
     if mode == "record":
         if lane_id == "embedded_miri_limits":
             return base | {"status": "incomplete", "reason": "v7_requires_live_execution"}, {}
+        if lane_id == "live_past_grid":
+            return base | {"status": "incomplete", "reason": "live_grid_requires_execution"}, {}
         try:
             stdout, stderr, code, paths = read_record(Path(lane["receipt"]), graph, inputs, parser)
         except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as error:

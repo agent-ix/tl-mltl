@@ -62,7 +62,7 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                 continue
             if lane_id not in COMMAND_CONTRACTS:
                 continue
-            if lane_id == "live_r2u2" and live_r2u2_source is None:
+            if lane_id in ("live_r2u2", "live_past_grid") and live_r2u2_source is None:
                 continue
             if lane_id == "embedded_miri_limits" and v7_cargo_home is None:
                 continue
@@ -78,7 +78,7 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                 "repo": repo, "parser": parser, "argv": argv,
                 "seed": {"kind": "none", "reason": "deterministic_cargo_test"},
             }
-            if lane_id == "live_r2u2":
+            if lane_id in ("live_r2u2", "live_past_grid"):
                 lane["target_source"] = str(live_r2u2_source.resolve())
             if lane_id == "embedded_miri_limits":
                 lane["cargo_home"] = str(v7_cargo_home.resolve())

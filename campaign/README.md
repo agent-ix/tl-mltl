@@ -15,14 +15,20 @@ tests, both finite and infinite rewrite wrong-rule controls, the infinite
 oracle (also required for V1 lasso coverage), infinite behavior, and oracle
 semantic-law tests; an
 arbitrary command with a plausible test summary cannot complete their gates.
-V10 also has an explicit live-target command. It requires the caller to opt in
+V10 has two explicit live-target commands. They require the caller to opt in
 with a clean local checkout of R2U2 at `336a2453`, with the pinned C2PO entry
 and monitor executable bytes. The normal manifest never invokes that foreign
 runtime. Its explicit Cargo example retains fresh compiler/monitor raw files,
 compares eight reviewed bounded cells and eighteen past cells with the
 independent oracle, classifies the known unsafe `S[0,2]` origin mismatch as
 unsupported mapping, and checks one finite bad-prefix refutation against the
-oracle. This is a bounded reviewed population, not general R2U2 parity.
+oracle. The second command generates the TL-217 past grid: 75
+operator/interval/depth shapes, three trace classes, six positions, 21
+C2PO/R2U2 executions and 1,350 per-step cells. Its gate checks source/lock
+and target pins, reconstructs all 21 spec/trace inputs, checks 147 raw artifact
+digests, requires 360 admitted agreements and 990 mapping refusals, and refuses
+missing or mismatched admitted target rows. Both commands must pass for V10.
+This is a bounded reviewed population, not general R2U2 parity.
 
 V4 has a fixed native gate that reconciles five checked-in libFuzzer reports
 across the four production crates, including both mlTL mapping and evaluation.
@@ -68,13 +74,13 @@ faults. Its small partition can pass independently. V2 remains incomplete
 because the full depth-three, interval-through-4, length-through-6 domain has
 not run.
 
-To deliberately include V10, generate a fresh manifest with
+To deliberately include both V10 lanes, generate a fresh manifest with
 `--live-r2u2-source /absolute/path/to/pinned/r2u2`. Use a new empty
 `--raw-dir` for each campaign run. The runner checks the foreign source
-revision and binary digests before invoking it; it checks all 15 fresh raw
-target artifacts against the example's reported hashes before giving V10 credit.
+revision and binary digests before invoking it; it checks all 15 original raw
+artifacts and all 147 grid artifacts against the examples' reported hashes.
 An absent source leaves V10 not run; a missing or changed pinned source cannot
-pass. The external example runs only through this explicit campaign lane.
+pass. The examples run only through these explicit campaign lanes.
 
 V7 is also opt in. Add `--v7-cargo-home /absolute/path/to/provisioned/home`
 when creating the manifest and use a fresh empty campaign raw directory. The
