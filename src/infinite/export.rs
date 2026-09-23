@@ -9,7 +9,7 @@ use tl_syntax::{
 use crate::{
     mapping::legacy::{is_c2po_identifier, sha256_hex},
     mapping::target_equivalent_interval,
-    TargetOriginContract, ToolIdentity,
+    PastMappingError, TargetOriginContract, ToolIdentity,
 };
 
 use super::{
@@ -29,8 +29,8 @@ pub enum SafetyExportError {
     UnboundedUntilRelease,
     /// Nonempty fairness premises cannot be settled by a finite prefix.
     FairnessPremise,
-    /// A target past-origin contract is absent or does not admit an operator.
-    TargetOrigin,
+    /// Exact target-origin evidence is missing, mismatched or unverified.
+    TargetOrigin(PastMappingError),
     /// The exact target interval differs from source origin semantics.
     TargetOriginIntervalMismatch {
         operator: PastOperatorKind,
@@ -420,7 +420,9 @@ impl Renderer<'_, '_> {
         if self.origin.admitted_operators.contains(&operator) {
             Ok(())
         } else {
-            Err(SafetyExportError::TargetOrigin)
+            Err(SafetyExportError::TargetOrigin(
+                PastMappingError::TargetOriginUnverified(operator),
+            ))
         }
     }
 
@@ -459,9 +461,7 @@ pub fn export_safety_monitor(
             return Err(SafetyExportError::FairnessPremise);
         }
     }
-    origin
-        .validate()
-        .map_err(|_| SafetyExportError::TargetOrigin)?;
+    origin.validate().map_err(SafetyExportError::TargetOrigin)?;
     classify_safety_shape(request.formula.formula())?;
     let (inner, decision_horizon) =
         finite_horizons(request.formula.formula()).map_err(|error| match error {

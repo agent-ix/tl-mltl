@@ -7,7 +7,7 @@ use tl_mltl::{
         export_safety_monitor, replay_target_step, EvaluationLimit, PrefixRequest,
         SafetyExportError, SafetyReplayDisposition, TargetStepObservation,
     },
-    TargetOriginContract,
+    PastMappingError, TargetOriginContract,
 };
 use tl_syntax::{
     FairnessPremisesDocument, InfiniteClock, InfiniteFormulaDocument, InfiniteNode,
@@ -413,7 +413,25 @@ fn safety_export_refuses_exhausted_work_and_unreviewed_past_operator() {
     unreviewed.admitted_operators.clear();
     assert_eq!(
         export_safety_monitor(&request, None, &catalog(), &unreviewed, 100),
-        Err(SafetyExportError::TargetOrigin)
+        Err(SafetyExportError::TargetOrigin(
+            PastMappingError::TargetOriginUnverified(PastOperatorKind::Once)
+        ))
+    );
+    let mut missing_evidence = contract();
+    missing_evidence.evidence_sha256.clear();
+    assert_eq!(
+        export_safety_monitor(&request, None, &catalog(), &missing_evidence, 100),
+        Err(SafetyExportError::TargetOrigin(
+            PastMappingError::MissingOriginEvidence
+        ))
+    );
+    let mut foreign_target = contract();
+    foreign_target.target.version = "C2PO v4.2.0".to_owned();
+    assert_eq!(
+        export_safety_monitor(&request, None, &catalog(), &foreign_target, 100),
+        Err(SafetyExportError::TargetOrigin(
+            PastMappingError::TargetOriginMismatch
+        ))
     );
 }
 
