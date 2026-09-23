@@ -133,8 +133,10 @@ pub enum EvidenceBasis {
     ExactTrace,
     /// A finite prefix contains a continuation-invariant violation.
     BadPrefix,
-    /// Partial evidence remains pending or conflicting.
+    /// Declared progress may resolve partial evidence.
     Pending,
+    /// Closed partial evidence admits both truth values and cannot progress.
+    Indeterminate,
     /// No sound proof or refutation basis is available.
     Unavailable,
 }
@@ -147,6 +149,8 @@ pub enum ResultReason {
     MissingObservation,
     /// Contradictory observations leave both truth values possible.
     ConflictingObservation,
+    /// Missing and contradictory observations both occur in the trace.
+    MissingAndConflictingObservations,
     /// No completion satisfies all fairness premises.
     EmptyFairAdmission,
     /// The selected subject is a model and this provider has no model procedure.
@@ -157,6 +161,82 @@ pub enum ResultReason {
     FinitePrefixUnsettled,
     /// The graph is outside the exact monitorable safety fragment.
     SafetyFragmentUnsupported,
+    /// A provider invariant failed after request validation.
+    ProviderFault,
+}
+
+/// Whether new observations may still resolve a partial lasso valuation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EvidenceClosure {
+    /// The supplied evidence is closed.
+    Closed,
+    /// The caller declares that further evidence can resolve uncertainty.
+    ProgressDeclared,
+}
+
+/// Resolution state of a partial, inconclusive trace result.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UncertaintyStatus {
+    /// Declared progress can resolve the remaining possibilities.
+    Pending,
+    /// Closed evidence leaves both truth values possible.
+    Indeterminate,
+}
+
+/// One unknown valuation cell in a representative Boolean completion.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompletionAssignment {
+    /// Materialized lasso position; loop repetitions reuse this assignment.
+    pub position: u64,
+    /// Proposition in the trace's proposition map.
+    pub proposition: PropositionId,
+    /// Boolean value selected for this unknown cell.
+    pub value: bool,
+}
+
+/// A replayable representative of one admitted fair completion.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompletionExample {
+    /// Assignments to missing or conflicting cells; known cells remain in the trace.
+    pub assignments: Vec<CompletionAssignment>,
+}
+
+/// Evidence from exhaustive settlement of the exact trace's fair completions.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TraceEvidence {
+    /// Count of every admitted fair completion evaluated, not a sample count.
+    pub all_admitted_fair_completions: u64,
+    /// One satisfying completion, when any exists.
+    pub satisfying: Option<CompletionExample>,
+    /// One falsifying completion, when any exists.
+    pub falsifying: Option<CompletionExample>,
+}
+
+/// A decisive violation of a finite-horizon safety body in an observed prefix.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PrefixCounterexample {
+    /// Origin-based position at which the safety body is false.
+    pub violation_position: u64,
+    /// Maximum future lookahead needed to decide the body at that position.
+    pub decision_horizon: u64,
+    /// Last observed position needed by that decision.
+    pub observed_through: u64,
+}
+
+/// Complete trace settlement or a continuation-invariant bad prefix.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SettlementEvidence {
+    /// All admitted fair completions were evaluated.
+    ExhaustiveTrace(TraceEvidence),
+    /// The exact safety fragment has a decisive observed violation.
+    BadPrefix(PrefixCounterexample),
 }
 
 /// Exact subject scope of an infinite result.
@@ -197,6 +277,8 @@ pub struct ResultIdentity {
     pub selected_position: u64,
     /// Fairness roots, in request order.
     pub fairness: Vec<NodeId>,
+    /// Closure declaration for an exact lasso; absent for other subjects.
+    pub evidence_closure: Option<EvidenceClosure>,
 }
 
 /// Attributable trace-scoped result. No field claims a model-wide theorem.
@@ -213,6 +295,10 @@ pub struct InfiniteResult {
     pub basis: EvidenceBasis,
     /// Typed nonconclusive reason, when present.
     pub reason: Option<ResultReason>,
+    /// Pending or indeterminate detail for a partial inconclusive result.
+    pub uncertainty: Option<UncertaintyStatus>,
+    /// Typed proof or counterexample evidence; absent on refusal or incomplete work.
+    pub evidence: Option<SettlementEvidence>,
     /// Exact request/provider attribution.
     pub identity: ResultIdentity,
     /// Number of fair Boolean completions examined.
@@ -242,6 +328,8 @@ struct RawTraceRequest<'a> {
     pub selected_position: u64,
     /// Same-graph fairness roots.
     pub fairness: &'a [NodeId],
+    /// Whether further evidence may resolve an unknown cell.
+    pub evidence_closure: EvidenceClosure,
     /// Configured bounded work.
     pub limit: EvaluationLimit,
 }
@@ -260,6 +348,7 @@ impl RawTraceRequest<'_> {
             clock: "event_position",
             selected_position: self.selected_position,
             fairness: self.fairness.to_vec(),
+            evidence_closure: Some(self.evidence_closure),
         }
     }
 
@@ -335,7 +424,10 @@ fn result(
             EvidenceBasis::Unavailable,
         ),
         Disposition::Failed => (
-            ExecutionDisposition::ResourceIncomplete,
+            match reason {
+                Some(ResultReason::ResourceIncomplete) => ExecutionDisposition::ResourceIncomplete,
+                _ => ExecutionDisposition::Failed,
+            },
             TruthAvailability::Unavailable,
             EvidenceBasis::Unavailable,
         ),
@@ -346,16 +438,49 @@ fn result(
         truth,
         basis,
         reason,
+        uncertainty: None,
+        evidence: None,
         identity,
         admitted_completions,
         evaluation_steps,
     }
 }
 
+fn provider_fault(identity: ResultIdentity, evaluation_steps: u64) -> InfiniteResult {
+    result(
+        identity,
+        Disposition::Failed,
+        Some(ResultReason::ProviderFault),
+        0,
+        evaluation_steps,
+    )
+}
+
+fn completion_example(
+    unknown: &[(usize, usize)],
+    propositions: &[PropositionId],
+    completion: u64,
+) -> Result<CompletionExample, InfiniteError> {
+    let assignments = unknown
+        .iter()
+        .enumerate()
+        .map(|(bit, (row, cell))| {
+            Ok(CompletionAssignment {
+                position: u64::try_from(*row).map_err(|_| InfiniteError::ResourceIncomplete)?,
+                proposition: *propositions.get(*cell).ok_or(InfiniteError::InvalidLasso)?,
+                value: completion & (1_u64 << bit) != 0,
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(CompletionExample { assignments })
+}
+
 /// Evaluates all Boolean completions of an exact lasso and filters them through
 /// the same-graph fairness roots before settling a trace-scoped claim.
-fn evaluate_trace(request: &RawTraceRequest<'_>) -> Result<InfiniteResult, InfiniteError> {
-    let index = request.validate()?;
+fn evaluate_trace(
+    request: &RawTraceRequest<'_>,
+    index: &BTreeMap<PropositionId, usize>,
+) -> Result<InfiniteResult, InfiniteError> {
     let mut rows = Vec::with_capacity(request.observations.len());
     let mut unknown = Vec::new();
     let mut missing = false;
@@ -393,6 +518,8 @@ fn evaluate_trace(request: &RawTraceRequest<'_>) -> Result<InfiniteResult, Infin
     let mut all_false = true;
     let mut admitted = 0_u64;
     let mut steps = 0_u64;
+    let mut satisfying = None;
+    let mut falsifying = None;
     for completion in 0..combinations {
         for (bit, (row, cell)) in unknown.iter().enumerate() {
             rows[*row][*cell] = completion & (1_u64 << bit) != 0;
@@ -404,7 +531,7 @@ fn evaluate_trace(request: &RawTraceRequest<'_>) -> Result<InfiniteResult, Infin
             request.formula.root(),
             &rows,
             request.loop_entry,
-            &index,
+            index,
             selected,
             request.fairness,
             remaining,
@@ -429,6 +556,18 @@ fn evaluate_trace(request: &RawTraceRequest<'_>) -> Result<InfiniteResult, Infin
             admitted += 1;
             all_true &= truth;
             all_false &= !truth;
+            let sample = if truth {
+                &mut satisfying
+            } else {
+                &mut falsifying
+            };
+            if sample.is_none() {
+                *sample = Some(completion_example(
+                    &unknown,
+                    request.propositions,
+                    completion,
+                )?);
+            }
         }
     }
     let (disposition, reason) = if admitted == 0 {
@@ -440,6 +579,11 @@ fn evaluate_trace(request: &RawTraceRequest<'_>) -> Result<InfiniteResult, Infin
         (Disposition::Proved, None)
     } else if all_false {
         (Disposition::Refuted, None)
+    } else if conflicting && missing {
+        (
+            Disposition::Inconclusive,
+            Some(ResultReason::MissingAndConflictingObservations),
+        )
     } else if conflicting {
         (
             Disposition::Inconclusive,
@@ -453,13 +597,37 @@ fn evaluate_trace(request: &RawTraceRequest<'_>) -> Result<InfiniteResult, Infin
     } else {
         (Disposition::Inconclusive, None)
     };
-    Ok(result(
-        request.identity(),
-        disposition,
-        reason,
-        admitted,
-        steps,
-    ))
+    let mut report = result(request.identity(), disposition, reason, admitted, steps);
+    if admitted > 0 {
+        report.evidence = Some(SettlementEvidence::ExhaustiveTrace(TraceEvidence {
+            all_admitted_fair_completions: admitted,
+            satisfying,
+            falsifying,
+        }));
+    }
+    if report.disposition == Disposition::Inconclusive
+        && matches!(
+            report.reason,
+            Some(
+                ResultReason::MissingObservation
+                    | ResultReason::ConflictingObservation
+                    | ResultReason::MissingAndConflictingObservations
+            )
+        )
+    {
+        let (basis, uncertainty) = match request.evidence_closure {
+            EvidenceClosure::Closed => (
+                EvidenceBasis::Indeterminate,
+                UncertaintyStatus::Indeterminate,
+            ),
+            EvidenceClosure::ProgressDeclared => {
+                (EvidenceBasis::Pending, UncertaintyStatus::Pending)
+            }
+        };
+        report.basis = basis;
+        report.uncertainty = Some(uncertainty);
+    }
+    Ok(report)
 }
 
 /// Validated document request for an exact trace-scoped lasso evaluation.
@@ -470,6 +638,8 @@ pub struct LassoRequest<'a> {
     pub trace: &'a LassoTraceDocument,
     /// Same-graph fairness premises, or no premises.
     pub fairness: Option<&'a FairnessPremisesDocument>,
+    /// Closure declaration for missing or conflicting evidence.
+    pub evidence_closure: EvidenceClosure,
     /// Exact graph identity.
     pub graph_id: &'a str,
     /// Exact trace identity.
@@ -531,6 +701,7 @@ pub fn evaluate_lasso(request: &LassoRequest<'_>) -> Result<InfiniteResult, Infi
             fairness: request
                 .fairness
                 .map_or_else(Vec::new, |premises| premises.roots().to_vec()),
+            evidence_closure: Some(request.evidence_closure),
         };
         return Ok(result(
             identity,
@@ -567,9 +738,23 @@ pub fn evaluate_lasso(request: &LassoRequest<'_>) -> Result<InfiniteResult, Infi
         fairness: request
             .fairness
             .map_or(&[], FairnessPremisesDocument::roots),
+        evidence_closure: request.evidence_closure,
         limit: request.limit,
     };
-    match evaluate_trace(&raw) {
+    let index = match raw.validate() {
+        Ok(index) => index,
+        Err(InfiniteError::ResourceIncomplete) => {
+            return Ok(result(
+                raw.identity(),
+                Disposition::Failed,
+                Some(ResultReason::ResourceIncomplete),
+                0,
+                0,
+            ));
+        }
+        Err(other) => return Err(other),
+    };
+    match evaluate_trace(&raw, &index) {
         Err(InfiniteError::ResourceIncomplete) => Ok(result(
             raw.identity(),
             Disposition::Failed,
@@ -577,7 +762,12 @@ pub fn evaluate_lasso(request: &LassoRequest<'_>) -> Result<InfiniteResult, Infi
             0,
             0,
         )),
-        other => other,
+        Err(
+            InfiniteError::InvalidFormula
+            | InfiniteError::InvalidLasso
+            | InfiniteError::IdentityMismatch,
+        ) => Ok(provider_fault(raw.identity(), 0)),
+        Ok(report) => Ok(report),
     }
 }
 
@@ -607,6 +797,7 @@ pub fn evaluate_model(
         clock: formula.clock().as_str(),
         selected_position: 0,
         fairness: Vec::new(),
+        evidence_closure: None,
     };
     Ok(result(
         identity,
@@ -782,6 +973,7 @@ fn evaluate_prefix_safety_at(
         clock: request.formula.clock().as_str(),
         selected_position: 0,
         fairness: Vec::new(),
+        evidence_closure: None,
     };
     if request.formula.nodes().len() > request.limit.max_nodes
         || request.observations.len() > request.limit.max_positions
@@ -916,7 +1108,13 @@ fn evaluate_prefix_safety_at(
                         steps,
                     ));
                 }
-                Err(other) => return Err(other),
+                Err(
+                    InfiniteError::InvalidFormula
+                    | InfiniteError::InvalidLasso
+                    | InfiniteError::IdentityMismatch,
+                ) => {
+                    return Ok(provider_fault(identity, steps));
+                }
             };
             steps = steps
                 .checked_add(used)
@@ -931,6 +1129,15 @@ fn evaluate_prefix_safety_at(
             report.basis = EvidenceBasis::BadPrefix;
             report.identity.selected_position =
                 u64::try_from(position).map_err(|_| InfiniteError::ResourceIncomplete)?;
+            report.evidence = Some(SettlementEvidence::BadPrefix(PrefixCounterexample {
+                violation_position: report.identity.selected_position,
+                decision_horizon: horizon,
+                observed_through: report
+                    .identity
+                    .selected_position
+                    .checked_add(horizon)
+                    .ok_or(InfiniteError::ResourceIncomplete)?,
+            }));
             return Ok(report);
         }
     }
@@ -1002,7 +1209,12 @@ impl LivenessBackend for InfiniteProvider<'_> {
                     }
                 },
             },
-            Err(_) => LivenessDisposition::Unsupported,
+            Err(InfiniteError::ResourceIncomplete) => LivenessDisposition::ResourceIncomplete,
+            Err(
+                InfiniteError::InvalidFormula
+                | InfiniteError::InvalidLasso
+                | InfiniteError::IdentityMismatch,
+            ) => LivenessDisposition::Unsupported,
         }
     }
 }
@@ -1045,5 +1257,59 @@ impl<'a> ProviderRegistry<'a> {
             self.provider
                 .map(|provider| provider as &dyn LivenessBackend),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn identity() -> ResultIdentity {
+        ResultIdentity {
+            feature: FEATURE,
+            provider_revision: crate::TL_MLTL_SOURCE_REVISION,
+            profile: PROFILE,
+            graph_id: "graph".to_owned(),
+            proposition_map_id: "map".to_owned(),
+            subject_kind: SubjectKind::Lasso,
+            subject_id: "trace".to_owned(),
+            trace_id: Some("trace".to_owned()),
+            clock: "event_position",
+            selected_position: 0,
+            fairness: Vec::new(),
+            evidence_closure: Some(EvidenceClosure::Closed),
+        }
+    }
+
+    // Trace: TC-158; FR-033-AC-3
+    #[test]
+    fn provider_fault_and_resource_exhaustion_have_distinct_execution_axes() {
+        let fault = provider_fault(identity(), 3);
+        let exhausted = result(
+            identity(),
+            Disposition::Failed,
+            Some(ResultReason::ResourceIncomplete),
+            0,
+            3,
+        );
+        let unsupported = result(
+            identity(),
+            Disposition::Unsupported,
+            Some(ResultReason::SafetyFragmentUnsupported),
+            0,
+            0,
+        );
+        assert_eq!(fault.execution, ExecutionDisposition::Failed);
+        assert_eq!(fault.reason, Some(ResultReason::ProviderFault));
+        assert_eq!(
+            exhausted.execution,
+            ExecutionDisposition::ResourceIncomplete
+        );
+        assert_eq!(unsupported.execution, ExecutionDisposition::Unsupported);
+        for report in [fault, exhausted, unsupported] {
+            assert_eq!(report.truth, TruthAvailability::Unavailable);
+            assert_eq!(report.basis, EvidenceBasis::Unavailable);
+            assert!(report.evidence.is_none());
+        }
     }
 }

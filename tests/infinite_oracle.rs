@@ -1,6 +1,8 @@
 #![cfg(feature = "infinite-trace")]
 
-use tl_mltl::infinite::{evaluate_lasso, Disposition, EvaluationLimit, LassoRequest};
+use tl_mltl::infinite::{
+    evaluate_lasso, Disposition, EvaluationLimit, EvidenceClosure, LassoRequest,
+};
 use tl_oracle::{evaluate_documents, Limits, Verdict};
 use tl_syntax::{
     FairnessPremisesDocument, InfiniteClock, InfiniteFormulaDocument, InfiniteNode,
@@ -356,6 +358,7 @@ fn cross_compare_small_lassos() {
                     formula: &graph,
                     trace: word,
                     fairness: None,
+                    evidence_closure: EvidenceClosure::Closed,
                     graph_id: &graph_id,
                     trace_id: &trace_id,
                     selected_position: position,
@@ -422,6 +425,7 @@ fn cross_compare_fairness_and_partial_completions() {
                     formula: &graph,
                     trace: word,
                     fairness: Some(&fairness),
+                    evidence_closure: EvidenceClosure::Closed,
                     graph_id: &graph_id,
                     trace_id: &trace_id,
                     selected_position: position,

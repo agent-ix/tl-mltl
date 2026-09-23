@@ -4,7 +4,9 @@ use std::{fs, path::Path};
 
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
-use tl_mltl::infinite::{evaluate_lasso, Disposition, EvaluationLimit, LassoRequest, ResultReason};
+use tl_mltl::infinite::{
+    evaluate_lasso, Disposition, EvaluationLimit, EvidenceClosure, LassoRequest, ResultReason,
+};
 use tl_syntax::{
     FairnessPremisesDocument, InfiniteClock, InfiniteFormulaDocument, LassoTraceDocument, NodeId,
     PartialValuation, PartialValue, PropositionEntry, PropositionId, PropositionMapDocument,
@@ -144,6 +146,7 @@ fn owner_infinite_corpus_replays_from_the_compiled_syntax_revision() {
             formula: &formula,
             trace: &trace,
             fairness: Some(&fairness),
+            evidence_closure: EvidenceClosure::Closed,
             graph_id: &graph_id,
             trace_id: &trace_id,
             selected_position: case["anchor"].as_u64().unwrap(),

@@ -2,8 +2,9 @@
 
 use tl_mltl::infinite::{
     evaluate_lasso, evaluate_model, evaluate_prefix_safety, Disposition, EvaluationLimit,
-    InfiniteError, InfiniteProvider, LassoRequest, ObservationValue, PrefixRequest,
-    ProviderRegistry, ProviderRequest, RegistrationError, ResultReason,
+    EvidenceBasis, EvidenceClosure, InfiniteError, InfiniteProvider, LassoRequest,
+    ObservationValue, PrefixRequest, ProviderRegistry, ProviderRequest, RegistrationError,
+    ResultReason, SettlementEvidence, UncertaintyStatus,
 };
 use tl_syntax::{
     FairnessPremisesDocument, InfiniteClock, InfiniteFormulaDocument, InfiniteNode,
@@ -64,18 +65,148 @@ fn run(
     selected_position: u64,
     fairness: Option<&FairnessPremisesDocument>,
 ) -> tl_mltl::infinite::InfiniteResult {
+    run_with_closure(
+        graph,
+        lasso,
+        selected_position,
+        fairness,
+        EvidenceClosure::Closed,
+    )
+}
+
+fn run_with_closure(
+    graph: &InfiniteFormulaDocument,
+    lasso: &LassoTraceDocument,
+    selected_position: u64,
+    fairness: Option<&FairnessPremisesDocument>,
+    evidence_closure: EvidenceClosure,
+) -> tl_mltl::infinite::InfiniteResult {
     let graph_id = graph.content_identity().unwrap();
     let trace_id = lasso.content_identity().unwrap();
     evaluate_lasso(&LassoRequest {
         formula: graph,
         trace: lasso,
         fairness,
+        evidence_closure,
         graph_id: &graph_id,
         trace_id: &trace_id,
         selected_position,
         limit: EvaluationLimit::default(),
     })
     .unwrap()
+}
+
+// Trace: TC-143; FR-030-AC-2
+#[test]
+fn closure_declaration_distinguishes_pending_from_indeterminate() {
+    let graph = formula(
+        0,
+        vec![node(K::Proposition {
+            proposition: PropositionId(7),
+        })],
+    );
+    for value in [ObservationValue::Missing, ObservationValue::Conflicting] {
+        let lasso = trace(&[], &[value]);
+        let closed = run_with_closure(&graph, &lasso, 0, None, EvidenceClosure::Closed);
+        let progressing =
+            run_with_closure(&graph, &lasso, 0, None, EvidenceClosure::ProgressDeclared);
+        let expected_reason = if value == ObservationValue::Missing {
+            ResultReason::MissingObservation
+        } else {
+            ResultReason::ConflictingObservation
+        };
+        assert_eq!(closed.disposition, Disposition::Inconclusive);
+        assert_eq!(progressing.disposition, Disposition::Inconclusive);
+        assert_eq!(closed.reason, Some(expected_reason));
+        assert_eq!(progressing.reason, Some(expected_reason));
+        assert_eq!(closed.basis, EvidenceBasis::Indeterminate);
+        assert_eq!(progressing.basis, EvidenceBasis::Pending);
+        assert_eq!(closed.uncertainty, Some(UncertaintyStatus::Indeterminate));
+        assert_eq!(progressing.uncertainty, Some(UncertaintyStatus::Pending));
+        assert_eq!(
+            closed.identity.evidence_closure,
+            Some(EvidenceClosure::Closed)
+        );
+        assert_eq!(
+            progressing.identity.evidence_closure,
+            Some(EvidenceClosure::ProgressDeclared)
+        );
+    }
+    let temporal = formula(
+        1,
+        vec![
+            node(K::Proposition {
+                proposition: PropositionId(7),
+            }),
+            node(K::Future {
+                interval: closed(0, 1),
+                operand: NodeId(0),
+            }),
+        ],
+    );
+    let both = trace(
+        &[ObservationValue::Missing],
+        &[ObservationValue::Conflicting],
+    );
+    let mixed = run(&temporal, &both, 0, None);
+    assert_eq!(mixed.disposition, Disposition::Inconclusive);
+    assert_eq!(
+        mixed.reason,
+        Some(ResultReason::MissingAndConflictingObservations)
+    );
+}
+
+// Trace: TC-156; FR-033-AC-1
+#[test]
+fn exact_trace_evidence_names_all_fair_completions_and_replayable_examples() {
+    let graph = formula(
+        0,
+        vec![node(K::Proposition {
+            proposition: PropositionId(7),
+        })],
+    );
+    let partial = trace(&[], &[ObservationValue::Missing]);
+    let mixed = run(&graph, &partial, 0, None);
+    let Some(SettlementEvidence::ExhaustiveTrace(evidence)) = mixed.evidence else {
+        panic!("partial lasso must carry exhaustive trace evidence");
+    };
+    assert_eq!(evidence.all_admitted_fair_completions, 2);
+    let satisfying = evidence.satisfying.unwrap().assignments;
+    let falsifying = evidence.falsifying.unwrap().assignments;
+    assert_eq!(satisfying.len(), 1);
+    assert_eq!(falsifying.len(), 1);
+    assert_eq!(
+        (
+            satisfying[0].position,
+            satisfying[0].proposition,
+            satisfying[0].value
+        ),
+        (0, PropositionId(7), true)
+    );
+    assert_eq!(
+        (
+            falsifying[0].position,
+            falsifying[0].proposition,
+            falsifying[0].value
+        ),
+        (0, PropositionId(7), false)
+    );
+    let true_value = run(&graph, &trace(&[], &[ObservationValue::True]), 0, None);
+    let false_value = run(&graph, &trace(&[], &[ObservationValue::False]), 0, None);
+    assert_eq!(true_value.disposition, Disposition::Proved);
+    assert_eq!(false_value.disposition, Disposition::Refuted);
+    let Some(SettlementEvidence::ExhaustiveTrace(true_evidence)) = true_value.evidence else {
+        panic!("proved lasso must carry exhaustive trace evidence");
+    };
+    let Some(SettlementEvidence::ExhaustiveTrace(false_evidence)) = false_value.evidence else {
+        panic!("refuted lasso must carry exhaustive trace evidence");
+    };
+    assert_eq!(true_evidence.all_admitted_fair_completions, 1);
+    assert_eq!(false_evidence.all_admitted_fair_completions, 1);
+    assert!(true_evidence.satisfying.is_some());
+    assert!(true_evidence.falsifying.is_none());
+    assert!(false_evidence.satisfying.is_none());
+    assert!(false_evidence.falsifying.is_some());
 }
 
 fn open(start: u32) -> TemporalInterval {
@@ -256,10 +387,17 @@ fn fairness_filters_completions_without_vacuous_proof() {
     let result = run(&graph, &partial, 0, Some(&fairness));
     assert_eq!(result.disposition, Disposition::Refuted);
     assert_eq!(result.admitted_completions, 1);
+    let Some(SettlementEvidence::ExhaustiveTrace(evidence)) = result.evidence else {
+        panic!("fair trace refutation must carry exhaustive evidence");
+    };
+    assert_eq!(evidence.all_admitted_fair_completions, 1);
+    assert!(evidence.satisfying.is_none());
+    assert!(evidence.falsifying.unwrap().assignments[0].value);
     let unfair = trace(&[], &[ObservationValue::False]);
     let result = run(&graph, &unfair, 0, Some(&fairness));
     assert_eq!(result.disposition, Disposition::Inconclusive);
     assert_eq!(result.reason, Some(ResultReason::EmptyFairAdmission));
+    assert!(result.evidence.is_none());
 }
 
 // Trace: TC-139, TC-155, TC-158, TC-159; FR-028-AC-2, FR-033-AC-1, FR-033-AC-3, FR-034-AC-1
@@ -272,10 +410,12 @@ fn model_and_identity_refusals_keep_their_scope() {
     let model = evaluate_model(&graph, &graph.content_identity().unwrap(), "model", "map").unwrap();
     assert_eq!(model.disposition, Disposition::Unsupported);
     assert!(model.identity.trace_id.is_none());
+    assert!(model.evidence.is_none());
     let bad = evaluate_lasso(&LassoRequest {
         formula: &graph,
         trace: &lasso,
         fairness: None,
+        evidence_closure: EvidenceClosure::Closed,
         graph_id: "",
         trace_id: "trace",
         selected_position: 0,
@@ -296,6 +436,7 @@ fn deployment_registry_routes_one_provider_and_refuses_duplicate() {
             formula: &graph,
             trace: &lasso,
             fairness: None,
+            evidence_closure: EvidenceClosure::Closed,
             graph_id: &graph_id,
             trace_id: &trace_id,
             selected_position: 0,
@@ -351,6 +492,7 @@ fn exact_work_limit_succeeds_and_one_less_is_resource_incomplete() {
         formula: &graph,
         trace: &lasso,
         fairness: None,
+        evidence_closure: EvidenceClosure::Closed,
         graph_id: &graph_id,
         trace_id: &trace_id,
         selected_position: 0,
@@ -370,6 +512,7 @@ fn exact_work_limit_succeeds_and_one_less_is_resource_incomplete() {
     let incomplete = evaluate_lasso(&request(baseline.evaluation_steps - 1)).unwrap();
     assert_eq!(incomplete.disposition, Disposition::Failed);
     assert_eq!(incomplete.reason, Some(ResultReason::ResourceIncomplete));
+    assert!(incomplete.evidence.is_none());
     assert_eq!(
         incomplete.execution,
         tl_mltl::infinite::ExecutionDisposition::ResourceIncomplete
@@ -401,6 +544,7 @@ fn every_lasso_resource_dimension_refuses_one_over_without_panic() {
                 formula: &graph,
                 trace: lasso,
                 fairness: None,
+                evidence_closure: EvidenceClosure::Closed,
                 graph_id: &graph_id,
                 trace_id: &trace_id,
                 selected_position: 0,
@@ -526,7 +670,7 @@ fn prefix_resource_dimensions_refuse_one_over_without_panic() {
     }
 }
 
-// Trace: TC-157, TC-168, TC-169, TC-170; FR-033-AC-2, FR-040-AC-1, FR-040-AC-2
+// Trace: TC-156, TC-157, TC-168, TC-169, TC-170; FR-033-AC-1, FR-033-AC-2, FR-040-AC-1, FR-040-AC-2
 #[test]
 fn finite_prefix_refutes_only_a_decisive_safety_violation() {
     let graph = formula(
@@ -554,6 +698,12 @@ fn finite_prefix_refutes_only_a_decisive_safety_violation() {
     let refuted = evaluate_prefix_safety(&request).unwrap();
     assert_eq!(refuted.disposition, Disposition::Refuted);
     assert_eq!(refuted.basis, tl_mltl::infinite::EvidenceBasis::BadPrefix);
+    let Some(SettlementEvidence::BadPrefix(counterexample)) = refuted.evidence else {
+        panic!("finite safety refutation must carry a bad-prefix counterexample");
+    };
+    assert_eq!(counterexample.violation_position, 0);
+    assert_eq!(counterexample.decision_horizon, 0);
+    assert_eq!(counterexample.observed_through, 0);
     let true_trace = trace(&[ObservationValue::True], &[ObservationValue::False]);
     let unsettled = evaluate_prefix_safety(&PrefixRequest {
         observations: true_trace.prefix(),
@@ -563,6 +713,7 @@ fn finite_prefix_refutes_only_a_decisive_safety_violation() {
     .unwrap();
     assert_eq!(unsettled.disposition, Disposition::Inconclusive);
     assert_eq!(unsettled.reason, Some(ResultReason::FinitePrefixUnsettled));
+    assert!(unsettled.evidence.is_none());
 }
 
 // Trace: TC-157, TC-168, TC-172; FR-033-AC-2, FR-040-AC-1, FR-041-AC-1
