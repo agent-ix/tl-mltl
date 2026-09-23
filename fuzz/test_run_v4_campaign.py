@@ -33,6 +33,7 @@ class V4CampaignTests(unittest.TestCase):
         package = campaign.tomllib.loads((campaign.ROOT / "Cargo.toml").read_text())[
             "package"]["name"]
         self.assertGreaterEqual(len(campaign.corpus_manifest(campaign.TARGETS[package])), 3)
+        self.assertEqual(len(campaign.corpus_manifest("closed_eval")), 4)
 
 
 if __name__ == "__main__":
