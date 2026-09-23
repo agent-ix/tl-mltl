@@ -137,6 +137,11 @@ def verify(report_bytes: bytes, raw_dir: Path, source_revision: str,
         if key in seen:
             raise ValueError("duplicate grid cell")
         seen.add(key)
+        origin_hazard = ((operator in ("historically", "triggered") and
+                          interval is not None and position < interval[1] * depth) or
+                         (operator == "previous" and position < depth))
+        if row.get("origin_hazard") is not origin_hazard:
+            raise ValueError("mislabelled origin hazard")
         observed = target[f"{group}-{trace}"].get((formula_id, position))
         if row["target"] is not observed:
             raise ValueError("reported verdict differs from raw target")

@@ -56,6 +56,10 @@ class GridGateTests(unittest.TestCase):
                         "case": case, "operator": operator, "interval": interval,
                         "depth": depth, "trace": trace, "position": position,
                         "tl": False, "oracle": False, "target": False,
+                        "origin_hazard": (
+                            operator in ("historically", "triggered")
+                            and interval is not None and position < interval[1] * depth
+                        ) or (operator == "previous" and position < depth),
                         "mapping": {"status": "admitted"},
                         "classification": "agreement",
                     })
@@ -85,6 +89,13 @@ class GridGateTests(unittest.TestCase):
     def test_false_success_count_cannot_receive_credit(self) -> None:
         self.report["classifications"] = {"agreement": 1349}
         with self.assertRaisesRegex(ValueError, "population/count"):
+            self.verify()
+
+    def test_origin_hazard_cannot_be_suppressed(self) -> None:
+        row = next(row for row in self.report["rows"] if row["case"] == "historically-0-1-d1"
+                   and row["position"] == 0)
+        row["origin_hazard"] = False
+        with self.assertRaisesRegex(ValueError, "origin hazard"):
             self.verify()
 
 

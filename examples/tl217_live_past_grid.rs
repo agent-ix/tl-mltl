@@ -609,8 +609,8 @@ fn main() {
                             Operator::Historically | Operator::Triggered
                         ) && case
                             .interval
-                            .is_some_and(|(a, _)| position < a as usize))
-                            || (case.operator == Operator::Previous && position == 0),
+                            .is_some_and(|(_, b)| position < (b as usize).saturating_mul(case.depth)))
+                            || (case.operator == Operator::Previous && position < case.depth),
                         tl,
                         oracle,
                         target: observed,
