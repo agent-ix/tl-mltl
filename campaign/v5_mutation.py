@@ -24,7 +24,7 @@ REVIEW_DISPOSITIONS = {"counterexample", "proof_candidate", "reviewed_limitation
 
 def failed(status: Any) -> bool:
     return (isinstance(status, dict) and set(status) == {"Failure"}
-            and isinstance(status["Failure"], int) and status["Failure"] != 0)
+            and type(status["Failure"]) is int and status["Failure"] != 0)
 
 
 def timed_out(status: Any) -> bool:
@@ -213,7 +213,7 @@ def verify_restored_control(restored: dict[str, Any], revision: str,
     if restored.get("argv") != ["cargo", "test", "--locked", "--all-features",
                                 *test_tail]:
         raise ValueError("restored control test selection differs")
-    if restored.get("exit_code") != 0:
+    if type(restored.get("exit_code")) is not int or restored["exit_code"] != 0:
         raise ValueError("restored green control failed")
 
 
@@ -234,7 +234,7 @@ def verify_invocation(invocation: dict[str, Any], entry: dict[str, Any],
     if invocation.get("mutation_command") != mutation_command:
         raise ValueError("mutation test selection or output command differs")
     expected_code = 2 if native["missed"] or native["timeout"] else 0
-    if invocation.get("exit_code") != expected_code:
+    if type(invocation.get("exit_code")) is not int or invocation["exit_code"] != expected_code:
         raise ValueError("mutation invocation exit code contradicts native outcomes")
 
 
