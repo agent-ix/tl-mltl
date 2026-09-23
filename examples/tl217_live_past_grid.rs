@@ -16,7 +16,7 @@ use sha2::{Digest, Sha256};
 use tl_mltl::{
     evaluate_past, map_past_to_c2po, ClockBinding, MappingSourceIdentity, MappingSourceState,
     PastEvaluationLimits, PastEvaluationRelationInput, PositionHistoryDocument,
-    PositionObservation, TargetOriginContract, ToolIdentity,
+    PositionObservation, TargetOriginContract,
 };
 use tl_oracle::{
     evaluate_origin_complete, Formula as OracleFormula, Interval as OracleInterval,
@@ -24,8 +24,8 @@ use tl_oracle::{
 };
 use tl_syntax::{
     Formula, FormulaDocument, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration,
-    PastOperatorKind, PropositionBinding, PropositionId, SemanticProfile, SignalCatalogDocument,
-    SignalDomain, SignalId,
+    PropositionBinding, PropositionId, SemanticProfile, SignalCatalogDocument, SignalDomain,
+    SignalId,
 };
 
 const TARGET_REVISION: &str = "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a";
@@ -423,28 +423,7 @@ fn catalog() -> SignalCatalogDocument {
 }
 
 fn origin_contract() -> TargetOriginContract {
-    TargetOriginContract {
-        target: ToolIdentity {
-            name: "C2PO".to_owned(),
-            version: "C2PO v4.1.0".to_owned(),
-            executable_sha256: COMPILER_SHA256.to_owned(),
-            configuration_sha256: sha256(include_bytes!(
-                "../corpus/past-c2po-v1/target-4.2/past.c2po"
-            )),
-        },
-        evidence_sha256: sha256(include_bytes!(
-            "../corpus/past-c2po-v1/target-4.2/r2u2.stdout"
-        )),
-        admitted_operators: [
-            PastOperatorKind::Once,
-            PastOperatorKind::Historically,
-            PastOperatorKind::Since,
-            PastOperatorKind::Triggered,
-            PastOperatorKind::StrongPrevious,
-        ]
-        .into_iter()
-        .collect(),
-    }
+    TargetOriginContract::reviewed_r2u2_4_2()
 }
 
 fn source_verdict(
