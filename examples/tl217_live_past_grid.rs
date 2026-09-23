@@ -646,6 +646,7 @@ fn main() {
 mod tests {
     use super::*;
 
+    // Trace: TC-191, FR-052-AC-1
     #[test]
     fn grid_axes_are_complete_and_unique() {
         let groups = groups();
@@ -682,6 +683,7 @@ mod tests {
         );
     }
 
+    // Trace: TC-191, FR-052-AC-1
     #[test]
     fn parser_refuses_duplicate_or_unknown_target_rows() {
         assert_eq!(parse_target(b"0:0,T\n0:1,F\n").len(), 2);
