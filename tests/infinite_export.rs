@@ -1,0 +1,380 @@
+#![cfg(feature = "infinite-trace")]
+
+use std::{collections::BTreeSet, fs, path::Path, process::Command};
+
+use tl_mltl::{
+    infinite::{
+        export_safety_monitor, replay_target_step, EvaluationLimit, PrefixRequest,
+        SafetyExportError, SafetyReplayDisposition, TargetStepObservation,
+    },
+    TargetOriginContract, ToolIdentity,
+};
+use tl_syntax::{
+    InfiniteClock, InfiniteFormulaDocument, InfiniteNode, InfiniteNodeKind as K, Interval, NodeId,
+    OwnedSignalDeclaration, PartialValuation, PartialValue, PastOperatorKind, PropositionBinding,
+    PropositionId, SemanticProfile, SignalCatalogDocument, SignalDomain, SignalId,
+    TemporalInterval, TraceObservation, UnboundedInterval, ValuationEntry,
+};
+
+fn graph(nodes: Vec<InfiniteNode>) -> InfiniteFormulaDocument {
+    InfiniteFormulaDocument::new(
+        SemanticProfile::InfiniteTraceV1,
+        InfiniteClock::EventPosition,
+        NodeId(u32::try_from(nodes.len() - 1).unwrap()),
+        nodes,
+    )
+    .unwrap()
+}
+
+fn node(kind: K) -> InfiniteNode {
+    InfiniteNode::new(kind)
+}
+fn open() -> TemporalInterval {
+    TemporalInterval::Unbounded(UnboundedInterval::new(0))
+}
+fn closed() -> TemporalInterval {
+    TemporalInterval::Closed(Interval::new(0, 1).unwrap())
+}
+
+fn catalog() -> SignalCatalogDocument {
+    SignalCatalogDocument::new(
+        vec![OwnedSignalDeclaration::new(
+            SignalId(1),
+            "p".to_owned(),
+            SignalDomain::Boolean,
+        )],
+        vec![PropositionBinding::new(PropositionId(0), SignalId(1))],
+    )
+    .unwrap()
+}
+
+fn contract() -> TargetOriginContract {
+    TargetOriginContract {
+        target: ToolIdentity {
+            name: "C2PO".to_owned(),
+            version: "test-fixture".to_owned(),
+            executable_sha256: "a".repeat(64),
+            configuration_sha256: "b".repeat(64),
+        },
+        evidence_sha256: "c".repeat(64),
+        admitted_operators: [PastOperatorKind::Once]
+            .into_iter()
+            .collect::<BTreeSet<_>>(),
+    }
+}
+
+fn rows(value: PartialValue) -> Vec<TraceObservation> {
+    vec![TraceObservation {
+        position: 0,
+        valuation: PartialValuation::new(
+            "map".to_owned(),
+            &[PropositionId(0)],
+            vec![ValuationEntry {
+                proposition: PropositionId(0),
+                value,
+            }],
+        )
+        .unwrap(),
+    }]
+}
+
+fn export(
+    graph: &InfiniteFormulaDocument,
+    observations: &[TraceObservation],
+) -> Result<tl_mltl::infinite::SafetyMappingManifest, SafetyExportError> {
+    export_safety_monitor(
+        &PrefixRequest {
+            formula: graph,
+            graph_id: &graph.content_identity().unwrap(),
+            proposition_map_id: "map",
+            propositions: &[PropositionId(0)],
+            observations,
+            limit: EvaluationLimit::default(),
+        },
+        &catalog(),
+        &contract(),
+        100,
+    )
+}
+
+// Trace: TC-168, TC-169, TC-171; FR-040-AC-1 and FR-040-AC-3
+#[test]
+fn exact_outer_safety_guard_exports_only_its_finite_horizon_body() {
+    let past = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Once {
+            interval: closed(),
+            operand: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
+    let evidence = export(&past, &rows(PartialValue::True)).unwrap();
+    assert_eq!(evidence.section, "PTSPEC");
+    assert_eq!(evidence.expression, "O[0,1](p)");
+    assert_eq!(evidence.decision_horizon, 0);
+    assert!(evidence.refutation_only);
+    assert_eq!(evidence.profile, "mltl.infinite-trace/v1");
+    let future = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Future {
+            interval: closed(),
+            operand: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
+    let evidence = export(&future, &rows(PartialValue::True)).unwrap();
+    assert_eq!(evidence.section, "FTSPEC");
+    assert_eq!(evidence.expression, "F[0,1](p)");
+    assert_eq!(evidence.decision_horizon, 1);
+}
+
+// Trace: TC-172, TC-173; FR-041-AC-1 and FR-041-AC-2
+#[test]
+fn unsupported_shape_partial_observation_and_mixed_target_context_refuse() {
+    let unbounded = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Future {
+            interval: open(),
+            operand: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
+    assert_eq!(
+        export(&unbounded, &rows(PartialValue::True)),
+        Err(SafetyExportError::UnsupportedShape)
+    );
+    let past = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Once {
+            interval: closed(),
+            operand: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
+    assert_eq!(
+        export(&past, &rows(PartialValue::Missing)),
+        Err(SafetyExportError::PartialValuation)
+    );
+    let mixed = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Future {
+            interval: closed(),
+            operand: NodeId(0),
+        }),
+        node(K::Once {
+            interval: closed(),
+            operand: NodeId(1),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(2),
+        }),
+    ]);
+    assert_eq!(
+        export(&mixed, &rows(PartialValue::True)),
+        Err(SafetyExportError::MixedTargetContext)
+    );
+}
+
+// Trace: TC-170; FR-040-AC-2
+#[test]
+fn export_refuses_a_noncanonical_prefix_and_missing_formula_binding() {
+    let past = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Once {
+            interval: closed(),
+            operand: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
+    let mut shifted = rows(PartialValue::True);
+    shifted[0].position = 1;
+    assert_eq!(export(&past, &shifted), Err(SafetyExportError::Identity));
+
+    let request = PrefixRequest {
+        formula: &past,
+        graph_id: &past.content_identity().unwrap(),
+        proposition_map_id: "map",
+        propositions: &[],
+        observations: &[],
+        limit: EvaluationLimit::default(),
+    };
+    assert_eq!(
+        export_safety_monitor(&request, &catalog(), &contract(), 100),
+        Err(SafetyExportError::Identity)
+    );
+}
+
+// Trace: TC-169, TC-170; FR-040-AC-1 and FR-040-AC-2
+#[test]
+fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive() {
+    let safety = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(0),
+        }),
+    ]);
+    let false_rows = rows(PartialValue::False);
+    let request = PrefixRequest {
+        formula: &safety,
+        graph_id: &safety.content_identity().unwrap(),
+        proposition_map_id: "map",
+        propositions: &[PropositionId(0)],
+        observations: &false_rows,
+        limit: EvaluationLimit::default(),
+    };
+    let manifest = export_safety_monitor(&request, &catalog(), &contract(), 100).unwrap();
+    let step = |position, verdict| TargetStepObservation {
+        target: &manifest.target,
+        expression_sha256: &manifest.output_sha256,
+        position,
+        verdict,
+    };
+    assert_eq!(
+        replay_target_step(&manifest, &request, step(0, false)).unwrap(),
+        SafetyReplayDisposition::Refuted
+    );
+    assert_eq!(
+        replay_target_step(&manifest, &request, step(0, true)).unwrap(),
+        SafetyReplayDisposition::Mismatch
+    );
+    assert_eq!(
+        replay_target_step(&manifest, &request, step(1, false)).unwrap(),
+        SafetyReplayDisposition::Mismatch
+    );
+
+    let true_rows = rows(PartialValue::True);
+    let passing_request = PrefixRequest {
+        formula: &safety,
+        graph_id: &safety.content_identity().unwrap(),
+        proposition_map_id: "map",
+        propositions: &[PropositionId(0)],
+        observations: &true_rows,
+        limit: EvaluationLimit::default(),
+    };
+    let passing = export_safety_monitor(&passing_request, &catalog(), &contract(), 100).unwrap();
+    let passing_step = TargetStepObservation {
+        target: &passing.target,
+        expression_sha256: &passing.output_sha256,
+        position: 0,
+        verdict: true,
+    };
+    assert_eq!(
+        replay_target_step(&passing, &passing_request, passing_step).unwrap(),
+        SafetyReplayDisposition::Inconclusive
+    );
+}
+
+// Set TL_MLTL_C2PO_SOURCE to the exact retained R2U2 4.2 source.
+// Trace: TC-173; FR-041-AC-2
+#[test]
+fn c2po_4_2_type_checker_rejects_mixed_time_in_both_sections() {
+    let Ok(source) = std::env::var("TL_MLTL_C2PO_SOURCE") else {
+        return;
+    };
+    let source = Path::new(&source);
+    let revision = Command::new("git")
+        .arg("rev-parse")
+        .arg("HEAD")
+        .current_dir(source)
+        .output()
+        .unwrap();
+    assert!(revision.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&revision.stdout).trim(),
+        "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a"
+    );
+    let directory = tempfile::tempdir().unwrap();
+    for (section, expected) in [
+        (
+            "FTSPEC",
+            "mixed-time formulas unsupported, found PT formula in FTSPEC",
+        ),
+        (
+            "PTSPEC",
+            "mixed-time formulas unsupported, found FT formula in PTSPEC",
+        ),
+    ] {
+        // This is the renderer's exact nested expression for O[0,1](F[0,1] p).
+        let specification = directory.path().join(format!("mixed-{section}.c2po"));
+        fs::write(
+            &specification,
+            format!("INPUT\n  p: bool;\n{section}\n  O[0,1](F[0,1](p));\n"),
+        )
+        .unwrap();
+        let output = Command::new("python3")
+            .arg(source.join("compiler/c2po.py"))
+            .args(["--spec", specification.to_str().unwrap(), "--type-check"])
+            .current_dir(source)
+            .output()
+            .unwrap();
+        assert!(
+            !output.status.success(),
+            "{section} unexpectedly accepted mixed time"
+        );
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains(expected),
+            "{section}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    for (name, section, expression) in [
+        ("once", "PTSPEC", "O[0,1](p)"),
+        ("historically", "PTSPEC", "H[0,1](p)"),
+        ("previous", "PTSPEC", "O[1,1](p)"),
+        ("since", "PTSPEC", "(p S[0,2] q)"),
+        ("triggered", "PTSPEC", "(!((!p) S[0,2] (!q)))"),
+        ("future", "FTSPEC", "F[0,1](p)"),
+        ("globally", "FTSPEC", "G[0,1](p)"),
+        ("until", "FTSPEC", "(p U[0,1] q)"),
+        ("release", "FTSPEC", "(p R[0,1] q)"),
+    ] {
+        let specification = directory.path().join(format!("admitted-{name}.c2po"));
+        fs::write(
+            &specification,
+            format!("INPUT\n  p,q: bool;\n{section}\n  {expression};\n"),
+        )
+        .unwrap();
+        let output = Command::new("python3")
+            .arg(source.join("compiler/c2po.py"))
+            .args(["--spec", specification.to_str().unwrap(), "--type-check"])
+            .current_dir(source)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{name}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}

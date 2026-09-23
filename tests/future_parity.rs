@@ -711,6 +711,9 @@ fn lowered_wm_horizon_matches_direct_lookahead_including_maximum_bounds() {
                 SemanticProfile::OriginCompleteHistoryV1 => {
                     unreachable!("future parity profiles exclude origin-complete history")
                 }
+                SemanticProfile::InfiniteTraceV1 => {
+                    unreachable!("future parity profiles exclude infinite trace")
+                }
             }
             .unwrap();
             assert_eq!(record.horizon, analysis.lookahead, "{kind:?} {profile:?}");
@@ -757,6 +760,9 @@ fn evaluate_both(
         }
         SemanticProfile::OriginCompleteHistoryV1 => {
             unreachable!("future parity profiles exclude origin-complete history")
+        }
+        SemanticProfile::InfiniteTraceV1 => {
+            unreachable!("future parity profiles exclude infinite trace")
         }
     }
     .map(|report| report.verdict)
@@ -890,6 +896,9 @@ fn lowered_wm_resource_outcomes_match_direct_canonical_construction() {
                     SemanticProfile::OnlinePrefixV1 => TruthValue::Pending,
                     SemanticProfile::OriginCompleteHistoryV1 => {
                         unreachable!("future parity profiles exclude origin-complete history")
+                    }
+                    SemanticProfile::InfiniteTraceV1 => {
+                        unreachable!("future parity profiles exclude infinite trace")
                     }
                 };
                 assert_eq!(
@@ -1144,7 +1153,7 @@ fn evaluator_has_no_derived_future_branch() {
         scanned += 1;
     }
     assert_eq!(
-        scanned, 22,
+        scanned, 26,
         "the reviewed subsystem source population changed"
     );
 }

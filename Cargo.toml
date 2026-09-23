@@ -10,6 +10,10 @@ publish = false
 repository = "https://github.com/agent-ix/tl-mltl"
 build = "build.rs"
 
+[features]
+default = []
+infinite-trace = []
+
 [lib]
 name = "tl_mltl"
 path = "src/lib.rs"
@@ -18,7 +22,7 @@ path = "src/lib.rs"
 serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.151"
 sha2 = "=0.10.9"
-tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "4a5614193d21e5ae99950ae683b04ba0ec931358", default-features = false, features = ["alloc", "serde"] }
+tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "75ebec8ec8d15dcdee3a821119ae3ceb18e61bb3", default-features = false, features = ["alloc", "serde"] }
 
 [dev-dependencies]
 serde_yaml_ng = "0.10"

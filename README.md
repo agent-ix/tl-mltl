@@ -13,7 +13,7 @@ make spec
 ```
 
 The library requires Rust 1.98.1 or later and consumes validated `tl-syntax` formulas
-pinned to exact revision `4a5614193d21e5ae99950ae683b04ba0ec931358`. The
+pinned to exact revision `75ebec8ec8d15dcdee3a821119ae3ceb18e61bb3`. The
 shared temporal corpus, the future-operator corpus, and the past-history
 corpus are all read directly from the compiled `tl-syntax` dependency via
 `tl_syntax::CORPUS_DIR`, tracking `TL_SYNTAX_REVISION`. `evaluate_closed` implements
@@ -23,6 +23,12 @@ the declared all-false-after-closure profile at time zero, while
 `analyze_horizon` reports checked
 lookahead, propagation delay, and buffer length. `map_to_c2po` emits a
 digest-bearing mapping manifest without claiming that an external monitor ran.
+
+The non-default `infinite-trace` feature exposes `tl_mltl::infinite` for
+trace-scoped lasso evaluation, fairness-filtered partial observations, and
+finite-prefix safety refutation. `G[0,)ψ` can be exported as a refutation-only
+C2PO expression when its body has an admitted finite decision horizon and
+verified target form. Model-wide proof is not supplied by this provider.
 
 `evaluate_past` implements the closed `mltl.origin-complete-history/v1`
 profile over strict `tl-mltl.position-history/v1` inputs. It evaluates bounded

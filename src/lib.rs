@@ -32,6 +32,8 @@ pub mod clock;
 mod context;
 mod differential;
 pub mod future;
+#[cfg(feature = "infinite-trace")]
+pub mod infinite;
 pub mod mapping;
 pub mod past;
 pub mod wire;
@@ -59,9 +61,9 @@ pub use future::{
     EvaluationLimits, EvaluationReport, EvaluationStats, TruthValue,
 };
 pub use mapping::{
-    map_to_c2po, map_to_c2po_with_context, ContextualMappingManifest,
+    map_past_to_c2po, map_to_c2po, map_to_c2po_with_context, ContextualMappingManifest,
     ContextualMappingSchemaVersion, MappingError, MappingManifest, MappingSourceIdentity,
-    MappingSourceState,
+    MappingSourceState, PastMappingError, PastMappingManifest, TargetOriginContract,
 };
 pub use past::{
     analyze_required_history, evaluate_past, evaluate_past_with_stats, fixed_sample_instant,
@@ -87,7 +89,7 @@ pub use wire::{
 /// dependency via `tl_syntax::CORPUS_DIR`, so there is no separate basis
 /// revision to track for either: reading through the dependency means each
 /// tracks whatever this revision names.
-pub const TL_SYNTAX_REVISION: &str = "4a5614193d21e5ae99950ae683b04ba0ec931358";
+pub const TL_SYNTAX_REVISION: &str = "75ebec8ec8d15dcdee3a821119ae3ceb18e61bb3";
 
 /// Shared temporal corpus identity consumed by this crate.
 pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";

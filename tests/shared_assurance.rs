@@ -2242,7 +2242,8 @@ fn no_local_evidence_framework_remains() {
         // corpus/future-operators (20 files) the same way, leaving only
         // corpus/README.md and the retained corpus/r2u2-v4.2 exchange (35 - 25
         // = 10).
-        ("corpus", 10),
+        // TL-211 adds the pinned past C2PO source corpus and its digest.
+        ("corpus", 12),
         // TL-170 adds examples/emit_shared_corpus_manifest.rs, the bridge
         // producer the chain driver reads its independent malformed-count
         // oracle from now that the manifest is no longer a vendored file.
@@ -2259,13 +2260,17 @@ fn no_local_evidence_framework_remains() {
         // NFR-006 and its spec review SR-053 (2 files). (Requirement ids are
         // kept off the start of these comment lines: Quire reads a line-leading
         // id as a trace tag, and this test backs none of them.)
-        ("spec", 134),
+        // The V1 spec cycle adds its requirements, matrices, decisions and
+        // combined review documents before implementation begins.
+        ("spec", 178),
         // TL-179 deletes wire::request, wire::observation, wire::report, and
         // mapping::contract_ir (4 files): the quire-observation-coupled
         // request/result/mapping owner boundary now lives in quire-mltl.
         // TL-65 adds ci_guard.rs and bin/ci_guard.rs (2 files), the NFR-006
         // gate-set guard.
-        ("src", 22),
+        // Stage 1 adds the opt-in infinite provider (3 files) and the distinct
+        // past-profile mapping adapter (1 file).
+        ("src", 26),
         // TL-179 deletes tests/tc_084_temporal_owner_wire.rs (1 file), the
         // dedicated test for the request/result/mapping owner boundary it
         // removed from src/. TL-173 then deletes the two files that test left
@@ -2276,7 +2281,8 @@ fn no_local_evidence_framework_remains() {
         // tests/fixtures/README.md, which existed only to document that one
         // fixture's provenance. Neither was referenced by any remaining test
         // or source file (23 - 2 = 21). TL-65 adds tests/ci_guard.rs (22).
-        ("tests", 22),
+        // Stage 1 adds infinite, safety export, owner corpus, past mapping and pinned corpus replay tests.
+        ("tests", 27),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2341,13 +2347,15 @@ fn no_local_evidence_framework_remains() {
     // tests/ci_guard.rs, NFR-006 and its spec review SR-053, and the 10-file
     // plan/PLAN-009 bundle (15 files), for 261; the 0.3.0 release adds
     // CHANGELOG.md, for 262.
+    // The V1 spec cycle adds 44 spec artifacts and two corpus files; Stage 1
+    // adds four source modules and five integration tests, for 317.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 262,
-        "the source census population changed from the reviewed 262 tracked files \
+        inspected, 317,
+        "the source census population changed from the reviewed 317 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

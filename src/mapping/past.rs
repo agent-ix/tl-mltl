@@ -1,0 +1,304 @@
+//! Distinct origin-complete past mapping to the C2PO expression vocabulary.
+//!
+//! A caller must supply operator-specific target-origin evidence. The adapter
+//! records that evidence; it does not claim that rendering alone executed R2U2.
+
+use std::collections::BTreeSet;
+
+use serde::Serialize;
+use tl_syntax::{
+    Formula, FormulaDocument, NodeId, NodeKind, PastOperatorKind, PropositionId, SemanticProfile,
+    SignalCatalog, SignalCatalogDocument,
+};
+
+use super::legacy::{is_c2po_identifier, sha256_hex};
+use super::MappingSourceIdentity;
+use crate::{context::bind_formula, ContextualBindingError, ToolIdentity, TL_SYNTAX_REVISION};
+
+/// Reviewed target-origin behavior, bound to one exact target version and
+/// operator set. The evidence digest identifies the separately replayable
+/// target observations used to establish false-before-origin parity.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TargetOriginContract {
+    /// Exact external tool identity.
+    pub target: ToolIdentity,
+    /// Lowercase SHA-256 of the reviewed target-origin evidence artifact.
+    pub evidence_sha256: String,
+    /// Past operators whose origin behavior was reviewed for this target.
+    pub admitted_operators: BTreeSet<PastOperatorKind>,
+}
+
+impl TargetOriginContract {
+    pub(crate) fn validate(&self) -> Result<(), PastMappingError> {
+        if self.target.name.is_empty()
+            || self.target.version.is_empty()
+            || !is_sha256(&self.evidence_sha256)
+            || !is_sha256(&self.target.executable_sha256)
+            || !is_sha256(&self.target.configuration_sha256)
+        {
+            Err(PastMappingError::MissingOriginEvidence)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+/// Typed refusal without a partial C2PO expression or manifest.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum PastMappingError {
+    /// A different TL profile was selected.
+    UnsupportedProfile,
+    /// A future-time operator was encountered in the past-profile graph.
+    UnsupportedNode(NodeId),
+    /// The target-origin contract is absent or malformed.
+    MissingOriginEvidence,
+    /// A node uses an operator with no reviewed target-origin behavior.
+    TargetOriginUnverified(PastOperatorKind),
+    /// The formula's signal catalog does not bind every proposition.
+    Binding(ContextualBindingError),
+    /// A catalog document failed validation.
+    InvalidCatalog(String),
+    /// A signal name has no exact C2PO identifier representation.
+    UnsupportedSignal(PropositionId),
+    /// A node reference was absent in a supposedly validated graph.
+    InvalidNode(NodeId),
+    /// Work exceeded the configured renderer budget.
+    ResourceIncomplete,
+    /// A canonical identity could not be constructed.
+    Identity(String),
+}
+
+impl core::fmt::Display for PastMappingError {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(formatter, "past C2PO mapping refused: {self:?}")
+    }
+}
+
+impl std::error::Error for PastMappingError {}
+
+/// Versioned past-profile mapping artifact.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PastMappingManifest {
+    /// Exact manifest edition.
+    pub schema_version: &'static str,
+    /// tl-mltl adapter version.
+    pub adapter_version: &'static str,
+    /// Exact tl-mltl source revision.
+    pub source_revision: String,
+    /// Exact tl-mltl source tree state.
+    pub source_state: String,
+    /// Exact tl-syntax dependency revision.
+    pub syntax_revision: &'static str,
+    /// Canonical formula-v2 graph content identity.
+    pub graph_id: String,
+    /// Caller formula identity.
+    pub formula_id: String,
+    /// Exact past TL profile.
+    pub profile: &'static str,
+    /// Exact event-position clock.
+    pub clock: &'static str,
+    /// SHA-256 of the exact supplied formula bytes.
+    pub input_sha256: String,
+    /// SHA-256 of the complete signal catalog.
+    pub signal_catalog_sha256: String,
+    /// Exact target binary/configuration identity.
+    pub target: ToolIdentity,
+    /// SHA-256 of separately reviewed target-origin evidence.
+    pub target_origin_evidence_sha256: String,
+    /// Canonical C2PO expression, intended for a PTSPEC section.
+    pub expression: String,
+    /// SHA-256 of the expression bytes.
+    pub output_sha256: String,
+    /// Exact mapping limitation.
+    pub limitation: &'static str,
+}
+
+struct Renderer<'a, 'b> {
+    formula: Formula<'a>,
+    catalog: SignalCatalog<'b>,
+    origin: &'b TargetOriginContract,
+    visits: u64,
+    limit: u64,
+}
+
+impl Renderer<'_, '_> {
+    fn render(&mut self, node: NodeId) -> Result<String, PastMappingError> {
+        self.visits = self
+            .visits
+            .checked_add(1)
+            .ok_or(PastMappingError::ResourceIncomplete)?;
+        if self.visits > self.limit {
+            return Err(PastMappingError::ResourceIncomplete);
+        }
+        let kind = usize::try_from(node.0)
+            .ok()
+            .and_then(|index| self.formula.nodes().get(index))
+            .map(|node| node.kind)
+            .ok_or(PastMappingError::InvalidNode(node))?;
+        let rendered = match kind {
+            NodeKind::False => "false".to_owned(),
+            NodeKind::True => "true".to_owned(),
+            NodeKind::Proposition { proposition } => {
+                let signal = self
+                    .catalog
+                    .signal_for_proposition(proposition)
+                    .ok_or(PastMappingError::UnsupportedSignal(proposition))?;
+                if !is_c2po_identifier(signal.name()) {
+                    return Err(PastMappingError::UnsupportedSignal(proposition));
+                }
+                signal.name().to_owned()
+            }
+            NodeKind::Not { operand } => format!("(!{})", self.render(operand)?),
+            NodeKind::And { left, right } => self.binary("&&", left, right)?,
+            NodeKind::Or { left, right } => self.binary("||", left, right)?,
+            NodeKind::Implies { left, right } => self.binary("->", left, right)?,
+            NodeKind::Equivalent { left, right } => self.binary("<->", left, right)?,
+            NodeKind::Once { interval, operand } => {
+                self.require(PastOperatorKind::Once)?;
+                format!(
+                    "O[{},{}]({})",
+                    interval.start(),
+                    interval.end(),
+                    self.render(operand)?
+                )
+            }
+            NodeKind::Historically { interval, operand } => {
+                self.require(PastOperatorKind::Historically)?;
+                format!(
+                    "H[{},{}]({})",
+                    interval.start(),
+                    interval.end(),
+                    self.render(operand)?
+                )
+            }
+            NodeKind::StrongPrevious { operand } => {
+                self.require(PastOperatorKind::StrongPrevious)?;
+                format!("O[1,1]({})", self.render(operand)?)
+            }
+            NodeKind::Since {
+                interval,
+                left,
+                right,
+            } => {
+                self.require(PastOperatorKind::Since)?;
+                format!(
+                    "({} S[{},{}] {})",
+                    self.render(left)?,
+                    interval.start(),
+                    interval.end(),
+                    self.render(right)?
+                )
+            }
+            NodeKind::Triggered {
+                interval,
+                left,
+                right,
+            } => {
+                self.require(PastOperatorKind::Triggered)?;
+                self.require(PastOperatorKind::Since)?;
+                format!(
+                    "(!((!{}) S[{},{}] (!{})))",
+                    self.render(left)?,
+                    interval.start(),
+                    interval.end(),
+                    self.render(right)?
+                )
+            }
+            NodeKind::Future { .. }
+            | NodeKind::Globally { .. }
+            | NodeKind::Until { .. }
+            | NodeKind::Release { .. } => {
+                return Err(PastMappingError::UnsupportedNode(node));
+            }
+        };
+        Ok(rendered)
+    }
+
+    fn binary(
+        &mut self,
+        token: &str,
+        left: NodeId,
+        right: NodeId,
+    ) -> Result<String, PastMappingError> {
+        Ok(format!(
+            "({} {token} {})",
+            self.render(left)?,
+            self.render(right)?
+        ))
+    }
+
+    fn require(&self, operator: PastOperatorKind) -> Result<(), PastMappingError> {
+        if self.origin.admitted_operators.contains(&operator) {
+            Ok(())
+        } else {
+            Err(PastMappingError::TargetOriginUnverified(operator))
+        }
+    }
+}
+
+fn is_sha256(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+}
+
+/// Maps a validated formula-v2 past graph under an explicit reviewed target
+/// origin contract. Every refusal returns no executable artifact.
+#[allow(clippy::too_many_arguments)]
+pub fn map_past_to_c2po(
+    formula: Formula<'_>,
+    formula_id: &str,
+    formula_bytes: &[u8],
+    source: MappingSourceIdentity,
+    catalog_document: &SignalCatalogDocument,
+    origin: &TargetOriginContract,
+    work_limit: u64,
+) -> Result<PastMappingManifest, PastMappingError> {
+    if formula.profile() != SemanticProfile::OriginCompleteHistoryV1 {
+        return Err(PastMappingError::UnsupportedProfile);
+    }
+    origin.validate()?;
+    // The borrowed graph has structural validation but no document depth
+    // ceiling. Admit its v2 owner document before recursive rendering.
+    let graph_id = FormulaDocument::from_formula_v2(formula)
+        .map_err(|error| PastMappingError::Identity(error.to_string()))?
+        .content_identity()
+        .map_err(|error| PastMappingError::Identity(error.to_string()))?;
+    bind_formula(formula, catalog_document).map_err(PastMappingError::Binding)?;
+    let catalog = catalog_document
+        .validate()
+        .map_err(|error| PastMappingError::InvalidCatalog(error.to_string()))?;
+    let expression = Renderer {
+        formula,
+        catalog,
+        origin,
+        visits: 0,
+        limit: work_limit,
+    }
+    .render(formula.root())?;
+    let signal_catalog_sha256 = sha256_hex(
+        &serde_json::to_vec(catalog_document)
+            .map_err(|error| PastMappingError::Identity(error.to_string()))?,
+    );
+    Ok(PastMappingManifest {
+        schema_version: "tl-mltl.past-c2po-mapping/v1",
+        adapter_version: env!("CARGO_PKG_VERSION"),
+        source_revision: source.revision,
+        source_state: source.state.as_str().to_owned(),
+        syntax_revision: TL_SYNTAX_REVISION,
+        graph_id,
+        formula_id: formula_id.to_owned(),
+        profile: SemanticProfile::OriginCompleteHistoryV1.as_str(),
+        clock: "event_position",
+        input_sha256: sha256_hex(formula_bytes),
+        signal_catalog_sha256,
+        target: origin.target.clone(),
+        target_origin_evidence_sha256: origin.evidence_sha256.clone(),
+        output_sha256: sha256_hex(expression.as_bytes()),
+        expression,
+        limitation:
+            "mapping records caller-supplied target-origin evidence; it does not execute R2U2",
+    })
+}

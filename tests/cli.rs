@@ -93,6 +93,6 @@ fn cli_is_deterministic_and_rejects_unknown_command_schema() {
     assert_eq!(manifest["syntaxRevision"], tl_mltl::TL_SYNTAX_REVISION);
     assert_eq!(
         tl_mltl::TL_SYNTAX_REVISION,
-        "4a5614193d21e5ae99950ae683b04ba0ec931358"
+        "75ebec8ec8d15dcdee3a821119ae3ceb18e61bb3"
     );
 }
