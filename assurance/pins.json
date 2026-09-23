@@ -12,8 +12,8 @@
   "repinned_workflow_component": {
     "component": "quoin",
     "was": "0.22.5",
-    "now": "0.23.1",
-    "why": "The hosted workflow pinned @agent-ix/quoin@0.22.5, which the packaged compatibility matrix names explicitly incompatible: it 'predates the `quoin change-assurance` surface; seal, intake, and receipt commands do not exist'. Every command this migration's chain runs is on that surface, so the old pin could not have worked. ix-flow@0.0.4 was absent from the workflow entirely and is now installed."
+    "now": "0.24.1",
+    "why": "The hosted workflow formerly pinned @agent-ix/quoin@0.22.5, which the packaged compatibility matrix names explicitly incompatible: it predates the quoin change-assurance surface. An earlier migration moved to 0.23.1; the Stage 1 EA 0.3.2 matrix now requires the published 0.24.1. ix-flow@0.0.4 was absent from the old workflow and is now installed at 0.2.3."
   },
   "repinned_ix_flow": {
     "component": "ix-flow",
