@@ -2223,7 +2223,9 @@ fn no_local_evidence_framework_remains() {
         // oracle from now that the manifest is no longer a vendored file.
         // TL-217 adds the live past-time operator/interval/trace grid.
         ("examples", 6),
-        ("fuzz", 29),
+        // TL-223 adds two differential fuzz targets, nine seeds, two checksum
+        // manifests and three campaign support/verification files.
+        ("fuzz", 45),
         // Criterion inputs and runner for the V9 evaluator workloads.
         ("benches", 3),
         ("scripts", 5),
@@ -2339,8 +2341,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 409,
-        "the source census population changed from the reviewed 409 tracked files \
+        inspected, 425,
+        "the source census population changed from the reviewed 425 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
