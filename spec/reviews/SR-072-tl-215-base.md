@@ -20,10 +20,13 @@ The main cross-crate review index is `SR-110` at
 
 | ID | Severity | Summary | Refs |
 |---|---|---|---|
-| FND-001 | high | The literal local-gate promise to test every depth-three formula tree is infeasible; FR-044 truthfully marks unvisited partitions incomplete, so TL-212 must adopt that bounded claim before acceptance. | FR-044, TL-212 |
+| FND-001 | high | Initial TL-212 local-gate wording was infeasible. TL-212 now adopts FR-044's finite-partition scope and incomplete result for unvisited cells. Resolved on re-review. | FR-044, TL-212 |
 
 ## Evidence and disposition
 
 TC-085 remains retired for unrelated QObs work. The new TL-210 rows start at TC-138; TL-211 starts at TC-160 and TL-212 at TC-175. No new acceptance criterion lacks a verification reference.
+
+Re-review confirmed that the revised TL-212 description preserves the full
+depth-three target without claiming that a local partition completes it.
 
 The review is not human-accepted. Implementation remains gated by TL-215.

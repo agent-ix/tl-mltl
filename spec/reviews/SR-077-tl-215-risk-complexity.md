@@ -17,7 +17,7 @@ The highest technical risks are the partial/fair lasso fixed points, independent
 
 | ID | Severity | Summary | Refs |
 |---|---|---|---|
-| FND-001 | high | FR-044 cannot complete a literal all-tree depth-three domain in the local gate under a realistic finite budget; the campaign must preserve unvisited counts and avoid an exhaustive claim until a tractable scope is selected. | FR-044 |
+| FND-001 | high | A literal all-tree depth-three local gate is infeasible. TL-212 now requires finite partitions, unvisited counts and no full-target exhaustive claim until complete. The claim mismatch is resolved; the population size remains an implementation risk. | FR-044, TL-212 |
 | FND-002 | medium | R2U2 past-origin equivalence is target-version dependent; FR-039 requires refusing export without a reviewed target contract and FR-052 retains non-conclusive live outcomes. | FR-039, FR-052 |
 
 ## Evidence and disposition

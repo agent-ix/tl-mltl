@@ -17,10 +17,13 @@ Checked profile, clock, wire edition, partial-valuation and result vocabulary co
 
 | ID | Severity | Summary | Refs |
 |---|---|---|---|
-| FND-001 | high | TL-212 still phrases depth-three all-tree exhaustiveness as a local-gate obligation, while the authored FR-044 can only claim enumerated finite partitions until the full cardinality is visited. This needs an explicit owner disposition. | FR-044, TL-212 |
+| FND-001 | high | Initial TL-212 wording overstated the local gate. The ticket now matches FR-044: full depth-three exhaustiveness remains incomplete until its full population is visited. Resolved on re-review. | FR-044, TL-212 |
 
 ## Evidence and disposition
 
 The amended FR-290/FR-033 route carries subject kind and identity. A V1 model request without a model-wide procedure is unsupported; a complete lasso may yield only a trace-scoped conclusion.
+
+Re-review of the amended TL-212 description found no remaining ticket/spec
+claim mismatch for FR-044.
 
 The review is not human-accepted. Implementation remains gated by TL-215.
