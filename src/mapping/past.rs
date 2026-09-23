@@ -7,8 +7,8 @@ use std::collections::BTreeSet;
 
 use serde::Serialize;
 use tl_syntax::{
-    Formula, FormulaDocument, NodeId, NodeKind, PastOperatorKind, PropositionId, SemanticProfile,
-    SignalCatalog, SignalCatalogDocument,
+    Formula, FormulaDocument, Interval, NodeId, NodeKind, PastOperatorKind, PropositionId,
+    SemanticProfile, SignalCatalog, SignalCatalogDocument,
 };
 
 use super::legacy::{is_c2po_identifier, sha256_hex};
@@ -54,6 +54,11 @@ pub enum PastMappingError {
     MissingOriginEvidence,
     /// A node uses an operator with no reviewed target-origin behavior.
     TargetOriginUnverified(PastOperatorKind),
+    /// The selected target does not match source semantics for this interval.
+    TargetOriginIntervalMismatch {
+        operator: PastOperatorKind,
+        interval: Interval,
+    },
     /// The formula's signal catalog does not bind every proposition.
     Binding(ContextualBindingError),
     /// A catalog document failed validation.
@@ -155,7 +160,7 @@ impl Renderer<'_, '_> {
             NodeKind::Implies { left, right } => self.binary("->", left, right)?,
             NodeKind::Equivalent { left, right } => self.binary("<->", left, right)?,
             NodeKind::Once { interval, operand } => {
-                self.require(PastOperatorKind::Once)?;
+                self.require_interval(PastOperatorKind::Once, interval)?;
                 format!(
                     "O[{},{}]({})",
                     interval.start(),
@@ -164,7 +169,7 @@ impl Renderer<'_, '_> {
                 )
             }
             NodeKind::Historically { interval, operand } => {
-                self.require(PastOperatorKind::Historically)?;
+                self.require_interval(PastOperatorKind::Historically, interval)?;
                 format!(
                     "H[{},{}]({})",
                     interval.start(),
@@ -181,7 +186,7 @@ impl Renderer<'_, '_> {
                 left,
                 right,
             } => {
-                self.require(PastOperatorKind::Since)?;
+                self.require_interval(PastOperatorKind::Since, interval)?;
                 format!(
                     "({} S[{},{}] {})",
                     self.render(left)?,
@@ -195,8 +200,8 @@ impl Renderer<'_, '_> {
                 left,
                 right,
             } => {
-                self.require(PastOperatorKind::Triggered)?;
-                self.require(PastOperatorKind::Since)?;
+                self.require_interval(PastOperatorKind::Triggered, interval)?;
+                self.require_interval(PastOperatorKind::Since, interval)?;
                 format!(
                     "(!((!{}) S[{},{}] (!{})))",
                     self.render(left)?,
@@ -234,6 +239,35 @@ impl Renderer<'_, '_> {
         } else {
             Err(PastMappingError::TargetOriginUnverified(operator))
         }
+    }
+
+    fn require_interval(
+        &self,
+        operator: PastOperatorKind,
+        interval: Interval,
+    ) -> Result<(), PastMappingError> {
+        self.require(operator)?;
+        if target_equivalent_interval(operator, interval) {
+            Ok(())
+        } else {
+            Err(PastMappingError::TargetOriginIntervalMismatch { operator, interval })
+        }
+    }
+}
+
+/// Conservative C2PO 4.2 interval partition from the observed origin grid.
+/// Since/Triggered only agree for immediate or one-step windows. O/H with a
+/// lower bound of two may omit the origin verdict entirely. Unreviewed cells
+/// are refused rather than inferred from parser acceptance.
+pub(crate) fn target_equivalent_interval(operator: PastOperatorKind, interval: Interval) -> bool {
+    match operator {
+        PastOperatorKind::Once | PastOperatorKind::Historically => {
+            interval.start() <= 1 && interval.end() <= 2
+        }
+        PastOperatorKind::Since | PastOperatorKind::Triggered => {
+            interval.start() == 0 && interval.end() <= 1
+        }
+        PastOperatorKind::StrongPrevious => false,
     }
 }
 

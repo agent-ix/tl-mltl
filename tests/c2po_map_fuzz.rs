@@ -1,7 +1,8 @@
 use std::{collections::BTreeSet, fs};
 
 use tl_mltl::{
-    map_past_to_c2po, MappingSourceIdentity, MappingSourceState, TargetOriginContract, ToolIdentity,
+    map_past_to_c2po, MappingSourceIdentity, MappingSourceState, PastMappingError,
+    TargetOriginContract, ToolIdentity,
 };
 use tl_syntax::{
     Formula, FormulaDocument, OwnedSignalDeclaration, PastOperatorKind, PropositionBinding,
@@ -65,7 +66,15 @@ fn every_fuzz_seed_reaches_the_strict_reader_and_real_c2po_mapper() {
             &origin,
             10_000,
         );
-        assert!(mapped.is_ok(), "{}: {mapped:?}", seed.path().display());
+        assert!(
+            mapped.is_ok()
+                || matches!(
+                    mapped,
+                    Err(PastMappingError::TargetOriginIntervalMismatch { .. })
+                ),
+            "{}: {mapped:?}",
+            seed.path().display()
+        );
     }
     let record: serde_json::Value =
         serde_json::from_slice(&fs::read("fuzz/runs/2026-09-22-c2po_map.json").unwrap()).unwrap();

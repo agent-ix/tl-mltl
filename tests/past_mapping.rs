@@ -106,14 +106,14 @@ fn admitted_once_historically_and_previous_render_exact_past_forms() {
         &[
             p(),
             Node::new(NodeKind::Historically {
-                interval: interval(1, 3),
+                interval: interval(1, 2),
                 operand: NodeId(0),
             }),
         ],
         &origin,
     )
     .unwrap();
-    assert_eq!(historically.expression, "H[1,3](p)");
+    assert_eq!(historically.expression, "H[1,2](p)");
     let previous = render(
         &[
             p(),
@@ -134,7 +134,7 @@ fn since_and_triggered_use_explicit_target_forms() {
             p(),
             q(),
             Node::new(NodeKind::Since {
-                interval: interval(0, 2),
+                interval: interval(0, 1),
                 left: NodeId(0),
                 right: NodeId(1),
             }),
@@ -142,13 +142,13 @@ fn since_and_triggered_use_explicit_target_forms() {
         &origin,
     )
     .unwrap();
-    assert_eq!(since.expression, "(p S[0,2] q)");
+    assert_eq!(since.expression, "(p S[0,1] q)");
     let trigger = render(
         &[
             p(),
             q(),
             Node::new(NodeKind::Triggered {
-                interval: interval(0, 2),
+                interval: interval(0, 1),
                 left: NodeId(0),
                 right: NodeId(1),
             }),
@@ -156,7 +156,63 @@ fn since_and_triggered_use_explicit_target_forms() {
         &origin,
     )
     .unwrap();
-    assert_eq!(trigger.expression, "(!((!p) S[0,2] (!q)))");
+    assert_eq!(trigger.expression, "(!((!p) S[0,1] (!q)))");
+}
+
+// Trace: TC-166, TC-167; FR-039-AC-1, FR-039-AC-2
+#[test]
+fn target_4_2_origin_mismatch_intervals_refuse_without_artifact() {
+    let origin = contract(&[
+        PastOperatorKind::Once,
+        PastOperatorKind::Historically,
+        PastOperatorKind::Since,
+        PastOperatorKind::Triggered,
+    ]);
+    for (kind, operator, bounds) in [
+        (
+            NodeKind::Once {
+                interval: interval(2, 2),
+                operand: NodeId(0),
+            },
+            PastOperatorKind::Once,
+            interval(2, 2),
+        ),
+        (
+            NodeKind::Historically {
+                interval: interval(2, 2),
+                operand: NodeId(0),
+            },
+            PastOperatorKind::Historically,
+            interval(2, 2),
+        ),
+        (
+            NodeKind::Since {
+                interval: interval(0, 2),
+                left: NodeId(0),
+                right: NodeId(1),
+            },
+            PastOperatorKind::Since,
+            interval(0, 2),
+        ),
+        (
+            NodeKind::Triggered {
+                interval: interval(1, 1),
+                left: NodeId(0),
+                right: NodeId(1),
+            },
+            PastOperatorKind::Triggered,
+            interval(1, 1),
+        ),
+    ] {
+        let nodes = [p(), q(), Node::new(kind)];
+        assert_eq!(
+            render(&nodes, &origin),
+            Err(PastMappingError::TargetOriginIntervalMismatch {
+                operator,
+                interval: bounds
+            })
+        );
+    }
 }
 
 // Trace: TC-162, TC-167, TC-173; FR-038-AC-2, FR-039-AC-2, FR-041-AC-2

@@ -8,4 +8,6 @@ pub use legacy::{
     ContextualMappingSchemaVersion, MappingError, MappingManifest, MappingSourceIdentity,
     MappingSourceState,
 };
+#[cfg(feature = "infinite-trace")]
+pub(crate) use past::target_equivalent_interval;
 pub use past::{map_past_to_c2po, PastMappingError, PastMappingManifest, TargetOriginContract};

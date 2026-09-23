@@ -4,7 +4,7 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use tl_mltl::{
     evaluate_past, map_past_to_c2po, ClockBinding, MappingSourceIdentity, MappingSourceState,
-    PastEvaluationLimits, PastEvaluationRelationInput, PositionHistoryDocument,
+    PastEvaluationLimits, PastEvaluationRelationInput, PastMappingError, PositionHistoryDocument,
     PositionObservation, TargetOriginContract, ToolIdentity,
 };
 use tl_syntax::{
@@ -25,8 +25,20 @@ struct Manifest {
     source_oracle: String,
     target_observation: TargetObservation,
     target_limitation: String,
+    unsafe_since_counterexample: UnsafeSinceCounterexample,
     trace: Vec<Row>,
     cases: Vec<Case>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct UnsafeSinceCounterexample {
+    formula: String,
+    position: usize,
+    source: bool,
+    target: bool,
+    source_revision: String,
+    compiler_version: String,
 }
 
 #[derive(Deserialize)]
@@ -157,8 +169,8 @@ fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
     assert!(target.monitor_command.contains("monitors/c/build/r2u2"));
     assert!(manifest
         .target_limitation
-        .contains("One retained C2PO and R2U2 4.2 execution"));
-    assert_eq!(target.files.len(), 5);
+        .contains("One retained six-formula C2PO and R2U2 4.2 execution"));
+    assert_eq!(target.files.len(), 9);
     let mut pinned = BTreeSet::new();
     for file in &target.files {
         assert!(pinned.insert(file.path.as_str()));
@@ -169,6 +181,57 @@ fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
             .collect::<String>();
         assert_eq!(actual, file.sha256, "{}", file.path);
     }
+    let counterexample = &manifest.unsafe_since_counterexample;
+    assert_eq!(counterexample.formula, "p S[0,2] q");
+    assert_eq!(counterexample.position, 2);
+    assert!(!counterexample.source);
+    assert!(counterexample.target);
+    assert_eq!(counterexample.source_revision, target.source_revision);
+    assert_eq!(counterexample.compiler_version, target.compiler_version);
+    let counterexample_output =
+        std::fs::read_to_string("corpus/past-c2po-v1/target-4.2/unsafe-since.stdout").unwrap();
+    assert!(counterexample_output.lines().any(|line| line == "0:2,T"));
+    let counterexample_trace =
+        std::fs::read_to_string("corpus/past-c2po-v1/target-4.2/unsafe-since.csv").unwrap();
+    assert_eq!(counterexample_trace, "# p,q\n0,1\n0,0\n1,0\n");
+    let unsafe_case = manifest
+        .cases
+        .iter()
+        .find(|case| case.id == "since-zero-two")
+        .unwrap();
+    let unsafe_nodes = formula(unsafe_case);
+    let unsafe_graph = Formula::new(
+        SemanticProfile::OriginCompleteHistoryV1,
+        NodeId(u32::try_from(unsafe_nodes.len() - 1).unwrap()),
+        &unsafe_nodes,
+    )
+    .unwrap();
+    let unsafe_history = PositionHistoryDocument::new(
+        "unsafe-since",
+        1,
+        0,
+        2,
+        Some(ClockBinding::EventPosition),
+        vec![
+            PositionObservation::new(0, vec![PropositionId(1)], None),
+            PositionObservation::new(1, vec![], None),
+            PositionObservation::new(2, vec![PropositionId(0)], None),
+        ],
+    )
+    .unwrap();
+    let source_verdict = evaluate_past(
+        unsafe_graph,
+        "unsafe-since",
+        &unsafe_history,
+        2,
+        "map",
+        1,
+        PastEvaluationRelationInput::Original,
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(source_verdict.verdict, counterexample.source);
+    assert_ne!(source_verdict.verdict, counterexample.target);
     let output = std::fs::read_to_string("corpus/past-c2po-v1/target-4.2/r2u2.stdout").unwrap();
     let source = std::fs::read_to_string("corpus/past-c2po-v1/target-4.2/past.c2po").unwrap();
     let expressions: Vec<_> = source
@@ -282,18 +345,33 @@ fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
             &catalog,
             &origin,
             100,
-        )
-        .unwrap();
-        assert_eq!(
-            mapping.expression, expressions[case.target_formula_id],
-            "{}",
-            case.id
         );
-        assert_eq!(mapping.target, origin.target);
-        assert_eq!(
-            mapping.target_origin_evidence_sha256,
-            origin.evidence_sha256
-        );
+        if matches!(case.id.as_str(), "since-zero-two" | "triggered-zero-two") {
+            let operator = if case.id == "since-zero-two" {
+                PastOperatorKind::Since
+            } else {
+                PastOperatorKind::Triggered
+            };
+            assert_eq!(
+                mapping,
+                Err(PastMappingError::TargetOriginIntervalMismatch {
+                    operator,
+                    interval: Interval::new(0, 2).unwrap(),
+                })
+            );
+        } else {
+            let mapping = mapping.unwrap();
+            assert_eq!(
+                mapping.expression, expressions[case.target_formula_id],
+                "{}",
+                case.id
+            );
+            assert_eq!(mapping.target, origin.target);
+            assert_eq!(
+                mapping.target_origin_evidence_sha256,
+                origin.evidence_sha256
+            );
+        }
         for (position, expected) in case.expected_source.iter().enumerate() {
             let actual = evaluate_past(
                 graph,

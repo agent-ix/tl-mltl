@@ -15,14 +15,45 @@
     "monitorCommand": "monitors/c/build/r2u2 spec.bin trace.csv",
     "monitorExecutableSha256": "5743987dddb47cc01829a633e15623095c9c2aff2f8bb24e30d7f0e0f488f85f",
     "files": [
-      {"path": "target-4.2/past.c2po", "sha256": "4e0c904eccfbf7a2efdd08dfe268d1862d3a2ea473595e34afd118af4a6cb915"},
-      {"path": "target-4.2/trace.csv", "sha256": "8b1d83c99985139a2272bf21d83bf5a2667500db276e36ef1b44e60c1a3ced32"},
-      {"path": "target-4.2/spec.bin", "sha256": "727e8a54ef082a10c79ad5a02ba1e70b0c1700277d279948152c6d657c2679ef"},
-      {"path": "target-4.2/c2po.stdout", "sha256": "eed22a73257fce0ab3645674a3c5daa017b404d17a9c4aeb60abb260ccd6915a"},
-      {"path": "target-4.2/r2u2.stdout", "sha256": "378b4ba53bb5a4aa685fe26a570285df171a3a829d984afd2a682ceb60312085"}
+      {
+        "path": "target-4.2/past.c2po",
+        "sha256": "4e0c904eccfbf7a2efdd08dfe268d1862d3a2ea473595e34afd118af4a6cb915"
+      },
+      {
+        "path": "target-4.2/trace.csv",
+        "sha256": "8b1d83c99985139a2272bf21d83bf5a2667500db276e36ef1b44e60c1a3ced32"
+      },
+      {
+        "path": "target-4.2/spec.bin",
+        "sha256": "727e8a54ef082a10c79ad5a02ba1e70b0c1700277d279948152c6d657c2679ef"
+      },
+      {
+        "path": "target-4.2/c2po.stdout",
+        "sha256": "eed22a73257fce0ab3645674a3c5daa017b404d17a9c4aeb60abb260ccd6915a"
+      },
+      {
+        "path": "target-4.2/r2u2.stdout",
+        "sha256": "378b4ba53bb5a4aa685fe26a570285df171a3a829d984afd2a682ceb60312085"
+      },
+      {
+        "path": "target-4.2/unsafe-since.c2po",
+        "sha256": "a76ac511612e2d2f77379e37366a7b21010331d5fc901c3388c58b90bdffa136"
+      },
+      {
+        "path": "target-4.2/unsafe-since.csv",
+        "sha256": "02e2f5935de837e57673d45a209ee353c9a4e2cec40bec5a2944307a34ed378d"
+      },
+      {
+        "path": "target-4.2/unsafe-since.bin",
+        "sha256": "e89a128ef0fd455a1cc6a0ab09efa18bb5431c7a46fa47f9155a1f05c35a551d"
+      },
+      {
+        "path": "target-4.2/unsafe-since.stdout",
+        "sha256": "78928cb830556f101cd01b95faef04cc661ded25845716108d5a588029c3de78"
+      }
     ]
   },
-  "targetLimitation": "One retained C2PO and R2U2 4.2 execution covers the six listed formulas and first three event positions. The monitor emits additional terminal-flush events at position three; they are not source observations or general target qualification.",
+  "targetLimitation": "One retained six-formula C2PO and R2U2 4.2 execution agrees at three observed positions, but does not qualify S/T[0,2]. A separately retained minimal S[0,2] counterexample shows a target true verdict where origin-complete source semantics are false at position two. Other interval cells were partitioned in a finite five-position exhaustive Boolean trace campaign; admission is limited to cells that matched in that campaign.",
   "trace": [
     {
       "position": 0,
@@ -107,5 +138,13 @@
       ],
       "originHazard": "before-origin-false"
     }
-  ]
+  ],
+  "unsafeSinceCounterexample": {
+    "formula": "p S[0,2] q",
+    "position": 2,
+    "source": false,
+    "target": true,
+    "sourceRevision": "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a",
+    "compilerVersion": "C2PO v4.1.0"
+  }
 }

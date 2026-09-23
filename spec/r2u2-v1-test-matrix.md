@@ -26,8 +26,8 @@ requiring broader qualification remain planned.
 
 | Test ID | Title | Type | Priority | Traces To | Status |
 |---|---|---|---|---|---|
-| TC-160 | Render H/O/S/Y from validated past graphs through parsed C2PO expressions and preserve identities | Integration | P0 | FR-038-AC-1 | ✅ implemented |
-| TC-161 | Render T only through a verified direct or dual target form under the exact origin contract | Integration | P0 | FR-038-AC-1 | ✅ implemented |
+| TC-160 | Render H/O/S/Y from validated past graphs through parsed C2PO expressions and preserve identities | Integration | P0 | FR-038-AC-1 | 🚧 planned |
+| TC-161 | Render T only through a verified direct or dual target form under the exact origin contract | Integration | P0 | FR-038-AC-1 | 🚧 planned |
 | TC-162 | Refuse unsupported past node and interval forms without any expression or manifest | Integration | P0 | FR-038-AC-2 | 🚧 planned |
 | TC-163 | Keep bounded future v1/v2 manifest and expression bytes stable after past mapping is added | Snapshot | P0 | FR-038-AC-2 | 🚧 planned |
 | TC-164 | Replay pinned past corpus expectations per step against independent source evaluation and classified target observations | Integration | P0 | FR-038-AC-3, FR-042-AC-1 | ✅ implemented |

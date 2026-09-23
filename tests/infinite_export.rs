@@ -232,6 +232,32 @@ fn export_refuses_a_noncanonical_prefix_and_missing_formula_binding() {
     );
 }
 
+// Trace: TC-166, TC-173; FR-039-AC-1, FR-041-AC-2
+#[test]
+fn safety_export_refuses_target_origin_mismatch_before_artifact() {
+    let bounds = Interval::new(2, 2).unwrap();
+    let safety = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Once {
+            interval: TemporalInterval::Closed(bounds),
+            operand: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
+    assert_eq!(
+        export(&safety, &rows(PartialValue::True)),
+        Err(SafetyExportError::TargetOriginIntervalMismatch {
+            operator: PastOperatorKind::Once,
+            interval: bounds,
+        })
+    );
+}
+
 // Trace: TC-169, TC-170; FR-040-AC-1 and FR-040-AC-2
 #[test]
 fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive() {
@@ -352,8 +378,8 @@ fn c2po_4_2_type_checker_rejects_mixed_time_in_both_sections() {
         ("once", "PTSPEC", "O[0,1](p)"),
         ("historically", "PTSPEC", "H[0,1](p)"),
         ("previous", "PTSPEC", "O[1,1](p)"),
-        ("since", "PTSPEC", "(p S[0,2] q)"),
-        ("triggered", "PTSPEC", "(!((!p) S[0,2] (!q)))"),
+        ("since", "PTSPEC", "(p S[0,1] q)"),
+        ("triggered", "PTSPEC", "(!((!p) S[0,1] (!q)))"),
         ("future", "FTSPEC", "F[0,1](p)"),
         ("globally", "FTSPEC", "G[0,1](p)"),
         ("until", "FTSPEC", "(p U[0,1] q)"),

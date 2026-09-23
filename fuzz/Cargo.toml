@@ -11,7 +11,7 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4"
 sha2 = "=0.10.9"
 tl-mltl = { path = ".." }
-tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "75ebec8ec8d15dcdee3a821119ae3ceb18e61bb3", default-features = false, features = ["alloc", "serde"] }
+tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "5ced12e22917c56bb2ebd161a3e519cddf7a668a", default-features = false, features = ["alloc", "serde"] }
 
 [[bin]]
 name = "c2po_map"

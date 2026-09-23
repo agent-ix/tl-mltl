@@ -2,12 +2,13 @@
 
 use serde::Serialize;
 use tl_syntax::{
-    InfiniteNodeKind as K, NodeId, PartialValue, PastOperatorKind, SignalCatalog,
+    InfiniteNodeKind as K, Interval, NodeId, PartialValue, PastOperatorKind, SignalCatalog,
     SignalCatalogDocument, TemporalInterval,
 };
 
 use crate::{
     mapping::legacy::{is_c2po_identifier, sha256_hex},
+    mapping::target_equivalent_interval,
     TargetOriginContract, ToolIdentity,
 };
 
@@ -24,6 +25,11 @@ pub enum SafetyExportError {
     UnsupportedShape,
     /// A target past-origin contract is absent or does not admit an operator.
     TargetOrigin,
+    /// The exact target interval differs from source origin semantics.
+    TargetOriginIntervalMismatch {
+        operator: PastOperatorKind,
+        interval: Interval,
+    },
     /// A past interval has no reviewed target representation.
     UnboundedPast,
     /// Mixed future/past nesting has no reviewed target parser contract.
@@ -241,10 +247,10 @@ impl Renderer<'_, '_> {
                 } else {
                     PastOperatorKind::Historically
                 };
-                self.require(operator)?;
                 let TemporalInterval::Closed(bounds) = interval else {
                     return Err(SafetyExportError::UnboundedPast);
                 };
+                self.require_interval(operator, bounds)?;
                 let symbol = if operator == PastOperatorKind::Once {
                     "O"
                 } else {
@@ -274,17 +280,20 @@ impl Renderer<'_, '_> {
             } => {
                 self.past = true;
                 let trigger = matches!(kind, K::Triggered { .. });
-                self.require(if trigger {
-                    PastOperatorKind::Triggered
-                } else {
-                    PastOperatorKind::Since
-                })?;
-                if trigger {
-                    self.require(PastOperatorKind::Since)?;
-                }
                 let TemporalInterval::Closed(bounds) = interval else {
                     return Err(SafetyExportError::UnboundedPast);
                 };
+                self.require_interval(
+                    if trigger {
+                        PastOperatorKind::Triggered
+                    } else {
+                        PastOperatorKind::Since
+                    },
+                    bounds,
+                )?;
+                if trigger {
+                    self.require_interval(PastOperatorKind::Since, bounds)?;
+                }
                 if trigger {
                     format!(
                         "(!((!{}) S[{},{}] (!{})))",
@@ -325,6 +334,19 @@ impl Renderer<'_, '_> {
             Ok(())
         } else {
             Err(SafetyExportError::TargetOrigin)
+        }
+    }
+
+    fn require_interval(
+        &self,
+        operator: PastOperatorKind,
+        interval: Interval,
+    ) -> Result<(), SafetyExportError> {
+        self.require(operator)?;
+        if target_equivalent_interval(operator, interval) {
+            Ok(())
+        } else {
+            Err(SafetyExportError::TargetOriginIntervalMismatch { operator, interval })
         }
     }
 }
