@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import io
+import os
 import re
 import subprocess
 import tarfile
 import tempfile
+import tomllib
 from pathlib import Path
 
 CLAIMS = {
@@ -111,9 +113,9 @@ def parse_false(raw: bytes, exit_code: int) -> dict:
 
 
 def capture(argv: list[str], cwd: Path, raw_dir: Path, name: str,
-            timeout: int = 900) -> tuple[bytes, int, dict]:
+            env: dict[str, str], timeout: int = 900) -> tuple[bytes, int, dict]:
     try:
-        process = subprocess.run(argv, cwd=cwd, capture_output=True,
+        process = subprocess.run(argv, cwd=cwd, env=env, capture_output=True,
                                  timeout=timeout, check=False)
         stdout, stderr, code = process.stdout, process.stderr, process.returncode
     except subprocess.TimeoutExpired as error:
@@ -158,8 +160,9 @@ def replay_test(rows: list[list[int]]) -> str:
             "}\n")
 
 
-def version(argv: list[str], cwd: Path) -> str:
-    result = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, check=False)
+def version(argv: list[str], cwd: Path, env: dict[str, str]) -> str:
+    result = subprocess.run(argv, cwd=cwd, env=env, capture_output=True,
+                            text=True, check=False)
     if result.returncode:
         raise ValueError(f"tool version unavailable: {argv}")
     return (result.stdout or result.stderr).strip()
@@ -173,17 +176,23 @@ def run_v6(graph: dict, raw_dir: Path) -> tuple[str, dict, dict]:
                   "claims": {}, "counterexample": {"status": "not_run"}}
     raw = {}
     try:
+        channel = tomllib.loads((mltl / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
+        toolchain_cargo = version(["rustup", "which", "cargo", "--toolchain", channel],
+                                  mltl, os.environ.copy())
+        env = os.environ.copy()
+        env["PATH"] = str(Path(toolchain_cargo).parent) + os.pathsep + env.get("PATH", "")
         population["tool_versions"] = {
-            "kani": version(["cargo", "kani", "--version"], mltl),
-            "cargo": version(["cargo", "-V"], mltl),
-            "rustc": version(["rustc", "-Vv"], mltl),
+            "kani": version(["cargo", "kani", "--version"], mltl, env),
+            "cargo": version(["cargo", "-V"], mltl, env),
+            "rustc": version(["rustc", "-Vv"], mltl, env),
+            "cargo_path": toolchain_cargo,
         }
         if "Kani Rust Verifier 0.68.0" not in population["tool_versions"]["kani"]:
             raise ValueError("unreviewed Kani version")
         for name, (harness, relative, domain) in CLAIMS.items():
             root = syntax if name == "tl-syntax" else mltl
             source = exact_harness_source(root, relative, harness)
-            output, code, raw[name] = capture(command(harness), root, raw_dir, name)
+            output, code, raw[name] = capture(command(harness), root, raw_dir, name, env)
             population["claims"][name] = {
                 "harness": harness, "symbolic_domain": domain,
                 "argv": command(harness), "exit_code": code,
@@ -201,7 +210,7 @@ def run_v6(graph: dict, raw_dir: Path) -> tuple[str, dict, dict]:
                 raise ValueError("verifier-only mutation altered production body")
             (copy / relative).write_text(mutated)
             output, code, raw["seeded_false"] = capture(
-                command(FALSE_NAME, mutant=True), copy, raw_dir, "seeded_false")
+                command(FALSE_NAME, mutant=True), copy, raw_dir, "seeded_false", env)
             false_result = parse_false(output, code)
             false_result.update({
                 "argv": command(FALSE_NAME, mutant=True), "exit_code": code,
@@ -213,7 +222,7 @@ def run_v6(graph: dict, raw_dir: Path) -> tuple[str, dict, dict]:
                 test_path.write_text(replay_test(false_result["counterexample_bytes"]))
                 output, code, raw["ordinary_replay"] = capture(
                     ["cargo", "test", "--locked", "--offline", "--test",
-                     "v6_counterexample_replay"], copy, raw_dir, "ordinary_replay")
+                     "v6_counterexample_replay"], copy, raw_dir, "ordinary_replay", env)
                 summary = re.findall(rb"test result: ok\. 1 passed; 0 failed; 0 ignored;", output)
                 false_result["ordinary_replay"] = {
                     "status": "passed" if code == 0 and len(summary) == 1 else "incomplete",
