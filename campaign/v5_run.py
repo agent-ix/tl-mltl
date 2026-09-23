@@ -110,14 +110,15 @@ def main() -> int:
     selection = json.loads(args.selection.read_bytes())
     if selection.get("schema") != "tl-mltl.v5-mutation-selection/v1":
         raise ValueError("wrong V5 selection schema")
-    args.output_dir.mkdir(parents=True, exist_ok=False)
-    entries = [run_one(entry, args.output_dir / entry["crate"])
+    output_dir = args.output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=False)
+    entries = [run_one(entry, output_dir / entry["crate"])
                for entry in selection["runs"]]
     manifest = {"schema": "tl-mltl.v5-mutation-manifest/v1", "runs": entries}
-    manifest_path = args.output_dir / "manifest.json"
+    manifest_path = output_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
     result = v5.report(manifest, manifest_path.parent)
-    (args.output_dir / "report.json").write_text(json.dumps(result, sort_keys=True, indent=2) + "\n")
+    (output_dir / "report.json").write_text(json.dumps(result, sort_keys=True, indent=2) + "\n")
     return 0 if result["status"] == "passed" else 1
 
 
