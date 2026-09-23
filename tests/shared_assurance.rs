@@ -1675,7 +1675,7 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 214 is every row this repository declares: 118 requirement criteria, 88
+    // 230 is every row this repository declares: 126 requirement criteria, 96
     // test-matrix rows across the three TestMatrix documents, and 8
     // suite-registry rows. Naming the population matters — "matrix rows" would
     // be wrong, because criteria and the authored suite registry are separate
@@ -1685,31 +1685,37 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     //
     // This pair was `118`/`116` and had drifted from the tree it measures:
     // FR-027 through FR-029 (#72) and this campaign's FR-008 through FR-010 and
-    // NFR-004 are all declared-but-unimplemented, so `backed` has not equalled
-    // `total` since #72 landed and the old `116` could not hold. The numbers
-    // now record the measurement rather than an aspiration:
+    // the NFR-004 criteria are all declared-but-unimplemented, so `backed` has
+    // not equalled `total` since #72 landed and the old `116` could not hold.
+    // The numbers now record the measurement rather than an aspiration:
     //   71 pre-campaign criteria + 18 M4 criteria (FR-008 5, FR-009 6,
-    //   FR-010 4, NFR-004 3) + 29 M5 criteria (FR-020 through FR-024 and
-    //   NFR-005) = 118;
-    //   49 spec/test-matrix.md rows + 13 spec/corpus-campaign-test-matrix.md
-    //   rows + 26 spec/verification-effectiveness-test-matrix.md rows = 88;
+    //   FR-010 4, NFR-004 3) + 29 M5 criteria (FR-020 through FR-024 and the
+    //   three NFR-005 criteria) + 8 NFR-006 criteria (TL-65) = 126;
+    //   57 spec/test-matrix.md rows (TL-65 adds TC-130 through TC-137) + 13
+    //   spec/corpus-campaign-test-matrix.md rows + 26
+    //   spec/verification-effectiveness-test-matrix.md rows = 96;
     //   8 suite rows.
     // Only TC rows are counted from a TestMatrix; its FR/NFR summary rows
     // are not a separate declared population.
-    // `backed` stays at 105: every campaign row is planned and deliberately
-    // unbacked, exactly as TM-002 declares. An unbacked row that is NOT one of
-    // those is a coverage regression, not a number to adjust here.
+    // `backed` is 119: the 105 measured before TL-65, plus NFR-006-AC-1
+    // through AC-7 and their TC-130 through TC-136 (14). Every campaign row is
+    // planned and deliberately unbacked, exactly as TM-002 declares, and the
+    // Inspection-verified NFR-006-AC-8 and TC-137 mint no source symbol. An unbacked row that is NOT one of those is a coverage
+    // regression, not a number to adjust here. (Requirement ids are kept off
+    // the start of these comment lines: Quire reads a line-leading id as a
+    // trace tag, and this test backs none of them.)
     assert_eq!(
-        totals["total"], 214,
-        "the declared-row population changed: {totals}. It is 118 requirement \
-         criteria + 88 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 230,
+        "the declared-row population changed: {totals}. It is 126 requirement \
+         criteria + 96 test-matrix rows + 8 suite-registry rows."
     );
     assert_eq!(
-        totals["backed"], 105,
+        totals["backed"], 119,
         "backed-row count changed: {totals}. The unbacked population is exactly \
          FR-018, FR-019, FR-027 through FR-029, the 18 planned M4 criteria, the 29 \
          planned M5 criteria, the 13 planned TM-002 rows, the 26 planned TM-003 \
-         rows, the 6 planned spec/test-matrix.md rows, and the two deliberately \
+         rows, the 6 planned or retired TC-085 through TC-090 rows, the \
+         Inspection-verified NFR-006-AC-8 and TC-137, and the two deliberately \
          non-runnable suite rows."
     );
     // The aggregate alone cannot identify which suite rows are absent, so check
@@ -2248,12 +2254,15 @@ fn no_local_evidence_framework_remains() {
         // FR-010, NFR-004, assurance/MP-002, and decisions/ADR-002. The M5
         // campaign adds 12: verification-effectiveness-campaign.md,
         // verification-effectiveness-test-matrix.md, FR-020 through FR-024,
-        // NFR-005, and assurance/MP-003 through MP-006.
-        ("spec", 132),
+        // NFR-005, and assurance/MP-003 through MP-006. TL-65 adds NFR-006 and
+        // its spec review SR-053 (2 files).
+        ("spec", 134),
         // TL-179 deletes wire::request, wire::observation, wire::report, and
         // mapping::contract_ir (4 files): the quire-observation-coupled
         // request/result/mapping owner boundary now lives in quire-mltl.
-        ("src", 20),
+        // TL-65 adds ci_guard.rs and bin/ci_guard.rs (2 files), the NFR-006
+        // gate-set guard.
+        ("src", 22),
         // TL-179 deletes tests/tc_084_temporal_owner_wire.rs (1 file), the
         // dedicated test for the request/result/mapping owner boundary it
         // removed from src/. TL-173 then deletes the two files that test left
@@ -2263,8 +2272,8 @@ fn no_local_evidence_framework_remains() {
         // upstream with nothing left to re-vendor from, and
         // tests/fixtures/README.md, which existed only to document that one
         // fixture's provenance. Neither was referenced by any remaining test
-        // or source file (23 - 2 = 21).
-        ("tests", 21),
+        // or source file (23 - 2 = 21). TL-65 adds tests/ci_guard.rs (22).
+        ("tests", 22),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2273,8 +2282,8 @@ fn no_local_evidence_framework_remains() {
         // gap-analysis skill can audit one typed target without rewriting the
         // historical in-spec plans. PLAN-007 adds its own 10-file bundle
         // (plan, index, log, and seven tasks) beside it, and PLAN-008 adds a
-        // further 10-file bundle of the same shape.
-        ("plan", 25),
+        // further 10-file bundle of the same shape, as does PLAN-009 (TL-65).
+        ("plan", 35),
         // The readiness and formal gap-analysis skill artifacts live at the
         // root review path required by their output contracts.
         ("reviews", 3),
