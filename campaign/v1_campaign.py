@@ -502,7 +502,13 @@ def classify(raw: bytes, parser: str, exit_code: int) -> tuple[str, dict[str, An
                 or set(classes) != expected
             ):
                 raise ValueError("property population or criterion scope differs")
-            passed_names = set(re.findall(r"^test (?:[\w]+::)*([\w]+) \.\.\. ok$", decoded, re.M))
+            # With --nocapture, the property test prints its marker between
+            # Cargo's test prefix and the final `ok` line.
+            passed_names = set(re.findall(
+                r"^test (?:[\w]+::)*([\w]+) \.\.\. "
+                r"(?:TL_CAMPAIGN_PROPERTIES \{[^\r\n]*\}\r?\n)?ok$",
+                decoded, re.M,
+            ))
             if not {"native_semantic_laws_and_strict_round_trips", "seeded_law_fault_is_detected"} <= passed_names:
                 raise ValueError("native property or fault control did not run")
             kinds = {"property": 0, "example": 0, "excluded": 0}

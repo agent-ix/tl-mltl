@@ -355,20 +355,31 @@ class CampaignTests(unittest.TestCase):
             "classifications": classes,
         }
 
-        def raw(value: dict) -> bytes:
+        def raw(value: dict, *, inline_marker: bool = False) -> bytes:
             names = (
                 "native_semantic_laws_and_strict_round_trips",
                 "seeded_law_fault_is_detected",
                 "cross_compare_small_lassos",
             )
+            marker_line = "TL_CAMPAIGN_PROPERTIES " + json.dumps(
+                value, separators=(",", ":"))
+            if inline_marker:
+                native = f"test v1_campaign::{names[0]} ... {marker_line}\nok"
+                tests = [native, *(f"test v1_campaign::{name} ... ok" for name in names[1:])]
+                return ("\n".join(tests) + "\n" + self.cargo_summary(3) + "\n").encode()
             return ("\n".join(f"test {name} ... ok" for name in names)
-                    + "\nTL_CAMPAIGN_PROPERTIES " + json.dumps(value, separators=(",", ":"))
-                    + "\n" + self.cargo_summary(3) + "\n").encode()
+                    + "\n" + marker_line + "\n" + self.cargo_summary(3) + "\n").encode()
 
         passed, population = campaign.classify(raw(marker), "cargo_properties", 0)
         self.assertEqual(passed, "passed")
         self.assertEqual(population["classified"], 61)
         self.assertEqual(population["accepted"], 64)
+        inline = raw(marker, inline_marker=True)
+        self.assertEqual(campaign.classify(inline, "cargo_properties", 0)[0], "passed")
+        self.assertEqual(campaign.classify(inline.replace(b"\nok\n", b"\nFAILED\n", 1),
+                                           "cargo_properties", 0)[0], "failed")
+        self.assertEqual(campaign.classify(inline + b"TL_CAMPAIGN_PROPERTIES {}\n",
+                                           "cargo_properties", 0)[0], "failed")
 
         altered = json.loads(json.dumps(marker))
         altered["classifications"].pop("FR-033-AC-2")
