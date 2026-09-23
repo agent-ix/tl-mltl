@@ -3,6 +3,19 @@
 All notable user-visible changes to `tl-mltl` are recorded here. The crate is
 distributed as a git source release (`publish = false`); versions are git tags.
 
+## 0.4.0
+
+Stage 1 candidate. The opt-in `infinite-trace` feature adds infinite-trace
+evaluation and monitoring, fairness premises, lasso and replay contracts, and
+typed refusals. The default finite-trace API remains available. The coordinated
+version, dependency pins, and release tag are assigned with the final source
+graph.
+
+### API migration inventory
+
+The `cargo-semver-checks` 0.50 comparison against v0.3.0 found no public API
+breaks in this crate. The release gate checks the final committed graph again.
+
 ## 0.3.0
 
 Part of the first coordinated release of the MLTL crates (`tl-syntax`,
