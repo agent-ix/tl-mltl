@@ -8,7 +8,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from v1_campaign import COMMAND_CONTRACTS, REQUIRED, SOURCE_NAMES, git_revision, sha256
+from v1_campaign import COMMAND_CONTRACTS, NATIVE_CONTRACTS, REQUIRED, SOURCE_NAMES, git_revision, sha256
 
 
 def corpus_paths(repo: Path) -> list[Path]:
@@ -40,6 +40,12 @@ def make_manifest(repos_root: Path) -> dict:
     lanes = []
     for milestone, lane_ids in REQUIRED.items():
         for lane_id in lane_ids:
+            if lane_id in NATIVE_CONTRACTS:
+                lanes.append({
+                    "id": lane_id, "milestone": milestone, "mode": "native",
+                    "seed": {"kind": "fixed", "value": 181},
+                })
+                continue
             if lane_id not in COMMAND_CONTRACTS:
                 continue
             repo, parser, argv = COMMAND_CONTRACTS[lane_id]

@@ -1,0 +1,69 @@
+{
+  "budget": {
+    "max_len": 4096,
+    "runs": 1000,
+    "seconds": 30,
+    "seed": 181
+  },
+  "command": [
+    "cargo",
+    "fuzz",
+    "run",
+    "--sanitizer",
+    "address",
+    "c2po_map",
+    "/private/tmp/tl-v4-fuzz-9wcq61n7/corpus",
+    "--",
+    "-runs=1000",
+    "-seed=181",
+    "-max_total_time=30",
+    "-max_len=4096",
+    "-artifact_prefix=/private/tmp/tl-mltl-v4-fuzz/fuzz/evidence/v4-2026-09-23/artifacts/"
+  ],
+  "crash_artifacts_sha256": {},
+  "crate": "tl-mltl",
+  "engine": "libFuzzer",
+  "fuzz_lock_sha256": "55c9ae7948e499767cf2a3ca4a14ddbf001b278973f09028ed5c358d1b0697a1",
+  "observed": {
+    "elapsed_seconds": 17.723,
+    "executions": 1000,
+    "exit_code": 0,
+    "stop_reason": "run_budget"
+  },
+  "raw_output_sha256": {
+    "stderr.log.gz": "b45af709c6454e18e2308fd66df4248dca38b6ea41492ce7012418da5abafd87",
+    "stdout.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "raw_stream_sha256": {
+    "stderr": "17e1a1f988bb5c0fdfba8c0a582a62de2902b79c4625c3c00f70d1c5f1f8cdaf",
+    "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "replay": {
+    "confirmed": false,
+    "minimized_artifact_sha256": null,
+    "required": false
+  },
+  "root_lock_sha256": "389db0173c37b642706b90d38d40c08e88ddf08f871b1635d5daa3b6c712ea1b",
+  "sanitizer": "address",
+  "schema": "tl-v4.libfuzzer-campaign/v1",
+  "scope": "bounded observation; no four-crate V4 or correctness claim",
+  "seed_files_sha256": {
+    "boolean-nesting": "2e80911bddf5983da16a592dd1ed47fc04838ad6f39a1e94061e75c9046d8596",
+    "historically-pre-origin": "746101fab0d67abd152fdd9c0e561566cd294fdc44dbca4f5bc25bc1558699cb",
+    "once-endpoints": "e8c1b82cca3f044b1cc72690ef3589c6a9f6607394fe80d0b97662fdc99747a2",
+    "once-one-rewrite": "eacae433b00637636a9f4ee7b416efb41f4ef1d09e26f13a8dae8211b8953a88",
+    "since-lower-bound": "aa0e316e3632fc7b46723ad2f8ef06dc96d86a02458aca237e362762ff8c27a5",
+    "strong-previous": "b4dd9f36c79edd0446f531d8124e9d5482de6e6058a37cb314f28c96eeae217c",
+    "triggered-dual-rewrite": "2279a5c94067223e64f40ccf11950af10766f4d026dc62df973286a3a8e2e3d3",
+    "triggered-duality": "de6c503d6548145afeb4016966be591847736a53897bca0881c11f3526974c65"
+  },
+  "source_revision": "95d764f3e5cf99383578044994c53c7d278a0095",
+  "starting_corpus_sha256": "acf07a05cea858e0b8f9097fe98069326315030a9f4381bf1f90b088695bcd43",
+  "status": "bounded_no_crash",
+  "target": "c2po_map",
+  "tool_versions": {
+    "cargo": "cargo 1.100.0-nightly (495c385d0 2026-09-16)",
+    "cargo_fuzz": "cargo-fuzz 0.13.1",
+    "rustc": "rustc 1.100.0-nightly (1303417c4 2026-09-21)\nbinary: rustc\ncommit-hash: 1303417c416e1595173d9689e7394c31e136ae95\ncommit-date: 2026-09-21\nhost: aarch64-apple-darwin\nrelease: 1.100.0-nightly\nLLVM version: 23.1.1"
+  }
+}

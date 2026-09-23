@@ -15,7 +15,13 @@ tests, both finite and infinite rewrite wrong-rule controls, the infinite
 oracle (also required for V1 lasso coverage), infinite behavior, and oracle
 semantic-law tests; an
 arbitrary command with a plausible test summary cannot complete their gates.
-The other required gates have named `unsupported` contracts in the
+V4 has a fixed native gate that reconciles all four checked-in libFuzzer
+reports against their measured source ancestors, unchanged targets and lock
+files, checked corpus digests, lossless raw streams, actual 1,000-execution
+`DONE` markers, and crash-artifact state. A clean outcome is a bounded
+observation for those four named targets. The manifest builder adds this lane
+automatically with seed 181; stale or missing per-crate evidence leaves V4
+incomplete. The other required gates have named `unsupported` contracts in the
 report, with a specific missing native output/parser. Adding one requires an
 exact invocation, a parser for its actual population, and fault tests. This
 runner presently reports those milestones open; it is not a full V1–V11
@@ -48,7 +54,9 @@ python3 campaign/v1_campaign.py \
   --output /private/tmp/tl-v1-report.json
 ```
 
-Each lane names an `id`, `milestone`, and `mode`. A `command` lane also names
+Each lane names an `id`, `milestone`, and `mode`. V4 uses the fixed `native`
+mode with `{ "kind": "fixed", "value": 181 }` as its seed identity; it accepts
+no caller-selected command or parser. A `command` lane also names
 `repo`, argument-vector `argv`, `parser` (`cargo_test`, `cargo_population`, or
 `population_json`),
 an explicit fixed or deterministic `seed`, and an optional timeout. `record`
