@@ -298,8 +298,9 @@ def classify(raw: bytes, parser: str, exit_code: int) -> tuple[str, dict[str, An
                 or marker.get("compiler_sha256") != LIVE_COMPILER_SHA256
                 or marker.get("monitor_sha256") != LIVE_MONITOR_SHA256
                 or marker.get("license") != "Apache-2.0"
-                or (marker.get("bounded_cells"), marker.get("past_cells"), marker.get("unsafe_cells"))
-                != (8, 18, 1)
+                or (marker.get("bounded_cells"), marker.get("past_cells"),
+                    marker.get("unsafe_cells"), marker.get("safety_export_cells"))
+                != (8, 18, 1, 2)
                 or marker.get("bad_prefix") != {
                     "basis": "bad_prefix", "disposition": "refuted",
                     "oracle": "refuted", "violation_position": 0,
@@ -313,7 +314,10 @@ def classify(raw: bytes, parser: str, exit_code: int) -> tuple[str, dict[str, An
                 f"{case}.{kind}" for case in ("bounded", "past", "unsafe-since")
                 for kind in ("bin", "compiler.stdout", "compiler.stderr",
                              "r2u2.stdout", "r2u2.stderr")
-            }
+            } | {f"safety.{kind}" for kind in (
+                "c2po", "csv", "bin", "compiler.stdout", "compiler.stderr",
+                "r2u2.stdout", "r2u2.stderr",
+            )}
             if set(artifacts) != expected_artifacts or any(
                 not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)
                 for digest in artifacts.values()
@@ -329,13 +333,35 @@ def classify(raw: bytes, parser: str, exit_code: int) -> tuple[str, dict[str, An
                                  "corpus/past-c2po-v1/target-4.2/unsafe-since.csv", None),
             }
             runs = marker["runs"]
-            if set(runs) != set(expected_runs):
+            if set(runs) != set(expected_runs) | {"safety"}:
                 raise ValueError("missing target command result")
             for name, (spec, trace, signal_map) in expected_runs.items():
                 run = runs[name]
                 if run != {"compiler_exit": 0, "monitor_exit": 0,
                            "spec": spec, "trace": trace, "map": signal_map}:
                     raise ValueError("wrong target command or exit state")
+            safety_run = runs["safety"]
+            safety_spec = Path(safety_run["spec"])
+            safety_trace = Path(safety_run["trace"])
+            if (safety_run["compiler_exit"], safety_run["monitor_exit"],
+                safety_run["map"]) != (0, 0, None) or (
+                    safety_spec.name, safety_trace.name) != ("safety.c2po", "safety.csv") or (
+                    not safety_spec.is_absolute() or safety_spec.parent != safety_trace.parent):
+                raise ValueError("wrong safety target command")
+            safety = marker["safety_export"]
+            if (safety.get("schema"), safety.get("section"), safety.get("expression"),
+                safety.get("expression_sha256"), safety.get("decision_horizon"),
+                safety.get("refutation_only"), safety.get("false_position"),
+                safety.get("false_disposition"), safety.get("target_false"),
+                safety.get("true_position"), safety.get("true_disposition"),
+                safety.get("target_true")) != (
+                    "tl-mltl.infinite-safety-mapping/v1", "FTSPEC", "q",
+                    sha256(b"q"), 0, True, 0, "refuted", False,
+                    1, "inconclusive", True,
+                ) or any(not isinstance(safety.get(key), str) or
+                         not re.fullmatch(r"[0-9a-f]{64}", safety[key])
+                         for key in ("graph_id", "input_sha256")):
+                raise ValueError("wrong infinite safety export/replay")
             rows = marker["classifications"]
             if not isinstance(rows, list) or len(rows) != 27:
                 raise ValueError("wrong per-step population")
@@ -404,6 +430,7 @@ def classify(raw: bytes, parser: str, exit_code: int) -> tuple[str, dict[str, An
             "monitor_sha256": marker["monitor_sha256"],
             "license": marker["license"],
             "bad_prefix": marker["bad_prefix"],
+            "safety_export": safety,
             "classifications": rows, "artifacts": artifacts,
             "runs": runs,
         }
@@ -875,6 +902,16 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
                 target_paths[name] = {"path": str(path.resolve()), "sha256": actual}
             if status == "passed":
                 paths["target_artifacts"] = target_paths
+                expected_safety = {
+                    "safety.c2po": b"INPUT\n q: bool;\nFTSPEC\n q;\n",
+                    "safety.csv": b"# q\n0\n1\n",
+                    "safety.r2u2.stdout": b"0:0,F\n0:1,T\n",
+                }
+                for name, expected in expected_safety.items():
+                    if (target_raw_dir / name).read_bytes() != expected:
+                        status = "failed"
+                        population["reason"] = f"wrong_safety_export_target_bytes:{name}"
+                        break
         if timed_out:
             status = "incomplete"
             population["reason"] = "timeout"

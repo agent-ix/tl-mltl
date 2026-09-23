@@ -220,6 +220,10 @@ class CampaignTests(unittest.TestCase):
             for kind in ("bin", "compiler.stdout", "compiler.stderr",
                          "r2u2.stdout", "r2u2.stderr")
         }
+        artifacts.update({f"safety.{kind}": "a" * 64 for kind in (
+            "c2po", "csv", "bin", "compiler.stdout", "compiler.stderr",
+            "r2u2.stdout", "r2u2.stderr",
+        )})
         bounded_cases = {
             "r2u2-future-witness-v1": 0,
             "r2u2-globally-counterexample-v1": 0,
@@ -256,7 +260,8 @@ class CampaignTests(unittest.TestCase):
             "compiler_sha256": campaign.LIVE_COMPILER_SHA256,
             "monitor_sha256": campaign.LIVE_MONITOR_SHA256,
             "license": "Apache-2.0", "bounded_cells": 8, "past_cells": 18,
-            "unsafe_cells": 1, "artifacts": artifacts, "classifications": rows,
+            "unsafe_cells": 1, "safety_export_cells": 2,
+            "artifacts": artifacts, "classifications": rows,
             "runs": {
                 "bounded": {"compiler_exit": 0, "monitor_exit": 0,
                             "spec": "corpus/r2u2-v4.2/formulas.c2po",
@@ -270,6 +275,19 @@ class CampaignTests(unittest.TestCase):
                                  "spec": "corpus/past-c2po-v1/target-4.2/unsafe-since.c2po",
                                  "trace": "corpus/past-c2po-v1/target-4.2/unsafe-since.csv",
                                  "map": None},
+                "safety": {"compiler_exit": 0, "monitor_exit": 0,
+                           "spec": "/private/tmp/safety.c2po",
+                           "trace": "/private/tmp/safety.csv", "map": None},
+            },
+            "safety_export": {
+                "schema": "tl-mltl.infinite-safety-mapping/v1",
+                "section": "FTSPEC", "expression": "q",
+                "expression_sha256": campaign.sha256(b"q"),
+                "input_sha256": "b" * 64, "graph_id": "c" * 64,
+                "decision_horizon": 0, "refutation_only": True,
+                "false_position": 0, "false_disposition": "refuted",
+                "target_false": False, "true_position": 1,
+                "true_disposition": "inconclusive", "target_true": True,
             },
             "bad_prefix": {"basis": "bad_prefix", "disposition": "refuted",
                            "oracle": "refuted", "violation_position": 0,
@@ -291,6 +309,9 @@ class CampaignTests(unittest.TestCase):
             lambda value: value["classifications"].pop(),
             lambda value: value["artifacts"].pop("bounded.r2u2.stdout"),
             lambda value: value["runs"]["past"].update(monitor_exit=1),
+            lambda value: value["safety_export"].update(true_disposition="proved"),
+            lambda value: value["safety_export"].update(refutation_only=False),
+            lambda value: value["runs"]["safety"].update(spec="/tmp/other.c2po"),
         ):
             broken = json.loads(json.dumps(marker))
             corrupt(broken)

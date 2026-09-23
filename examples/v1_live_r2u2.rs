@@ -7,12 +7,15 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use serde::Serialize;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use tl_mltl::infinite::{
-    evaluate_prefix_safety, Disposition, EvaluationLimit, EvidenceBasis, ObservationValue,
-    PrefixRequest, SettlementEvidence,
+    evaluate_prefix_safety, export_safety_monitor, replay_target_step, Disposition,
+    EvaluationLimit, EvidenceBasis, ObservationValue, PrefixRequest, SafetyReplayDisposition,
+    SettlementEvidence, TargetStepObservation,
 };
+use tl_mltl::TargetOriginContract;
 use tl_oracle::{
     evaluate as evaluate_lasso_oracle, evaluate_closed_trace_v1, evaluate_origin_complete,
     Evidence as OracleEvidence, Formula as OracleFormula, Interval as OracleInterval,
@@ -20,13 +23,32 @@ use tl_oracle::{
 };
 use tl_syntax::{
     InfiniteClock, InfiniteFormulaDocument, InfiniteNode, InfiniteNodeKind, LassoTraceDocument,
-    NodeId, PartialValuation, PropositionId, SemanticProfile, TemporalInterval, TraceObservation,
-    UnboundedInterval, ValuationEntry,
+    NodeId, OwnedSignalDeclaration, PartialValuation, PropositionBinding, PropositionId,
+    SemanticProfile, SignalCatalogDocument, SignalDomain, SignalId, TemporalInterval,
+    TraceObservation, UnboundedInterval, ValuationEntry,
 };
 
 const TARGET_REVISION: &str = "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a";
 const COMPILER_SHA256: &str = "f978a32f667a8247c387a66bce35371c97b7d8f7b730035a8ee40cdfc428ce12";
 const MONITOR_SHA256: &str = "5743987dddb47cc01829a633e15623095c9c2aff2f8bb24e30d7f0e0f488f85f";
+
+#[derive(Serialize)]
+struct SafetyExportReport {
+    schema: &'static str,
+    section: &'static str,
+    expression: String,
+    expression_sha256: String,
+    input_sha256: String,
+    graph_id: String,
+    decision_horizon: u64,
+    refutation_only: bool,
+    false_position: u64,
+    false_disposition: &'static str,
+    true_position: u64,
+    true_disposition: &'static str,
+    target_false: bool,
+    target_true: bool,
+}
 
 fn digest(bytes: &[u8]) -> String {
     Sha256::digest(bytes)
@@ -210,7 +232,7 @@ fn past_word(rows: &[Value]) -> Vec<BTreeMap<PropositionId, bool>> {
         .collect()
 }
 
-fn bad_prefix_witness() -> Value {
+fn bad_prefix_witness(source: &Path, raw_dir: &Path) -> (Value, Value, SafetyExportReport) {
     let proposition = PropositionId(1);
     let graph = InfiniteFormulaDocument::new(
         SemanticProfile::InfiniteTraceV1,
@@ -244,15 +266,19 @@ fn bad_prefix_witness() -> Value {
     )
     .unwrap();
     let graph_id = graph.content_identity().unwrap();
-    let result = evaluate_prefix_safety(&PrefixRequest {
+    let observations = vec![
+        observation(0, ObservationValue::False),
+        observation(1, ObservationValue::True),
+    ];
+    let request = PrefixRequest {
         formula: &graph,
         graph_id: &graph_id,
         proposition_map_id: "map",
         propositions: trace.propositions(),
-        observations: trace.prefix(),
+        observations: &observations,
         limit: EvaluationLimit::default(),
-    })
-    .unwrap();
+    };
+    let result = evaluate_prefix_safety(&request).unwrap();
     assert_eq!(result.disposition, Disposition::Refuted);
     assert_eq!(result.basis, EvidenceBasis::BadPrefix);
     let Some(SettlementEvidence::BadPrefix(witness)) = result.evidence else {
@@ -276,7 +302,89 @@ fn bad_prefix_witness() -> Value {
     )
     .unwrap();
     assert_eq!(oracle_result.verdict, OracleVerdict::Refuted);
-    json!({"disposition":"refuted","basis":"bad_prefix","violation_position":witness.violation_position,"oracle":"refuted","target_case":"r2u2-globally-counterexample-v1","target_position":0,"target_verdict":false})
+    let catalog = SignalCatalogDocument::new(
+        vec![OwnedSignalDeclaration::new(
+            SignalId(1),
+            "q".to_owned(),
+            SignalDomain::Boolean,
+        )],
+        vec![PropositionBinding::new(proposition, SignalId(1))],
+    )
+    .unwrap();
+    let exported = export_safety_monitor(
+        &request,
+        None,
+        &catalog,
+        &TargetOriginContract::reviewed_r2u2_4_2(),
+        100,
+    )
+    .unwrap();
+    assert_eq!(exported.section, "FTSPEC");
+    assert_eq!(exported.expression, "q");
+    assert_eq!(exported.decision_horizon, 0);
+    assert!(exported.refutation_only);
+    let spec_path = raw_dir.join("safety.c2po");
+    let trace_path = raw_dir.join("safety.csv");
+    fs::write(
+        &spec_path,
+        format!("INPUT\n q: bool;\nFTSPEC\n {};\n", exported.expression),
+    )
+    .unwrap();
+    fs::write(&trace_path, "# q\n0\n1\n").unwrap();
+    let (target, run) = run_target(
+        source,
+        raw_dir,
+        "safety",
+        spec_path.to_str().unwrap(),
+        trace_path.to_str().unwrap(),
+        None,
+    );
+    assert_eq!(target.get(&(0, 0)), Some(&false));
+    assert_eq!(target.get(&(0, 1)), Some(&true));
+    let first_false = replay_target_step(
+        &exported,
+        &request,
+        TargetStepObservation {
+            target: &exported.target,
+            expression_sha256: &exported.output_sha256,
+            position: 0,
+            verdict: false,
+        },
+    )
+    .unwrap();
+    let later_true = replay_target_step(
+        &exported,
+        &request,
+        TargetStepObservation {
+            target: &exported.target,
+            expression_sha256: &exported.output_sha256,
+            position: 1,
+            verdict: true,
+        },
+    )
+    .unwrap();
+    assert_eq!(first_false, SafetyReplayDisposition::Refuted);
+    assert_eq!(later_true, SafetyReplayDisposition::Inconclusive);
+    (
+        json!({"disposition":"refuted","basis":"bad_prefix","violation_position":witness.violation_position,"oracle":"refuted","target_case":"r2u2-globally-counterexample-v1","target_position":0,"target_verdict":false}),
+        run,
+        SafetyExportReport {
+            schema: exported.schema_version,
+            section: exported.section,
+            expression: exported.expression,
+            expression_sha256: exported.output_sha256,
+            input_sha256: exported.input_sha256,
+            graph_id: exported.graph_id,
+            decision_horizon: exported.decision_horizon,
+            refutation_only: exported.refutation_only,
+            false_position: 0,
+            false_disposition: "refuted",
+            true_position: 1,
+            true_disposition: "inconclusive",
+            target_false: false,
+            target_true: true,
+        },
+    )
 }
 
 fn main() {
@@ -418,7 +526,7 @@ fn main() {
     );
     rows.push(json!({"case":"unsafe-since","family":"past","position":2,"classification":"unsupported_mapping","oracle":unsafe_oracle,"target":unsafe_target}));
 
-    let witness = bad_prefix_witness();
+    let (witness, safety_run, safety_export) = bad_prefix_witness(&source, &raw_dir);
     let artifacts: BTreeMap<String, String> = fs::read_dir(&raw_dir)
         .unwrap()
         .map(|entry| {
@@ -429,7 +537,7 @@ fn main() {
             )
         })
         .collect();
-    assert_eq!(artifacts.len(), 15);
+    assert_eq!(artifacts.len(), 22);
     println!(
         "TL_CAMPAIGN_LIVE_TARGET {}",
         json!({
@@ -441,13 +549,15 @@ fn main() {
             "bounded_cells":8,
             "past_cells":18,
             "unsafe_cells":1,
+            "safety_export_cells":2,
             "classifications":rows,
             "bad_prefix":witness,
+            "safety_export":safety_export,
             "commands":{
                 "compiler":"python3 compiler/c2po.py --spec <input> --trace/--map <input> --output <raw>.bin",
                 "monitor":"monitors/c/build/r2u2 <raw>.bin <trace>",
             },
-            "runs":{"bounded":bounded_run,"past":past_run,"unsafe-since":unsafe_run},
+            "runs":{"bounded":bounded_run,"past":past_run,"unsafe-since":unsafe_run,"safety":safety_run},
             "artifacts":artifacts,
         })
     );

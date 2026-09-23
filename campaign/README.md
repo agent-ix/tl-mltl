@@ -22,7 +22,10 @@ runtime. Its explicit Cargo example retains fresh compiler/monitor raw files,
 compares eight reviewed bounded cells and eighteen past cells with the
 independent oracle, classifies the known unsafe `S[0,2]` origin mismatch as
 unsupported mapping, and checks one finite bad-prefix refutation against the
-oracle. The second command generates the TL-217 past grid: 75
+oracle. It also exports the `G[0,)q` safety body, compiles and executes the
+exported `q` expression, replays its first false target step as a provider bad
+prefix, and classifies a later true step as inconclusive. The second command
+generates the TL-217 past grid: 75
 operator/interval/depth shapes, three trace classes, six positions, 21
 C2PO/R2U2 executions and 1,350 per-step cells. Its gate checks source/lock
 and target pins, reconstructs all 21 spec/trace inputs, checks 147 raw artifact
@@ -77,7 +80,7 @@ not run.
 To deliberately include both V10 lanes, generate a fresh manifest with
 `--live-r2u2-source /absolute/path/to/pinned/r2u2`. Use a new empty
 `--raw-dir` for each campaign run. The runner checks the foreign source
-revision and binary digests before invoking it; it checks all 15 original raw
+revision and binary digests before invoking it; it checks all 22 original raw
 artifacts and all 147 grid artifacts against the examples' reported hashes.
 An absent source leaves V10 not run; a missing or changed pinned source cannot
 pass. The examples run only through these explicit campaign lanes.
