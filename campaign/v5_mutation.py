@@ -22,6 +22,39 @@ OUTCOMES = {
 REVIEW_DISPOSITIONS = {"counterexample", "proof_candidate", "reviewed_limitation"}
 
 
+def failed(status: Any) -> bool:
+    return (isinstance(status, dict) and set(status) == {"Failure"}
+            and isinstance(status["Failure"], int) and status["Failure"] != 0)
+
+
+def timed_out(status: Any) -> bool:
+    return status == "Timeout" or (isinstance(status, dict) and set(status) == {"Timeout"})
+
+
+def validate_phases(kind: str, phases: list[dict[str, Any]],
+                    build_argv: list[str], test_argv: list[str]) -> None:
+    if not phases or phases[0].get("phase") != "Build":
+        raise ValueError(f"{kind}: missing native build phase")
+    if phases[0].get("argv") != build_argv:
+        raise ValueError(f"{kind}: build selection changed")
+    if len(phases) == 2:
+        if phases[1].get("phase") != "Test" or phases[1].get("argv") != test_argv:
+            raise ValueError(f"{kind}: test selection changed")
+    elif len(phases) != 1:
+        raise ValueError(f"{kind}: unexpected native phase count")
+    build = phases[0]["process_status"]
+    test = phases[1]["process_status"] if len(phases) == 2 else None
+    valid = {
+        "caught": build == "Success" and len(phases) == 2 and failed(test),
+        "missed": build == "Success" and len(phases) == 2 and test == "Success",
+        "unviable": len(phases) == 1 and failed(build),
+        "timed_out": (len(phases) == 1 and timed_out(build)) or
+                     (len(phases) == 2 and build == "Success" and timed_out(test)),
+    }
+    if not valid[kind]:
+        raise ValueError(f"{kind}: native phase result contradicts summary")
+
+
 def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -88,14 +121,14 @@ def classify(
     baseline = outcomes[0]
     if baseline.get("summary") != "Success":
         raise ValueError("unmutated baseline did not pass")
-    if any(phase["process_status"] != "Success" for phase in baseline["phase_results"]):
-        raise ValueError("unmutated baseline has a failed phase")
+    baseline_phases = baseline["phase_results"]
+    if ([phase.get("phase") for phase in baseline_phases] != ["Build", "Test"]
+            or any(phase["process_status"] != "Success" for phase in baseline_phases)):
+        raise ValueError("unmutated baseline build/test did not both pass")
     if not test_tail:
         raise ValueError("fixed test selection is empty")
-    baseline_tests = [phase for phase in baseline["phase_results"] if phase["phase"] == "Test"]
-    if len(baseline_tests) != 1 or baseline_tests[0]["process_status"] != "Success":
-        raise ValueError("baseline test phase did not pass exactly once")
-    test_argv = baseline_tests[0]["argv"]
+    build_argv = baseline_phases[0]["argv"]
+    test_argv = baseline_phases[1]["argv"]
     if test_argv[-len(test_tail):] != test_tail:
         raise ValueError("baseline test selection changed")
     counts = {value: 0 for value in OUTCOMES.values()}
@@ -114,9 +147,7 @@ def classify(
         counts[kind] += 1
         if kind in ("missed", "timed_out"):
             review_needed[name] = kind
-        for phase in item["phase_results"]:
-            if phase["phase"] == "Test" and phase["argv"] != test_argv:
-                raise ValueError(f"test selection changed for {name}")
+        validate_phases(kind, item["phase_results"], build_argv, test_argv)
     if len(outcome_names) != len(selected_names) or set(outcome_names) != set(selected_names):
         raise ValueError("native outcomes do not exactly cover selected mutants")
     if native["total_mutants"] != len(selected_names):
