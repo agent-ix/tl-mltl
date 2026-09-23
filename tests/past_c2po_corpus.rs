@@ -7,7 +7,7 @@ use sha2::{Digest, Sha256};
 use tl_mltl::{
     evaluate_past, map_past_to_c2po, ClockBinding, MappingSourceIdentity, MappingSourceState,
     PastEvaluationLimits, PastEvaluationRelationInput, PastMappingError, PositionHistoryDocument,
-    PositionObservation, TargetOriginContract, ToolIdentity,
+    PositionObservation, TargetOriginContract,
 };
 use tl_syntax::{
     Formula, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration, PastOperatorKind,
@@ -255,24 +255,19 @@ fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
         .iter()
         .find(|file| file.path.ends_with("r2u2.stdout"))
         .unwrap();
-    let origin = TargetOriginContract {
-        target: ToolIdentity {
-            name: "C2PO".to_owned(),
-            version: target.compiler_version.clone(),
-            executable_sha256: target.compiler_entry_sha256.clone(),
-            configuration_sha256: source_sha.sha256.clone(),
-        },
-        evidence_sha256: output_sha.sha256.clone(),
-        admitted_operators: [
-            PastOperatorKind::Once,
-            PastOperatorKind::Historically,
-            PastOperatorKind::StrongPrevious,
-            PastOperatorKind::Since,
-            PastOperatorKind::Triggered,
-        ]
-        .into_iter()
-        .collect(),
-    };
+    let origin = TargetOriginContract::reviewed_r2u2_4_2();
+    assert_eq!(origin.source_revision, target.source_revision);
+    assert_eq!(origin.target.version, target.compiler_version);
+    assert_eq!(
+        origin.target.executable_sha256,
+        target.compiler_entry_sha256
+    );
+    assert_eq!(origin.target.configuration_sha256, source_sha.sha256);
+    assert_eq!(
+        origin.monitor_executable_sha256,
+        target.monitor_executable_sha256
+    );
+    assert_eq!(origin.evidence_sha256, output_sha.sha256);
     let catalog = SignalCatalogDocument::new(
         vec![
             OwnedSignalDeclaration::new(SignalId(1), "p".to_owned(), SignalDomain::Boolean),

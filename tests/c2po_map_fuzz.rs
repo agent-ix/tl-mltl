@@ -1,12 +1,12 @@
-use std::{collections::BTreeSet, fs};
+use std::fs;
 
 use tl_mltl::{
     map_past_to_c2po, MappingSourceIdentity, MappingSourceState, PastMappingError,
-    TargetOriginContract, ToolIdentity,
+    TargetOriginContract,
 };
 use tl_syntax::{
-    Formula, FormulaDocument, OwnedSignalDeclaration, PastOperatorKind, PropositionBinding,
-    PropositionId, SignalCatalogDocument, SignalDomain, SignalId, SyntaxArtifactLimits,
+    Formula, FormulaDocument, OwnedSignalDeclaration, PropositionBinding, PropositionId,
+    SignalCatalogDocument, SignalDomain, SignalId, SyntaxArtifactLimits,
 };
 
 // Trace: TC-174; FR-042-AC-2
@@ -30,24 +30,7 @@ fn every_fuzz_seed_reaches_the_strict_reader_and_real_c2po_mapper() {
         ],
     )
     .unwrap();
-    let origin = TargetOriginContract {
-        target: ToolIdentity {
-            name: "C2PO-fuzz-fixture".to_owned(),
-            version: "v1".to_owned(),
-            executable_sha256: "a".repeat(64),
-            configuration_sha256: "b".repeat(64),
-        },
-        evidence_sha256: "c".repeat(64),
-        admitted_operators: [
-            PastOperatorKind::Once,
-            PastOperatorKind::Historically,
-            PastOperatorKind::StrongPrevious,
-            PastOperatorKind::Since,
-            PastOperatorKind::Triggered,
-        ]
-        .into_iter()
-        .collect::<BTreeSet<_>>(),
-    };
+    let origin = TargetOriginContract::reviewed_r2u2_4_2();
     for seed in &seeds {
         let bytes = fs::read(seed.path()).unwrap();
         let document = FormulaDocument::from_json_bytes(&bytes, SyntaxArtifactLimits::default())

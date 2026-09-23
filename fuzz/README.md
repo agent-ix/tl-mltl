@@ -3,8 +3,9 @@
 `c2po_map` passes every admitted byte sequence through the real, bounded
 `tl-syntax` formula-v2 strict reader and `tl-mltl::map_past_to_c2po`. It checks
 that a successful mapping has exact input and output digests, and lets the
-fuzzer catch panics or hangs. The origin contract in this lane is a synthetic
-fixture for renderer robustness; it provides no target qualification.
+fuzzer catch panics or hangs. The origin contract uses the exact retained
+R2U2 4.2 observation identity to exercise admitted renderer cells. The fuzz
+lane does not execute the external target or add target qualification.
 
 `closed_eval` passes formula-v2 bytes through the same strict syntax reader,
 then calls the real closed-trace evaluator at every position of a fixed

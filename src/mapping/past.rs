@@ -20,8 +20,12 @@ use crate::{context::bind_formula, ContextualBindingError, ToolIdentity, TL_SYNT
 /// target observations used to establish false-before-origin parity.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TargetOriginContract {
+    /// Exact source revision of the reviewed C2PO/R2U2 target.
+    pub source_revision: String,
     /// Exact external tool identity.
     pub target: ToolIdentity,
+    /// SHA-256 of the reviewed R2U2 monitor executable.
+    pub monitor_executable_sha256: String,
     /// Lowercase SHA-256 of the reviewed target-origin evidence artifact.
     pub evidence_sha256: String,
     /// Past operators whose origin behavior was reviewed for this target.
@@ -29,19 +33,69 @@ pub struct TargetOriginContract {
 }
 
 impl TargetOriginContract {
+    /// Origin observations retained for the exact R2U2 4.2 source and C2PO
+    /// compiler. This is reviewed historical evidence, not a fresh target run.
+    pub fn reviewed_r2u2_4_2() -> Self {
+        Self {
+            source_revision: REVIEWED_SOURCE_REVISION.to_owned(),
+            target: ToolIdentity {
+                name: "C2PO".to_owned(),
+                version: "C2PO v4.1.0".to_owned(),
+                executable_sha256: REVIEWED_COMPILER_SHA256.to_owned(),
+                configuration_sha256: REVIEWED_SOURCE_SHA256.to_owned(),
+            },
+            monitor_executable_sha256: REVIEWED_MONITOR_SHA256.to_owned(),
+            evidence_sha256: REVIEWED_OBSERVATION_SHA256.to_owned(),
+            admitted_operators: [
+                PastOperatorKind::Once,
+                PastOperatorKind::Historically,
+                PastOperatorKind::StrongPrevious,
+                PastOperatorKind::Since,
+                PastOperatorKind::Triggered,
+            ]
+            .into_iter()
+            .collect(),
+        }
+    }
+
     pub(crate) fn validate(&self) -> Result<(), PastMappingError> {
-        if self.target.name.is_empty()
+        if self.source_revision.is_empty()
+            || self.target.name.is_empty()
             || self.target.version.is_empty()
             || !is_sha256(&self.evidence_sha256)
             || !is_sha256(&self.target.executable_sha256)
             || !is_sha256(&self.target.configuration_sha256)
+            || !is_sha256(&self.monitor_executable_sha256)
         {
-            Err(PastMappingError::MissingOriginEvidence)
-        } else {
-            Ok(())
+            return Err(PastMappingError::MissingOriginEvidence);
         }
+        // These interval admissions were measured only against this exact
+        // retained R2U2 4.2/C2PO target and origin-observation artifact.
+        // A caller-supplied digest of the right shape is not equivalence
+        // evidence for another target.
+        if self.source_revision != REVIEWED_SOURCE_REVISION
+            || self.target.name != "C2PO"
+            || self.target.version != "C2PO v4.1.0"
+            || self.target.executable_sha256 != REVIEWED_COMPILER_SHA256
+            || self.target.configuration_sha256 != REVIEWED_SOURCE_SHA256
+            || self.monitor_executable_sha256 != REVIEWED_MONITOR_SHA256
+            || self.evidence_sha256 != REVIEWED_OBSERVATION_SHA256
+        {
+            return Err(PastMappingError::TargetOriginMismatch);
+        }
+        Ok(())
     }
 }
+
+const REVIEWED_SOURCE_REVISION: &str = "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a";
+const REVIEWED_COMPILER_SHA256: &str =
+    "f978a32f667a8247c387a66bce35371c97b7d8f7b730035a8ee40cdfc428ce12";
+const REVIEWED_SOURCE_SHA256: &str =
+    "4e0c904eccfbf7a2efdd08dfe268d1862d3a2ea473595e34afd118af4a6cb915";
+const REVIEWED_MONITOR_SHA256: &str =
+    "5743987dddb47cc01829a633e15623095c9c2aff2f8bb24e30d7f0e0f488f85f";
+const REVIEWED_OBSERVATION_SHA256: &str =
+    "378b4ba53bb5a4aa685fe26a570285df171a3a829d984afd2a682ceb60312085";
 
 /// Typed refusal without a partial C2PO expression or manifest.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -52,6 +106,8 @@ pub enum PastMappingError {
     UnsupportedNode(NodeId),
     /// The target-origin contract is absent or malformed.
     MissingOriginEvidence,
+    /// The target or evidence differs from the reviewed origin partition.
+    TargetOriginMismatch,
     /// A node uses an operator with no reviewed target-origin behavior.
     TargetOriginUnverified(PastOperatorKind),
     /// The selected target does not match source semantics for this interval.
@@ -109,6 +165,10 @@ pub struct PastMappingManifest {
     pub signal_catalog_sha256: String,
     /// Exact target binary/configuration identity.
     pub target: ToolIdentity,
+    /// Exact source revision of the reviewed target implementation.
+    pub target_source_revision: String,
+    /// Exact R2U2 monitor executable reviewed for origin parity.
+    pub target_monitor_sha256: String,
     /// SHA-256 of separately reviewed target-origin evidence.
     pub target_origin_evidence_sha256: String,
     /// Canonical C2PO expression, intended for a PTSPEC section.
@@ -329,6 +389,8 @@ pub fn map_past_to_c2po(
         input_sha256: sha256_hex(formula_bytes),
         signal_catalog_sha256,
         target: origin.target.clone(),
+        target_source_revision: origin.source_revision.clone(),
+        target_monitor_sha256: origin.monitor_executable_sha256.clone(),
         target_origin_evidence_sha256: origin.evidence_sha256.clone(),
         output_sha256: sha256_hex(expression.as_bytes()),
         expression,

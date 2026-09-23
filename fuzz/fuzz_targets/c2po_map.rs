@@ -1,15 +1,12 @@
 #![no_main]
 
-use std::collections::BTreeSet;
-
 use libfuzzer_sys::fuzz_target;
 use sha2::{Digest, Sha256};
 use tl_mltl::{
     map_past_to_c2po, MappingSourceIdentity, MappingSourceState, TargetOriginContract,
-    ToolIdentity,
 };
 use tl_syntax::{
-    Formula, FormulaDocument, FormulaSchemaVersion, OwnedSignalDeclaration, PastOperatorKind,
+    Formula, FormulaDocument, FormulaSchemaVersion, OwnedSignalDeclaration,
     PropositionBinding, PropositionId, SemanticProfile, SignalCatalogDocument, SignalDomain,
     SignalId, SyntaxArtifactLimits,
 };
@@ -35,22 +32,9 @@ fuzz_target!(|data: &[u8]| {
             PropositionBinding::new(PropositionId(1), SignalId(2)),
         ],
     ).unwrap();
-    // Isolated parser/renderer robustness fixture. No external target behavior
-    // is inferred from these synthetic identities.
-    let origin = TargetOriginContract {
-        target: ToolIdentity {
-            name: "C2PO-fuzz-fixture".to_owned(),
-            version: "v1".to_owned(),
-            executable_sha256: "a".repeat(64),
-            configuration_sha256: "b".repeat(64),
-        },
-        evidence_sha256: "c".repeat(64),
-        admitted_operators: [
-            PastOperatorKind::Once, PastOperatorKind::Historically,
-            PastOperatorKind::StrongPrevious, PastOperatorKind::Since,
-            PastOperatorKind::Triggered,
-        ].into_iter().collect::<BTreeSet<_>>(),
-    };
+    // Historical reviewed identity admits the renderer partition. This fuzz
+    // lane does not execute or claim a fresh run of the external target.
+    let origin = TargetOriginContract::reviewed_r2u2_4_2();
     if let Ok(manifest) = map_past_to_c2po(
         formula, "fuzz", data,
         MappingSourceIdentity { revision: "fuzz".to_owned(), state: MappingSourceState::Clean },

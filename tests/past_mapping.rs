@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use tl_mltl::{
     map_past_to_c2po, MappingSourceIdentity, MappingSourceState, PastMappingError,
-    TargetOriginContract, ToolIdentity,
+    TargetOriginContract,
 };
 use tl_syntax::{
     Formula, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration, PastOperatorKind,
@@ -32,16 +32,9 @@ fn catalog() -> SignalCatalogDocument {
 }
 
 fn contract(operators: &[PastOperatorKind]) -> TargetOriginContract {
-    TargetOriginContract {
-        target: ToolIdentity {
-            name: "C2PO".to_owned(),
-            version: "4.1.0-test-fixture".to_owned(),
-            executable_sha256: "a".repeat(64),
-            configuration_sha256: "b".repeat(64),
-        },
-        evidence_sha256: "c".repeat(64),
-        admitted_operators: operators.iter().copied().collect::<BTreeSet<_>>(),
-    }
+    let mut origin = TargetOriginContract::reviewed_r2u2_4_2();
+    origin.admitted_operators = operators.iter().copied().collect::<BTreeSet<_>>();
+    origin
 }
 
 fn render(
@@ -102,6 +95,8 @@ fn admitted_once_historically_and_previous_render_exact_past_forms() {
     assert_eq!(once.clock, "event_position");
     assert_eq!(once.profile, "mltl.origin-complete-history/v1");
     assert_eq!(once.target_origin_evidence_sha256, origin.evidence_sha256);
+    assert_eq!(once.target_source_revision, origin.source_revision);
+    assert_eq!(once.target_monitor_sha256, origin.monitor_executable_sha256);
     let historically = render(
         &[
             p(),
@@ -240,12 +235,14 @@ fn absent_or_operator_incomplete_origin_evidence_refuses_without_artifact() {
 #[test]
 fn each_target_origin_identity_field_is_required() {
     let nodes = [p()];
-    let corruptions: [fn(&mut TargetOriginContract); 5] = [
+    let corruptions: [fn(&mut TargetOriginContract); 7] = [
+        |origin: &mut TargetOriginContract| origin.source_revision.clear(),
         |origin: &mut TargetOriginContract| origin.target.name.clear(),
         |origin: &mut TargetOriginContract| origin.target.version.clear(),
         |origin: &mut TargetOriginContract| origin.evidence_sha256 = "C".repeat(64),
         |origin: &mut TargetOriginContract| origin.target.executable_sha256.clear(),
         |origin: &mut TargetOriginContract| origin.target.configuration_sha256.clear(),
+        |origin: &mut TargetOriginContract| origin.monitor_executable_sha256.clear(),
     ];
     for corrupt in corruptions {
         let mut invalid = contract(&[]);
@@ -254,6 +251,99 @@ fn each_target_origin_identity_field_is_required() {
             render(&nodes, &invalid),
             Err(PastMappingError::MissingOriginEvidence)
         );
+    }
+}
+
+// Trace: TC-166, TC-167; FR-039-AC-1, FR-039-AC-2
+#[test]
+fn well_formed_but_unreviewed_target_substitutions_refuse_before_output() {
+    let nodes = [
+        p(),
+        Node::new(NodeKind::Once {
+            interval: interval(0, 1),
+            operand: NodeId(0),
+        }),
+    ];
+    let substitutions: [fn(&mut TargetOriginContract); 7] = [
+        |origin| origin.source_revision = "f".repeat(40),
+        |origin| origin.target.name = "another C2PO".to_owned(),
+        |origin| origin.target.version = "C2PO v4.2.0".to_owned(),
+        |origin| origin.target.executable_sha256 = "a".repeat(64),
+        |origin| origin.target.configuration_sha256 = "b".repeat(64),
+        |origin| origin.monitor_executable_sha256 = "d".repeat(64),
+        |origin| origin.evidence_sha256 = "c".repeat(64),
+    ];
+    for substitute in substitutions {
+        let mut origin = contract(&[PastOperatorKind::Once]);
+        substitute(&mut origin);
+        assert_eq!(
+            render(&nodes, &origin),
+            Err(PastMappingError::TargetOriginMismatch)
+        );
+    }
+}
+
+// Trace: TC-166; FR-039-AC-1
+#[test]
+fn reviewed_target_admits_only_measured_origin_interval_cells() {
+    let origin = contract(&[
+        PastOperatorKind::Once,
+        PastOperatorKind::Historically,
+        PastOperatorKind::Since,
+        PastOperatorKind::Triggered,
+    ]);
+    for (kind, interval, admitted) in [
+        (0, interval(0, 0), true),
+        (0, interval(1, 2), true),
+        (0, interval(2, 2), false),
+        (1, interval(0, 2), true),
+        (1, interval(2, 2), false),
+        (2, interval(0, 1), true),
+        (2, interval(0, 2), false),
+        (3, interval(0, 1), true),
+        (3, interval(1, 1), false),
+    ] {
+        let (operator, node) = match kind {
+            0 => (
+                PastOperatorKind::Once,
+                NodeKind::Once {
+                    interval,
+                    operand: NodeId(0),
+                },
+            ),
+            1 => (
+                PastOperatorKind::Historically,
+                NodeKind::Historically {
+                    interval,
+                    operand: NodeId(0),
+                },
+            ),
+            2 => (
+                PastOperatorKind::Since,
+                NodeKind::Since {
+                    interval,
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+            ),
+            _ => (
+                PastOperatorKind::Triggered,
+                NodeKind::Triggered {
+                    interval,
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+            ),
+        };
+        let result = render(&[p(), q(), Node::new(node)], &origin);
+        if admitted {
+            assert!(result.is_ok(), "{operator:?} {interval:?}: {result:?}");
+        } else {
+            assert_eq!(
+                result,
+                Err(PastMappingError::TargetOriginIntervalMismatch { operator, interval })
+            );
+        }
     }
 }
 

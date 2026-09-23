@@ -7,7 +7,7 @@ use tl_mltl::{
         export_safety_monitor, replay_target_step, EvaluationLimit, PrefixRequest,
         SafetyExportError, SafetyReplayDisposition, TargetStepObservation,
     },
-    TargetOriginContract, ToolIdentity,
+    TargetOriginContract,
 };
 use tl_syntax::{
     InfiniteClock, InfiniteFormulaDocument, InfiniteNode, InfiniteNodeKind as K, Interval, NodeId,
@@ -49,18 +49,11 @@ fn catalog() -> SignalCatalogDocument {
 }
 
 fn contract() -> TargetOriginContract {
-    TargetOriginContract {
-        target: ToolIdentity {
-            name: "C2PO".to_owned(),
-            version: "test-fixture".to_owned(),
-            executable_sha256: "a".repeat(64),
-            configuration_sha256: "b".repeat(64),
-        },
-        evidence_sha256: "c".repeat(64),
-        admitted_operators: [PastOperatorKind::Once]
-            .into_iter()
-            .collect::<BTreeSet<_>>(),
-    }
+    let mut origin = TargetOriginContract::reviewed_r2u2_4_2();
+    origin.admitted_operators = [PastOperatorKind::Once]
+        .into_iter()
+        .collect::<BTreeSet<_>>();
+    origin
 }
 
 fn rows(value: PartialValue) -> Vec<TraceObservation> {
