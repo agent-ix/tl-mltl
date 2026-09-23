@@ -503,6 +503,32 @@ fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive(
         replay_target_step(&stale, &request, step(0, false)),
         Err(SafetyExportError::TargetMismatch)
     );
+    for field in [
+        "profile",
+        "providerRevision",
+        "graphId",
+        "inputSha256",
+        "clock",
+        "target",
+        "expression",
+    ] {
+        let mut changed = manifest.clone();
+        match field {
+            "profile" => changed.profile = "mltl.closed-trace/v1",
+            "providerRevision" => changed.provider_revision = "foreign-revision",
+            "graphId" => changed.graph_id.push_str("-foreign"),
+            "inputSha256" => changed.input_sha256 = "0".repeat(64),
+            "clock" => changed.clock = "fixed-sample",
+            "target" => changed.target.version.push_str("-foreign"),
+            "expression" => changed.expression.push_str(" && false"),
+            _ => unreachable!(),
+        }
+        assert_eq!(
+            replay_target_step(&changed, &request, step(0, false)),
+            Err(SafetyExportError::TargetMismatch),
+            "tampered manifest field {field} was admitted"
+        );
+    }
     let wrong_digest = TargetStepObservation {
         target: &manifest.target,
         expression_sha256: "0",

@@ -614,6 +614,94 @@ fn results_bind_all_dimensions_and_validate_direct_corrections() {
         ),
         Err(PastEvaluationError::ResultRevisionInvalid)
     );
+
+    // Persistence checks must reject a changed relation before the stale
+    // top-level digest check can hide the precise lineage refusal.
+    assert_eq!(
+        original.validate_with_predecessor(Some(&original)),
+        Err(PastResultValidationError::RelationShape)
+    );
+    let mut changed = original.clone();
+    changed.result_revision = 0;
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::ResultRevisionZero)
+    );
+    let mut changed = original.clone();
+    changed.stats.steps = 0;
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::StatisticsOutOfRange)
+    );
+
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .corrected_history
+        .as_mut()
+        .unwrap()
+        .revision += 1;
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::CorrectedHistoryMismatch)
+    );
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .direct_predecessor
+        .as_mut()
+        .unwrap()
+        .result_revision = changed.result_revision;
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::PredecessorNotEarlier)
+    );
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .direct_predecessor
+        .as_mut()
+        .unwrap()
+        .history_id = "foreign-history".to_owned();
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::PredecessorContextMismatch)
+    );
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .direct_predecessor
+        .as_mut()
+        .unwrap()
+        .history_sha256 = "not-a-digest".to_owned();
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::MalformedDigest {
+            field: "predecessorHistorySha256"
+        })
+    );
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .direct_predecessor
+        .as_mut()
+        .unwrap()
+        .result_sha256 = changed.result_sha256.clone();
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::SelfPredecessor)
+    );
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .direct_predecessor
+        .as_mut()
+        .unwrap()
+        .history_sha256 = changed.history.history_sha256.clone();
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::PredecessorNotEarlier)
+    );
 }
 
 // Trace: FR-012-AC-3, FR-012-AC-4, FR-050-AC-1

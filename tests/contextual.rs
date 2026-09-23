@@ -311,6 +311,47 @@ fn owner_trace_limits_bind_wire_shape_and_expected_identity() {
     assert_eq!(error.field(), "traceId");
 }
 
+// Trace: TC-029, FR-007-AC-5, NFR-001-AC-1
+#[test]
+fn owner_trace_binds_expected_identity_and_distinct_resource_ceilings() {
+    let limits = OwnerLimits::owner_max();
+    let trace = TraceDocument {
+        schema_version: TraceSchemaVersion::V1,
+        trace_id: "bound-trace".to_owned(),
+        closed: false,
+        instants: vec![vec![PropositionId(7), PropositionId(8)]],
+    };
+    let canonical = wire::trace::derive(&trace, limits).unwrap();
+
+    let mut foreign = trace.clone();
+    foreign.trace_id = "foreign-trace".to_owned();
+    let mismatch = wire::trace::read(canonical.bytes(), &foreign, limits).unwrap_err();
+    assert_eq!(mismatch.code(), OwnerReadErrorCode::ExpectedMismatch);
+    assert_eq!(mismatch.field(), "trace");
+
+    let mut invalid = trace.clone();
+    invalid.trace_id = "x".repeat(257);
+    let refusal = wire::trace::derive(&invalid, limits).unwrap_err();
+    assert_eq!(refusal.code(), OwnerReadErrorCode::InvalidCombination);
+    assert_eq!(refusal.field(), "traceId");
+
+    let proposition_limit = OwnerLimits {
+        max_propositions: 1,
+        ..limits
+    };
+    let refusal = wire::trace::derive(&trace, proposition_limit).unwrap_err();
+    assert_eq!(refusal.code(), OwnerReadErrorCode::ResourceIncomplete);
+    assert_eq!(refusal.field(), "propositions");
+
+    let input_limit = OwnerLimits {
+        max_input_bytes: canonical.bytes().len() - 1,
+        ..limits
+    };
+    let refusal = ValidatedTrace::from_json_bytes(canonical.bytes(), input_limit).unwrap_err();
+    assert_eq!(refusal.code(), OwnerReadErrorCode::ResourceIncomplete);
+    assert_eq!(refusal.field(), "inputBytes");
+}
+
 fn assert_stable_v1_wire<T>(record: T, v2_schema: &str)
 where
     T: serde::Serialize + serde::de::DeserializeOwned + Eq + core::fmt::Debug,
