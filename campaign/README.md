@@ -31,7 +31,22 @@ files, checked corpus digests, lossless raw streams, actual 1,000-execution
 `DONE` markers, and crash-artifact state. A clean outcome is a bounded
 observation for those five named targets. The manifest builder adds this lane
 automatically with seed 181; stale or missing per-crate evidence leaves V4
-incomplete. The other required gates have named `unsupported` contracts in the
+incomplete.
+
+V6 has a live native Kani gate. It runs the exact syntax interval and mlTL
+checked-horizon arithmetic harnesses with unwind bound 2, CaDiCaL, and Kani's
+default memory, overflow, assertion-reachability, and unwinding checks. The
+symbolic domains are two unconstrained `u32` endpoints and an unconstrained
+`u32`/`u64` operand pair, with no assumptions. It parses individual check
+results, verifier and solver identities, and one complete harness summary per
+claim. In a temporary archive of the syntax source commit it adds one
+verifier-only false assertion, requires Kani's concrete playback bytes, and
+runs an ordinary Rust replay of those exact bytes against the unchanged
+production interval body. All raw stdout/stderr streams and digests are
+retained outside the source tree. A timeout, missing tool, disabled check,
+incomplete proof, absent counterexample, or failed replay leaves V6 incomplete.
+
+The other required gates have named `unsupported` contracts in the
 report, with a specific missing native output/parser. Adding one requires an
 exact invocation, a parser for its actual population, and fault tests. This
 runner presently reports those milestones open; it is not a full V1–V11

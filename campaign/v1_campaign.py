@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from v4_fuzz import verify_four
+from v6_kani import run_v6
 
 SOURCE_NAMES = ("tl-syntax", "tl-parse", "tl-rewrite", "tl-mltl", "tl-oracle")
 # Every milestone names an executable lane. Additional campaign lanes can be
@@ -95,6 +96,7 @@ COMMAND_CONTRACTS = {
 }
 NATIVE_CONTRACTS = {
     "fuzz_replay": "four_crates_five_source_pinned_libfuzzer_targets_and_raw_streams",
+    "bounded_proof": "live_two_harness_kani_and_seeded_false_replay",
 }
 # A gate without a native output parser and exact invocation is intentionally
 # open. Extend COMMAND_CONTRACTS together with classify() and fault tests when
@@ -103,7 +105,6 @@ NATIVE_CONTRACTS = {
 UNSUPPORTED_GATE_REASONS = {
     "full_domain_census": "depth_three_interval_0_4_trace_1_6_population_not_run",
     "mutation_population": "no_reviewed_mutant_population_parser",
-    "bounded_proof": "no_bound_and_unwind_parser",
     "embedded_miri_limits": "no_combined_target_miri_limit_parser",
     "coverage": "no_four_crate_branch_coverage_parser",
     "performance": "no_four_crate_paired_benchmark_parser",
@@ -607,14 +608,20 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
     if mode == "blocked":
         return base | {"status": "blocked", "reason": lane["reason"]}, {}
     if mode == "native":
+        accepted_seeds = {
+            "fuzz_replay": {"kind": "fixed", "value": 181},
+            "bounded_proof": {"kind": "none", "reason": "symbolic_no_random_seed"},
+        }
         if (lane_id not in NATIVE_CONTRACTS or set(lane) != {
                 "id", "milestone", "mode", "seed"}
-                or seed != {"kind": "fixed", "value": 181}):
+                or seed != accepted_seeds[lane_id]):
             return base | {"status": "incomplete",
                            "reason": "unregistered_native_gate"}, {}
-        status, population, raw = verify_four(graph)
+        status, population, raw = (verify_four(graph) if lane_id == "fuzz_replay"
+                                   else run_v6(graph, raw_dir))
         return base | {"status": status, "population": population,
-                       "parser": "v4_fuzz_raw_reconciliation"}, raw
+                       "parser": ("v4_fuzz_raw_reconciliation" if lane_id == "fuzz_replay"
+                                  else "v6_kani_live_proof_replay")}, raw
     parser = lane["parser"]
     if mode == "command":
         repo = lane["repo"]
