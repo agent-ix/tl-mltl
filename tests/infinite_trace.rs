@@ -4,12 +4,13 @@ use tl_mltl::infinite::{
     evaluate_lasso, evaluate_model, evaluate_prefix_safety, Disposition, EvaluationLimit,
     EvidenceBasis, EvidenceClosure, InfiniteError, InfiniteProvider, LassoRequest,
     ObservationValue, PrefixRequest, ProviderRegistry, ProviderRequest, RegistrationError,
-    ResultReason, SettlementEvidence, UncertaintyStatus,
+    ResultReason, SettlementEvidence, SubjectKind, UncertaintyStatus, FEATURE, PROFILE,
 };
+use tl_mltl::{evaluate_closed_at, EvaluationLimits, TL_MLTL_SOURCE_REVISION};
 use tl_syntax::{
     FairnessPremisesDocument, InfiniteClock, InfiniteFormulaDocument, InfiniteNode,
     InfiniteNodeKind as K, Interval, LassoTraceDocument, LivenessDisposition, LivenessSubject,
-    LivenessSubjectKind, NodeId, PartialValuation, PropositionId, SemanticProfile,
+    LivenessSubjectKind, Node, NodeId, NodeKind, PartialValuation, PropositionId, SemanticProfile,
     TemporalInterval, TraceObservation, UnboundedInterval, ValuationEntry,
 };
 
@@ -402,17 +403,67 @@ fn fairness_filters_completions_without_vacuous_proof() {
     assert!(result.evidence.is_none());
 }
 
-// Trace: TC-139, TC-155, TC-158, TC-159; FR-028-AC-2, FR-033-AC-1, FR-033-AC-3, FR-034-AC-1
+// Trace: TC-089, TC-139, TC-140, TC-155, TC-158, TC-159; FR-028-AC-2, FR-029-AC-2, FR-033-AC-1, FR-033-AC-3, FR-034-AC-1
 #[test]
 fn model_and_identity_refusals_keep_their_scope() {
     let graph = formula(0, vec![node(K::True)]);
     let lasso = trace(&[], &[ObservationValue::True]);
     let trace_result = run(&graph, &lasso, 0, None);
     assert_eq!(trace_result.disposition, Disposition::Proved);
+    assert_eq!(trace_result.identity.feature, FEATURE);
+    assert_eq!(
+        trace_result.identity.provider_revision,
+        TL_MLTL_SOURCE_REVISION
+    );
+    assert_eq!(trace_result.identity.profile, PROFILE);
+    assert_eq!(
+        trace_result.identity.graph_id,
+        graph.content_identity().unwrap()
+    );
+    assert_eq!(
+        trace_result.identity.proposition_map_id,
+        lasso.proposition_map_identity()
+    );
+    assert_eq!(trace_result.identity.subject_kind, SubjectKind::Lasso);
+    assert_eq!(
+        trace_result.identity.subject_id,
+        lasso.content_identity().unwrap()
+    );
+    assert_eq!(
+        trace_result.identity.trace_id.as_deref(),
+        Some(trace_result.identity.subject_id.as_str())
+    );
+    assert_eq!(trace_result.identity.clock, "event_position");
+    assert_eq!(trace_result.identity.selected_position, 0);
     let model = evaluate_model(&graph, &graph.content_identity().unwrap(), "model", "map").unwrap();
     assert_eq!(model.disposition, Disposition::Unsupported);
+    assert_eq!(model.identity.feature, FEATURE);
+    assert_eq!(model.identity.provider_revision, TL_MLTL_SOURCE_REVISION);
+    assert_eq!(model.identity.profile, PROFILE);
+    assert_eq!(model.identity.subject_kind, SubjectKind::Model);
     assert!(model.identity.trace_id.is_none());
     assert!(model.evidence.is_none());
+    let bounded_nodes = [Node::new(NodeKind::True)];
+    let bounded_formula =
+        tl_syntax::Formula::new(SemanticProfile::ClosedTraceV1, NodeId(0), &bounded_nodes).unwrap();
+    let bounded = evaluate_closed_at(
+        bounded_formula,
+        "bounded-formula",
+        &[vec![]],
+        "bounded-trace",
+        0,
+        EvaluationLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(
+        bounded.semantic_profile,
+        SemanticProfile::ClosedTraceV1.as_str()
+    );
+    assert_eq!(bounded.formula_id, "bounded-formula");
+    assert_eq!(bounded.trace_id, "bounded-trace");
+    let bounded_wire = serde_json::to_value(&bounded).unwrap();
+    assert!(bounded_wire.get("providerRevision").is_none());
+    assert!(bounded_wire.get("subjectKind").is_none());
     let bad = evaluate_lasso(&LassoRequest {
         formula: &graph,
         trace: &lasso,
@@ -729,7 +780,7 @@ fn prefix_resource_dimensions_refuse_one_over_without_panic() {
     }
 }
 
-// Trace: TC-156, TC-157, TC-168, TC-169, TC-170; FR-033-AC-1, FR-033-AC-2, FR-040-AC-1, FR-040-AC-2
+// Trace: TC-089, TC-140, TC-156, TC-157, TC-168, TC-169, TC-170; FR-029-AC-2, FR-033-AC-1, FR-033-AC-2, FR-040-AC-1, FR-040-AC-2
 #[test]
 fn finite_prefix_refutes_only_a_decisive_safety_violation() {
     let graph = formula(
@@ -756,6 +807,17 @@ fn finite_prefix_refutes_only_a_decisive_safety_violation() {
     };
     let refuted = evaluate_prefix_safety(&request).unwrap();
     assert_eq!(refuted.disposition, Disposition::Refuted);
+    assert_eq!(refuted.identity.feature, FEATURE);
+    assert_eq!(refuted.identity.provider_revision, TL_MLTL_SOURCE_REVISION);
+    assert_eq!(refuted.identity.profile, PROFILE);
+    assert_eq!(refuted.identity.graph_id, graph_id);
+    assert_eq!(refuted.identity.proposition_map_id, "map");
+    assert_eq!(refuted.identity.subject_kind, SubjectKind::FinitePrefix);
+    assert_eq!(
+        refuted.identity.trace_id.as_deref(),
+        Some(refuted.identity.subject_id.as_str())
+    );
+    assert_eq!(refuted.identity.clock, "event_position");
     assert_eq!(refuted.basis, tl_mltl::infinite::EvidenceBasis::BadPrefix);
     let Some(SettlementEvidence::BadPrefix(counterexample)) = refuted.evidence else {
         panic!("finite safety refutation must carry a bad-prefix counterexample");
