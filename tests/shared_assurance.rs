@@ -2206,7 +2206,7 @@ fn no_local_evidence_framework_remains() {
         (".github", 3),
         ("assurance", 3),
         // V1 native campaign producers, raw gates, fault controls and instructions.
-        ("campaign", 40),
+        ("campaign", 43),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2339,8 +2339,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 406,
-        "the source census population changed from the reviewed 406 tracked files \
+        inspected, 409,
+        "the source census population changed from the reviewed 409 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

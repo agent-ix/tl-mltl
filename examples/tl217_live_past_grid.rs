@@ -11,7 +11,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use serde_json::{json, Value};
+use serde::Serialize;
 use sha2::{Digest, Sha256};
 use tl_mltl::{
     evaluate_past, map_past_to_c2po, ClockBinding, MappingSourceIdentity, MappingSourceState,
@@ -40,6 +40,64 @@ const INTERVALS: [(&str, u32, u32); 6] = [
     ("nonzero-range", 1, 2),
     ("nonzero-singleton", 2, 2),
 ];
+
+#[derive(Serialize)]
+struct TargetRun {
+    compiler_exit: Option<i32>,
+    monitor_exit: Option<i32>,
+    formula_count: usize,
+    trace_positions: usize,
+}
+
+#[derive(Serialize)]
+struct RunReport {
+    target: TargetRun,
+    extra_target_positions: usize,
+}
+
+#[derive(Serialize)]
+#[serde(tag = "status", rename_all = "snake_case")]
+enum MappingReport {
+    Admitted { expression_sha256: String },
+    Refused { reason: String },
+}
+
+#[derive(Serialize)]
+struct CellReport {
+    case: String,
+    operator: &'static str,
+    interval: Option<(u32, u32)>,
+    depth: usize,
+    trace: &'static str,
+    position: usize,
+    origin_hazard: bool,
+    tl: bool,
+    oracle: bool,
+    target: Option<bool>,
+    mapping: MappingReport,
+    classification: &'static str,
+}
+
+#[derive(Serialize)]
+struct GridReport {
+    schema: &'static str,
+    source_revision: String,
+    source_state: &'static str,
+    cargo_lock_sha256: String,
+    target_revision: &'static str,
+    compiler_sha256: &'static str,
+    monitor_sha256: &'static str,
+    license: &'static str,
+    intervals: [(&'static str, u32, u32); 6],
+    steps: usize,
+    formula_trace_cases: usize,
+    per_step_cells: usize,
+    classifications: BTreeMap<String, usize>,
+    unexplained_admitted_cells: usize,
+    runs: BTreeMap<String, RunReport>,
+    rows: Vec<CellReport>,
+    artifacts: BTreeMap<String, String>,
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Operator {
@@ -268,7 +326,7 @@ fn write_run(
     cases: &[Case],
     trace: &[(bool, bool)],
     source: &Path,
-) -> (BTreeMap<(usize, usize), bool>, Value) {
+) -> (BTreeMap<(usize, usize), bool>, TargetRun) {
     let spec = raw_dir.join(format!("{id}.c2po"));
     let trace_path = raw_dir.join(format!("{id}.csv"));
     let binary = raw_dir.join(format!("{id}.bin"));
@@ -341,7 +399,12 @@ fn write_run(
     );
     (
         verdicts,
-        json!({"compiler_exit":compiler.status.code(),"monitor_exit":monitor.status.code(),"formula_count":cases.len(),"trace_positions":trace.len()}),
+        TargetRun {
+            compiler_exit: compiler.status.code(),
+            monitor_exit: monitor.status.code(),
+            formula_count: cases.len(),
+            trace_positions: trace.len(),
+        },
     )
 }
 
@@ -384,7 +447,11 @@ fn origin_contract() -> TargetOriginContract {
     }
 }
 
-fn source_verdict(case: &Case, rows: &[(bool, bool)], position: usize) -> (bool, bool, Value) {
+fn source_verdict(
+    case: &Case,
+    rows: &[(bool, bool)],
+    position: usize,
+) -> (bool, bool, MappingReport) {
     let observations = rows
         .iter()
         .enumerate()
@@ -450,9 +517,13 @@ fn source_verdict(case: &Case, rows: &[(bool, bool)], position: usize) -> (bool,
                 "{} mapping expression",
                 case.id
             );
-            json!({"status":"admitted","expression_sha256":mapped.output_sha256})
+            MappingReport::Admitted {
+                expression_sha256: mapped.output_sha256,
+            }
         }
-        Err(refusal) => json!({"status":"refused","reason":format!("{refusal:?}")}),
+        Err(refusal) => MappingReport::Refused {
+            reason: format!("{refusal:?}"),
+        },
     };
     (tl, oracle, mapping)
 }
@@ -498,7 +569,10 @@ fn main() {
                 .count();
             runs.insert(
                 id.clone(),
-                json!({"target":run,"extra_target_positions":extra}),
+                RunReport {
+                    target: run,
+                    extra_target_positions: extra,
+                },
             );
             for (formula_id, case) in cases.iter().enumerate() {
                 cases_total += 1;
@@ -507,7 +581,7 @@ fn main() {
                     let (tl, oracle, mapping) = source_verdict(case, &trace, position);
                     assert_eq!(tl, oracle, "{} oracle at {position}", case.id);
                     let observed = target.get(&(formula_id, position)).copied();
-                    let admitted = mapping["status"] == "admitted";
+                    let admitted = matches!(mapping, MappingReport::Admitted { .. });
                     let classification = match (admitted, observed) {
                         (false, _) => "unsupported_mapping",
                         (true, None) => {
@@ -523,15 +597,26 @@ fn main() {
                     *classifications
                         .entry(classification.to_owned())
                         .or_default() += 1;
-                    rows.push(json!({
-                        "case":case.id,"operator":case.operator.name(),"interval":case.interval,
-                        "depth":case.depth,"trace":trace_kind,"position":position,
-                        "origin_hazard":(matches!(case.operator, Operator::Historically | Operator::Triggered)
-                            && case.interval.is_some_and(|(a,_)| position < a as usize))
+                    rows.push(CellReport {
+                        case: case.id.clone(),
+                        operator: case.operator.name(),
+                        interval: case.interval,
+                        depth: case.depth,
+                        trace: trace_kind,
+                        position,
+                        origin_hazard: (matches!(
+                            case.operator,
+                            Operator::Historically | Operator::Triggered
+                        ) && case
+                            .interval
+                            .is_some_and(|(a, _)| position < a as usize))
                             || (case.operator == Operator::Previous && position == 0),
-                        "tl":tl,"oracle":oracle,"target":observed,"mapping":mapping,
-                        "classification":classification,
-                    }));
+                        tl,
+                        oracle,
+                        target: observed,
+                        mapping,
+                        classification,
+                    });
                 }
             }
         }
@@ -549,19 +634,28 @@ fn main() {
         })
         .collect::<BTreeMap<_, _>>();
     assert_eq!(artifacts.len(), 147);
+    let report = GridReport {
+        schema: "tl-mltl.r2u2-past-grid/v1",
+        source_revision,
+        source_state,
+        cargo_lock_sha256: sha256(&fs::read(repo.join("Cargo.lock")).unwrap()),
+        target_revision: TARGET_REVISION,
+        compiler_sha256: COMPILER_SHA256,
+        monitor_sha256: MONITOR_SHA256,
+        license: "Apache-2.0",
+        intervals: INTERVALS,
+        steps: STEPS,
+        formula_trace_cases: cases_total,
+        per_step_cells: cells_total,
+        classifications,
+        unexplained_admitted_cells: unexplained,
+        runs,
+        rows,
+        artifacts,
+    };
     println!(
         "TL217_PAST_GRID {}",
-        json!({
-            "schema":"tl-mltl.r2u2-past-grid/v1",
-            "source_revision":source_revision,"source_state":source_state,
-            "cargo_lock_sha256":sha256(&fs::read(repo.join("Cargo.lock")).unwrap()),
-            "target_revision":TARGET_REVISION,
-            "compiler_sha256":COMPILER_SHA256,"monitor_sha256":MONITOR_SHA256,
-            "license":"Apache-2.0","intervals":INTERVALS,"steps":STEPS,
-            "formula_trace_cases":cases_total,"per_step_cells":cells_total,
-            "classifications":classifications,"unexplained_admitted_cells":unexplained,
-            "runs":runs,"rows":rows,"artifacts":artifacts,
-        })
+        serde_json::to_string(&report).unwrap()
     );
     assert_eq!(
         unexplained, 0,
