@@ -137,6 +137,7 @@ kani-check:
 .PHONY: test
 test: assurance-inputs
 	$(CARGO) test --all-targets --all-features
+	$(PYTHON) scripts/check_feature_boundary.py
 	$(CI_GUARD) record test
 
 # =============================================================================
