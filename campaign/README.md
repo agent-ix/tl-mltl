@@ -30,6 +30,17 @@ faults. Its small partition can pass independently. V2 remains incomplete
 because the full depth-three, interval-through-4, length-through-6 domain has
 not run.
 
+V3 uses the native `cargo_properties` lane from `tests/property.rs`. A fixed
+ChaCha seed drives 64 accepted production-evaluator cases for duality,
+bounded embedding, loop unrolling, fairness weakening, partial-information
+monotonicity, and finite-prefix refutation. The same test checks 24 strict
+owner-wire round trips and classifies all 61 checked-in criteria as property,
+existing example, or justified exclusion. The parser requires the exact
+seed, counts, criteria, example test names, and clean Cargo summaries; its
+fault tests reject missing or duplicate evidence. Parser-owned wire editions
+and rewrite equivalence remain in their owning crates, so this lane is a
+bounded V3 result, not a claim that those external obligations ran here.
+
 Run `python3 -m unittest discover -s campaign -p 'test_*.py'` for the
 TC-195–199 fault tests. Generate a manifest with
 `python3 campaign/make_manifest.py --repos-root /Users/peter/dev
@@ -49,7 +60,7 @@ python3 campaign/v1_campaign.py \
 ```
 
 Each lane names an `id`, `milestone`, and `mode`. A `command` lane also names
-`repo`, argument-vector `argv`, `parser` (`cargo_test`, `cargo_population`, or
+`repo`, argument-vector `argv`, `parser` (`cargo_test`, `cargo_population`, `cargo_properties`, or
 `population_json`),
 an explicit fixed or deterministic `seed`, and an optional timeout. `record`
 lanes name a receipt JSON with exact source
