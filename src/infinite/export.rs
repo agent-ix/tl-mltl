@@ -2,8 +2,8 @@
 
 use serde::Serialize;
 use tl_syntax::{
-    InfiniteNodeKind as K, Interval, NodeId, PartialValue, PastOperatorKind, SignalCatalog,
-    SignalCatalogDocument, TemporalInterval,
+    FairnessPremisesDocument, InfiniteFormula, InfiniteNodeKind as K, Interval, NodeId,
+    PartialValue, PastOperatorKind, SignalCatalog, SignalCatalogDocument, TemporalInterval,
 };
 
 use crate::{
@@ -23,6 +23,12 @@ pub enum SafetyExportError {
     Identity,
     /// The graph is outside exact `G[0,)ψ` with finite future horizon.
     UnsupportedShape,
+    /// An unbounded F/G appears outside the exact outer safety guard.
+    UnboundedLiveness,
+    /// An unbounded U/R has no finite-prefix safety export.
+    UnboundedUntilRelease,
+    /// Nonempty fairness premises cannot be settled by a finite prefix.
+    FairnessPremise,
     /// A target past-origin contract is absent or does not admit an operator.
     TargetOrigin,
     /// The exact target interval differs from source origin semantics.
@@ -53,6 +59,87 @@ impl core::fmt::Display for SafetyExportError {
 }
 
 impl std::error::Error for SafetyExportError {}
+
+/// Classifies every syntax-owned node before rendering any target bytes.
+/// The outer `G[0,)` is the only admitted unbounded future operator.
+fn classify_safety_shape(formula: InfiniteFormula<'_>) -> Result<(), SafetyExportError> {
+    let root = formula.root();
+    for (index, node) in formula.nodes().iter().enumerate() {
+        let is_root = u32::try_from(index).ok().map(NodeId) == Some(root);
+        match node.kind {
+            K::Future {
+                interval: TemporalInterval::Unbounded(_),
+                ..
+            }
+            | K::Globally {
+                interval: TemporalInterval::Unbounded(_),
+                ..
+            } if !is_root
+                || !matches!(
+                    node.kind,
+                    K::Globally {
+                        interval: TemporalInterval::Unbounded(bounds),
+                        ..
+                    } if bounds.start() == 0
+                ) =>
+            {
+                return Err(SafetyExportError::UnboundedLiveness);
+            }
+            K::Until {
+                interval: TemporalInterval::Unbounded(_),
+                ..
+            }
+            | K::Release {
+                interval: TemporalInterval::Unbounded(_),
+                ..
+            } => return Err(SafetyExportError::UnboundedUntilRelease),
+            K::Once {
+                interval: TemporalInterval::Unbounded(_),
+                ..
+            }
+            | K::Historically {
+                interval: TemporalInterval::Unbounded(_),
+                ..
+            }
+            | K::Since {
+                interval: TemporalInterval::Unbounded(_),
+                ..
+            }
+            | K::Triggered {
+                interval: TemporalInterval::Unbounded(_),
+                ..
+            } => return Err(SafetyExportError::UnboundedPast),
+            K::False
+            | K::True
+            | K::Proposition { .. }
+            | K::Not { .. }
+            | K::And { .. }
+            | K::Or { .. }
+            | K::Implies { .. }
+            | K::Equivalent { .. }
+            | K::StrongPrevious { .. }
+            | K::Future { .. }
+            | K::Globally { .. }
+            | K::Until { .. }
+            | K::Release { .. }
+            | K::Once { .. }
+            | K::Historically { .. }
+            | K::Since { .. }
+            | K::Triggered { .. } => {}
+        }
+    }
+    if matches!(
+        formula.node(root).map(|node| node.kind),
+        Some(K::Globally {
+            interval: TemporalInterval::Unbounded(bounds),
+            ..
+        }) if bounds.start() == 0
+    ) {
+        Ok(())
+    } else {
+        Err(SafetyExportError::UnsupportedShape)
+    }
+}
 
 /// A C2PO monitor expression that can supply refutation evidence only.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -355,6 +442,7 @@ impl Renderer<'_, '_> {
 /// A target pass is never proof of the infinite property.
 pub fn export_safety_monitor(
     request: &PrefixRequest<'_>,
+    fairness: Option<&FairnessPremisesDocument>,
     catalog_document: &SignalCatalogDocument,
     origin: &TargetOriginContract,
     work_limit: u64,
@@ -363,9 +451,18 @@ pub fn export_safety_monitor(
         .validate_shape()
         .map_err(|_| SafetyExportError::Identity)?;
     let graph_id = request.graph_id.to_owned();
+    if let Some(premises) = fairness {
+        if premises.graph_identity() != graph_id || premises.clock() != request.formula.clock() {
+            return Err(SafetyExportError::Identity);
+        }
+        if !premises.roots().is_empty() {
+            return Err(SafetyExportError::FairnessPremise);
+        }
+    }
     origin
         .validate()
         .map_err(|_| SafetyExportError::TargetOrigin)?;
+    classify_safety_shape(request.formula.formula())?;
     let (inner, decision_horizon) =
         finite_horizons(request.formula.formula()).map_err(|error| match error {
             InfiniteError::ResourceIncomplete => SafetyExportError::ResourceIncomplete,

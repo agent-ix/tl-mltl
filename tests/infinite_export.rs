@@ -10,10 +10,11 @@ use tl_mltl::{
     TargetOriginContract,
 };
 use tl_syntax::{
-    InfiniteClock, InfiniteFormulaDocument, InfiniteNode, InfiniteNodeKind as K, Interval, NodeId,
-    OwnedSignalDeclaration, PartialValuation, PartialValue, PastOperatorKind, PropositionBinding,
-    PropositionId, SemanticProfile, SignalCatalogDocument, SignalDomain, SignalId,
-    TemporalInterval, TraceObservation, UnboundedInterval, ValuationEntry,
+    FairnessPremisesDocument, InfiniteClock, InfiniteFormulaDocument, InfiniteNode,
+    InfiniteNodeKind as K, Interval, NodeId, OwnedSignalDeclaration, PartialValuation,
+    PartialValue, PastOperatorKind, PropositionBinding, PropositionId, SemanticProfile,
+    SignalCatalogDocument, SignalDomain, SignalId, TemporalInterval, TraceObservation,
+    UnboundedInterval, ValuationEntry,
 };
 
 fn graph(nodes: Vec<InfiniteNode>) -> InfiniteFormulaDocument {
@@ -84,6 +85,7 @@ fn export(
             observations,
             limit: EvaluationLimit::default(),
         },
+        None,
         &catalog(),
         &contract(),
         100,
@@ -149,7 +151,7 @@ fn unsupported_shape_partial_observation_and_mixed_target_context_refuse() {
     ]);
     assert_eq!(
         export(&unbounded, &rows(PartialValue::True)),
-        Err(SafetyExportError::UnsupportedShape)
+        Err(SafetyExportError::UnboundedLiveness)
     );
     let past = graph(vec![
         node(K::Proposition {
@@ -191,6 +193,132 @@ fn unsupported_shape_partial_observation_and_mixed_target_context_refuse() {
     );
 }
 
+// Trace: TC-172, TC-173; FR-041-AC-1 and FR-041-AC-2
+#[test]
+fn each_unbounded_future_family_has_a_distinct_typed_refusal() {
+    let atom = node(K::Proposition {
+        proposition: PropositionId(0),
+    });
+    let future = graph(vec![
+        atom,
+        node(K::Future {
+            interval: open(),
+            operand: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
+    assert_eq!(
+        export(&future, &rows(PartialValue::True)),
+        Err(SafetyExportError::UnboundedLiveness)
+    );
+    for temporal in [
+        K::Until {
+            interval: open(),
+            left: NodeId(0),
+            right: NodeId(1),
+        },
+        K::Release {
+            interval: open(),
+            left: NodeId(0),
+            right: NodeId(1),
+        },
+    ] {
+        let formula = graph(vec![
+            atom,
+            node(K::True),
+            node(temporal),
+            node(K::Globally {
+                interval: open(),
+                operand: NodeId(2),
+            }),
+        ]);
+        assert_eq!(
+            export(&formula, &rows(PartialValue::True)),
+            Err(SafetyExportError::UnboundedUntilRelease)
+        );
+    }
+    let wrong_outer = graph(vec![
+        atom,
+        node(K::Globally {
+            interval: TemporalInterval::Unbounded(UnboundedInterval::new(1)),
+            operand: NodeId(0),
+        }),
+    ]);
+    assert_eq!(
+        export(&wrong_outer, &rows(PartialValue::True)),
+        Err(SafetyExportError::UnboundedLiveness)
+    );
+    let bounded_outer = graph(vec![
+        atom,
+        node(K::Globally {
+            interval: closed(),
+            operand: NodeId(0),
+        }),
+    ]);
+    assert_eq!(
+        export(&bounded_outer, &rows(PartialValue::True)),
+        Err(SafetyExportError::UnsupportedShape)
+    );
+}
+
+// Trace: TC-172, TC-173; FR-041-AC-1 and FR-041-AC-2
+#[test]
+fn nonempty_fairness_refuses_before_target_output_and_empty_fairness_is_neutral() {
+    let safety = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(0),
+        }),
+    ]);
+    let graph_id = safety.content_identity().unwrap();
+    let observations = rows(PartialValue::True);
+    let request = PrefixRequest {
+        formula: &safety,
+        graph_id: &graph_id,
+        proposition_map_id: "map",
+        propositions: &[PropositionId(0)],
+        observations: &observations,
+        limit: EvaluationLimit::default(),
+    };
+    let premises = FairnessPremisesDocument::new(
+        &safety,
+        graph_id.clone(),
+        InfiniteClock::EventPosition,
+        vec![NodeId(0)],
+    )
+    .unwrap();
+    assert_eq!(
+        export_safety_monitor(&request, Some(&premises), &catalog(), &contract(), 100),
+        Err(SafetyExportError::FairnessPremise)
+    );
+    let empty = FairnessPremisesDocument::new(
+        &safety,
+        graph_id.clone(),
+        InfiniteClock::EventPosition,
+        vec![],
+    )
+    .unwrap();
+    assert!(export_safety_monitor(&request, Some(&empty), &catalog(), &contract(), 100).is_ok());
+    let foreign_graph = graph(vec![node(K::True)]);
+    let foreign = FairnessPremisesDocument::new(
+        &foreign_graph,
+        foreign_graph.content_identity().unwrap(),
+        InfiniteClock::EventPosition,
+        vec![],
+    )
+    .unwrap();
+    assert_eq!(
+        export_safety_monitor(&request, Some(&foreign), &catalog(), &contract(), 100),
+        Err(SafetyExportError::Identity)
+    );
+}
+
 // Trace: TC-170; FR-040-AC-2
 #[test]
 fn export_refuses_a_noncanonical_prefix_and_missing_formula_binding() {
@@ -220,7 +348,7 @@ fn export_refuses_a_noncanonical_prefix_and_missing_formula_binding() {
         limit: EvaluationLimit::default(),
     };
     assert_eq!(
-        export_safety_monitor(&request, &catalog(), &contract(), 100),
+        export_safety_monitor(&request, None, &catalog(), &contract(), 100),
         Err(SafetyExportError::Identity)
     );
 }
@@ -278,13 +406,13 @@ fn safety_export_refuses_exhausted_work_and_unreviewed_past_operator() {
         limit: EvaluationLimit::default(),
     };
     assert_eq!(
-        export_safety_monitor(&request, &catalog(), &contract(), 0),
+        export_safety_monitor(&request, None, &catalog(), &contract(), 0),
         Err(SafetyExportError::ResourceIncomplete)
     );
     let mut unreviewed = contract();
     unreviewed.admitted_operators.clear();
     assert_eq!(
-        export_safety_monitor(&request, &catalog(), &unreviewed, 100),
+        export_safety_monitor(&request, None, &catalog(), &unreviewed, 100),
         Err(SafetyExportError::TargetOrigin)
     );
 }
@@ -332,7 +460,7 @@ fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive(
         observations: &false_rows,
         limit: EvaluationLimit::default(),
     };
-    let manifest = export_safety_monitor(&request, &catalog(), &contract(), 100).unwrap();
+    let manifest = export_safety_monitor(&request, None, &catalog(), &contract(), 100).unwrap();
     let step = |position, verdict| TargetStepObservation {
         target: &manifest.target,
         expression_sha256: &manifest.output_sha256,
@@ -377,7 +505,8 @@ fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive(
         observations: &true_rows,
         limit: EvaluationLimit::default(),
     };
-    let passing = export_safety_monitor(&passing_request, &catalog(), &contract(), 100).unwrap();
+    let passing =
+        export_safety_monitor(&passing_request, None, &catalog(), &contract(), 100).unwrap();
     let passing_step = TargetStepObservation {
         target: &passing.target,
         expression_sha256: &passing.output_sha256,
