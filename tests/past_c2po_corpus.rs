@@ -1,4 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::path::Path;
+use std::process::Command;
 
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -394,4 +396,104 @@ fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
         }
     }
     assert_eq!(formula_ids, BTreeSet::from([0, 1, 2, 3, 4, 5]));
+}
+
+// Trace: TC-191; FR-052-AC-1
+#[test]
+fn exact_pin_live_target_replays_bounded_past_and_unsafe_origin() {
+    let Ok(source) = std::env::var("TL_MLTL_C2PO_SOURCE") else {
+        return;
+    };
+    let source = Path::new(&source);
+    let target: Manifest = serde_json::from_slice(MANIFEST).unwrap();
+    let revision = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(source)
+        .output()
+        .unwrap();
+    assert!(revision.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&revision.stdout).trim(),
+        target.target_observation.source_revision
+    );
+    let compiler = source.join("compiler/c2po.py");
+    let monitor = source.join("monitors/c/build/r2u2");
+    let digest = |path: &Path| {
+        Sha256::digest(std::fs::read(path).unwrap())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
+    assert_eq!(
+        digest(&compiler),
+        target.target_observation.compiler_entry_sha256
+    );
+    assert_eq!(
+        digest(&monitor),
+        target.target_observation.monitor_executable_sha256
+    );
+    let directory = tempfile::tempdir().unwrap();
+    for (name, spec, trace, map, expected_binary, expected_output) in [
+        (
+            "bounded",
+            "corpus/r2u2-v4.2/formulas.c2po",
+            "corpus/r2u2-v4.2/trace.csv",
+            Some("corpus/r2u2-v4.2/signals.map"),
+            Some("corpus/r2u2-v4.2/spec.bin"),
+            "corpus/r2u2-v4.2/r2u2.stdout",
+        ),
+        (
+            "past",
+            "corpus/past-c2po-v1/target-4.2/past.c2po",
+            "corpus/past-c2po-v1/target-4.2/trace.csv",
+            None,
+            Some("corpus/past-c2po-v1/target-4.2/spec.bin"),
+            "corpus/past-c2po-v1/target-4.2/r2u2.stdout",
+        ),
+        (
+            "unsafe-since",
+            "corpus/past-c2po-v1/target-4.2/unsafe-since.c2po",
+            "corpus/past-c2po-v1/target-4.2/unsafe-since.csv",
+            None,
+            Some("corpus/past-c2po-v1/target-4.2/unsafe-since.bin"),
+            "corpus/past-c2po-v1/target-4.2/unsafe-since.stdout",
+        ),
+    ] {
+        let binary = directory.path().join(format!("{name}.bin"));
+        let mut command = Command::new("python3");
+        command.arg(&compiler).arg("--spec").arg(spec);
+        if let Some(map) = map {
+            command.arg("--map").arg(map);
+        } else {
+            command.arg("--trace").arg(trace);
+        }
+        let compiled = command.arg("--output").arg(&binary).output().unwrap();
+        assert!(
+            compiled.status.success(),
+            "{name}: {}",
+            String::from_utf8_lossy(&compiled.stderr)
+        );
+        if let Some(expected) = expected_binary {
+            assert_eq!(
+                std::fs::read(&binary).unwrap(),
+                std::fs::read(expected).unwrap(),
+                "{name} binary"
+            );
+        }
+        let execution = Command::new(&monitor)
+            .arg(&binary)
+            .arg(trace)
+            .output()
+            .unwrap();
+        assert!(
+            execution.status.success(),
+            "{name}: {}",
+            String::from_utf8_lossy(&execution.stderr)
+        );
+        assert_eq!(
+            execution.stdout,
+            std::fs::read(expected_output).unwrap(),
+            "{name} per-step target output"
+        );
+    }
 }

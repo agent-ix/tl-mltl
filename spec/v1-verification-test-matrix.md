@@ -42,7 +42,7 @@ under `spec/stubs/` do not count as executed coverage.
 
 | Test ID | Title | Type | Priority | Traces To | Status |
 |---|---|---|---|---|---|
-| TC-175 | Build dev-only tl-oracle with no production imports and compare reviewed finite, past and lasso fixtures | Integration | P0 | FR-043-AC-1, NFR-007-AC-1 | 🚧 planned |
+| TC-175 | Build dev-only tl-oracle with no production imports and compare reviewed finite, past and lasso fixtures | Integration | P0 | FR-043-AC-1, NFR-007-AC-1 | ✅ implemented |
 | TC-176 | Seed independent wrong production/oracle clauses and reject self-oracled comparisons | Analysis | P0 | FR-043-AC-2 | 🚧 planned |
 | TC-177 | Reconcile exact generated depth/operator/interval/trace/profile partition cardinality with visits and refusals | Property | P0 | FR-044-AC-1, NFR-008-AC-1 | 🚧 planned |
 | TC-178 | Compare every visited admitted case with oracle and detect omission, duplication and wrong verdict | Property | P0 | FR-044-AC-2 | 🚧 planned |
@@ -60,7 +60,7 @@ under `spec/stubs/` do not count as executed coverage.
 | TC-190 | Compare Criterion distributions on matching hardware and classify confirmed/noisy regressions | Benchmark | P1 | FR-051-AC-1, NFR-009-AC-1 | 🚧 planned |
 | TC-191 | Execute a fresh exact-pin R2U2 run and compare reviewed bounded/past cases per step | Integration | P0 | FR-052-AC-1 | 🚧 planned |
 | TC-192 | Replay infinite safety bad prefixes and keep pass/origin/unavailable results non-proving | Integration | P0 | FR-052-AC-2 | 🚧 planned |
-| TC-193 | Compare complete/partial fair lassos including mixed past/future on repeated loops with tl-oracle | Property | P0 | FR-053-AC-1 | 🚧 planned |
+| TC-193 | Compare complete/partial fair lassos including mixed past/future on repeated loops with tl-oracle | Property | P0 | FR-053-AC-1 | ✅ implemented |
 | TC-194 | Detect wrong fixed point, fairness filter, prefix proof and FR-341 axis with seeded faults | Analysis | P0 | FR-053-AC-2 | 🚧 planned |
 | TC-195 | Bind one report to actual lane outputs, exact pins, seeds and digests; reject stale substitute | Integration | P0 | FR-054-AC-1 | 🚧 planned |
 | TC-196 | Reproduce deterministic payload and preserve all incomplete/refused/failed populations | Integration | P0 | FR-054-AC-2, NFR-007-AC-1 | 🚧 planned |

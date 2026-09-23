@@ -376,6 +376,156 @@ fn exact_work_limit_succeeds_and_one_less_is_resource_incomplete() {
     );
 }
 
+// Trace: TC-188; FR-049-AC-2, NFR-009-AC-1
+#[test]
+fn every_lasso_resource_dimension_refuses_one_over_without_panic() {
+    let graph = formula(
+        1,
+        vec![
+            node(K::Proposition {
+                proposition: PropositionId(7),
+            }),
+            node(K::Future {
+                interval: open(0),
+                operand: NodeId(0),
+            }),
+        ],
+    );
+    let complete = trace(&[], &[ObservationValue::True]);
+    let partial = trace(&[], &[ObservationValue::Missing]);
+    let graph_id = graph.content_identity().unwrap();
+    for (lasso, completion_count) in [(&complete, 1), (&partial, 2)] {
+        let trace_id = lasso.content_identity().unwrap();
+        let evaluate = |limit| {
+            evaluate_lasso(&LassoRequest {
+                formula: &graph,
+                trace: lasso,
+                fairness: None,
+                graph_id: &graph_id,
+                trace_id: &trace_id,
+                selected_position: 0,
+                limit,
+            })
+            .unwrap()
+        };
+        let exact = EvaluationLimit {
+            max_nodes: 2,
+            max_positions: 1,
+            max_valuation_cells: 1,
+            max_states: 2,
+            max_completions: completion_count,
+            ..EvaluationLimit::default()
+        };
+        assert_ne!(evaluate(exact).disposition, Disposition::Failed);
+        let one_over = [
+            EvaluationLimit {
+                max_nodes: 1,
+                ..exact
+            },
+            EvaluationLimit {
+                max_positions: 0,
+                ..exact
+            },
+            EvaluationLimit {
+                max_valuation_cells: 0,
+                ..exact
+            },
+            EvaluationLimit {
+                max_states: 1,
+                ..exact
+            },
+            EvaluationLimit {
+                max_completions: exact.max_completions - 1,
+                ..exact
+            },
+        ];
+        for limited in one_over {
+            let outcome = evaluate(limited);
+            assert_eq!(outcome.disposition, Disposition::Failed);
+            assert_eq!(outcome.reason, Some(ResultReason::ResourceIncomplete));
+        }
+    }
+}
+
+// Trace: TC-188; FR-049-AC-2, NFR-009-AC-1
+#[test]
+fn prefix_resource_dimensions_refuse_one_over_without_panic() {
+    let graph = formula(
+        1,
+        vec![
+            node(K::Proposition {
+                proposition: PropositionId(7),
+            }),
+            node(K::Globally {
+                interval: open(0),
+                operand: NodeId(0),
+            }),
+        ],
+    );
+    let graph_id = graph.content_identity().unwrap();
+    let finite = trace(&[ObservationValue::False], &[ObservationValue::True]);
+    let evaluate = |limit| {
+        evaluate_prefix_safety(&PrefixRequest {
+            formula: &graph,
+            graph_id: &graph_id,
+            proposition_map_id: "map",
+            propositions: finite.propositions(),
+            observations: finite.prefix(),
+            limit,
+        })
+        .unwrap()
+    };
+    let exact = EvaluationLimit {
+        max_nodes: 2,
+        max_positions: 2,
+        max_valuation_cells: 1,
+        max_states: 4,
+        max_completions: 1,
+        ..EvaluationLimit::default()
+    };
+    let baseline = evaluate(exact);
+    assert_eq!(baseline.disposition, Disposition::Refuted);
+    assert_eq!(
+        evaluate(EvaluationLimit {
+            max_steps: baseline.evaluation_steps,
+            ..exact
+        })
+        .disposition,
+        Disposition::Refuted
+    );
+    let one_over = [
+        EvaluationLimit {
+            max_nodes: 1,
+            ..exact
+        },
+        EvaluationLimit {
+            max_positions: 1,
+            ..exact
+        },
+        EvaluationLimit {
+            max_valuation_cells: 0,
+            ..exact
+        },
+        EvaluationLimit {
+            max_states: 3,
+            ..exact
+        },
+        EvaluationLimit {
+            max_completions: 0,
+            ..exact
+        },
+        EvaluationLimit {
+            max_steps: baseline.evaluation_steps - 1,
+            ..exact
+        },
+    ];
+    for limited in one_over {
+        let outcome = evaluate(limited);
+        assert_eq!(outcome.disposition, Disposition::Failed);
+        assert_eq!(outcome.reason, Some(ResultReason::ResourceIncomplete));
+    }
+}
+
 // Trace: TC-157, TC-168, TC-169, TC-170; FR-033-AC-2, FR-040-AC-1, FR-040-AC-2
 #[test]
 fn finite_prefix_refutes_only_a_decisive_safety_violation() {

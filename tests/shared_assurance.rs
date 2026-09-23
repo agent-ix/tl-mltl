@@ -2284,8 +2284,9 @@ fn no_local_evidence_framework_remains() {
         // tests/fixtures/README.md, which existed only to document that one
         // fixture's provenance. Neither was referenced by any remaining test
         // or source file (23 - 2 = 21). TL-65 adds tests/ci_guard.rs (22).
-        // Stage 1 adds infinite, safety export, owner corpus, past mapping and pinned corpus replay tests.
-        ("tests", 28),
+        // Stage 1 adds infinite, safety export, owner corpus, past mapping,
+        // pinned corpus replay and public tl-oracle differential tests.
+        ("tests", 30),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2353,14 +2354,15 @@ fn no_local_evidence_framework_remains() {
     // The V1 spec cycle adds 44 spec artifacts and two corpus files; Stage 1
     // adds four source modules and five integration tests, then five retained
     // target exchange files, one fuzz-seed test, and 13 fuzz-lane files, plus
-    // four retained target-origin counterexample files, for 340.
+    // four retained target-origin counterexample files and the tl-oracle
+    // integration tests for infinite and finite/past profiles, for 342.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 340,
-        "the source census population changed from the reviewed 340 tracked files \
+        inspected, 342,
+        "the source census population changed from the reviewed 342 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
