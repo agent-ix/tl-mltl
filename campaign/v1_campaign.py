@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -69,6 +70,10 @@ COMMAND_CONTRACTS = {
         "cargo", "test", "--locked", "--offline", "--features", "infinite-trace",
         "--test", "infinite_oracle",
     ]),
+    "live_r2u2": ("tl-mltl", "cargo_live_target", [
+        "cargo", "run", "--locked", "--offline", "--features", "infinite-trace",
+        "--example", "v1_live_r2u2",
+    ]),
     "infinite_trace_behavior": ("tl-mltl", "cargo_test", [
         "cargo", "test", "--locked", "--offline", "--features", "infinite-trace",
         "--test", "infinite_trace",
@@ -90,7 +95,6 @@ UNSUPPORTED_GATE_REASONS = {
     "embedded_miri_limits": "no_combined_target_miri_limit_parser",
     "coverage": "no_four_crate_branch_coverage_parser",
     "performance": "no_four_crate_paired_benchmark_parser",
-    "live_r2u2": "no_fresh_target_receipt_parser",
     "lasso_population_census": "no_complete_lasso_fairness_partial_population_output",
 }
 assert set(COMMAND_CONTRACTS) | set(UNSUPPORTED_GATE_REASONS) == {
@@ -109,6 +113,28 @@ CARGO_RESULT = re.compile(
     r"test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; "
     r"(\d+) ignored; (\d+) measured; (\d+) filtered out"
 )
+LIVE_TARGET_REVISION = "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a"
+LIVE_COMPILER_SHA256 = "f978a32f667a8247c387a66bce35371c97b7d8f7b730035a8ee40cdfc428ce12"
+LIVE_MONITOR_SHA256 = "5743987dddb47cc01829a633e15623095c9c2aff2f8bb24e30d7f0e0f488f85f"
+
+
+def live_target_source(path: str) -> tuple[Path, str | None]:
+    """Check the explicit foreign source preimage before invoking anything."""
+    source = Path(path).resolve()
+    if not source.is_dir():
+        return source, "target_source_absent"
+    try:
+        if git_revision(source) != LIVE_TARGET_REVISION or git_dirty(source):
+            return source, "target_source_revision_or_tree_mismatch"
+        for relative, expected in (
+            ("compiler/c2po.py", LIVE_COMPILER_SHA256),
+            ("monitors/c/build/r2u2", LIVE_MONITOR_SHA256),
+        ):
+            if sha256((source / relative).read_bytes()) != expected:
+                return source, f"target_binary_digest_mismatch:{relative}"
+    except (OSError, subprocess.CalledProcessError):
+        return source, "target_source_unreadable"
+    return source, None
 
 
 def sha256(data: bytes) -> str:
@@ -204,6 +230,129 @@ def input_graph(manifest: dict[str, Any]) -> dict[str, dict[str, str]]:
 
 def classify(raw: bytes, parser: str, exit_code: int) -> tuple[str, dict[str, Any]]:
     """Derive status only from captured bytes and process exit, never a receipt verdict."""
+    if parser == "cargo_live_target":
+        try:
+            markers = re.findall(rb"TL_CAMPAIGN_LIVE_TARGET (\{[^\r\n]*\})", raw)
+            if len(markers) != 1:
+                raise ValueError("missing or duplicate native live marker")
+            if exit_code:
+                return "failed", {"reason": "live_target_example_failed"}
+            marker = json.loads(markers[0])
+            if (
+                marker.get("schema") != "tl-mltl.live-r2u2/v1"
+                or marker.get("source_revision") != LIVE_TARGET_REVISION
+                or marker.get("compiler_sha256") != LIVE_COMPILER_SHA256
+                or marker.get("monitor_sha256") != LIVE_MONITOR_SHA256
+                or marker.get("license") != "Apache-2.0"
+                or (marker.get("bounded_cells"), marker.get("past_cells"), marker.get("unsafe_cells"))
+                != (8, 18, 1)
+                or marker.get("bad_prefix") != {
+                    "basis": "bad_prefix", "disposition": "refuted",
+                    "oracle": "refuted", "violation_position": 0,
+                    "target_case": "r2u2-globally-counterexample-v1",
+                    "target_position": 0, "target_verdict": False,
+                }
+            ):
+                raise ValueError("wrong exact target or census")
+            artifacts = marker["artifacts"]
+            expected_artifacts = {
+                f"{case}.{kind}" for case in ("bounded", "past", "unsafe-since")
+                for kind in ("bin", "compiler.stdout", "compiler.stderr",
+                             "r2u2.stdout", "r2u2.stderr")
+            }
+            if set(artifacts) != expected_artifacts or any(
+                not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)
+                for digest in artifacts.values()
+            ):
+                raise ValueError("missing or malformed raw target artifacts")
+            expected_runs = {
+                "bounded": ("corpus/r2u2-v4.2/formulas.c2po",
+                            "corpus/r2u2-v4.2/trace.csv",
+                            "corpus/r2u2-v4.2/signals.map"),
+                "past": ("corpus/past-c2po-v1/target-4.2/past.c2po",
+                         "corpus/past-c2po-v1/target-4.2/trace.csv", None),
+                "unsafe-since": ("corpus/past-c2po-v1/target-4.2/unsafe-since.c2po",
+                                 "corpus/past-c2po-v1/target-4.2/unsafe-since.csv", None),
+            }
+            runs = marker["runs"]
+            if set(runs) != set(expected_runs):
+                raise ValueError("missing target command result")
+            for name, (spec, trace, signal_map) in expected_runs.items():
+                run = runs[name]
+                if run != {"compiler_exit": 0, "monitor_exit": 0,
+                           "spec": spec, "trace": trace, "map": signal_map}:
+                    raise ValueError("wrong target command or exit state")
+            rows = marker["classifications"]
+            if not isinstance(rows, list) or len(rows) != 27:
+                raise ValueError("wrong per-step population")
+            seen = set()
+            bounded_cases = {
+                "r2u2-future-witness-v1": 0,
+                "r2u2-globally-counterexample-v1": 0,
+                "r2u2-future-deadline-v1": 0,
+                "r2u2-until-lower-bound-v1": 0,
+                "r2u2-release-lower-bound-v1": 0,
+                "r2u2-nested-until-v1": 0,
+                "r2u2-future-at-one-v1": 1,
+                "r2u2-globally-at-one-v1": 1,
+            }
+            past_cases = {
+                "once-zero-one", "historically-zero-one", "previous",
+                "since-zero-two", "triggered-zero-two", "once-one-one",
+            }
+            expected_cells = (
+                {("bounded", case, at) for case, at in bounded_cases.items()}
+                | {("past", case, at) for case in past_cases for at in range(3)}
+                | {("past", "unsafe-since", 2)}
+            )
+            counts = {"bounded_agreement": 0, "past_agreement": 0,
+                      "unsupported_mapping": 0}
+            for row in rows:
+                key = (row["family"], row["case"], row["position"])
+                if key in seen or type(row["position"]) is not int or row["position"] < 0:
+                    raise ValueError("duplicate or invalid target cell")
+                seen.add(key)
+                if type(row["oracle"]) is not bool or type(row["target"]) is not bool:
+                    raise ValueError("invalid target truth value")
+                if row["classification"] == "agreement":
+                    if row["oracle"] != row["target"]:
+                        raise ValueError("false agreement")
+                    category = f"{row['family']}_agreement"
+                    if category not in counts:
+                        raise ValueError("unknown agreement family")
+                    counts[category] += 1
+                elif row["classification"] == "unsupported_mapping":
+                    if row["family"] != "past" or row["case"] not in (
+                        "since-zero-two", "triggered-zero-two", "unsafe-since"
+                    ):
+                        raise ValueError("unreviewed mapping refusal")
+                    if row["case"] == "unsafe-since" and (row["oracle"], row["target"]) != (False, True):
+                        raise ValueError("known origin mismatch disappeared")
+                    counts["unsupported_mapping"] += 1
+                else:
+                    raise ValueError("unrecognized target classification")
+            if seen != expected_cells:
+                raise ValueError("target cell census mismatch")
+            bad_cell = next(row for row in rows if (
+                row["family"], row["case"], row["position"]
+            ) == ("bounded", "r2u2-globally-counterexample-v1", 0))
+            if bad_cell["target"] is not False or bad_cell["oracle"] is not False:
+                raise ValueError("bad-prefix target witness mismatch")
+            if counts != {"bounded_agreement": 8, "past_agreement": 12,
+                          "unsupported_mapping": 7}:
+                raise ValueError("classification counts do not reconcile")
+        except (ValueError, KeyError, TypeError, json.JSONDecodeError):
+            return "failed", {"reason": "malformed_live_target_population"}
+        return "passed", {
+            **counts, "declared": 27, "visited": len(seen),
+            "source_revision": marker["source_revision"],
+            "compiler_sha256": marker["compiler_sha256"],
+            "monitor_sha256": marker["monitor_sha256"],
+            "license": marker["license"],
+            "bad_prefix": marker["bad_prefix"],
+            "classifications": rows, "artifacts": artifacts,
+            "runs": runs,
+        }
     if parser == "cargo_test":
         matches = CARGO_RESULT.findall(raw.decode(errors="replace"))
         if not matches:
@@ -331,8 +480,27 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
         timeout = lane.get("timeout_seconds", 600)
         if type(timeout) is not int or not 1 <= timeout <= 86400:
             raise ValueError(f"invalid timeout for {lane_id}")
+        environment = None
+        target_raw_dir = None
+        if lane_id == "live_r2u2":
+            target_source = lane.get("target_source")
+            if not isinstance(target_source, str) or not Path(target_source).is_absolute():
+                return base | {"status": "incomplete", "reason": "explicit_target_source_required"}, {}
+            source, reason = live_target_source(target_source)
+            if reason:
+                return base | {"status": "blocked", "reason": reason}, {}
+            target_raw_dir = raw_dir / "live_r2u2_target"
+            if target_raw_dir.exists() and any(target_raw_dir.iterdir()):
+                return base | {"status": "incomplete", "reason": "target_raw_dir_not_empty"}, {}
+            target_raw_dir.mkdir(parents=True, exist_ok=True)
+            environment = os.environ.copy()
+            environment["TL_MLTL_C2PO_SOURCE"] = str(source)
+            environment["TL_MLTL_LIVE_RAW_DIR"] = str(target_raw_dir.resolve())
         try:
-            result = subprocess.run(argv, cwd=graph[repo]["path"], capture_output=True, timeout=timeout)
+            result = subprocess.run(
+                argv, cwd=graph[repo]["path"], capture_output=True,
+                timeout=timeout, env=environment,
+            )
             stdout, stderr, code = result.stdout, result.stderr, result.returncode
             timed_out = False
         except OSError as error:
@@ -350,6 +518,22 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
             path.write_bytes(data)
             paths[stream] = {"path": str(path.resolve()), "sha256": sha256(data)}
         status, population = classify(stdout + b"\n" + stderr, parser, code)
+        if lane_id == "live_r2u2" and status == "passed":
+            assert target_raw_dir is not None
+            target_paths = {}
+            for name, expected in population["artifacts"].items():
+                path = target_raw_dir / name
+                try:
+                    actual = sha256(path.read_bytes())
+                except OSError:
+                    actual = None
+                if actual != expected:
+                    status = "failed"
+                    population["reason"] = f"stale_or_missing_target_artifact:{name}"
+                    break
+                target_paths[name] = {"path": str(path.resolve()), "sha256": actual}
+            if status == "passed":
+                paths["target_artifacts"] = target_paths
         if timed_out:
             status = "incomplete"
             population["reason"] = "timeout"
@@ -360,6 +544,8 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
             "status": status, "parser": parser, "argv": argv, "repo": repo,
             "exit_code": code, "population": population,
         }
+        if lane_id == "live_r2u2":
+            semantic["target_source"] = lane["target_source"]
         return semantic, paths
     if mode == "record":
         try:

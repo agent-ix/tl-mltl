@@ -15,6 +15,14 @@ tests, both finite and infinite rewrite wrong-rule controls, the infinite
 oracle (also required for V1 lasso coverage), infinite behavior, and oracle
 semantic-law tests; an
 arbitrary command with a plausible test summary cannot complete their gates.
+V10 also has an explicit live-target command. It requires the caller to opt in
+with a clean local checkout of R2U2 at `336a2453`, with the pinned C2PO entry
+and monitor executable bytes. The normal manifest never invokes that foreign
+runtime. Its explicit Cargo example retains fresh compiler/monitor raw files,
+compares eight reviewed bounded cells and eighteen past cells with the
+independent oracle, classifies the known unsafe `S[0,2]` origin mismatch as
+unsupported mapping, and checks one finite bad-prefix refutation against the
+oracle. This is a bounded reviewed population, not general R2U2 parity.
 The other required gates have named `unsupported` contracts in the
 report, with a specific missing native output/parser. Adding one requires an
 exact invocation, a parser for its actual population, and fault tests. This
@@ -29,6 +37,14 @@ and 34 word positions (12,750 comparisons) with all closed intervals through
 faults. Its small partition can pass independently. V2 remains incomplete
 because the full depth-three, interval-through-4, length-through-6 domain has
 not run.
+
+To deliberately include V10, generate a fresh manifest with
+`--live-r2u2-source /absolute/path/to/pinned/r2u2`. Use a new empty
+`--raw-dir` for each campaign run. The runner checks the foreign source
+revision and binary digests before invoking it; it checks all 15 fresh raw
+target artifacts against the example's reported hashes before giving V10 credit.
+An absent source leaves V10 not run; a missing or changed pinned source cannot
+pass. The external example runs only through this explicit campaign lane.
 
 Run `python3 -m unittest discover -s campaign -p 'test_*.py'` for the
 TC-195–199 fault tests. Generate a manifest with
@@ -49,8 +65,8 @@ python3 campaign/v1_campaign.py \
 ```
 
 Each lane names an `id`, `milestone`, and `mode`. A `command` lane also names
-`repo`, argument-vector `argv`, `parser` (`cargo_test`, `cargo_population`, or
-`population_json`),
+`repo`, argument-vector `argv`, `parser` (`cargo_test`, `cargo_population`,
+`cargo_live_target`, or `population_json`),
 an explicit fixed or deterministic `seed`, and an optional timeout. `record`
 lanes name a receipt JSON with exact source
 revisions, input digests, parser, exit code, and paths and SHA-256 digests for
@@ -58,8 +74,8 @@ captured stdout and stderr. `not_run` and `blocked` lanes keep explicit
 reasons. Unspecified required lanes are automatically `not_run`.
 
 The fixed V1–V11 gate table in the runner determines each milestone. A
-zero-exit command without a nonvacuous cargo test summary or reconciled
-population cannot pass. Missing, failed, stale, timed-out and partially
+zero-exit command without a nonvacuous cargo test summary, a validated live
+target marker, or a reconciled population cannot pass. Missing, failed, stale, timed-out and partially
 visited lanes retain separate statuses. The semantic payload excludes raw
 artifact paths and volatile timing text so identical deterministic runs can
 be compared by `semantic_sha256`; the report separately retains raw artifact

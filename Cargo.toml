@@ -18,6 +18,10 @@ infinite-trace = []
 name = "tl_mltl"
 path = "src/lib.rs"
 
+[[example]]
+name = "v1_live_r2u2"
+required-features = ["infinite-trace"]
+
 [dependencies]
 serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.151"

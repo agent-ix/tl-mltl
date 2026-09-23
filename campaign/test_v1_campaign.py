@@ -190,6 +190,108 @@ class CampaignTests(unittest.TestCase):
         status, population = campaign.classify(broken, "cargo_population", 0)
         self.assertEqual((status, population["reason"]), ("incomplete", "unvisited_population"))
 
+    def test_live_target_is_explicit_and_native_population_is_fault_checked(self) -> None:
+        ordinary = make_manifest.make_manifest(self.root)
+        self.assertNotIn("live_r2u2", {lane["id"] for lane in ordinary["lanes"]})
+        opted_in = make_manifest.make_manifest(self.root, self.root / "r2u2-source")
+        live = next(lane for lane in opted_in["lanes"] if lane["id"] == "live_r2u2")
+        self.assertEqual(live["target_source"], str((self.root / "r2u2-source").resolve()))
+        self.assertEqual(live["argv"], campaign.COMMAND_CONTRACTS["live_r2u2"][2])
+
+        artifacts = {
+            f"{case}.{kind}": "a" * 64
+            for case in ("bounded", "past", "unsafe-since")
+            for kind in ("bin", "compiler.stdout", "compiler.stderr",
+                         "r2u2.stdout", "r2u2.stderr")
+        }
+        bounded_cases = {
+            "r2u2-future-witness-v1": 0,
+            "r2u2-globally-counterexample-v1": 0,
+            "r2u2-future-deadline-v1": 0,
+            "r2u2-until-lower-bound-v1": 0,
+            "r2u2-release-lower-bound-v1": 0,
+            "r2u2-nested-until-v1": 0,
+            "r2u2-future-at-one-v1": 1,
+            "r2u2-globally-at-one-v1": 1,
+        }
+        rows = [
+            dict(case=case, family="bounded", position=at,
+                 classification="agreement",
+                 oracle=case != "r2u2-globally-counterexample-v1",
+                 target=case != "r2u2-globally-counterexample-v1")
+            for case, at in bounded_cases.items()
+        ]
+        rows += [
+            dict(case=case, family="past", position=at,
+                 classification="agreement", oracle=False, target=False)
+            for case in ("once-zero-one", "historically-zero-one", "previous", "once-one-one")
+            for at in range(3)
+        ]
+        rows += [
+            dict(case=name, family="past", position=at,
+                 classification="unsupported_mapping", oracle=False, target=False)
+            for name in ("since-zero-two", "triggered-zero-two") for at in range(3)
+        ]
+        rows.append(dict(case="unsafe-since", family="past", position=2,
+                         classification="unsupported_mapping", oracle=False, target=True))
+        marker = {
+            "schema": "tl-mltl.live-r2u2/v1",
+            "source_revision": campaign.LIVE_TARGET_REVISION,
+            "compiler_sha256": campaign.LIVE_COMPILER_SHA256,
+            "monitor_sha256": campaign.LIVE_MONITOR_SHA256,
+            "license": "Apache-2.0", "bounded_cells": 8, "past_cells": 18,
+            "unsafe_cells": 1, "artifacts": artifacts, "classifications": rows,
+            "runs": {
+                "bounded": {"compiler_exit": 0, "monitor_exit": 0,
+                            "spec": "corpus/r2u2-v4.2/formulas.c2po",
+                            "trace": "corpus/r2u2-v4.2/trace.csv",
+                            "map": "corpus/r2u2-v4.2/signals.map"},
+                "past": {"compiler_exit": 0, "monitor_exit": 0,
+                         "spec": "corpus/past-c2po-v1/target-4.2/past.c2po",
+                         "trace": "corpus/past-c2po-v1/target-4.2/trace.csv",
+                         "map": None},
+                "unsafe-since": {"compiler_exit": 0, "monitor_exit": 0,
+                                 "spec": "corpus/past-c2po-v1/target-4.2/unsafe-since.c2po",
+                                 "trace": "corpus/past-c2po-v1/target-4.2/unsafe-since.csv",
+                                 "map": None},
+            },
+            "bad_prefix": {"basis": "bad_prefix", "disposition": "refuted",
+                           "oracle": "refuted", "violation_position": 0,
+                           "target_case": "r2u2-globally-counterexample-v1",
+                           "target_position": 0, "target_verdict": False},
+        }
+        def raw(value: dict) -> bytes:
+            return ("TL_CAMPAIGN_LIVE_TARGET " + json.dumps(value, separators=(",", ":"))
+                    + "\n").encode()
+
+        state, population = campaign.classify(raw(marker), "cargo_live_target", 0)
+        self.assertEqual(state, "passed")
+        self.assertEqual((population["visited"], population["unsupported_mapping"]), (27, 7))
+        for corrupt in (
+            lambda value: value.update(source_revision="0" * 40),
+            lambda value: value["bad_prefix"].update(disposition="proved"),
+            lambda value: value["classifications"][0].update(target=False),
+            lambda value: value["classifications"][0].update(case="invented-cell"),
+            lambda value: value["classifications"].pop(),
+            lambda value: value["artifacts"].pop("bounded.r2u2.stdout"),
+            lambda value: value["runs"]["past"].update(monitor_exit=1),
+        ):
+            broken = json.loads(json.dumps(marker))
+            corrupt(broken)
+            self.assertEqual(campaign.classify(raw(broken), "cargo_live_target", 0)[0], "failed")
+        self.assertEqual(campaign.classify(raw(marker), "cargo_live_target", 1)[0], "failed")
+
+    def test_live_target_missing_source_cannot_pass(self) -> None:
+        repo, parser, argv = campaign.COMMAND_CONTRACTS["live_r2u2"]
+        lane = {"id": "live_r2u2", "milestone": "V10", "mode": "command",
+                "repo": repo, "parser": parser, "argv": argv,
+                "target_source": str(self.root / "missing-target"),
+                "seed": {"kind": "none", "reason": "deterministic_live_run"}}
+        self.manifest["lanes"] = [lane]
+        report = self.report()["semantic_payload"]
+        self.assertEqual(report["lanes"]["live_r2u2"]["status"], "blocked")
+        self.assertEqual(report["milestones"]["V10"]["status"], "blocked")
+
     # TC-196: Identical deterministic runs have identical semantic payloads
     # even though raw paths may differ. Preserve refused, missing and failed.
     def test_repeated_semantics_and_population_classes(self) -> None:
