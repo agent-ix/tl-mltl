@@ -77,9 +77,10 @@ controls and adds no derived evaluator semantics. FR-017 owns W/M
 canonical-graph interoperability and target loss evidence. FR-027 owns the
 infinite-trace crate boundary, FR-028 owns liveness-backend registration
 routing, and FR-029 owns infinite-trace downstream evidence and dependency
-order. FR-030 through FR-034 specify the opt-in evaluator semantics. NFR-001
-constrains determinism and resource failure; NFR-002 constrains identity,
-provenance, and qualification claims.
+order. FR-030 through FR-034 specify the opt-in evaluator semantics. FR-038
+through FR-042 own past C2PO mapping and the refutation-only infinite safety
+fragment. NFR-001 constrains determinism and resource failure; NFR-002
+constrains identity, provenance, and qualification claims.
 
 ## References
 
@@ -115,7 +116,7 @@ behavior in the bounded core.
 - [Verification-effectiveness and bounded-proof campaign](./verification-effectiveness-campaign.md)
   (MRS-003), which measures the TL crates' own property, fuzz, mutation, and
   bounded-proof evidence and carries no cross-repository producer dependency.
-- [tl-mltl epic](https://github.com/agent-ix/tl-mltl/issues/7).
+- [TL ecosystem campaign](https://linear.app/agent-ix/issue/TL-88).
 - [Typed context child](https://github.com/agent-ix/tl-mltl/issues/24).
 - [Future FRETish consumer](https://github.com/agent-ix/quire-contract-ir/issues/57).
 - [Infinite-trace scope, tl-mltl#72](https://github.com/agent-ix/tl-mltl/issues/72).

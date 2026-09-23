@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "tl-mltl.past-c2po-corpus/v1",
+  "profile": "mltl.origin-complete-history/v1",
+  "clock": "event_position",
+  "sourceOracle": "tl-mltl past evaluator; expected vectors are specification values pending executable replay",
+  "targetObservation": null,
+  "targetLimitation": "No new C2PO/R2U2 execution is claimed by this manifest",
+  "trace": [
+    {
+      "position": 0,
+      "p": false,
+      "q": false
+    },
+    {
+      "position": 1,
+      "p": true,
+      "q": false
+    },
+    {
+      "position": 2,
+      "p": true,
+      "q": true
+    }
+  ],
+  "cases": [
+    {
+      "id": "once-zero-one",
+      "formula": "O[0,1] p",
+      "expectedSource": [
+        false,
+        true,
+        true
+      ],
+      "originHazard": "at-origin"
+    },
+    {
+      "id": "historically-zero-one",
+      "formula": "H[0,1] p",
+      "expectedSource": [
+        false,
+        false,
+        true
+      ],
+      "originHazard": "at-origin"
+    },
+    {
+      "id": "previous",
+      "formula": "Y p",
+      "expectedSource": [
+        false,
+        false,
+        true
+      ],
+      "originHazard": "before-origin-false"
+    },
+    {
+      "id": "since-zero-two",
+      "formula": "p S[0,2] q",
+      "expectedSource": [
+        false,
+        false,
+        true
+      ],
+      "originHazard": "at-origin"
+    },
+    {
+      "id": "triggered-zero-two",
+      "formula": "p T[0,2] q",
+      "expectedSource": [
+        false,
+        false,
+        true
+      ],
+      "originHazard": "dual-at-origin"
+    },
+    {
+      "id": "once-one-one",
+      "formula": "O[1,1] p",
+      "expectedSource": [
+        false,
+        false,
+        true
+      ],
+      "originHazard": "before-origin-false"
+    }
+  ]
+}
