@@ -27,7 +27,7 @@ class GridGateTests(unittest.TestCase):
             "formula_trace_cases": 225,
             "per_step_cells": 1350,
             "unexplained_admitted_cells": 0,
-            "classifications": {"agreement": 1350},
+            "classifications": {"agreement": 360, "unsupported_mapping": 990},
             "runs": {},
             "rows": [],
             "artifacts": {},
@@ -44,12 +44,21 @@ class GridGateTests(unittest.TestCase):
                 }
                 for kind in gate.ARTIFACT_KINDS:
                     name = f"{run}.{kind}"
-                    data = ("".join(f"{formula}:{position},F\n"
-                                    for formula in range(count) for position in range(6)).encode()
-                            if kind == "monitor.stdout" else b"fixture")
+                    spec, observations = gate.expected_run_inputs(group, trace)
+                    if kind == "c2po":
+                        data = spec
+                    elif kind == "csv":
+                        data = observations
+                    elif kind == "monitor.stdout":
+                        data = "".join(f"{formula}:{position},F\n"
+                                       for formula in range(count)
+                                       for position in range(6)).encode()
+                    else:
+                        data = b"fixture"
                     (self.raw / name).write_bytes(data)
                     self.report["artifacts"][name] = gate.sha256(data)
         for case, (operator, interval, depth, _, _) in cases.items():
+            admitted = gate.expected_admission(operator, interval, depth)
             for trace in gate.TRACES:
                 for position in range(6):
                     self.report["rows"].append({
@@ -60,8 +69,10 @@ class GridGateTests(unittest.TestCase):
                             operator in ("historically", "triggered")
                             and interval is not None and position < interval[1] * depth
                         ) or (operator == "previous" and position < depth),
-                        "mapping": {"status": "admitted"},
-                        "classification": "agreement",
+                        "mapping": ({"status": "admitted", "expression_sha256": gate.sha256(
+                            gate.expected_expression(operator, interval, depth).encode())}
+                            if admitted else {"status": "refused", "reason": "reviewed boundary"}),
+                        "classification": "agreement" if admitted else "unsupported_mapping",
                     })
 
     def verify(self) -> dict:
@@ -87,8 +98,24 @@ class GridGateTests(unittest.TestCase):
             self.verify()
 
     def test_false_success_count_cannot_receive_credit(self) -> None:
-        self.report["classifications"] = {"agreement": 1349}
+        self.report["classifications"] = {"agreement": 359, "unsupported_mapping": 990}
         with self.assertRaisesRegex(ValueError, "population/count"):
+            self.verify()
+
+    def test_all_refused_claim_cannot_receive_credit(self) -> None:
+        for row in self.report["rows"]:
+            row["mapping"] = {"status": "refused", "reason": "anything"}
+            row["classification"] = "unsupported_mapping"
+        self.report["classifications"] = {"unsupported_mapping": 1350}
+        with self.assertRaisesRegex(ValueError, "admission"):
+            self.verify()
+
+    def test_self_hashed_wrong_inputs_cannot_receive_credit(self) -> None:
+        name = "zero-singleton-all-true.c2po"
+        bad = b"fixture"
+        (self.raw / name).write_bytes(bad)
+        self.report["artifacts"][name] = gate.sha256(bad)
+        with self.assertRaisesRegex(ValueError, "wrong C2PO spec"):
             self.verify()
 
     def test_origin_hazard_cannot_be_suppressed(self) -> None:

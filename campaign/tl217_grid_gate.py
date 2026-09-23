@@ -71,6 +71,73 @@ def expected_cases() -> dict[str, tuple[str, list[int] | None, int, int, str]]:
     return cases
 
 
+def expected_expression(operator: str, interval: list[int] | None, depth: int) -> str:
+    expression = "p"
+    for _ in range(depth):
+        if operator == "previous":
+            expression = f"O[1,1]({expression})"
+        else:
+            assert interval is not None
+            a, b = interval
+            if operator == "once":
+                expression = f"O[{a},{b}]({expression})"
+            elif operator == "historically":
+                expression = f"H[{a},{b}]({expression})"
+            elif operator == "since":
+                expression = f"({expression} S[{a},{b}] q)"
+            elif operator == "triggered":
+                expression = f"(!((!{expression}) S[{a},{b}] (!q)))"
+            else:
+                raise ValueError("unknown past operator")
+    return expression
+
+
+def expected_admission(operator: str, interval: list[int] | None, depth: int) -> bool:
+    if operator == "previous":
+        return depth <= 2
+    return (operator == "once" and interval in ([0, 0], [0, 1]) or
+            operator == "historically" and interval == [0, 0] or
+            operator == "since" and interval in ([0, 0], [0, 1]) or
+            operator == "triggered" and interval == [0, 0])
+
+
+def expected_run_inputs(group: str, trace: str) -> tuple[bytes, bytes]:
+    cases = expected_cases()
+    selected = sorted((formula_id, operator, interval, depth)
+                      for operator, interval, depth, formula_id, case_group in cases.values()
+                      if case_group == group)
+    spec = ("INPUT\n p,q: bool;\nPTSPEC\n" + "\n".join(
+        f" {expected_expression(operator, interval, depth)};"
+        for _, operator, interval, depth in selected
+    ) + "\n").encode()
+    boundary = (1 if group == "previous" else INTERVALS[group][1])
+    observations = []
+    for position in range(6):
+        if trace == "all-true":
+            p, q = True, True
+        elif trace == "all-false":
+            p, q = False, False
+        elif trace == "boundary-toggle":
+            p = position >= boundary
+            q = not p
+        else:
+            raise ValueError("unknown trace class")
+        observations.append(f"{int(p)},{int(q)}\n")
+    return spec, ("# p,q\n" + "".join(observations)).encode()
+
+
+def verify_target_source(source: Path) -> None:
+    source = source.resolve()
+    if git_output(source, "rev-parse", "HEAD") != TARGET_REVISION:
+        raise ValueError("wrong R2U2 source revision")
+    if git_output(source, "status", "--porcelain"):
+        raise ValueError("dirty R2U2 source")
+    if sha256((source / "compiler/c2po.py").read_bytes()) != COMPILER_SHA256:
+        raise ValueError("wrong C2PO compiler bytes")
+    if sha256((source / "monitors/c/build/r2u2").read_bytes()) != MONITOR_SHA256:
+        raise ValueError("wrong R2U2 monitor bytes")
+
+
 def verify(report_bytes: bytes, raw_dir: Path, source_revision: str,
            cargo_lock_sha256: str) -> dict:
     lines = report_bytes.splitlines()
@@ -97,7 +164,9 @@ def verify(report_bytes: bytes, raw_dir: Path, source_revision: str,
     if report.get("intervals") != [[name, *interval] for name, interval in INTERVALS.items()]:
         raise ValueError("wrong interval axis")
     cases = expected_cases()
-    run_ids = {f"{group}-{trace}" for group in [*INTERVALS, "previous"] for trace in TRACES}
+    run_pairs = {f"{group}-{trace}": (group, trace)
+                 for group in [*INTERVALS, "previous"] for trace in TRACES}
+    run_ids = set(run_pairs)
     if set(report.get("runs", {})) != run_ids:
         raise ValueError("missing or extra live target run")
     artifact_names = {f"{run}.{kind}" for run in run_ids for kind in ARTIFACT_KINDS}
@@ -111,7 +180,11 @@ def verify(report_bytes: bytes, raw_dir: Path, source_revision: str,
         raw[name] = data
     target = {}
     for run in run_ids:
-        count = 3 if run.startswith("previous-") else 12
+        group, trace = run_pairs[run]
+        expected_spec, expected_trace = expected_run_inputs(group, trace)
+        if raw[f"{run}.c2po"] != expected_spec or raw[f"{run}.csv"] != expected_trace:
+            raise ValueError(f"wrong C2PO spec or trace bytes for {run}")
+        count = 3 if group == "previous" else 12
         parsed = target_rows(raw[f"{run}.monitor.stdout"], count)
         run_report = report["runs"][run]
         if run_report != {
@@ -150,6 +223,15 @@ def verify(report_bytes: bytes, raw_dir: Path, source_revision: str,
         admitted = row["mapping"]["status"] == "admitted"
         if not admitted and row["mapping"]["status"] != "refused":
             raise ValueError("invalid mapping status")
+        if admitted != expected_admission(operator, interval, depth):
+            raise ValueError("mapping admission differs from reviewed partition")
+        if admitted:
+            expression = expected_expression(operator, interval, depth)
+            if row["mapping"] != {"status": "admitted",
+                                   "expression_sha256": sha256(expression.encode())}:
+                raise ValueError("wrong admitted expression identity")
+        elif not isinstance(row["mapping"].get("reason"), str) or not row["mapping"]["reason"]:
+            raise ValueError("missing typed mapping refusal")
         classification = ("unsupported_mapping" if not admitted else
                           "nonconclusive_target_missing" if observed is None else
                           "agreement" if observed is row["tl"] else "semantic_mismatch")
@@ -160,6 +242,8 @@ def verify(report_bytes: bytes, raw_dir: Path, source_revision: str,
                       for trace in TRACES for position in range(6)}
     if seen != expected_cells or report.get("classifications") != counts:
         raise ValueError("grid population/count mismatch")
+    if counts != {"agreement": 360, "unsupported_mapping": 990}:
+        raise ValueError("reviewed admission/target census changed")
     if counts.get("semantic_mismatch", 0) or counts.get("nonconclusive_target_missing", 0):
         raise ValueError("unexplained admitted target cell")
     return {"status": "passed", "visited": len(seen), "classifications": counts,
@@ -176,6 +260,7 @@ def main() -> int:
     repo = args.repo.resolve()
     if git_output(repo, "status", "--porcelain"):
         raise ValueError("source checkout must be clean")
+    verify_target_source(args.target_source)
     revision = git_output(repo, "rev-parse", "HEAD")
     lock_hash = sha256((repo / "Cargo.lock").read_bytes())
     if args.report.exists() or (args.raw_dir.exists() and any(args.raw_dir.iterdir())):
