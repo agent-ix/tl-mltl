@@ -12,30 +12,30 @@
     "--sanitizer",
     "address",
     "c2po_map",
-    "/private/tmp/tl-v4-fuzz-k04h654m/corpus",
+    "/private/tmp/tl-v4-fuzz-ppfpvau5/corpus",
     "--",
     "-runs=1000",
     "-seed=181",
     "-max_total_time=30",
     "-max_len=4096",
-    "-artifact_prefix=/private/tmp/tl-mltl-v4-ea033-fcfa-c2po/artifacts/"
+    "-artifact_prefix=/private/tmp/tl-mltl-v4-ea041-b3a-c2po/artifacts/"
   ],
   "crash_artifacts_sha256": {},
   "crate": "tl-mltl",
   "engine": "libFuzzer",
-  "fuzz_lock_sha256": "46e80f663d62d565e7f92cd296e2c48c4980225d5aa87c65616e2cc5fc138128",
+  "fuzz_lock_sha256": "0843d73e9c84917176a1ba8345db978dee16eaf0404b0bf48da0eb329d6d4e6f",
   "observed": {
-    "elapsed_seconds": 16.147,
+    "elapsed_seconds": 16.976,
     "executions": 1000,
     "exit_code": 0,
     "stop_reason": "run_budget"
   },
   "raw_output_sha256": {
-    "stderr.log.gz": "4059d9961510e8efd84c4bd52feb3331a2e5d0e99dbd4ff556338be705db0303",
+    "stderr.log.gz": "a8358db79ac3fb48dd62a4dafdc406d016cd490a88320e3bd99307507b3a3c46",
     "stdout.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
   },
   "raw_stream_sha256": {
-    "stderr": "f97eb651037b3726dde317c49646c3db6dfba7eab1dcca48db6d986913c92583",
+    "stderr": "2bec849941a69283d57055189aaa0565f9959ac760ca171ee27f9fc0c9a24a6f",
     "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   "replay": {
@@ -43,7 +43,7 @@
     "minimized_artifact_sha256": null,
     "required": false
   },
-  "root_lock_sha256": "4bd633479b8b3329d39db50f75e09bf882665a1eae1d876b76452f88b90e7422",
+  "root_lock_sha256": "212684a6e7d2265531d1220b98b12d650a9822a6a2528e4b612a38967aa8fa91",
   "sanitizer": "address",
   "schema": "tl-v4.libfuzzer-campaign/v1",
   "scope": "bounded observation; no four-crate V4 or correctness claim",
@@ -57,7 +57,7 @@
     "triggered-dual-rewrite": "2279a5c94067223e64f40ccf11950af10766f4d026dc62df973286a3a8e2e3d3",
     "triggered-duality": "de6c503d6548145afeb4016966be591847736a53897bca0881c11f3526974c65"
   },
-  "source_revision": "fcfaa8561fb306c50e07e0b8b68b280fdce9c873",
+  "source_revision": "b3a9a545efffd6241b272f8a885be460727f6ec8",
   "starting_corpus_sha256": "acf07a05cea858e0b8f9097fe98069326315030a9f4381bf1f90b088695bcd43",
   "status": "bounded_no_crash",
   "target": "c2po_map",
