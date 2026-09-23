@@ -12,30 +12,30 @@
     "--sanitizer",
     "address",
     "closed_eval",
-    "/private/tmp/tl-v4-fuzz-59yms3kv/corpus",
+    "/private/tmp/tl-v4-fuzz-5ht9iwjq/corpus",
     "--",
     "-runs=1000",
     "-seed=181",
     "-max_total_time=30",
     "-max_len=4096",
-    "-artifact_prefix=/private/tmp/tl-mltl-v4-ea032-ec95-eval/artifacts/"
+    "-artifact_prefix=/private/tmp/tl-mltl-v4-ea033-fcfa-eval/artifacts/"
   ],
   "crash_artifacts_sha256": {},
   "crate": "tl-mltl",
   "engine": "libFuzzer",
-  "fuzz_lock_sha256": "24783c8699ffa0d6345bf4a36d791726a7dd087467c7bf58ede6e4a7af896c12",
+  "fuzz_lock_sha256": "46e80f663d62d565e7f92cd296e2c48c4980225d5aa87c65616e2cc5fc138128",
   "observed": {
-    "elapsed_seconds": 0.898,
+    "elapsed_seconds": 0.826,
     "executions": 1000,
     "exit_code": 0,
     "stop_reason": "run_budget"
   },
   "raw_output_sha256": {
-    "stderr.log.gz": "7436ead5a8bcc18ec268b124c223c28216f9f3c17ef2fd4ee9cf4a1f0baae2d7",
+    "stderr.log.gz": "85ef1d0157805d9011ed3fa76b4cb2aae1b9875d6ce085e7c01e06c0eff671b8",
     "stdout.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
   },
   "raw_stream_sha256": {
-    "stderr": "08e13cdde50d686c5a42274a36d9cab680efbda997e588674ad810b6d2eae2ad",
+    "stderr": "3b70076ccf3ca4809df4ea3d095c17a73d863df2e1c481cd8662da6e253276c5",
     "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   "replay": {
@@ -43,7 +43,7 @@
     "minimized_artifact_sha256": null,
     "required": false
   },
-  "root_lock_sha256": "19cf0dd3144adc689fab4ea663c85af4336d83700f8c17553de17632098a9bb8",
+  "root_lock_sha256": "4bd633479b8b3329d39db50f75e09bf882665a1eae1d876b76452f88b90e7422",
   "sanitizer": "address",
   "schema": "tl-v4.libfuzzer-campaign/v1",
   "scope": "bounded observation; no four-crate V4 or correctness claim",
@@ -53,7 +53,7 @@
     "malformed": "842fbc236383d8e62b60e6da88ed0fa3d8e7116c700162b05dfb6d1e1b078ed6",
     "until-lower-bound": "2479f5171261480903b24ca68113f209abd2f674228ccf8afe73b16fecb7058e"
   },
-  "source_revision": "ec95bbbc37f813b2ad0c2ff78d0a113d8afa83d5",
+  "source_revision": "fcfaa8561fb306c50e07e0b8b68b280fdce9c873",
   "starting_corpus_sha256": "8adb923a29a2d010e625634f2eff5323a904048f283a78edc3742602dcd33a8f",
   "status": "bounded_no_crash",
   "target": "closed_eval",
