@@ -1,4 +1,4 @@
-"""FR-047/TC-183–184: native V5 population and fault controls."""
+"""Native V5 population and fault controls for FR-047 and TC-183/184."""
 
 from __future__ import annotations
 
@@ -43,8 +43,8 @@ def fixture() -> tuple[list[dict], list[dict], dict, list[dict]]:
 
 
 class V5MutationTests(unittest.TestCase):
-    # TC-183: selected, viable, caught, missed, and not-run reconcile exactly.
     def test_completed_population_passes_only_at_declared_threshold(self) -> None:
+        """TC-183: selected, viable, caught, missed, and not-run reconcile exactly."""
         discovered, selected, native, reviews = fixture()
         result = v5.classify(discovered, selected, native, TAIL, reviews)
         self.assertEqual(result["status"], "passed")

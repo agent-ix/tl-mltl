@@ -200,7 +200,8 @@ audit-unsafe:
 .PHONY: spec
 spec:
 	$(QUIRE) validate --scope . 'spec/**/*.md'
-	$(QUIRE) coverage --scope . --strict
+	$(PYTHON) -m unittest discover -s scripts -p 'test_current_coverage.py'
+	$(PYTHON) scripts/check_current_coverage.py --quire "$(QUIRE)"
 	$(CI_GUARD) record spec
 
 .PHONY: msrv

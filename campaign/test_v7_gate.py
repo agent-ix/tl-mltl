@@ -1,4 +1,4 @@
-"""TC-187/188: V7 gate rejects stale, missing, and altered native evidence."""
+"""V7 gate rejects stale, missing, and altered native evidence (TC-187/188)."""
 
 from __future__ import annotations
 
@@ -43,6 +43,7 @@ class V7GateTests(unittest.TestCase):
                               self.root, self.graph, self.tools)
 
     def test_real_native_logs_reconcile_and_faults_fail(self) -> None:
+        """TC-187: bind the named embedded builds to retained native evidence."""
         population, artifacts = self.check()
         self.assertEqual((population["embedded_builds"], population["miri_tests"],
                           population["paired_edges"], population["refusal_only_edges"]),
