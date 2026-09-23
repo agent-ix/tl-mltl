@@ -607,10 +607,10 @@ fn main() {
                         origin_hazard: (matches!(
                             case.operator,
                             Operator::Historically | Operator::Triggered
-                        ) && case
-                            .interval
-                            .is_some_and(|(_, b)| position < (b as usize).saturating_mul(case.depth)))
-                            || (case.operator == Operator::Previous && position < case.depth),
+                        ) && case.interval.is_some_and(|(_, b)| {
+                            position < (b as usize).saturating_mul(case.depth)
+                        })) || (case.operator == Operator::Previous
+                            && position < case.depth),
                         tl,
                         oracle,
                         target: observed,
