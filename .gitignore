@@ -8,6 +8,9 @@ Cargo.lock.bak
 .vscode/
 
 target/
+fuzz/artifacts/
+fuzz/coverage/
+fuzz/target/
 *-target/
-target-*/
+/target-*/
 .worktrees/

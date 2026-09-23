@@ -16,6 +16,13 @@ cross-checked against upstream; tl-mltl neither depends on nor re-runs that
 parser. In this repository the manifest digest is `CORPUS_MANIFEST_SHA256` in
 `tests/future_interop.rs` (TC-081 through TC-083).
 
+`past-c2po-v1/target-4.2` retains one fresh C2PO/R2U2 4.2 exchange over six
+past expressions and three observed positions. The manifest pins source commit,
+compiler and executable identities, input and output bytes, and the exact
+commands. The test compares every retained target verdict to the independently
+computed past result at positions zero through two; R2U2's terminal flush at
+position three is preserved as raw output and carries no source observation.
+
 tl-mltl consumes the formula, profile, trace, horizon, and closed-verdict fields
 without changing their meaning. Evaluator-specific and external-monitor cases
 live in separate versioned manifests so the upstream corpus bytes remain

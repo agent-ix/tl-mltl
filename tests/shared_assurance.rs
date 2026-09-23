@@ -2243,11 +2243,12 @@ fn no_local_evidence_framework_remains() {
         // corpus/README.md and the retained corpus/r2u2-v4.2 exchange (35 - 25
         // = 10).
         // TL-211 adds the pinned past C2PO source corpus and its digest.
-        ("corpus", 12),
+        ("corpus", 17),
         // TL-170 adds examples/emit_shared_corpus_manifest.rs, the bridge
         // producer the chain driver reads its independent malformed-count
         // oracle from now that the manifest is no longer a vendored file.
         ("examples", 4),
+        ("fuzz", 13),
         ("scripts", 5),
         // 110 was measured before TL-180 added ADR-001 and SR-052 (2 files)
         // without moving this control, making 112. This campaign adds 8:
@@ -2282,7 +2283,7 @@ fn no_local_evidence_framework_remains() {
         // fixture's provenance. Neither was referenced by any remaining test
         // or source file (23 - 2 = 21). TL-65 adds tests/ci_guard.rs (22).
         // Stage 1 adds infinite, safety export, owner corpus, past mapping and pinned corpus replay tests.
-        ("tests", 27),
+        ("tests", 28),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2348,14 +2349,15 @@ fn no_local_evidence_framework_remains() {
     // plan/PLAN-009 bundle (15 files), for 261; the 0.3.0 release adds
     // CHANGELOG.md, for 262.
     // The V1 spec cycle adds 44 spec artifacts and two corpus files; Stage 1
-    // adds four source modules and five integration tests, for 317.
+    // adds four source modules and five integration tests, then five retained
+    // target exchange files, one fuzz-seed test, and 13 fuzz-lane files, for 336.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 317,
-        "the source census population changed from the reviewed 317 tracked files \
+        inspected, 336,
+        "the source census population changed from the reviewed 336 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

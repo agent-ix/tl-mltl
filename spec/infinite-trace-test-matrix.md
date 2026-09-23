@@ -9,9 +9,8 @@ relationships:
 
 # MLTL V1 infinite-trace provider test matrix
 
-These rows are planned and their stubs are deliberately red until TL-215 is
-accepted and implementation begins. The independent `tl-oracle` is dev-only
-and derives no semantics from the production provider.
+Implementation statuses below reflect only traced tests. Independent
+`tl-oracle` comparison rows remain planned until a persistent test lane lands.
 
 ## Functional Requirement Coverage
 
@@ -42,14 +41,14 @@ and derives no semantics from the production provider.
 | TC-147 | Check O/H origin and lower-bound semantics without backward loop wrap | Property | P0 | FR-031-AC-2 | 🚧 planned |
 | TC-148 | Check S/T/Y and mixed future/past nesting with independent origin-based oracle | Property | P0 | FR-031-AC-2 | 🚧 planned |
 | TC-149 | Check Boolean and temporal duals, bounded embedding, W/M lowering and TL `[a,)` to QSL `[a,*]` denotation correspondence | Property | P0 | FR-031-AC-3 | 🚧 planned |
-| TC-150 | Replay empty-prefix and nonempty-prefix lassos with exact loop-entry boundaries | Integration | P0 | FR-032-AC-1 | 🚧 planned |
+| TC-150 | Replay empty-prefix and nonempty-prefix lassos with exact loop-entry boundaries | Integration | P0 | FR-032-AC-1 | ✅ implemented |
 | TC-151 | Compare repeated loop observations and event-position mapping against an independent infinite-word oracle | Property | P0 | FR-032-AC-1 | 🚧 planned |
 | TC-152 | Admit every valid lasso under an empty fairness set and require infinite visits for each complete-value premise | Property | P0 | FR-032-AC-2 | 🚧 planned |
 | TC-153 | Filter shared partial completions before claim evaluation and show weakening fairness cannot remove an admitted trace | Property | P0 | FR-032-AC-2 | 🚧 planned |
 | TC-154 | Refuse foreign or malformed fairness/lasso identities and classify empty fair admission without vacuous proof | Integration | P0 | FR-032-AC-3 | 🚧 planned |
-| TC-155 | Separate trace-scoped proved/refuted/inconclusive possibilities and refuse one-lasso model proof | Property | P0 | FR-033-AC-1 | 🚧 planned |
+| TC-155 | Separate trace-scoped proved/refuted/inconclusive possibilities and refuse one-lasso model proof | Property | P0 | FR-033-AC-1 | ✅ implemented |
 | TC-156 | Validate witness and counterexample details against the admitted completion and full loop | Integration | P0 | FR-033-AC-1 | 🚧 planned |
-| TC-157 | Refute only continuation-invariant finite-prefix safety violations and never prove liveness from a prefix | Property | P0 | FR-033-AC-2 | 🚧 planned |
+| TC-157 | Refute only continuation-invariant finite-prefix safety violations and never prove liveness from a prefix | Property | P0 | FR-033-AC-2 | ✅ implemented |
 | TC-158 | Map unsupported and both failed execution dispositions to the exact FR-341 axes without a Boolean fallback | Integration | P0 | FR-033-AC-3 | 🚧 planned |
 | TC-159 | Mutate each identity and limit axis at and one over bound; verify deterministic results and checked arithmetic | Property | P0 | FR-034-AC-1, FR-034-AC-2, FR-034-AC-3 | 🚧 planned |
 
@@ -59,4 +58,4 @@ The local campaign records source revisions, toolchain, feature tree, corpus
 manifest digest, generated seed and accepted/discarded populations, oracle
 revision, limit settings and actual result bytes. A provider result does not
 qualify itself as its own oracle. TL-215 human acceptance is the predecessor
-for turning these planned rows into implementation tests.
+for deciding whether the remaining planned rows have qualifying evidence.
