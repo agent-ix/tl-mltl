@@ -39,11 +39,12 @@ def exact_source(path: Path, revision: str) -> None:
         raise ValueError(f"source restoration is dirty: {path}")
 
 
-def native_archive(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def native_archive(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     with tarfile.open(path, "r:gz") as archive:
         names = set(archive.getnames())
         for required in ("mutants.out/outcomes.json", "mutants.out/mutants.json",
-                         "mutants.out/log/baseline.log"):
+                         "mutants.out/log/baseline.log", "restored_control.json",
+                         "restored_control.stdout", "restored_control.stderr"):
             if required not in names:
                 raise ValueError(f"native archive lacks {required}")
         def read(name: str) -> bytes:
@@ -54,12 +55,13 @@ def native_archive(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
 
         outcomes = json.loads(read("mutants.out/outcomes.json"))
         selected = json.loads(read("mutants.out/mutants.json"))
+        restored = json.loads(read("restored_control.json"))
         for outcome in outcomes["outcomes"]:
             for field in ("log_path", "diff_path"):
                 relative = outcome.get(field)
                 if relative and f"mutants.out/{relative}" not in names:
                     raise ValueError(f"missing native {field}: {relative}")
-        return outcomes, selected
+        return outcomes, selected, restored
 
 
 def classify(
@@ -169,6 +171,17 @@ def exact_selection(discovered: list[dict[str, Any]], selected: list[dict[str, A
         raise ValueError("native selected mutants differ from fixed discovery filter")
 
 
+def verify_restored_control(restored: dict[str, Any], revision: str,
+                            test_tail: list[str]) -> None:
+    if restored.get("source_revision") != revision:
+        raise ValueError("restored control source revision differs")
+    if restored.get("argv") != ["cargo", "test", "--locked", "--all-features",
+                                *test_tail]:
+        raise ValueError("restored control test selection differs")
+    if restored.get("exit_code") != 0:
+        raise ValueError("restored green control failed")
+
+
 def report(manifest: dict[str, Any], base: Path) -> dict[str, Any]:
     if manifest.get("schema") != "tl-mltl.v5-mutation-manifest/v1":
         raise ValueError("wrong V5 manifest schema")
@@ -187,7 +200,8 @@ def report(manifest: dict[str, Any], base: Path) -> dict[str, Any]:
             raise ValueError(f"{crate}: stale discovery bytes")
         if digest(archive_bytes) != entry["archive_sha256"]:
             raise ValueError(f"{crate}: stale native archive bytes")
-        native, selected = native_archive(archive_path)
+        native, selected, restored = native_archive(archive_path)
+        verify_restored_control(restored, entry["source_revision"], entry["test_tail"])
         discovered = json.loads(discovery_bytes)
         exact_selection(discovered, selected, entry["source_file"], entry["selection_regex"])
         outcome = classify(discovered, selected, native,

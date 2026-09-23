@@ -103,6 +103,17 @@ class V5MutationTests(unittest.TestCase):
         self.assertEqual(argv[argv.index("--re") + 1], "evaluate_lasso")
         with self.assertRaisesRegex(ValueError, "must be fixed"):
             v5_run.command("src/infinite/mod.rs", "", Path("raw"), TAIL)
+        restored_argv = v5_run.restored_control_command(TAIL)
+        self.assertEqual(restored_argv, ["cargo", "test", "--locked", "--all-features", *TAIL])
+        restored = {"source_revision": "a" * 40, "argv": restored_argv, "exit_code": 0}
+        v5.verify_restored_control(restored, "a" * 40, TAIL)
+        with self.assertRaisesRegex(ValueError, "source revision differs"):
+            v5.verify_restored_control(restored, "b" * 40, TAIL)
+        with self.assertRaisesRegex(ValueError, "test selection differs"):
+            v5.verify_restored_control(restored | {"argv": restored_argv[:-1]},
+                                       "a" * 40, TAIL)
+        with self.assertRaisesRegex(ValueError, "green control failed"):
+            v5.verify_restored_control(restored | {"exit_code": 1}, "a" * 40, TAIL)
 
 
 if __name__ == "__main__":

@@ -23,6 +23,12 @@ def command(source_file: str, expression: str, output: Path, tail: list[str]) ->
             "--jobs", "1", "--", *tail]
 
 
+def restored_control_command(tail: list[str]) -> list[str]:
+    if not tail:
+        raise ValueError("restored control requires the fixed test selection")
+    return ["cargo", "test", "--locked", "--all-features", *tail]
+
+
 def add_bytes(archive: tarfile.TarFile, name: str, data: bytes) -> None:
     member = tarfile.TarInfo(name)
     member.size = len(data)
@@ -53,6 +59,10 @@ def run_one(entry: dict[str, Any], output: Path) -> dict[str, Any]:
                    entry["test_tail"])
     process = subprocess.run(argv, cwd=source, env=environment, capture_output=True)
     v5.exact_source(source, revision)
+    control_argv = restored_control_command(entry["test_tail"])
+    restored = subprocess.run(control_argv, cwd=source, env=environment,
+                              capture_output=True)
+    v5.exact_source(source, revision)
     native_path = raw_output / "mutants.out"
     if not native_path.is_dir():
         raise ValueError(f"{crate}: cargo-mutants emitted no native output")
@@ -61,12 +71,21 @@ def run_one(entry: dict[str, Any], output: Path) -> dict[str, Any]:
         archive.add(native_path, arcname="mutants.out")
         add_bytes(archive, "invocation.stdout", process.stdout)
         add_bytes(archive, "invocation.stderr", process.stderr)
+        add_bytes(archive, "restored_control.stdout", restored.stdout)
+        add_bytes(archive, "restored_control.stderr", restored.stderr)
+        add_bytes(archive, "restored_control.json", json.dumps({
+            "argv": control_argv,
+            "exit_code": restored.returncode,
+            "source_revision": revision,
+        }, sort_keys=True).encode())
         add_bytes(archive, "invocation.json", json.dumps({
             "discovery_command": discovery_command,
             "mutation_command": argv,
             "exit_code": process.returncode,
             "source_revision": revision,
         }, sort_keys=True).encode())
+    if restored.returncode != 0:
+        raise ValueError(f"{crate}: restored green control failed")
     return {
         "crate": crate,
         "source_path": str(source),
