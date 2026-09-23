@@ -397,6 +397,8 @@ fn fairness_filters_completions_without_vacuous_proof() {
     let result = run(&graph, &unfair, 0, Some(&fairness));
     assert_eq!(result.disposition, Disposition::Inconclusive);
     assert_eq!(result.reason, Some(ResultReason::EmptyFairAdmission));
+    assert_eq!(result.basis, EvidenceBasis::Pending);
+    assert_eq!(result.uncertainty, None);
     assert!(result.evidence.is_none());
 }
 
@@ -422,6 +424,63 @@ fn model_and_identity_refusals_keep_their_scope() {
         limit: EvaluationLimit::default(),
     });
     assert!(matches!(bad, Err(InfiniteError::IdentityMismatch)));
+}
+
+// Trace: TC-139; FR-028-AC-1, FR-028-AC-2
+#[test]
+fn lasso_refuses_each_identity_axis_independently() {
+    let graph = formula(0, vec![node(K::True)]);
+    let lasso = trace(&[], &[ObservationValue::True]);
+    let graph_id = graph.content_identity().unwrap();
+    let trace_id = lasso.content_identity().unwrap();
+    for (requested_graph, requested_trace) in [
+        ("wrong-graph", trace_id.as_str()),
+        (graph_id.as_str(), "wrong-trace"),
+    ] {
+        assert!(matches!(
+            evaluate_lasso(&LassoRequest {
+                formula: &graph,
+                trace: &lasso,
+                fairness: None,
+                evidence_closure: EvidenceClosure::Closed,
+                graph_id: requested_graph,
+                trace_id: requested_trace,
+                selected_position: 0,
+                limit: EvaluationLimit::default(),
+            }),
+            Err(InfiniteError::IdentityMismatch)
+        ));
+    }
+}
+
+// Trace: TC-152; FR-032-AC-1
+#[test]
+fn lasso_refuses_fairness_from_a_different_graph() {
+    let graph = formula(0, vec![node(K::True)]);
+    let other_graph = formula(0, vec![node(K::False)]);
+    let fairness = FairnessPremisesDocument::new(
+        &other_graph,
+        other_graph.content_identity().unwrap(),
+        InfiniteClock::EventPosition,
+        vec![NodeId(0)],
+    )
+    .unwrap();
+    let lasso = trace(&[], &[ObservationValue::True]);
+    let graph_id = graph.content_identity().unwrap();
+    let trace_id = lasso.content_identity().unwrap();
+    assert!(matches!(
+        evaluate_lasso(&LassoRequest {
+            formula: &graph,
+            trace: &lasso,
+            fairness: Some(&fairness),
+            evidence_closure: EvidenceClosure::Closed,
+            graph_id: &graph_id,
+            trace_id: &trace_id,
+            selected_position: 0,
+            limit: EvaluationLimit::default(),
+        }),
+        Err(InfiniteError::IdentityMismatch)
+    ));
 }
 
 // Trace: TC-139; FR-028-AC-1 and FR-028-AC-2
