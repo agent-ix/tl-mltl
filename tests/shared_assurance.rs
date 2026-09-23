@@ -2256,7 +2256,9 @@ fn no_local_evidence_framework_remains() {
         ("fuzz", 45),
         // Criterion inputs and runner for the V9 evaluator workloads.
         ("benches", 3),
-        ("scripts", 5),
+        // The current-only Quire coverage adapter and its fault controls
+        // preserve superseded history while exposing live release gaps.
+        ("scripts", 7),
         // 110 was measured before TL-180 added ADR-001 and SR-052 (2 files)
         // without moving this control, making 112. This campaign adds 8:
         // corpus-campaign.md, corpus-campaign-test-matrix.md, the documents
@@ -2364,13 +2366,15 @@ fn no_local_evidence_framework_remains() {
     // integration tests for infinite and finite/past profiles, for 342. The
     // V1 campaign runner, manifest builder, tests and instructions bring this
     // to 346. The V2 finite partition integration test brings this to 347.
+    // The current-coverage adapter and its fault controls add two scripts,
+    // bringing the reviewed population to 441.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 439,
-        "the source census population changed from the reviewed 439 tracked files \
+        inspected, 441,
+        "the source census population changed from the reviewed 441 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
