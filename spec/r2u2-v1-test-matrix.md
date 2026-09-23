@@ -14,7 +14,7 @@ requiring broader qualification remain planned.
 
 ## Functional Requirement Coverage
 
-| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| Functional Req | Acceptance Criteria | Test Cases | Status |
 |---|---|---|---|
 | FR-038 | FR-038-AC-1 through FR-038-AC-3 | TC-160 through TC-164 | 🚧 planned |
 | FR-039 | FR-039-AC-1 through FR-039-AC-2 | TC-165 through TC-167 | 🚧 planned |

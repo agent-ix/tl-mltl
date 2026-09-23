@@ -1,7 +1,7 @@
 {
   "schema_version": "tl-mltl.assurance-pins/v1",
   "purpose": "The Engineering Assurance release this repository adopts, and the artifacts it actually reads from that release. Component version pins are NOT restated here: the packaged compatibility matrix is their authority and a second copy would drift from it.",
-  "matrix_authority": "engineering_assurance/compatibility-matrix.json in the installed distribution. scripts/check_shared_pins.py observes the local toolchain and delegates every verdict to engineering_assurance.compatibility.",
+  "matrix_authority": "compatibility-matrix.json embedded in the pinned engineering-assurance CLI. scripts/check_shared_pins.py observes the local toolchain and delegates every verdict to the native engineering-assurance compatibility command.",
   "registry": "Every npm component resolves from the public npm registry (registry.npmjs.org). The internal npm.ix mirror must not appear in any requirement, pin, lockfile, or .npmrc, and is not an oracle for whether a release landed. Querying an @agent-ix package needs --@agent-ix:registry=https://registry.npmjs.org; a bare --registry does not override the scoped .npmrc entry.",
   "engineering_assurance": {
     "version": "0.3.2",
@@ -22,13 +22,8 @@
     "why": "TL-192: the packaged compatibility matrix authoritative for this repository's pin (matrix_authority above) classified ix-flow strictly at the exact pinned version, so a locally-installed 0.2.3 against a v0.2.0 matrix pinning 0.0.4 classified as unknown, not compatible, and failed the local qualification gate. engineering-assurance v0.2.1 (release: accept ix-flow 0.2.3 matrix, agent-ix/engineering-assurance#47) re-pins the matrix to ix-flow 0.2.3 with human acceptance recorded (accepted_by Peter Krenesky, accepted_at 2026-09-10, after the local TC-107 gate passed against public ix-flow 0.2.3). At TL-192, this repository's engineering_assurance pin moved from v0.2.0 to v0.2.1 so the workflow literal and the matrix authority agreed; the then-current quire-cli and quoin versions were unchanged by that historical bump."
   },
   "stage1_ea_adoption": "This candidate moves the active assurance lane to the reviewed Engineering Assurance 0.3.2 matrix, Quire CLI 0.33.0 (engine 0.47.1), and Quoin 0.24.1 while retaining ix-flow 0.2.3. The matrix is the only compatibility authority. The V1 campaign AP-002/MP-007 records the source-bound eleven-milestone release measurement; Quoin 0.24.1 has no independent measurement-verdict checker, so AP-002 recommends rather than requires checker promotion, while the executable campaign gate still requires eleven passes. This migration is not a release claim until the matrix has named human acceptance and v0.3.2 is tagged.",
-  "consumed_artifacts_note": "Every digest-bearing entry here belonged to the compatibility view, which is deleted (issue #16). This repository now reads exactly one file out of the pinned distribution, and that file deliberately carries no local digest, so artifact_digest_mismatches currently has an empty population. Recorded as UNKNOWN-consumed-artifact-digests-now-vacuous in change-assurance.json rather than concealed by keeping digests for files nobody reads.",
-  "consumed_artifacts": [
-    {
-      "path": "compatibility-matrix.json",
-      "why": "The authority on which component versions are pinned. Deliberately carries no digest here: it is expected to advance as the matrix is re-accepted, and pinning its bytes locally would make this repository a second acceptance authority."
-    }
-  ],
+  "consumed_artifacts_note": "The pinned native CLI embeds and classifies the compatibility matrix. This repository consumes its structured result through the CLI protocol and reads no separate file from the Engineering Assurance Python distribution. Artifact digest checks therefore have an empty population; the tagged CLI and its named matrix acceptance are the authority. The prior reduction in digest-bearing file consumers remains recorded in change-assurance.json.",
+  "consumed_artifacts": [],
   "upstream_dependency": {
     "component": "tl-syntax",
     "compiled_revision": "9de638dc4d14d0ae62a6825473a3a9bb6a9e57ac",

@@ -15,7 +15,7 @@ relationships:
 
 ## Functional Requirement Coverage
 
-| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| Functional Req | Acceptance Criteria | Test Cases | Status |
 |---|---|---|---|
 | FR-008 | FR-008-AC-1 through FR-008-AC-5 | TC-091 through TC-097, TC-099, TC-101 | ⛔ superseded by MRS-004 |
 | FR-009 | FR-009-AC-1 through FR-009-AC-6 | TC-098, TC-099, TC-101, TC-102 | ⛔ superseded by MRS-004 |

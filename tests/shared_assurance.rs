@@ -1054,12 +1054,35 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         report["upstream_pin_mismatches"]
     );
 
-    // Acceptance is reported and never gated on: the pinned release records
-    // `pending_human_acceptance` and ships no predicate for it
-    // (agent-ix/engineering-assurance#20). Reading an absent field as approval,
-    // in either direction, is the mistake this asserts against.
+    // Acceptance comes from the pinned native classifier, never from this
+    // repository. A pending matrix is a withheld gate, even if its versions
+    // are compatible.
     assert_eq!(report["acceptance_recorded_here"], false);
-    assert!(report["acceptance_state"].is_string());
+    assert_eq!(report["acceptance_state"], "accepted");
+
+    // The native EA classifier is the authority for rejected versions as
+    // well as accepted ones. The historical Quoin 0.22.5 pin must still
+    // withhold the gate after matrix acceptance.
+    let (code, stdout, stderr) = run(
+        &python,
+        &[
+            "-c",
+            "import json,sys;sys.path.insert(0,'scripts');\
+             import check_shared_pins as m;\
+             print(json.dumps(m.classify_with_ea({'quire-cli':'0.33.0',\
+             'quoin':'0.22.5','ix-flow':'0.2.3',\
+             'engineering-assurance':'0.3.2'})))",
+        ],
+    );
+    assert_eq!(code, 0, "negative classifier probe failed: {stderr}");
+    let negative: Value = serde_json::from_str(stdout.trim()).unwrap();
+    assert_eq!(negative["versions_compatible"], false);
+    assert_eq!(negative["gate_satisfied"], false);
+    assert!(negative["components"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|row| { row["component"] == "quoin" && row["verdict"] == "incompatible" }));
 
     // The mirror check must be seen to refuse. Without this it is indistinguishable
     // from a check that matches nothing.

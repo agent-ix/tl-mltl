@@ -14,7 +14,7 @@ under `spec/stubs/` do not count as executed coverage.
 
 ## Functional Requirement Coverage
 
-| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| Functional Req | Acceptance Criteria | Test Cases | Status |
 |---|---|---|---|
 | FR-043 | FR-043-AC-1 through FR-043-AC-2 | TC-175, TC-176 | 🚧 planned |
 | FR-044 | FR-044-AC-1 through FR-044-AC-2 | TC-177, TC-178 | 🚧 planned |
