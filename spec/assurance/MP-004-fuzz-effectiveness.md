@@ -5,16 +5,20 @@ type: MeasurementPlan
 status: proposed
 owner: tl-verification-campaign-owner
 metric: tl.fuzz-effectiveness
-definition_version: tl-mltl.fuzz-effectiveness/v1
+definition_version: tl-mltl.fuzz-effectiveness/v2
 stage: baseline
+objective:
+  direction: zero
 statistical_design:
   population: every reviewed Fuzz-kind target selected from applicable FR-020 obligations at exact source and instrumentation identities
   sampling: three distinct seeds per target under tl-mltl.fuzz-baseline/v1, each capped at 900 target-execution seconds and 1000000 executed inputs with the first stopping condition controlling
   repetitions: 3
-  estimator: per-target feature growth, plateau classification, corpus change, and independently reproducible crash counts with every stopping/result state reported separately
+  estimator: count
   error_model: stochastic seed sensitivity, generator/harness bias, unstable instrumentation, counter reset, build or replay contamination, timeout/resource failure, corpus corruption, and irreproducible crashes
   uncertainty: report all repetitions and their exact environments; feature identities compare only within one instrumentation identity and no no-crash probability or confidence interval is inferred
-  decision_rule: retain crashes as remediation work and use a valid plateau only to prioritize seed or bounded-analysis review; refuse an effectiveness claim when any required run, budget, snapshot, identity, or artifact is missing
+  decision_rule:
+    comparator: eq
+    threshold: 0
 relationships:
   - target: ix://agent-ix/tl-mltl/FR-021
     type: measures
@@ -52,9 +56,15 @@ represent the actual artifacts and execution.
 
 ## Interpretation
 
-Compare exact feature identity sets or stable bitmap identities only inside one
-instrumentation identity; a count alone is insufficient. Report each
+`statistical_design.decision_rule` evaluates only the count of required runs,
+budgets, snapshots, identities, or artifacts missing from the campaign record;
+it holds -- and an effectiveness claim may be made -- only when that count is
+exactly zero. Feature growth, plateau classification, corpus change, and
+crash counts remain descriptive and are never the evaluated quantity: compare
+exact feature identity sets or stable bitmap identities only inside one
+instrumentation identity, since a count alone is insufficient. Report each
 seed, raw stop, corpus, crash, and limitation before any summary. A plateau is
 only the FR-021 final-window observation and can justify review of a different
 seed strategy or bounded method; no-crash and plateau states remain
-non-authoritative.
+non-authoritative and reproducible crashes are retained as remediation work
+regardless of the decision rule's outcome.

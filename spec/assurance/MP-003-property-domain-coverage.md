@@ -5,16 +5,20 @@ type: MeasurementPlan
 status: proposed
 owner: tl-verification-campaign-owner
 metric: tl.property-domain-grounding
-definition_version: tl-mltl.property-domain-grounding/v1
+definition_version: tl-mltl.property-domain-grounding/v2
 stage: gate
+objective:
+  direction: higher
 statistical_design:
   population: every criterion in the exact tl-mltl Quire property export, classified as applicable, excluded, or blocked
   sampling: complete criterion census; each applicable finite-exhaustive domain is fully enumerated and each generated domain uses three declared seeds and its predeclared accepted-case budget
   repetitions: 1
-  estimator: completely grounded applicable criteria divided by all applicable criteria, with per-domain accepted, discarded, class, failure, and shrink populations reported separately
+  estimator: proportion
   error_model: omitted or stale criteria, classifier overreach, vacuous preconditions, self-oracling, correlated derivation faults, generator bias, excessive discards, incomplete enumeration, and irreproducible shrinking
   uncertainty: finite exhaustive domains have no sampling interval; generated runs expose seed and class variation and make no probability-of-correctness estimate
-  decision_rule: block advancement of an applicable row when its grounding, discriminating oracle control, finite budget, execution record, or limitation is incomplete
+  decision_rule:
+    comparator: ge
+    threshold: 1
 relationships:
   - target: ix://agent-ix/tl-mltl/FR-020
     type: measures
