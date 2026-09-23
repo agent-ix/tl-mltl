@@ -2236,7 +2236,7 @@ fn no_local_evidence_framework_remains() {
         (".github", 3),
         ("assurance", 3),
         // V1 campaign runner, manifest builder, fault tests, and instructions.
-        ("campaign", 4),
+        ("campaign", 6),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2252,7 +2252,7 @@ fn no_local_evidence_framework_remains() {
         // producer the chain driver reads its independent malformed-count
         // oracle from now that the manifest is no longer a vendored file.
         ("examples", 4),
-        ("fuzz", 16),
+        ("fuzz", 19),
         ("scripts", 5),
         // 110 was measured before TL-180 added ADR-001 and SR-052 (2 files)
         // without moving this control, making 112. This campaign adds 8:
@@ -2366,8 +2366,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 350,
-        "the source census population changed from the reviewed 350 tracked files \
+        inspected, 355,
+        "the source census population changed from the reviewed 355 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

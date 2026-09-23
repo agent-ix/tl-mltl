@@ -15,6 +15,8 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+from v4_fuzz import verify_four
+
 SOURCE_NAMES = ("tl-syntax", "tl-parse", "tl-rewrite", "tl-mltl", "tl-oracle")
 # Every milestone names an executable lane. Additional campaign lanes can be
 # recorded independently, but cannot replace these required gates.
@@ -91,20 +93,22 @@ COMMAND_CONTRACTS = {
         "--test", "v11_lasso_partition", "--", "--nocapture",
     ]),
 }
+NATIVE_CONTRACTS = {
+    "fuzz_replay": "four_source_pinned_libfuzzer_reports_and_raw_streams",
+}
 # A gate without a native output parser and exact invocation is intentionally
 # open. Extend COMMAND_CONTRACTS together with classify() and fault tests when
 # its producer emits a machine-checkable population; do not credit prose or a
 # copied success exit code.
 UNSUPPORTED_GATE_REASONS = {
     "full_domain_census": "depth_three_interval_0_4_trace_1_6_population_not_run",
-    "fuzz_replay": "no_four_crate_fuzz_population_output",
     "mutation_population": "no_reviewed_mutant_population_parser",
     "bounded_proof": "no_bound_and_unwind_parser",
     "embedded_miri_limits": "no_combined_target_miri_limit_parser",
     "coverage": "no_four_crate_branch_coverage_parser",
     "performance": "no_four_crate_paired_benchmark_parser",
 }
-assert set(COMMAND_CONTRACTS) | set(UNSUPPORTED_GATE_REASONS) == {
+assert set(COMMAND_CONTRACTS) | set(NATIVE_CONTRACTS) | set(UNSUPPORTED_GATE_REASONS) == {
     item for ids in REQUIRED.values() for item in ids
 }
 MEASUREMENT_LANES = {
@@ -602,6 +606,15 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
         return base | {"status": "not_run", "reason": lane.get("reason", "not_invoked")}, {}
     if mode == "blocked":
         return base | {"status": "blocked", "reason": lane["reason"]}, {}
+    if mode == "native":
+        if (lane_id not in NATIVE_CONTRACTS or set(lane) != {
+                "id", "milestone", "mode", "seed"}
+                or seed != {"kind": "fixed", "value": 181}):
+            return base | {"status": "incomplete",
+                           "reason": "unregistered_native_gate"}, {}
+        status, population, raw = verify_four(graph)
+        return base | {"status": status, "population": population,
+                       "parser": "v4_fuzz_raw_reconciliation"}, raw
     parser = lane["parser"]
     if mode == "command":
         repo = lane["repo"]
@@ -770,6 +783,8 @@ def build_report(manifest: dict, raw_dir: Path) -> dict:
                      "parser": COMMAND_CONTRACTS[lane_id][1],
                      "argv": COMMAND_CONTRACTS[lane_id][2]}
                     if lane_id in COMMAND_CONTRACTS else
+                    {"kind": "native", "identity": NATIVE_CONTRACTS[lane_id]}
+                    if lane_id in NATIVE_CONTRACTS else
                     {"kind": "unsupported", "reason": UNSUPPORTED_GATE_REASONS[lane_id]}
                 )
                 for lane_id in required_ids
