@@ -1675,48 +1675,18 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 230 is every row this repository declares: 126 requirement criteria, 96
-    // test-matrix rows across the three TestMatrix documents, and 8
-    // suite-registry rows. Naming the population matters — "matrix rows" would
-    // be wrong, because criteria and the authored suite registry are separate
-    // declarations. SUITE-001 and SUITE-002 are the two intentionally
-    // non-runnable registry rows; their exact absence and every other suite's
-    // binding are checked directly below.
-    //
-    // This pair was `118`/`116` and had drifted from the tree it measures:
-    // FR-027 through FR-029 (#72) and this campaign's FR-008 through FR-010 and
-    // the NFR-004 criteria are all declared-but-unimplemented, so `backed` has
-    // not equalled `total` since #72 landed and the old `116` could not hold.
-    // The numbers now record the measurement rather than an aspiration:
-    //   71 pre-campaign criteria + 18 M4 criteria (FR-008 5, FR-009 6,
-    //   FR-010 4, NFR-004 3) + 29 M5 criteria (FR-020 through FR-024 and the
-    //   three NFR-005 criteria) + 8 NFR-006 criteria (TL-65) = 126;
-    //   57 spec/test-matrix.md rows (TL-65 adds TC-130 through TC-137) + 13
-    //   spec/corpus-campaign-test-matrix.md rows + 26
-    //   spec/verification-effectiveness-test-matrix.md rows = 96;
-    //   8 suite rows.
-    // Only TC rows are counted from a TestMatrix; its FR/NFR summary rows
-    // are not a separate declared population.
-    // `backed` is 119: the 105 measured before TL-65, plus NFR-006-AC-1
-    // through AC-7 and their TC-130 through TC-136 (14). Every campaign row is
-    // planned and deliberately unbacked, exactly as TM-002 declares, and the
-    // Inspection-verified NFR-006-AC-8 and TC-137 mint no source symbol. An unbacked row that is NOT one of those is a coverage
-    // regression, not a number to adjust here. (Requirement ids are kept off
-    // the start of these comment lines: Quire reads a line-leading id as a
-    // trace tag, and this test backs none of them.)
+    // V1 requirement and matrix authoring expands the exact Quire export to
+    // 347 declared rows; 166 have native trace backing at this source revision.
+    // Suite registry rows are included; the two intentionally non-runnable
+    // suites are checked separately below. An unbacked row is not counted as
+    // implemented merely because its requirement appears in the spec.
     assert_eq!(
-        totals["total"], 230,
-        "the declared-row population changed: {totals}. It is 126 requirement \
-         criteria + 96 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 347,
+        "the declared-row population changed: {totals}; review the exact Quire export."
     );
     assert_eq!(
-        totals["backed"], 119,
-        "backed-row count changed: {totals}. The unbacked population is exactly \
-         FR-018, FR-019, FR-027 through FR-029, the 18 planned M4 criteria, the 29 \
-         planned M5 criteria, the 13 planned TM-002 rows, the 26 planned TM-003 \
-         rows, the 6 planned or retired TC-085 through TC-090 rows, the \
-         Inspection-verified NFR-006-AC-8 and TC-137, and the two deliberately \
-         non-runnable suite rows."
+        totals["backed"], 166,
+        "backed-row count changed: {totals}; review the exact Quire export and trace tags."
     );
     // The aggregate alone cannot identify which suite rows are absent, so check
     // the registry's own claim directly: every suite except SUITE-001 and
@@ -2235,8 +2205,8 @@ fn no_local_evidence_framework_remains() {
         // .github/workflows/cla.yml, same CLA rollout.
         (".github", 3),
         ("assurance", 3),
-        // V1 campaign runner, manifest builder, fault tests, and instructions.
-        ("campaign", 8),
+        // V1 native campaign producers, raw gates, fault controls and instructions.
+        ("campaign", 40),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2253,6 +2223,8 @@ fn no_local_evidence_framework_remains() {
         // oracle from now that the manifest is no longer a vendored file.
         ("examples", 5),
         ("fuzz", 29),
+        // Criterion inputs and runner for the V9 evaluator workloads.
+        ("benches", 3),
         ("scripts", 5),
         // 110 was measured before TL-180 added ADR-001 and SR-052 (2 files)
         // without moving this control, making 112. This campaign adds 8:
@@ -2366,8 +2338,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 370,
-        "the source census population changed from the reviewed 370 tracked files \
+        inspected, 405,
+        "the source census population changed from the reviewed 405 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
