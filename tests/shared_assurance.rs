@@ -2295,7 +2295,7 @@ fn no_local_evidence_framework_remains() {
         // Stage 1 adds infinite, safety export, owner corpus, past mapping,
         // pinned corpus replay and public tl-oracle differential tests.
         // V2 adds one native finite production/oracle partition.
-        ("tests", 34),
+        ("tests", 35),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2369,14 +2369,15 @@ fn no_local_evidence_framework_remains() {
     // to 346. The V2 finite partition integration test brings this to 347.
     // The current-coverage adapter and its fault controls add two scripts,
     // bringing the reviewed population to 441. The external Cargo feature
-    // boundary control adds one script, bringing it to 442.
+    // boundary control adds one script, bringing it to 442; executable
+    // owner/CI inspection evidence adds one test, bringing it to 443.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 442,
-        "the source census population changed from the reviewed 442 tracked files \
+        inspected, 443,
+        "the source census population changed from the reviewed 443 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

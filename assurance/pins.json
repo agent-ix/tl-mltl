@@ -26,7 +26,7 @@
   "consumed_artifacts_note": "The pinned native CLI embeds and classifies the compatibility matrix. This repository consumes its structured result through the CLI protocol and reads no separate file from an EA Python distribution. The tagged CLI and its named matrix acceptance are the authority. Historical digest-consumer reductions remain recorded in change-assurance.json.",
   "upstream_dependency": {
     "component": "tl-syntax",
-    "compiled_revision": "b923fd4fdf2a2bafe66fe7d20f951e50bea2210f",
+    "compiled_revision": "66d012cb37508d9ed9e8a91b5b92ef440cbe81a7",
     "superseded_compiled_revisions": ["9de638dc4d14d0ae62a6825473a3a9bb6a9e57ac", "8bcbce984f7ec3d86a92f90d866e842cc98b39fb", "d52d89549b0a6c0c429261bab912cd5396c4a19e", "842d82553f045eb69a7f38745756d968254fc25e", "953ee825e5060335b4c79682f5f41a78c5a1bfae", "6ad7499f2ccc179bb33b2590666399c6632a7e3c", "1b3c4026ff9567491e87a19fdf2793d3b2e76160", "26b801d4a68ebfe720062cfdb3c66b070ab60e92", "8dc18eec5af227f484170362c9e8894b8531a27d", "e70f2379a752117c79682f5f41a78c5a1bfae", "75ebec8ec8d15dcdee3a821119ae3ceb18e61bb3", "5ced12e22917c56bb2ebd161a3e519cddf7a668a", "de37776a565d79bb4369956647026bd849908999", "d71d757bf696fa31878392cd1e6854ab4b95e740", "fed48a2fab3f5277131a7012e1a8d10993330cb1", "6d182fa90e22d0cfbd9aff3728f3de069b8aefd4", "9a4316e75d8fda6d50330d2211832c2607d6d62a"],
     "why": "The compiled pin is the exact Stage 1 tl-syntax 0.4.0 candidate revision. Its MIT-licensed unbounded formula owner and shared corpora supply the evaluator contracts. Cargo.toml, Cargo.lock, fuzz/Cargo.lock, src/lib.rs, and this record agree on the revision; the previous 9de638d revision is retained in the superseded list."
   },
