@@ -233,7 +233,7 @@ def verify_invocation(invocation: dict[str, Any], entry: dict[str, Any],
     ]
     if invocation.get("mutation_command") != mutation_command:
         raise ValueError("mutation test selection or output command differs")
-    expected_code = 2 if native["missed"] or native["timeout"] else 0
+    expected_code = 3 if native["timeout"] else (2 if native["missed"] else 0)
     if type(invocation.get("exit_code")) is not int or invocation["exit_code"] != expected_code:
         raise ValueError("mutation invocation exit code contradicts native outcomes")
 

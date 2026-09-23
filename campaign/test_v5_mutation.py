@@ -162,11 +162,15 @@ class V5MutationTests(unittest.TestCase):
             "exit_code": 2,
         }
         v5.verify_invocation(invocation, entry, archive, {"missed": 1, "timeout": 0})
+        v5.verify_invocation(invocation | {"exit_code": 3}, entry, archive,
+                             {"missed": 0, "timeout": 1})
         with self.assertRaisesRegex(ValueError, "exit code contradicts"):
             v5.verify_invocation(invocation | {"exit_code": -9}, entry, archive,
                                  {"missed": 1, "timeout": 0})
         with self.assertRaisesRegex(ValueError, "exit code contradicts"):
             v5.verify_invocation(invocation, entry, archive, {"missed": 0, "timeout": 0})
+        with self.assertRaisesRegex(ValueError, "exit code contradicts"):
+            v5.verify_invocation(invocation, entry, archive, {"missed": 0, "timeout": 1})
         with self.assertRaisesRegex(ValueError, "exit code contradicts"):
             v5.verify_invocation(invocation | {"exit_code": False}, entry, archive,
                                  {"missed": 0, "timeout": 0})
