@@ -29,7 +29,8 @@ def corpus_paths(repo: Path) -> list[Path]:
 def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                   v7_cargo_home: Path | None = None,
                   v8_cargo_home: Path | None = None,
-                  v5_selection: Path | None = None) -> dict:
+                  v5_selection: Path | None = None,
+                  v9_pair_dirs: list[Path] | None = None) -> dict:
     sources = {}
     inputs = {}
     for name in SOURCE_NAMES:
@@ -44,6 +45,10 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
         selected = v5_selection.resolve()
         inputs["v5_selection"] = {"path": str(selected),
                                   "sha256": sha256(selected.read_bytes())}
+    for index, pair in enumerate(v9_pair_dirs or []):
+        path = pair.resolve() / "pair.json"
+        inputs[f"v9_pair_{index}"] = {"path": str(path.resolve()),
+                                      "sha256": sha256(path.read_bytes())}
     lanes = []
     for milestone, lane_ids in REQUIRED.items():
         for lane_id in lane_ids:
@@ -65,6 +70,8 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                 continue
             if lane_id == "mutation_population" and v5_selection is None:
                 continue
+            if lane_id == "performance" and not v9_pair_dirs:
+                continue
             repo, parser, argv = COMMAND_CONTRACTS[lane_id]
             lane = {
                 "id": lane_id, "milestone": milestone, "mode": "command",
@@ -83,6 +90,10 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                 lane["selection_path"] = str(v5_selection.resolve())
                 lane["timeout_seconds"] = 7200
                 lane["seed"] = {"kind": "none", "reason": "fixed_mutant_selection"}
+            if lane_id == "performance":
+                lane["pair_dirs"] = [str(path.resolve()) for path in v9_pair_dirs]
+                lane["timeout_seconds"] = 600
+                lane["seed"] = {"kind": "none", "reason": "fixed_criterion_pairs"}
             lanes.append(lane)
     return {
         "schema": "tl-mltl.v1-campaign-manifest/v1",
@@ -112,9 +123,14 @@ def main() -> None:
         "--v5-selection", type=Path,
         help="Opt into fresh four-crate mutation with a fixed source-pinned selection JSON",
     )
+    parser.add_argument(
+        "--v9-pair-dir", type=Path, action="append", default=[],
+        help="Include one retained same-host baseline/candidate Criterion pair",
+    )
     args = parser.parse_args()
     manifest = make_manifest(args.repos_root, args.live_r2u2_source,
-                             args.v7_cargo_home, args.v8_cargo_home, args.v5_selection)
+                             args.v7_cargo_home, args.v8_cargo_home, args.v5_selection,
+                             args.v9_pair_dir)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
 

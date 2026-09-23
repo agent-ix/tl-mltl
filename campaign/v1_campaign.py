@@ -20,6 +20,7 @@ from v6_kani import run_v6
 import v7_gate
 import v8_gate
 import v5_gate
+import v9_gate
 
 SOURCE_NAMES = ("tl-syntax", "tl-parse", "tl-rewrite", "tl-mltl", "tl-oracle")
 # Every milestone names an executable lane. Additional campaign lanes can be
@@ -86,6 +87,9 @@ COMMAND_CONTRACTS = {
     "coverage": ("tl-mltl", "v8_native", [
         sys.executable, "campaign/v8_coverage.py",
     ]),
+    "performance": ("tl-mltl", "v9_native", [
+        sys.executable, "campaign/v9_criterion.py", "report",
+    ]),
     "infinite_oracle": ("tl-mltl", "cargo_test", [
         "cargo", "test", "--locked", "--offline", "--features", "infinite-trace",
         "--test", "infinite_oracle",
@@ -116,7 +120,6 @@ NATIVE_CONTRACTS = {
 # copied success exit code.
 UNSUPPORTED_GATE_REASONS = {
     "full_domain_census": "depth_three_interval_0_4_trace_1_6_population_not_run",
-    "performance": "no_four_crate_paired_benchmark_parser",
 }
 assert set(COMMAND_CONTRACTS) | set(NATIVE_CONTRACTS) | set(UNSUPPORTED_GATE_REASONS) == {
     item for ids in REQUIRED.values() for item in ids
@@ -658,6 +661,8 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
         v8_report_path = None
         v5_output_dir = None
         v5_selection_path = None
+        v9_report_path = None
+        v9_pair_dirs = None
         executed_argv = argv
         if lane_id == "live_r2u2":
             target_source = lane.get("target_source")
@@ -726,6 +731,31 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
                 return base | {"status": "incomplete", "reason": "v5_raw_dir_not_empty"}, {}
             executed_argv = argv + ["--selection", str(v5_selection_path),
                                     "--output-dir", str(v5_output_dir.resolve())]
+        if lane_id == "performance":
+            pairs = lane.get("pair_dirs")
+            if (not isinstance(pairs, list) or not pairs or
+                    any(not isinstance(path, str) or not Path(path).is_absolute()
+                        for path in pairs)):
+                return base | {"status": "blocked", "reason": "v9_pair_dirs_required"}, {}
+            v9_pair_dirs = [Path(path).resolve() for path in pairs]
+            if len(set(v9_pair_dirs)) != len(v9_pair_dirs):
+                return base | {"status": "incomplete", "reason": "v9_duplicate_pair"}, {}
+            for index, path in enumerate(v9_pair_dirs):
+                pair_file = path / "pair.json"
+                try:
+                    pair_digest = sha256(pair_file.read_bytes())
+                except OSError:
+                    return base | {"status": "blocked", "reason": "v9_pair_unreadable"}, {}
+                if inputs.get(f"v9_pair_{index}") != {
+                    "path": str(pair_file.resolve()), "sha256": pair_digest,
+                }:
+                    return base | {"status": "incomplete", "reason": "v9_pair_not_pinned"}, {}
+            v9_report_path = raw_dir / "performance-native.json"
+            if v9_report_path.exists():
+                return base | {"status": "incomplete", "reason": "v9_report_path_not_empty"}, {}
+            executed_argv = argv + [piece for path in v9_pair_dirs
+                                    for piece in ("--pair-dir", str(path))] + [
+                                        "--output", str(v9_report_path.resolve())]
         try:
             result = subprocess.run(
                 executed_argv, cwd=graph[repo]["path"], capture_output=True,
@@ -786,6 +816,18 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
             except (OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired,
                     subprocess.CalledProcessError, json.JSONDecodeError):
                 status, population = "failed", {"reason": "malformed_v5_native_evidence"}
+        elif lane_id == "performance":
+            assert v9_report_path is not None and v9_pair_dirs is not None
+            try:
+                status, population, native_artifacts = v9_gate.verify(
+                    v9_report_path.read_bytes(), v9_report_path, v9_pair_dirs, graph, inputs
+                )
+                if code not in (0, 1) or (status == "passed") != (code == 0):
+                    raise ValueError("V9 process/report status mismatch")
+                paths["native_artifacts"] = native_artifacts
+            except (OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired,
+                    subprocess.CalledProcessError, json.JSONDecodeError):
+                status, population = "failed", {"reason": "malformed_v9_native_evidence"}
         else:
             status, population = classify(stdout + b"\n" + stderr, parser, code)
         if lane_id == "live_r2u2" and status == "passed":

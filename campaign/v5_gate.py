@@ -11,6 +11,39 @@ import v5_mutation
 import v5_run
 
 CRATES = ("tl-syntax", "tl-parse", "tl-mltl", "tl-rewrite")
+SCOPE = {
+    "tl-syntax": {
+        "source_file": "src/formula/infinite.rs",
+        "selection_regex": "TemporalInterval::start|select_infinite_profile|validate_resource_limits|preflight_resource_limits|InfiniteFormulaDocument::content_identity",
+        "critical_scope": "V5 selected critical semantics",
+        "test_tail": ["--test", "infinite_formula", "--test", "infinite_trace",
+                      "--test", "infinite_trace_corpus"],
+        "minimum_selected": 18,
+    },
+    "tl-parse": {
+        "source_file": "src/infinite.rs",
+        "selection_regex": "parse_clean_ascii_v4|Parser.*::interval|Parser.*::lower_derived",
+        "critical_scope": "V5 selected critical semantics",
+        "test_tail": ["--test", "infinite_v4", "--test", "infinite_trace_corpus",
+                      "--test", "owner_infinite_corpus"],
+        "minimum_selected": 23,
+    },
+    "tl-rewrite": {
+        "source_file": "src/infinite.rs",
+        "selection_regex": "check_infinite_rewrite|classify_infinite_results",
+        "critical_scope": "V5 selected critical semantics",
+        "test_tail": ["--lib", "--test", "infinite_conformance", "--test",
+                      "infinite_rules", "--test", "infinite_owner_corpus"],
+        "minimum_selected": 39,
+    },
+    "tl-mltl": {
+        "source_file": "src/infinite/mod.rs",
+        "selection_regex": "evaluate_trace|evaluate_lasso",
+        "critical_scope": "infinite trace/lasso evaluator",
+        "test_tail": ["--lib", "--test", "infinite_trace", "--test", "infinite_oracle"],
+        "minimum_selected": 43,
+    },
+}
 
 
 def digest(data: bytes) -> str:
@@ -51,7 +84,16 @@ def selection(path: Path, graph: dict) -> dict:
             raise ValueError(f"V5 critical scope or test selection is empty: {crate}")
         if not isinstance(row.get("selection_regex"), str) or not row["selection_regex"]:
             raise ValueError(f"V5 mutant selection regex is absent: {crate}")
+        if any(row.get(key) != value for key, value in SCOPE[crate].items()
+               if key != "minimum_selected"):
+            raise ValueError(f"V5 reviewed critical selection changed: {crate}")
     return selected
+
+
+def valid_native_exit(code: int, counts: dict) -> bool:
+    """cargo-mutants 27 returns 2 for completed missed/timeout populations."""
+    expected = 2 if counts["missed"] or counts["timed_out"] else 0
+    return type(code) is int and code == expected
 
 
 def verify(selection_path: Path, output_dir: Path, graph: dict) -> tuple[str, dict, dict]:
@@ -72,6 +114,7 @@ def verify(selection_path: Path, output_dir: Path, graph: dict) -> tuple[str, di
         "selection": {"path": str(selection_path.resolve()),
                       "sha256": digest(selection_path.read_bytes())},
     }
+    invocation_codes = {}
     for entry, source in zip(manifest["runs"], selected["runs"], strict=True):
         crate = source["crate"]
         fields = ("crate", "source_path", "source_revision", "source_file",
@@ -106,9 +149,15 @@ def verify(selection_path: Path, output_dir: Path, graph: dict) -> tuple[str, di
                 invocation.get("mutation_command") != expected_command or
                 type(invocation.get("exit_code")) is not int):
             raise ValueError(f"V5 native command or revision mismatch: {crate}")
+        invocation_codes[crate] = invocation["exit_code"]
     measured = v5_mutation.report(manifest, manifest_path.parent)
     if claimed != measured:
         raise ValueError("V5 native result was restamped")
+    for crate in CRATES:
+        if measured["runs"][crate]["selected"] < SCOPE[crate]["minimum_selected"]:
+            raise ValueError(f"V5 selected population shrank: {crate}")
+        if not valid_native_exit(invocation_codes[crate], measured["runs"][crate]):
+            raise ValueError(f"V5 native cargo-mutants exited abnormally: {crate}")
     population = {"declared_crates": 4, "visited_crates": len(measured["runs"]),
                   "runs": measured["runs"], "selection_sha256": artifacts["selection"]["sha256"]}
     return measured["status"], population, artifacts

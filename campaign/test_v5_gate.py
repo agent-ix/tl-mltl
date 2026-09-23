@@ -17,9 +17,9 @@ class V5SelectionTests(unittest.TestCase):
                       for index, name in enumerate(v5_gate.CRATES, 1)}
         self.runs = [{"crate": name, "source_path": entry["path"],
                       "source_revision": entry["revision"],
-                      "source_file": "src/semantic.rs", "selection_regex": "operator",
-                      "critical_scope": "critical temporal operator",
-                      "test_tail": ["--lib"], "survivor_reviews": []}
+                      **{key: value for key, value in v5_gate.SCOPE[name].items()
+                         if key != "minimum_selected"},
+                      "survivor_reviews": []}
                      for name, entry in self.graph.items()]
         self.path = self.root / "selection.json"
 
@@ -42,6 +42,18 @@ class V5SelectionTests(unittest.TestCase):
         changed[0]["source_revision"] = "f" * 40
         with self.assertRaisesRegex(ValueError, "source graph changed"):
             self.read(changed)
+        changed = json.loads(json.dumps(self.runs))
+        changed[0]["selection_regex"] = "one_easy_mutant"
+        with self.assertRaisesRegex(ValueError, "reviewed critical selection changed"):
+            self.read(changed)
+
+    def test_native_exit_requires_the_completed_population_code(self):
+        caught = {"missed": 0, "timed_out": 0}
+        missed = {"missed": 1, "timed_out": 0}
+        self.assertTrue(v5_gate.valid_native_exit(0, caught))
+        self.assertTrue(v5_gate.valid_native_exit(2, missed))
+        for code, counts in ((-9, caught), (1, caught), (2, caught), (0, missed)):
+            self.assertFalse(v5_gate.valid_native_exit(code, counts))
 
 
 if __name__ == "__main__":
