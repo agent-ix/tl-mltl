@@ -2259,7 +2259,7 @@ fn no_local_evidence_framework_remains() {
         // The current-only Quire coverage adapter and its fault controls
         // preserve superseded history while exposing live release gaps. The
         // external Cargo consumer checks the opt-in infinite feature boundary.
-        ("scripts", 8),
+        ("scripts", 9),
         // 110 was measured before TL-180 added ADR-001 and SR-052 (2 files)
         // without moving this control, making 112. This campaign adds 8:
         // corpus-campaign.md, corpus-campaign-test-matrix.md, the documents
@@ -2295,7 +2295,7 @@ fn no_local_evidence_framework_remains() {
         // Stage 1 adds infinite, safety export, owner corpus, past mapping,
         // pinned corpus replay and public tl-oracle differential tests.
         // V2 adds one native finite production/oracle partition.
-        ("tests", 35),
+        ("tests", 36),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2370,14 +2370,16 @@ fn no_local_evidence_framework_remains() {
     // The current-coverage adapter and its fault controls add two scripts,
     // bringing the reviewed population to 441. The external Cargo feature
     // boundary control adds one script, bringing it to 442; executable
-    // owner/CI inspection evidence adds one test, bringing it to 443.
+    // owner/CI inspection evidence adds one test, bringing it to 443. The
+    // Quire-bound feature control adds one script and the historical mapping
+    // payload fixture adds one test fixture, bringing it to 445.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 443,
-        "the source census population changed from the reviewed 443 tracked files \
+        inspected, 445,
+        "the source census population changed from the reviewed 445 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
