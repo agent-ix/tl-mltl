@@ -2250,12 +2250,15 @@ fn no_local_evidence_framework_remains() {
         ("scripts", 5),
         // 110 was measured before TL-180 added ADR-001 and SR-052 (2 files)
         // without moving this control, making 112. This campaign adds 8:
-        // corpus-campaign.md, corpus-campaign-test-matrix.md, FR-008, FR-009,
-        // FR-010, NFR-004, assurance/MP-002, and decisions/ADR-002. The M5
-        // campaign adds 12: verification-effectiveness-campaign.md,
+        // corpus-campaign.md, corpus-campaign-test-matrix.md, the documents
+        // for FR-008, FR-009, FR-010 and NFR-004, assurance/MP-002, and
+        // decisions/ADR-002. The M5 campaign adds 12:
+        // verification-effectiveness-campaign.md,
         // verification-effectiveness-test-matrix.md, FR-020 through FR-024,
-        // NFR-005, and assurance/MP-003 through MP-006. TL-65 adds NFR-006 and
-        // its spec review SR-053 (2 files).
+        // the NFR-005 document, and assurance/MP-003 through MP-006. TL-65 adds
+        // NFR-006 and its spec review SR-053 (2 files). (Requirement ids are
+        // kept off the start of these comment lines: Quire reads a line-leading
+        // id as a trace tag, and this test backs none of them.)
         ("spec", 134),
         // TL-179 deletes wire::request, wire::observation, wire::report, and
         // mapping::contract_ir (4 files): the quire-observation-coupled
