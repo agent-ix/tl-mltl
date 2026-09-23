@@ -148,6 +148,27 @@ class V5MutationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "green control failed"):
             v5.verify_restored_control(restored | {"exit_code": 1}, "a" * 40, TAIL)
 
+        archive = Path("/tmp/v5/raw/native.tar.gz")
+        entry = {"source_revision": "a" * 40, "source_file": "src/infinite/mod.rs",
+                 "selection_regex": "evaluate_lasso", "test_tail": TAIL}
+        invocation = {
+            "source_revision": "a" * 40,
+            "discovery_command": ["cargo", "mutants", "--no-config", "--all-features",
+                                  "--list", "--json", "--file", "src/infinite/mod.rs"],
+            "mutation_command": v5_run.command("src/infinite/mod.rs", "evaluate_lasso",
+                                               archive.parent / "native", TAIL),
+            "exit_code": 2,
+        }
+        v5.verify_invocation(invocation, entry, archive, {"missed": 1, "timeout": 0})
+        with self.assertRaisesRegex(ValueError, "exit code contradicts"):
+            v5.verify_invocation(invocation | {"exit_code": -9}, entry, archive,
+                                 {"missed": 1, "timeout": 0})
+        with self.assertRaisesRegex(ValueError, "exit code contradicts"):
+            v5.verify_invocation(invocation, entry, archive, {"missed": 0, "timeout": 0})
+        with self.assertRaisesRegex(ValueError, "test selection or output command differs"):
+            v5.verify_invocation(invocation | {"mutation_command": ["cargo", "mutants"]},
+                                 entry, archive, {"missed": 1, "timeout": 0})
+
 
 if __name__ == "__main__":
     unittest.main()

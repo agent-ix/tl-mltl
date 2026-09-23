@@ -72,12 +72,15 @@ def exact_source(path: Path, revision: str) -> None:
         raise ValueError(f"source restoration is dirty: {path}")
 
 
-def native_archive(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
+def native_archive(
+    path: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     with tarfile.open(path, "r:gz") as archive:
         names = set(archive.getnames())
         for required in ("mutants.out/outcomes.json", "mutants.out/mutants.json",
                          "mutants.out/log/baseline.log", "restored_control.json",
-                         "restored_control.stdout", "restored_control.stderr"):
+                         "restored_control.stdout", "restored_control.stderr",
+                         "invocation.json", "invocation.stdout", "invocation.stderr"):
             if required not in names:
                 raise ValueError(f"native archive lacks {required}")
         def read(name: str) -> bytes:
@@ -89,12 +92,13 @@ def native_archive(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]], di
         outcomes = json.loads(read("mutants.out/outcomes.json"))
         selected = json.loads(read("mutants.out/mutants.json"))
         restored = json.loads(read("restored_control.json"))
+        invocation = json.loads(read("invocation.json"))
         for outcome in outcomes["outcomes"]:
             for field in ("log_path", "diff_path"):
                 relative = outcome.get(field)
                 if relative and f"mutants.out/{relative}" not in names:
                     raise ValueError(f"missing native {field}: {relative}")
-        return outcomes, selected, restored
+        return outcomes, selected, restored, invocation
 
 
 def classify(
@@ -213,6 +217,27 @@ def verify_restored_control(restored: dict[str, Any], revision: str,
         raise ValueError("restored green control failed")
 
 
+def verify_invocation(invocation: dict[str, Any], entry: dict[str, Any],
+                      archive_path: Path, native: dict[str, Any]) -> None:
+    if invocation.get("source_revision") != entry["source_revision"]:
+        raise ValueError("mutation invocation source revision differs")
+    discovery_command = ["cargo", "mutants", "--no-config", "--all-features", "--list",
+                         "--json", "--file", entry["source_file"]]
+    if invocation.get("discovery_command") != discovery_command:
+        raise ValueError("mutation discovery command differs")
+    mutation_command = [
+        "cargo", "mutants", "--no-config", "--all-features", "--file",
+        entry["source_file"], "--re", entry["selection_regex"], "--output",
+        str(archive_path.parent / "native"), "--timeout", "120", "--jobs", "1", "--",
+        *entry["test_tail"],
+    ]
+    if invocation.get("mutation_command") != mutation_command:
+        raise ValueError("mutation test selection or output command differs")
+    expected_code = 2 if native["missed"] or native["timeout"] else 0
+    if invocation.get("exit_code") != expected_code:
+        raise ValueError("mutation invocation exit code contradicts native outcomes")
+
+
 def report(manifest: dict[str, Any], base: Path) -> dict[str, Any]:
     if manifest.get("schema") != "tl-mltl.v5-mutation-manifest/v1":
         raise ValueError("wrong V5 manifest schema")
@@ -231,8 +256,9 @@ def report(manifest: dict[str, Any], base: Path) -> dict[str, Any]:
             raise ValueError(f"{crate}: stale discovery bytes")
         if digest(archive_bytes) != entry["archive_sha256"]:
             raise ValueError(f"{crate}: stale native archive bytes")
-        native, selected, restored = native_archive(archive_path)
+        native, selected, restored, invocation = native_archive(archive_path)
         verify_restored_control(restored, entry["source_revision"], entry["test_tail"])
+        verify_invocation(invocation, entry, archive_path, native)
         discovered = json.loads(discovery_bytes)
         exact_selection(discovered, selected, entry["source_file"], entry["selection_regex"])
         outcome = classify(discovered, selected, native,
