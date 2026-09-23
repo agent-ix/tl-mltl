@@ -84,14 +84,14 @@ fn admitted_once_historically_and_previous_render_exact_past_forms() {
         &[
             p(),
             Node::new(NodeKind::Once {
-                interval: interval(0, 2),
+                interval: interval(0, 1),
                 operand: NodeId(0),
             }),
         ],
         &origin,
     )
     .unwrap();
-    assert_eq!(once.expression, "O[0,2](p)");
+    assert_eq!(once.expression, "O[0,1](p)");
     assert_eq!(once.clock, "event_position");
     assert_eq!(once.profile, "mltl.origin-complete-history/v1");
     assert_eq!(once.target_origin_evidence_sha256, origin.evidence_sha256);
@@ -101,14 +101,14 @@ fn admitted_once_historically_and_previous_render_exact_past_forms() {
         &[
             p(),
             Node::new(NodeKind::Historically {
-                interval: interval(1, 2),
+                interval: interval(0, 0),
                 operand: NodeId(0),
             }),
         ],
         &origin,
     )
     .unwrap();
-    assert_eq!(historically.expression, "H[1,2](p)");
+    assert_eq!(historically.expression, "H[0,0](p)");
     let previous = render(
         &[
             p(),
@@ -143,7 +143,7 @@ fn since_and_triggered_use_explicit_target_forms() {
             p(),
             q(),
             Node::new(NodeKind::Triggered {
-                interval: interval(0, 1),
+                interval: interval(0, 0),
                 left: NodeId(0),
                 right: NodeId(1),
             }),
@@ -151,7 +151,7 @@ fn since_and_triggered_use_explicit_target_forms() {
         &origin,
     )
     .unwrap();
-    assert_eq!(trigger.expression, "(!((!p) S[0,1] (!q)))");
+    assert_eq!(trigger.expression, "(!((!p) S[0,0] (!q)))");
 }
 
 // Trace: TC-166, TC-167; FR-039-AC-1, FR-039-AC-2
@@ -235,8 +235,10 @@ fn absent_or_operator_incomplete_origin_evidence_refuses_without_artifact() {
 #[test]
 fn each_target_origin_identity_field_is_required() {
     let nodes = [p()];
-    let corruptions: [fn(&mut TargetOriginContract); 7] = [
+    let corruptions: [fn(&mut TargetOriginContract); 9] = [
         |origin: &mut TargetOriginContract| origin.source_revision.clear(),
+        |origin: &mut TargetOriginContract| origin.source_revision = "a".repeat(39),
+        |origin: &mut TargetOriginContract| origin.source_revision = "A".repeat(40),
         |origin: &mut TargetOriginContract| origin.target.name.clear(),
         |origin: &mut TargetOriginContract| origin.target.version.clear(),
         |origin: &mut TargetOriginContract| origin.evidence_sha256 = "C".repeat(64),
@@ -294,13 +296,16 @@ fn reviewed_target_admits_only_measured_origin_interval_cells() {
     ]);
     for (kind, interval, admitted) in [
         (0, interval(0, 0), true),
-        (0, interval(1, 2), true),
+        (0, interval(0, 1), true),
+        (0, interval(1, 1), false),
         (0, interval(2, 2), false),
-        (1, interval(0, 2), true),
+        (1, interval(0, 0), true),
+        (1, interval(0, 1), false),
         (1, interval(2, 2), false),
         (2, interval(0, 1), true),
         (2, interval(0, 2), false),
-        (3, interval(0, 1), true),
+        (3, interval(0, 0), true),
+        (3, interval(0, 1), false),
         (3, interval(1, 1), false),
     ] {
         let (operator, node) = match kind {
@@ -345,6 +350,87 @@ fn reviewed_target_admits_only_measured_origin_interval_cells() {
             );
         }
     }
+}
+
+// Trace: TC-166, TC-167; FR-039-AC-1, FR-039-AC-2
+#[test]
+fn only_reviewed_homogeneous_temporal_nesting_is_exported() {
+    let origin = contract(&[
+        PastOperatorKind::Once,
+        PastOperatorKind::Historically,
+        PastOperatorKind::StrongPrevious,
+    ]);
+    let once_chain = [
+        p(),
+        Node::new(NodeKind::Once {
+            interval: interval(0, 1),
+            operand: NodeId(0),
+        }),
+        Node::new(NodeKind::Once {
+            interval: interval(0, 1),
+            operand: NodeId(1),
+        }),
+        Node::new(NodeKind::Once {
+            interval: interval(0, 1),
+            operand: NodeId(2),
+        }),
+    ];
+    assert!(render(&once_chain, &origin).is_ok());
+    let mut too_deep = once_chain.to_vec();
+    too_deep.push(Node::new(NodeKind::Once {
+        interval: interval(0, 1),
+        operand: NodeId(3),
+    }));
+    assert_eq!(
+        render(&too_deep, &origin),
+        Err(PastMappingError::TargetOriginShapeUnverified(NodeId(4)))
+    );
+    let previous_chain = [
+        p(),
+        Node::new(NodeKind::StrongPrevious { operand: NodeId(0) }),
+        Node::new(NodeKind::StrongPrevious { operand: NodeId(1) }),
+    ];
+    assert!(render(&previous_chain, &origin).is_ok());
+    let mut too_deep_previous = previous_chain.to_vec();
+    too_deep_previous.push(Node::new(NodeKind::StrongPrevious { operand: NodeId(2) }));
+    assert_eq!(
+        render(&too_deep_previous, &origin),
+        Err(PastMappingError::TargetOriginShapeUnverified(NodeId(3)))
+    );
+    let mixed_chain = [
+        p(),
+        Node::new(NodeKind::Historically {
+            interval: interval(0, 0),
+            operand: NodeId(0),
+        }),
+        Node::new(NodeKind::Once {
+            interval: interval(0, 1),
+            operand: NodeId(1),
+        }),
+    ];
+    assert_eq!(
+        render(&mixed_chain, &origin),
+        Err(PastMappingError::TargetOriginShapeUnverified(NodeId(2)))
+    );
+    let mixed_branches = [
+        p(),
+        Node::new(NodeKind::Historically {
+            interval: interval(0, 0),
+            operand: NodeId(0),
+        }),
+        Node::new(NodeKind::Once {
+            interval: interval(0, 1),
+            operand: NodeId(0),
+        }),
+        Node::new(NodeKind::And {
+            left: NodeId(1),
+            right: NodeId(2),
+        }),
+    ];
+    assert_eq!(
+        render(&mixed_branches, &origin),
+        Err(PastMappingError::TargetOriginShapeUnverified(NodeId(3)))
+    );
 }
 
 // Trace: TC-162, TC-167; FR-038-AC-2, FR-039-AC-2

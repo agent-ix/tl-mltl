@@ -59,7 +59,7 @@ impl TargetOriginContract {
     }
 
     pub(crate) fn validate(&self) -> Result<(), PastMappingError> {
-        if self.source_revision.is_empty()
+        if !is_hex_of_length(&self.source_revision, 40)
             || self.target.name.is_empty()
             || self.target.version.is_empty()
             || !is_sha256(&self.evidence_sha256)
@@ -110,6 +110,8 @@ pub enum PastMappingError {
     TargetOriginMismatch,
     /// A node uses an operator with no reviewed target-origin behavior.
     TargetOriginUnverified(PastOperatorKind),
+    /// This temporal nesting shape was not covered by target-origin evidence.
+    TargetOriginShapeUnverified(NodeId),
     /// The selected target does not match source semantics for this interval.
     TargetOriginIntervalMismatch {
         operator: PastOperatorKind,
@@ -316,23 +318,127 @@ impl Renderer<'_, '_> {
 }
 
 /// Conservative C2PO 4.2 interval partition from the observed origin grid.
-/// Since/Triggered only agree for immediate or one-step windows. O/H with a
-/// lower bound of two may omit the origin verdict entirely. Unreviewed cells
-/// are refused rather than inferred from parser acceptance.
+/// The larger grid found H[0,1] semantic mismatches and incomplete target
+/// rows for wider O windows. Unreviewed cells are refused rather than
+/// inferred from parser acceptance or a shorter retained trace.
 pub(crate) fn target_equivalent_interval(operator: PastOperatorKind, interval: Interval) -> bool {
     match operator {
-        PastOperatorKind::Once | PastOperatorKind::Historically => {
-            interval.start() <= 1 && interval.end() <= 2
-        }
-        PastOperatorKind::Since | PastOperatorKind::Triggered => {
+        PastOperatorKind::Once | PastOperatorKind::Since => {
             interval.start() == 0 && interval.end() <= 1
+        }
+        PastOperatorKind::Historically | PastOperatorKind::Triggered => {
+            interval.start() == 0 && interval.end() == 0
         }
         PastOperatorKind::StrongPrevious => false,
     }
 }
 
+#[derive(Clone, Copy)]
+struct OriginShape {
+    signature: Option<(PastOperatorKind, Option<Interval>)>,
+    mixed: bool,
+    depth: usize,
+}
+
+/// The reviewed target grid covers homogeneous past chains only: up to three
+/// temporal nodes, or two for strong previous. One formula may not combine
+/// different temporal operators or intervals, including under a Boolean
+/// node. This is a conservative evidence boundary.
+fn validate_origin_shape(formula: Formula<'_>) -> Result<(), PastMappingError> {
+    let mut states: Vec<OriginShape> = Vec::with_capacity(formula.nodes().len());
+    for (index, node) in formula.nodes().iter().enumerate() {
+        let id = NodeId(u32::try_from(index).map_err(|_| PastMappingError::ResourceIncomplete)?);
+        let (children, temporal) = match node.kind {
+            NodeKind::False | NodeKind::True | NodeKind::Proposition { .. } => ([None, None], None),
+            NodeKind::Not { operand } => ([Some(operand), None], None),
+            NodeKind::And { left, right }
+            | NodeKind::Or { left, right }
+            | NodeKind::Implies { left, right }
+            | NodeKind::Equivalent { left, right } => ([Some(left), Some(right)], None),
+            NodeKind::Once { interval, operand } => (
+                [Some(operand), None],
+                Some((PastOperatorKind::Once, Some(interval))),
+            ),
+            NodeKind::Historically { interval, operand } => (
+                [Some(operand), None],
+                Some((PastOperatorKind::Historically, Some(interval))),
+            ),
+            NodeKind::StrongPrevious { operand } => (
+                [Some(operand), None],
+                Some((PastOperatorKind::StrongPrevious, None)),
+            ),
+            NodeKind::Since {
+                interval,
+                left,
+                right,
+            } => (
+                [Some(left), Some(right)],
+                Some((PastOperatorKind::Since, Some(interval))),
+            ),
+            NodeKind::Triggered {
+                interval,
+                left,
+                right,
+            } => (
+                [Some(left), Some(right)],
+                Some((PastOperatorKind::Triggered, Some(interval))),
+            ),
+            NodeKind::Future { .. }
+            | NodeKind::Globally { .. }
+            | NodeKind::Until { .. }
+            | NodeKind::Release { .. } => return Err(PastMappingError::UnsupportedNode(id)),
+        };
+        let mut state = OriginShape {
+            signature: None,
+            mixed: false,
+            depth: 0,
+        };
+        for child in children.into_iter().flatten() {
+            let child = usize::try_from(child.0)
+                .ok()
+                .and_then(|at| states.get(at))
+                .ok_or(PastMappingError::InvalidNode(child))?;
+            state.depth = state.depth.max(child.depth);
+            state.mixed |= child.mixed;
+            if let Some(signature) = child.signature {
+                if state.signature.is_some_and(|prior| prior != signature) {
+                    state.mixed = true;
+                }
+                state.signature = Some(signature);
+            }
+        }
+        if state.mixed {
+            return Err(PastMappingError::TargetOriginShapeUnverified(id));
+        }
+        if let Some(signature) = temporal {
+            if state.signature.is_some_and(|child| child != signature) {
+                return Err(PastMappingError::TargetOriginShapeUnverified(id));
+            }
+            state.depth = state
+                .depth
+                .checked_add(1)
+                .ok_or(PastMappingError::ResourceIncomplete)?;
+            let limit = if signature.0 == PastOperatorKind::StrongPrevious {
+                2
+            } else {
+                3
+            };
+            if state.depth > limit {
+                return Err(PastMappingError::TargetOriginShapeUnverified(id));
+            }
+            state.signature = Some(signature);
+        }
+        states.push(state);
+    }
+    Ok(())
+}
+
 fn is_sha256(value: &str) -> bool {
-    value.len() == 64
+    is_hex_of_length(value, 64)
+}
+
+fn is_hex_of_length(value: &str, length: usize) -> bool {
+    value.len() == length
         && value
             .bytes()
             .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
@@ -360,6 +466,7 @@ pub fn map_past_to_c2po(
         .map_err(|error| PastMappingError::Identity(error.to_string()))?
         .content_identity()
         .map_err(|error| PastMappingError::Identity(error.to_string()))?;
+    validate_origin_shape(formula)?;
     bind_formula(formula, catalog_document).map_err(PastMappingError::Binding)?;
     let catalog = catalog_document
         .validate()

@@ -343,18 +343,24 @@ fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
             &origin,
             100,
         );
-        if matches!(case.id.as_str(), "since-zero-two" | "triggered-zero-two") {
-            let operator = if case.id == "since-zero-two" {
-                PastOperatorKind::Since
-            } else {
-                PastOperatorKind::Triggered
-            };
+        let refused = match case.id.as_str() {
+            "since-zero-two" => Some((PastOperatorKind::Since, Interval::new(0, 2).unwrap())),
+            "triggered-zero-two" => {
+                Some((PastOperatorKind::Triggered, Interval::new(0, 2).unwrap()))
+            }
+            // The retained three-step trace agrees, but the broader live
+            // origin grid found H[0,1] mismatches. Retain the observation
+            // without turning it into an export-admission claim.
+            "historically-zero-one" => {
+                Some((PastOperatorKind::Historically, Interval::new(0, 1).unwrap()))
+            }
+            "once-one-one" => Some((PastOperatorKind::Once, Interval::new(1, 1).unwrap())),
+            _ => None,
+        };
+        if let Some((operator, interval)) = refused {
             assert_eq!(
                 mapping,
-                Err(PastMappingError::TargetOriginIntervalMismatch {
-                    operator,
-                    interval: Interval::new(0, 2).unwrap(),
-                })
+                Err(PastMappingError::TargetOriginIntervalMismatch { operator, interval })
             );
         } else {
             let mapping = mapping.unwrap();

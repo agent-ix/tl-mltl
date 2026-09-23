@@ -57,7 +57,8 @@ fn every_fuzz_seed_reaches_the_strict_reader_and_real_c2po_mapper() {
             mapped.is_ok()
                 || matches!(
                     mapped,
-                    Err(PastMappingError::TargetOriginIntervalMismatch { .. })
+                    Err(PastMappingError::TargetOriginIntervalMismatch { .. }
+                        | PastMappingError::TargetOriginShapeUnverified(_))
                 ),
             "{}: {mapped:?}",
             seed.path().display()
