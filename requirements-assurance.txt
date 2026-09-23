@@ -8,7 +8,7 @@
 # git tag, and resolving a git dependency into the system interpreter would make
 # the pin depend on whatever else that interpreter happens to have.
 #
-# The pin is the accepted release from agent-ix/engineering-assurance#8, which
-# publishes engineering-assurance as a source distribution: the git tag IS the
-# released artifact. It is not a branch head and must not be replaced by one.
-engineering-assurance @ git+https://github.com/agent-ix/engineering-assurance@v0.2.1
+# This candidate pin becomes active only after the v0.3.2 matrix has named
+# human acceptance and the exact source-distribution tag exists. A branch head
+# does not substitute for the released artifact.
+engineering-assurance @ git+https://github.com/agent-ix/engineering-assurance@v0.3.2
