@@ -14,8 +14,8 @@ relationships:
 ## Description
 
 When an infinite-trace formula has the exact shape `G[0,)ψ` and ψ contains
-only admitted past or bounded-future operations, the opt-in provider may
-export a C2PO monitor expression as refutation-only evidence.
+only admitted past or bounded-future operations in any nesting, the opt-in
+provider may export a C2PO monitor expression as refutation-only evidence.
 
 ## Behavior
 
@@ -23,7 +23,9 @@ The export resides behind `tl_mltl::infinite` and consumes only validated
 formula-unbounded/v1 under `mltl.infinite-trace/v1`. A per-node, per-interval
 classification admits the outer `G[0,)` and only inner operators whose
 finite-horizon verdict is sound under the selected target's clock and origin
-contract. A violating observation may establish a replayable finite bad
+contract. Any mixed nesting must have a finite decision horizon at each
+position; otherwise it refuses before output. A violating observation may
+establish a replayable finite bad
 prefix; absence of violation, a target pass, or an incomplete observation
 never yields `proved`. The adapter does not register as a second liveness
 backend. Its manifest names its refutation-only scope, source and target
