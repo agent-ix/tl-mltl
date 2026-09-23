@@ -32,6 +32,18 @@ CRITICAL_PREFIXES = {
                 "src/infinite.rs", "src/report.rs", "src/replay.rs",
                 "src/disposition.rs"),
 }
+EXPECTED_CRITICAL = {
+    "syntax": {"core": CRITICAL_PREFIXES["syntax"][:2],
+               "alloc": CRITICAL_PREFIXES["syntax"][:2],
+               "serde": CRITICAL_PREFIXES["syntax"]},
+    "parse": {"default": CRITICAL_PREFIXES["parse"]},
+    "mltl": {"default": ("src/future/evaluate.rs", "src/past/evaluate.rs",
+                         "src/mapping/past.rs", "src/wire/"),
+             "infinite": CRITICAL_PREFIXES["mltl"]},
+    "rewrite": {"default": ("src/engine/future.rs", "src/engine/past.rs",
+                            "src/report.rs", "src/replay.rs", "src/disposition.rs"),
+                "infinite": CRITICAL_PREFIXES["rewrite"]},
+}
 TOOLCHAIN = "nightly"
 
 
@@ -94,14 +106,20 @@ def classify_export(raw: dict, root: Path) -> dict:
             raise ValueError(f"malformed coverage counts: {relative}")
         if lines["covered"] > lines["count"] or branches["covered"] > branches["count"]:
             raise ValueError(f"impossible coverage counts: {relative}")
+        if branches["count"] and not item["branches"]:
+            raise ValueError(f"missing detailed branch population: {relative}")
         uncovered = []
         for branch in item["branches"]:
             if len(branch) != 9 or any(type(value) is not int for value in branch):
                 raise ValueError(f"malformed branch location: {relative}")
             # LLVM export: line/column span, true and false counts, file IDs, kind.
             if branch[4] == 0 or branch[5] == 0:
-                uncovered.append({"line": branch[0], "column": branch[1],
-                                  "true_count": branch[4], "false_count": branch[5]})
+                location = {"line": branch[0], "column": branch[1],
+                            "true_count": branch[4], "false_count": branch[5]}
+                if location not in uncovered:
+                    uncovered.append(location)
+        if branches["covered"] < branches["count"] and not uncovered:
+            raise ValueError(f"unlocated uncovered branch: {relative}")
         files[relative] = {"lines": {"count": lines["count"], "covered": lines["covered"]},
                            "branches": {"count": branches["count"],
                                         "covered": branches["covered"]},
@@ -138,6 +156,9 @@ def main() -> int:
                                      text=True, check=True).stdout.strip(),
              "llvm_cov": subprocess.run((str(llvm_cov), "--version"), capture_output=True,
                                         text=True, check=True).stdout.strip(),
+             "llvm_profdata": subprocess.run((str(llvm_profdata), "--version"),
+                                             capture_output=True, text=True,
+                                             check=True).stdout.strip(),
              "cargo_llvm_cov": subprocess.run(("cargo", "llvm-cov", "--version"),
                                               capture_output=True, text=True,
                                               check=True).stdout.strip()}
@@ -190,13 +211,18 @@ def main() -> int:
                             critical_files[file] = details["branches"]
                             critical.extend({"file": file, **location} for location in
                                             details["uncovered_branch_locations"])
+                    missing = [prefix for prefix in EXPECTED_CRITICAL[name][feature]
+                               if not any(file.startswith(prefix) for file in critical_files)]
                     result["critical_uncovered"] = critical
                     result["critical_branch_census"] = {
                         "files": critical_files,
+                        "missing_files": missing,
                         "count": sum(item["count"] for item in critical_files.values()),
                         "covered": sum(item["covered"] for item in critical_files.values())}
-                    result["status"] = "passed" if critical_files and not critical else "incomplete"
-                    if not critical_files:
+                    result["status"] = "passed" if not missing and not critical and all(
+                        item["covered"] == item["count"] for item in critical_files.values()
+                    ) else "incomplete"
+                    if missing:
                         result["reason"] = "critical_branches_not_instrumented"
                     elif critical:
                         result["reason"] = "critical_branch_target_open"

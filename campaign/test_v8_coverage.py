@@ -48,6 +48,21 @@ class CoverageExportTests(unittest.TestCase):
                                  "branches": {"count": 1, "covered": 1}},
                      "branches": [[1, 0, 1, 1, 1, 1, 0, 0, 4]]}]}]}, root)
 
+    def test_summary_gap_cannot_hide_missing_detail(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            file = root / "src" / "future.rs"
+            file.parent.mkdir()
+            file.write_text("fn check() {}\n")
+            export = {"type": "llvm.coverage.json.export", "data": [{"files": [{
+                "filename": str(file),
+                "summary": {"lines": {"count": 1, "covered": 1},
+                            "branches": {"count": 2, "covered": 1}},
+                "branches": [],
+            }]}]}
+            with self.assertRaisesRegex(ValueError, "missing detailed branch population"):
+                classify_export(export, root)
+
 
 if __name__ == "__main__":
     unittest.main()

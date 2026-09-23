@@ -28,7 +28,8 @@ def corpus_paths(repo: Path) -> list[Path]:
 
 def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                   v7_cargo_home: Path | None = None,
-                  v8_cargo_home: Path | None = None) -> dict:
+                  v8_cargo_home: Path | None = None,
+                  v5_selection: Path | None = None) -> dict:
     sources = {}
     inputs = {}
     for name in SOURCE_NAMES:
@@ -39,6 +40,10 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
             inputs[f"{name}/{relative}"] = {
                 "path": str(path), "sha256": sha256(path.read_bytes()),
             }
+    if v5_selection is not None:
+        selected = v5_selection.resolve()
+        inputs["v5_selection"] = {"path": str(selected),
+                                  "sha256": sha256(selected.read_bytes())}
     lanes = []
     for milestone, lane_ids in REQUIRED.items():
         for lane_id in lane_ids:
@@ -58,6 +63,8 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                 continue
             if lane_id == "coverage" and v8_cargo_home is None:
                 continue
+            if lane_id == "mutation_population" and v5_selection is None:
+                continue
             repo, parser, argv = COMMAND_CONTRACTS[lane_id]
             lane = {
                 "id": lane_id, "milestone": milestone, "mode": "command",
@@ -72,6 +79,10 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
             if lane_id == "coverage":
                 lane["cargo_home"] = str(v8_cargo_home.resolve())
                 lane["timeout_seconds"] = 7200
+            if lane_id == "mutation_population":
+                lane["selection_path"] = str(v5_selection.resolve())
+                lane["timeout_seconds"] = 7200
+                lane["seed"] = {"kind": "none", "reason": "fixed_mutant_selection"}
             lanes.append(lane)
     return {
         "schema": "tl-mltl.v1-campaign-manifest/v1",
@@ -97,9 +108,13 @@ def main() -> None:
         "--v8-cargo-home", type=Path,
         help="Explicitly opt into fresh four-crate llvm-cov with a provisioned Cargo home",
     )
+    parser.add_argument(
+        "--v5-selection", type=Path,
+        help="Opt into fresh four-crate mutation with a fixed source-pinned selection JSON",
+    )
     args = parser.parse_args()
     manifest = make_manifest(args.repos_root, args.live_r2u2_source,
-                             args.v7_cargo_home, args.v8_cargo_home)
+                             args.v7_cargo_home, args.v8_cargo_home, args.v5_selection)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
 

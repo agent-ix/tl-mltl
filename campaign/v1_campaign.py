@@ -19,6 +19,7 @@ from v4_fuzz import verify_four
 from v6_kani import run_v6
 import v7_gate
 import v8_gate
+import v5_gate
 
 SOURCE_NAMES = ("tl-syntax", "tl-parse", "tl-rewrite", "tl-mltl", "tl-oracle")
 # Every milestone names an executable lane. Additional campaign lanes can be
@@ -79,6 +80,9 @@ COMMAND_CONTRACTS = {
     "embedded_miri_limits": ("tl-mltl", "v7_native", [
         sys.executable, "campaign/v7_native.py",
     ]),
+    "mutation_population": ("tl-mltl", "v5_native", [
+        sys.executable, "campaign/v5_run.py",
+    ]),
     "coverage": ("tl-mltl", "v8_native", [
         sys.executable, "campaign/v8_coverage.py",
     ]),
@@ -112,7 +116,6 @@ NATIVE_CONTRACTS = {
 # copied success exit code.
 UNSUPPORTED_GATE_REASONS = {
     "full_domain_census": "depth_three_interval_0_4_trace_1_6_population_not_run",
-    "mutation_population": "no_reviewed_mutant_population_parser",
     "performance": "no_four_crate_paired_benchmark_parser",
 }
 assert set(COMMAND_CONTRACTS) | set(NATIVE_CONTRACTS) | set(UNSUPPORTED_GATE_REASONS) == {
@@ -653,6 +656,8 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
         v7_report_path = None
         v8_raw_dir = None
         v8_report_path = None
+        v5_output_dir = None
+        v5_selection_path = None
         executed_argv = argv
         if lane_id == "live_r2u2":
             target_source = lane.get("target_source")
@@ -700,6 +705,27 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
                 "--raw-dir", str(v8_raw_dir.resolve()),
                 "--output", str(v8_report_path.resolve()),
             ]
+        if lane_id == "mutation_population":
+            selected = lane.get("selection_path")
+            if not isinstance(selected, str) or not Path(selected).is_absolute():
+                return base | {"status": "blocked", "reason": "v5_selection_required"}, {}
+            v5_selection_path = Path(selected).resolve()
+            try:
+                selected_digest = sha256(v5_selection_path.read_bytes())
+            except OSError:
+                return base | {"status": "blocked", "reason": "v5_selection_unreadable"}, {}
+            if inputs.get("v5_selection") != {"path": str(v5_selection_path),
+                                               "sha256": selected_digest}:
+                return base | {"status": "incomplete", "reason": "v5_selection_not_pinned"}, {}
+            try:
+                v5_gate.selection(v5_selection_path, graph)
+            except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+                return base | {"status": "incomplete", "reason": "v5_selection_graph_mismatch"}, {}
+            v5_output_dir = raw_dir / "mutation_population_native"
+            if v5_output_dir.exists():
+                return base | {"status": "incomplete", "reason": "v5_raw_dir_not_empty"}, {}
+            executed_argv = argv + ["--selection", str(v5_selection_path),
+                                    "--output-dir", str(v5_output_dir.resolve())]
         try:
             result = subprocess.run(
                 executed_argv, cwd=graph[repo]["path"], capture_output=True,
@@ -748,6 +774,18 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
             except (OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired,
                     subprocess.CalledProcessError, json.JSONDecodeError):
                 status, population = "failed", {"reason": "malformed_v8_native_evidence"}
+        elif lane_id == "mutation_population":
+            assert v5_output_dir is not None and v5_selection_path is not None
+            try:
+                status, population, native_artifacts = v5_gate.verify(
+                    v5_selection_path, v5_output_dir, graph
+                )
+                if code not in (0, 1) or (status == "passed") != (code == 0):
+                    raise ValueError("V5 process/score status mismatch")
+                paths["native_artifacts"] = native_artifacts
+            except (OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired,
+                    subprocess.CalledProcessError, json.JSONDecodeError):
+                status, population = "failed", {"reason": "malformed_v5_native_evidence"}
         else:
             status, population = classify(stdout + b"\n" + stderr, parser, code)
         if lane_id == "live_r2u2" and status == "passed":

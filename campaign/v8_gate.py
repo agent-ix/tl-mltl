@@ -8,7 +8,8 @@ import platform
 import subprocess
 from pathlib import Path
 
-from v8_coverage import CRATES, CRITICAL_PREFIXES, FEATURES, classify_export, tool_path
+from v8_coverage import (CRATES, CRITICAL_PREFIXES, EXPECTED_CRITICAL, FEATURES,
+                         classify_export, tool_path)
 
 
 def digest(data: bytes) -> str:
@@ -27,6 +28,7 @@ def unique_pairs(pairs: list[tuple[str, object]]) -> dict:
 def tool_versions() -> dict[str, str]:
     commands = {"rustc": (str(tool_path("rustc")), "--version"),
                 "llvm_cov": (str(tool_path("llvm-cov")), "--version"),
+                "llvm_profdata": (str(tool_path("llvm-profdata")), "--version"),
                 "cargo_llvm_cov": ("cargo", "llvm-cov", "--version")}
     return {name: subprocess.run(argv, capture_output=True, text=True,
                                  timeout=10, check=True).stdout.strip()
@@ -104,17 +106,22 @@ def verify(report_bytes: bytes, raw_dir: Path, graph: dict,
             raise ValueError(f"V8 production coverage tampered: {key}")
         files = {file: details["branches"] for file, details in measured["files"].items()
                  if any(file.startswith(prefix) for prefix in CRITICAL_PREFIXES[name])}
+        missing = [prefix for prefix in EXPECTED_CRITICAL[name][feature]
+                   if not any(file.startswith(prefix) for file in files)]
         gaps = [{"file": file, **location}
                 for file, details in measured["files"].items() if file in files
                 for location in details["uncovered_branch_locations"]]
-        census = {"files": files, "count": sum(item["count"] for item in files.values()),
+        census = {"files": files, "missing_files": missing,
+                  "count": sum(item["count"] for item in files.values()),
                   "covered": sum(item["covered"] for item in files.values())}
         if row.get("critical_branch_census") != census or row.get("critical_uncovered") != gaps:
             raise ValueError(f"V8 critical branch census tampered: {key}")
-        expected_status = "passed" if files and not gaps else "incomplete"
+        expected_status = "passed" if not missing and not gaps and all(
+            item["count"] == item["covered"] for item in files.values()
+        ) else "incomplete"
         expected_reason = (None if expected_status == "passed" else
-                           "critical_branch_target_open" if files else
-                           "critical_branches_not_instrumented")
+                           "critical_branches_not_instrumented" if missing else
+                           "critical_branch_target_open")
         if row.get("status") != expected_status or row.get("reason") != expected_reason:
             raise ValueError(f"V8 critical target status mismatch: {key}")
         total += measured["totals"]["branches"]["count"]
