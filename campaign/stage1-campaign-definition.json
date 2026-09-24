@@ -16,8 +16,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "8106a4f60d8c3e89c550e516921d59b18fe3be30",
-      "digest": "c4cd3efb889aa2be6aa0c7e8dcbdf25c9e8d745755d10627dba833a00552bb42"
+      "revision": "a64af127efb783e2af64dfdf14f6c659e5b9f9f4",
+      "digest": "973d9aa74352e70cbf93a36ffeed58b127e0c301d32101838496f8bc768fd561"
     },
     {
       "repository": "tl-rewrite",
@@ -1416,6 +1416,246 @@
       "group": "V4",
       "planId": "MP-025",
       "definitionVersion": "tl.v4.mltl-closed-eval/v1",
+      "dependsOn": [],
+      "required": true,
+      "checkerProcedure": {
+        "schemaVersion": "engineering-assurance.measurement-procedure/v1",
+        "producerName": "tl_campaign_check",
+        "producerVersion": "0.4.0",
+        "sourceRepository": "tl-mltl",
+        "arguments": [
+          {
+            "kind": "literal",
+            "value": "--input"
+          },
+          {
+            "kind": "input_artifact",
+            "value": "bundle"
+          },
+          {
+            "kind": "literal",
+            "value": "--output"
+          },
+          {
+            "kind": "output_artifact",
+            "value": "verdict"
+          }
+        ],
+        "environment": [],
+        "inputs": [
+          {
+            "role": "bundle",
+            "required": true
+          },
+          {
+            "role": "definition",
+            "required": true
+          },
+          {
+            "role": "request",
+            "required": true
+          },
+          {
+            "role": "result",
+            "required": true
+          },
+          {
+            "role": "rawBundle",
+            "required": true
+          }
+        ],
+        "inputRolePrefixes": [
+          {
+            "prefix": "dependency/",
+            "required": false
+          },
+          {
+            "prefix": "dependency-request/",
+            "required": false
+          },
+          {
+            "prefix": "dependencyRaw/",
+            "required": false
+          }
+        ],
+        "outputs": [
+          {
+            "role": "verdict",
+            "required": true
+          }
+        ],
+        "responseProtocol": "quoin.process-evidence/v1",
+        "responseAdapter": "quoin.process-evidence-adapter",
+        "responseAdapterVersion": "1",
+        "repetitions": 1,
+        "timeoutMillis": 120000
+      }
+    },
+    {
+      "name": "V4.mltl_wire_cli_decode",
+      "group": "V4",
+      "planId": "MP-125",
+      "definitionVersion": "tl.v4.mltl-wire-cli-decode/v1",
+      "dependsOn": [],
+      "required": true,
+      "checkerProcedure": {
+        "schemaVersion": "engineering-assurance.measurement-procedure/v1",
+        "producerName": "tl_campaign_check",
+        "producerVersion": "0.4.0",
+        "sourceRepository": "tl-mltl",
+        "arguments": [
+          {
+            "kind": "literal",
+            "value": "--input"
+          },
+          {
+            "kind": "input_artifact",
+            "value": "bundle"
+          },
+          {
+            "kind": "literal",
+            "value": "--output"
+          },
+          {
+            "kind": "output_artifact",
+            "value": "verdict"
+          }
+        ],
+        "environment": [],
+        "inputs": [
+          {
+            "role": "bundle",
+            "required": true
+          },
+          {
+            "role": "definition",
+            "required": true
+          },
+          {
+            "role": "request",
+            "required": true
+          },
+          {
+            "role": "result",
+            "required": true
+          },
+          {
+            "role": "rawBundle",
+            "required": true
+          }
+        ],
+        "inputRolePrefixes": [
+          {
+            "prefix": "dependency/",
+            "required": false
+          },
+          {
+            "prefix": "dependency-request/",
+            "required": false
+          },
+          {
+            "prefix": "dependencyRaw/",
+            "required": false
+          }
+        ],
+        "outputs": [
+          {
+            "role": "verdict",
+            "required": true
+          }
+        ],
+        "responseProtocol": "quoin.process-evidence/v1",
+        "responseAdapter": "quoin.process-evidence-adapter",
+        "responseAdapterVersion": "1",
+        "repetitions": 1,
+        "timeoutMillis": 120000
+      }
+    },
+    {
+      "name": "V4.mltl_trace_history_intake",
+      "group": "V4",
+      "planId": "MP-126",
+      "definitionVersion": "tl.v4.mltl-trace-history-intake/v1",
+      "dependsOn": [],
+      "required": true,
+      "checkerProcedure": {
+        "schemaVersion": "engineering-assurance.measurement-procedure/v1",
+        "producerName": "tl_campaign_check",
+        "producerVersion": "0.4.0",
+        "sourceRepository": "tl-mltl",
+        "arguments": [
+          {
+            "kind": "literal",
+            "value": "--input"
+          },
+          {
+            "kind": "input_artifact",
+            "value": "bundle"
+          },
+          {
+            "kind": "literal",
+            "value": "--output"
+          },
+          {
+            "kind": "output_artifact",
+            "value": "verdict"
+          }
+        ],
+        "environment": [],
+        "inputs": [
+          {
+            "role": "bundle",
+            "required": true
+          },
+          {
+            "role": "definition",
+            "required": true
+          },
+          {
+            "role": "request",
+            "required": true
+          },
+          {
+            "role": "result",
+            "required": true
+          },
+          {
+            "role": "rawBundle",
+            "required": true
+          }
+        ],
+        "inputRolePrefixes": [
+          {
+            "prefix": "dependency/",
+            "required": false
+          },
+          {
+            "prefix": "dependency-request/",
+            "required": false
+          },
+          {
+            "prefix": "dependencyRaw/",
+            "required": false
+          }
+        ],
+        "outputs": [
+          {
+            "role": "verdict",
+            "required": true
+          }
+        ],
+        "responseProtocol": "quoin.process-evidence/v1",
+        "responseAdapter": "quoin.process-evidence-adapter",
+        "responseAdapterVersion": "1",
+        "repetitions": 1,
+        "timeoutMillis": 120000
+      }
+    },
+    {
+      "name": "V4.mltl_finite_oracle_differential",
+      "group": "V4",
+      "planId": "MP-127",
+      "definitionVersion": "tl.v4.mltl-finite-oracle-differential/v1",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
