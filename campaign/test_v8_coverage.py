@@ -110,9 +110,47 @@ class CoverageExportTests(unittest.TestCase):
             }]}]}
             measured = classify_export(export, root)
             self.assertEqual(measured["files"]["src/future.rs"]
-                             ["uncovered_branch_locations"], [
-                                 {"line": 1, "column": 2, "true_count": 0,
-                                  "false_count": 0}])
+                             ["uncovered_branch_locations"], [])
+            self.assertEqual(measured["files"]["src/future.rs"]
+                             ["unattributed_missing_sides"], 2)
+
+    def test_dead_duplicate_does_not_implicate_covered_source_sites(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            file = root / "src" / "future.rs"
+            file.parent.mkdir()
+            file.write_text("fn check() {}\n")
+            export = {"type": "llvm.coverage.json.export", "data": [{"files": [{
+                "filename": str(file),
+                "summary": {"lines": {"count": 2, "covered": 2},
+                            "branches": {"count": 4, "covered": 3}},
+                "branches": [[1, 2, 1, 12, 5, 6, 0, 0, 4],
+                             [2, 2, 2, 12, 7, 8, 0, 0, 4],
+                             [1, 2, 1, 12, 0, 0, 0, 0, 4],
+                             [2, 2, 2, 12, 0, 0, 0, 0, 4]],
+            }]}]}
+            measured = classify_export(export, root)["files"]["src/future.rs"]
+            self.assertEqual(measured["uncovered_branch_locations"], [])
+            self.assertEqual(measured["unattributed_missing_sides"], 1)
+
+    def test_true_source_gap_remains_named_amid_dead_duplicates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            file = root / "src" / "future.rs"
+            file.parent.mkdir()
+            file.write_text("fn check() {}\n")
+            export = {"type": "llvm.coverage.json.export", "data": [{"files": [{
+                "filename": str(file),
+                "summary": {"lines": {"count": 2, "covered": 2},
+                            "branches": {"count": 4, "covered": 3}},
+                "branches": [[1, 2, 1, 12, 5, 0, 0, 0, 4],
+                             [2, 2, 2, 12, 7, 8, 0, 0, 4],
+                             [2, 2, 2, 12, 0, 0, 0, 0, 4]],
+            }]}]}
+            measured = classify_export(export, root)["files"]["src/future.rs"]
+            self.assertEqual(measured["uncovered_branch_locations"], [
+                {"line": 1, "column": 2, "true_count": 5, "false_count": 0}])
+            self.assertEqual(measured["unattributed_missing_sides"], 0)
 
     def test_summary_counts_monomorphized_branches_beyond_unique_sites(self):
         with tempfile.TemporaryDirectory() as directory:

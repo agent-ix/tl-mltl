@@ -213,23 +213,14 @@ def classify_export(raw: dict, root: Path) -> dict:
                                 "true_count": true_count, "false_count": false_count}
                     if location not in uncovered:
                         uncovered.append(location)
-        if branches["covered"] < branches["count"] and not uncovered:
-            # Aggregation can make both sides positive even when separate
-            # instantiations each miss one side. Locate the summary gap at the
-            # source span using the minimum per-instance counts. A fully
-            # covered summary is authoritative and does not report zero-count
-            # uninstantiated detail rows as gaps.
-            for site in branch_sites:
-                records = [branch for branch in item["branches"]
-                           if tuple(branch[:4] + branch[6:]) == site]
-                true_count = min(branch[4] for branch in records)
-                false_count = min(branch[5] for branch in records)
-                if true_count == 0 or false_count == 0:
-                    uncovered.append({"line": site[0], "column": site[1],
-                                      "true_count": true_count,
-                                      "false_count": false_count})
-            if not uncovered:
-                raise ValueError(f"unlocated uncovered branch: {relative}")
+        # LLVM's summary counts monomorphized branches separately. When both
+        # sides were exercised at each source span but an instance is still
+        # missing a side, the export has no function identity that can bind
+        # the deficit to one reviewable source location. Keep the summary gap
+        # open rather than assigning it to every zero-count duplicate record.
+        unattributed_missing_sides = (
+            branches["count"] - branches["covered"] if not uncovered else 0
+        )
         files[relative] = {"lines": {"count": lines["count"], "covered": lines["covered"]},
                            "branches": {"count": branches["count"],
                                         "covered": branches["covered"]},
@@ -237,7 +228,8 @@ def classify_export(raw: dict, root: Path) -> dict:
                                          for key in ("count", "covered")},
                            "regions": {key: regions.get(key, 0)
                                        for key in ("count", "covered")},
-                           "uncovered_branch_locations": uncovered}
+                           "uncovered_branch_locations": uncovered,
+                           "unattributed_missing_sides": unattributed_missing_sides}
     if not files or not any(item["branches"]["count"] for item in files.values()):
         raise ValueError("no production branches were measured")
     return {"files": files, "totals": {
@@ -396,7 +388,9 @@ def main() -> int:
                     ) else "incomplete"
                     if missing:
                         result["reason"] = "critical_branches_not_instrumented"
-                    elif critical:
+                    elif critical or any(
+                        item["covered"] < item["count"] for item in critical_files.values()
+                    ):
                         result["reason"] = "critical_branch_target_open"
                 except (ValueError, KeyError, TypeError, json.JSONDecodeError) as failure:
                     result["status"] = "failed"
