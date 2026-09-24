@@ -140,6 +140,46 @@ fn validate_rust_binding(
             "{member}: rust toolchain identity differs from observed RUSTC release/host"
         ));
     }
+    if procedure.producer_name == "cargo-llvm-cov"
+        && procedure
+            .arguments
+            .iter()
+            .any(|argument| argument.kind == "literal" && argument.value == "--branch")
+    {
+        if !release.contains("-nightly") {
+            return Err(format!(
+                "{member}: branch coverage requires a nightly Rust toolchain"
+            ));
+        }
+        let llvm_version = field("LLVM version:")?;
+        for name in ["LLVM_COV", "LLVM_PROFDATA"] {
+            if !procedure.environment.iter().any(|entry| {
+                entry.name == name
+                    && entry.kind == "runtime"
+                    && entry.value == format!("host:{name}")
+            }) {
+                return Err(format!("{member}: branch coverage must bind host:{name}"));
+            }
+            let executable = Path::new(
+                environment
+                    .get(name)
+                    .ok_or(format!("{member}: branch coverage has no {name}"))?,
+            );
+            if !executable.is_absolute() || !executable.is_file() {
+                return Err(format!(
+                    "{member}: {name} must name an absolute executable file"
+                ));
+            }
+            let version = observed_version(executable, "--version")?;
+            let observed_llvm = version.lines().find_map(|line| {
+                line.split_once("LLVM version ")
+                    .and_then(|(_, value)| value.split_whitespace().next())
+            });
+            if observed_llvm != Some(llvm_version) {
+                return Err(format!("{member}: {name} LLVM version differs from RUSTC"));
+            }
+        }
+    }
     if procedure.producer_name == "cargo" {
         if procedure.producer_version != release {
             return Err(format!(
@@ -247,6 +287,8 @@ struct Procedure {
     producer_version: String,
     source_repository: String,
     #[serde(default)]
+    arguments: Vec<ProcedureArgument>,
+    #[serde(default)]
     environment: Vec<ProcedureEnvironment>,
     #[serde(default)]
     inputs: Vec<Artifact>,
@@ -258,6 +300,12 @@ struct Procedure {
     response_adapter: String,
     response_adapter_version: String,
     timeout_millis: u64,
+}
+
+#[derive(Deserialize)]
+struct ProcedureArgument {
+    kind: String,
+    value: String,
 }
 
 #[derive(Deserialize)]
@@ -1206,6 +1254,94 @@ mod tests {
             &tools
         )
         .is_err());
+    }
+
+    // Trace: FR-055-AC-4, TC-200
+    #[cfg(unix)]
+    #[test]
+    fn branch_coverage_requires_matching_nightly_and_llvm_tools() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir().unwrap();
+        let write_tool = |name: &str, output: &str| {
+            let path = directory.path().join(name);
+            std::fs::write(&path, format!("#!/bin/sh\nprintf '%s\\n' '{output}'\n")).unwrap();
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+            path
+        };
+        let stable = write_tool(
+            "stable-rustc",
+            "release: 1.98.1\nhost: x86_64-unknown-linux-gnu\nLLVM version: 20.1.0",
+        );
+        let nightly = write_tool(
+            "rustc",
+            "release: 1.100.0-nightly\nhost: x86_64-unknown-linux-gnu\nLLVM version: 23.1.1",
+        );
+        let cov = write_tool("llvm-cov", "LLVM version 23.1.1");
+        let profdata = write_tool("llvm-profdata", "LLVM version 23.1.1");
+        let wrong_profdata = write_tool("old-llvm-profdata", "LLVM version 23.1.10");
+        let procedure: Procedure = serde_json::from_str(include_str!(
+            "../../campaign/procedures/v8-mltl-default.json"
+        ))
+        .unwrap();
+        let nightly_identity = BTreeMap::from([(
+            "rust".into(),
+            "rustc 1.100.0-nightly (x86_64-unknown-linux-gnu)".into(),
+        )]);
+        let mut environment = BTreeMap::from([
+            (
+                "PATH".into(),
+                directory.path().to_string_lossy().into_owned(),
+            ),
+            ("RUSTC".into(), nightly.to_string_lossy().into_owned()),
+            ("LLVM_COV".into(), cov.to_string_lossy().into_owned()),
+            (
+                "LLVM_PROFDATA".into(),
+                profdata.to_string_lossy().into_owned(),
+            ),
+        ]);
+        assert!(validate_rust_binding(
+            "V8.mltl_default",
+            &procedure,
+            &nightly_identity,
+            &environment,
+            &BTreeMap::new()
+        )
+        .is_ok());
+        environment.insert(
+            "LLVM_PROFDATA".into(),
+            wrong_profdata.to_string_lossy().into_owned(),
+        );
+        let mismatch = validate_rust_binding(
+            "V8.mltl_default",
+            &procedure,
+            &nightly_identity,
+            &environment,
+            &BTreeMap::new()
+        )
+        .unwrap_err();
+        assert!(mismatch.contains("LLVM_PROFDATA LLVM version differs from RUSTC"));
+        environment.insert(
+            "LLVM_PROFDATA".into(),
+            profdata.to_string_lossy().into_owned(),
+        );
+        environment.insert("RUSTC".into(), stable.to_string_lossy().into_owned());
+        let stable_identity = BTreeMap::from([(
+            "rust".into(),
+            "rustc 1.98.1 (x86_64-unknown-linux-gnu)".into(),
+        )]);
+        std::fs::remove_file(&nightly).unwrap();
+        std::fs::rename(&stable, &nightly).unwrap();
+        environment.insert("RUSTC".into(), nightly.to_string_lossy().into_owned());
+        let stable_refusal = validate_rust_binding(
+            "V8.mltl_default",
+            &procedure,
+            &stable_identity,
+            &environment,
+            &BTreeMap::new()
+        )
+        .unwrap_err();
+        assert!(stable_refusal.contains("branch coverage requires a nightly Rust toolchain"));
     }
 
     // Trace: FR-055-AC-4, TC-200
