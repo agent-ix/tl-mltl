@@ -26,6 +26,23 @@ struct Machine {
     source_remotes: BTreeMap<String, String>,
 }
 
+fn validate_toolchains(toolchains: &BTreeMap<String, String>) -> Result<(), String> {
+    if toolchains.is_empty() {
+        return Err("machine toolchains must name at least one of node, rust, python".into());
+    }
+    for (language, identity) in toolchains {
+        if !matches!(language.as_str(), "node" | "rust" | "python") {
+            return Err(format!(
+                "machine toolchains.{language} is unsupported; use node, rust, or python"
+            ));
+        }
+        if identity.trim().is_empty() {
+            return Err(format!("machine toolchains.{language} has no identity"));
+        }
+    }
+    Ok(())
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Tool {
@@ -571,6 +588,7 @@ fn build(repo: &Path, definition: Definition, machine: Machine) -> Result<Value,
     if machine.schema != "tl-mltl.campaign-machine/v1" {
         return Err("wrong TL machine schema".into());
     }
+    validate_toolchains(&machine.toolchains)?;
     let revisions = definition
         .source_graph
         .iter()
@@ -697,8 +715,8 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        binding, selected_inputs, sha256, verify_control_file, Contracts, Machine, Member,
-        Procedure, Tool,
+        binding, selected_inputs, sha256, validate_toolchains, verify_control_file, Contracts,
+        Machine, Member, Procedure, Tool,
     };
 
     // Trace: FR-055-AC-1, TC-197
@@ -765,6 +783,25 @@ mod tests {
             measured.path(),
             std::path::Path::new("procedure.json")
         )
+        .is_ok());
+    }
+
+    // Trace: FR-055-AC-1, TC-197
+    #[test]
+    fn machine_toolchains_need_a_supported_language_identity() {
+        assert!(validate_toolchains(&BTreeMap::new()).is_err());
+        assert!(
+            validate_toolchains(&BTreeMap::from([("rustc".into(), "rustc 1.98.1".into())]))
+                .is_err()
+        );
+        assert!(validate_toolchains(&BTreeMap::from([("rust".into(), " ".into())])).is_err());
+        assert!(validate_toolchains(&BTreeMap::from([
+            (
+                "rust".into(),
+                "rustc 1.98.1 (aarch64-unknown-linux-gnu)".into()
+            ),
+            ("python".into(), "Python 3.13.11".into()),
+        ]))
         .is_ok());
     }
 

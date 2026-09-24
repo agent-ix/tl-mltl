@@ -210,6 +210,14 @@ machine table. A generated config is only an execution selection, never a
 measurement result. A member passes only after Quoin retains the bounded EA
 producer and checker results and independently reconciles their identities.
 
+The machine file's `toolchains` map must identify at least one language used
+by the run, using Quoin's exact `rust`, `python`, or `node` keys and nonempty
+identities observed on that machine (for example,
+`"rust": "rustc 1.98.1 (aarch64-unknown-linux-gnu)"`). Do not use executable
+names such as `rustc` as keys or leave the map empty. The config generator
+rejects both cases before any measurement starts. The producer executable and
+version are pinned separately by each procedure and machine tool entry.
+
 The direct C2PO compile procedures bind Python 3.13.11. A bounded smoke on
 Linux host `cave` used R2U2 commit
 `336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a` with C2PO 4.1.0
