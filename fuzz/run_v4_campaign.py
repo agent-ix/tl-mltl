@@ -22,6 +22,9 @@ TARGETS = {
     "tl-rewrite": "infinite_rewrite",
     "tl-mltl": "c2po_map",
 }
+REPORT_SCHEMA = "tl-v4.libfuzzer-campaign/v1"
+SCOPE = "bounded observation; no four-crate V4 or correctness claim"
+TEMP_PREFIX = "tl-v4-fuzz-"
 
 
 def digest(data: bytes) -> str:
@@ -84,7 +87,7 @@ def run(output: Path, runs: int, seed: int, seconds: int) -> int:
     output.mkdir(parents=True)
     artifacts_dir = output / "artifacts"
     artifacts_dir.mkdir()
-    with tempfile.TemporaryDirectory(prefix="tl-v4-fuzz-") as temp:
+    with tempfile.TemporaryDirectory(prefix=TEMP_PREFIX) as temp:
         corpus = Path(temp) / "corpus"
         corpus.mkdir()
         for name in seeds:
@@ -111,7 +114,7 @@ def run(output: Path, runs: int, seed: int, seconds: int) -> int:
     artifact_paths = sorted(path for path in artifacts_dir.iterdir() if path.is_file())
     status, actual, stop_reason = classify(exit_code, stdout + b"\n" + stderr, runs, artifact_paths)
     report = {
-        "schema": "tl-v4.libfuzzer-campaign/v1",
+        "schema": REPORT_SCHEMA,
         "crate": package,
         "source_revision": revision,
         "target": target,
@@ -133,7 +136,7 @@ def run(output: Path, runs: int, seed: int, seconds: int) -> int:
         "replay": {"required": bool(artifact_paths), "confirmed": False,
                    "minimized_artifact_sha256": None},
         "status": status,
-        "scope": "bounded observation; no four-crate V4 or correctness claim",
+        "scope": SCOPE,
     }
     (output / "report.json").write_text(json.dumps(report, sort_keys=True, indent=2) + "\n")
     return 0 if status == "bounded_no_crash" else 1

@@ -327,6 +327,7 @@ dependencies = [
 name = "tl-mltl-fuzz"
 version = "0.0.0"
 dependencies = [
+ "arbitrary",
  "libfuzzer-sys",
  "serde_json",
  "sha2",

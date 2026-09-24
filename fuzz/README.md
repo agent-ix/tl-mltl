@@ -70,3 +70,33 @@ owner past-history corpus and do not expand that denominator.
 The earlier 200-execution campaign remains in
 `runs/2026-09-22-c2po_map.json`; its source and syntax pins differ from this
 V4 campaign. Generated coverage seeds are scratch, not reviewed corpus cases.
+
+## Finite oracle differential lane
+
+`finite_oracle_differential` uses `arbitrary::Unstructured` to construct valid
+closed-future or origin-complete-past formula graphs directly, with nested
+Boolean and temporal operators, ordered bounded intervals, and nonempty
+complete traces. It evaluates each trace position through the production
+evaluator and the separate dev-only `tl-oracle`. Every verdict mismatch fails
+the target. The checked seed corpus and its SHA-256 manifest are in
+`corpus/finite_oracle_differential/`.
+
+`finite_oracle_fault_seed` uses the same generator and comparator with a
+deliberately inverted production Until verdict at the origin. It is a
+diagnostic target for proving that the comparison detects a seeded evaluator
+fault, not a clean-run target. Run it with the same corpus and expect a crash
+artifact; minimize and replay that artifact before citing the fault result.
+
+The V9 runner records toolchain, source and corpus digests, requested budget,
+observed executions, raw streams, and any crash artifacts. From a clean
+reviewed commit with a nightly Rust toolchain selected:
+
+```sh
+python3 fuzz/run_v9_finite_campaign.py --output fuzz/evidence/v9-finite-YYYY-MM-DD \
+  --runs 1000 --seed 230 --seconds 30
+```
+
+A bounded clean run does not prove all finite semantics correct. Any real
+disagreement must be minimized, replayed on the same source revision, and
+promoted to a reviewed regression fixture before the Campaign V9 report
+claims its exit criteria.

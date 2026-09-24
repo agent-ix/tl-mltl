@@ -9,6 +9,7 @@ edition = "2021"
 cargo-fuzz = true
 
 [dependencies]
+arbitrary = "=1.4.2"
 libfuzzer-sys = "0.4"
 sha2 = "=0.10.9"
 serde_json = "=1.0.151"
@@ -40,6 +41,20 @@ bench = false
 [[bin]]
 name = "partial_valuation_monotone"
 path = "fuzz_targets/partial_valuation_monotone.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "finite_oracle_differential"
+path = "fuzz_targets/finite_oracle_differential.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "finite_oracle_fault_seed"
+path = "fuzz_targets/finite_oracle_fault_seed.rs"
 test = false
 doc = false
 bench = false
