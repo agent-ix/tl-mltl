@@ -1701,9 +1701,8 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // The current V1 matrix has 346 declared rows; 196 have native trace
-    // backing after the FR-050 owner boundary tests and exact
-    // infinite-provider attribution at this revision.
+    // The current V1 matrix has 346 declared rows; 199 have native trace
+    // backing, including the V5 mutation population's TC-183 binding.
     // Suite registry rows are included; the two intentionally non-runnable
     // suites are checked separately below. An unbacked row is not counted as
     // implemented merely because its requirement appears in the spec.
@@ -1712,7 +1711,7 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
         "the declared-row population changed: {totals}; review the exact Quire export."
     );
     assert_eq!(
-        totals["backed"], 196,
+        totals["backed"], 199,
         "backed-row count changed: {totals}; review the exact Quire export and trace tags."
     );
     // The aggregate alone cannot identify which suite rows are absent, so check
