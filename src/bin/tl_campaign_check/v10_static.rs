@@ -22,7 +22,9 @@ use tl_syntax::{
     SignalDomain, SignalId,
 };
 
-use super::v10_replay::{CellDetail, Replay};
+use super::v10_replay::{CellDetail, DetailReason, RefusalDetail, Replay};
+#[cfg(test)]
+use super::v10_replay::ComparisonClass;
 
 const BOUNDED_MANIFEST: &[u8] = include_bytes!("../../../corpus/r2u2-v4.2/manifest.json");
 const BOUNDED_SPEC: &[u8] = include_bytes!("../../../corpus/r2u2-v4.2/formulas.c2po");
@@ -480,7 +482,7 @@ fn past_case(
             None
         }
         (false, Err(refusal)) if expected_past_refusal(index, &refusal) => {
-            Some(format!("{refusal:?}"))
+            Some(RefusalDetail::validated(&refusal))
         }
         _ => return Replay::Reject("v10_mapping_partition_unproved"),
     };
@@ -614,24 +616,22 @@ fn unsafe_since(target: &BTreeMap<(usize, usize), bool>, cells: &mut Vec<CellDet
                 2,
                 cell.expected,
                 observed,
-                "v10_static_known_origin_mismatch_unsupported",
+                DetailReason::KnownOriginMismatchUnsupported,
             ),
-            Some(false) => CellDetail {
-                formula_index: 0,
-                position: 2,
-                comparison_class: "semantic_mismatch",
-                expected: cell.expected,
+            Some(false) => CellDetail::non_conclusive(
+                0,
+                2,
+                cell.expected,
                 observed,
-                refusal: Some("v10_static_known_origin_mismatch_changed".into()),
-            },
-            None => CellDetail {
-                formula_index: 0,
-                position: 2,
-                comparison_class: "unavailable_target",
-                expected: cell.expected,
+                DetailReason::KnownOriginMismatchChanged,
+            ),
+            None => CellDetail::non_conclusive(
+                0,
+                2,
+                cell.expected,
                 observed,
-                refusal: Some("v10_known_target_row_missing".into()),
-            },
+                DetailReason::KnownTargetRowMissing,
+            ),
         };
     }
     match target.get(&(0, 2)) {
@@ -704,7 +704,7 @@ fn safety(target: &BTreeMap<(usize, usize), bool>, cells: &mut Vec<CellDetail>) 
             1,
             Some(true),
             second,
-            "target_pass_does_not_prove_unbounded_safety",
+            DetailReason::TargetPassDoesNotProveUnboundedSafety,
         ),
         _ => CellDetail::compared(0, 1, true, second),
     });
@@ -822,7 +822,7 @@ mod tests {
         assert_eq!(bounded.len(), 8);
         assert!(bounded
             .iter()
-            .all(|cell| cell.comparison_class == "agreement"));
+            .all(|cell| cell.comparison_class == ComparisonClass::Agreement));
 
         let (verdict, past) = replay_detailed(
             "past",
@@ -834,29 +834,42 @@ mod tests {
         assert_eq!(past.len(), 18);
         assert_eq!(
             past.iter()
-                .filter(|cell| cell.comparison_class == "agreement")
+                .filter(|cell| cell.comparison_class == ComparisonClass::Agreement)
                 .count(),
             6
         );
         assert_eq!(
             past.iter()
-                .filter(|cell| cell.comparison_class == "unsupported_mapping")
+                .filter(|cell| cell.comparison_class == ComparisonClass::UnsupportedMapping)
                 .count(),
             12
         );
         assert!(past
             .iter()
-            .filter(|cell| cell.comparison_class == "unsupported_mapping")
-            .all(|cell| cell
-                .refusal
-                .as_deref()
-                .is_some_and(|reason| reason.contains("TargetOriginIntervalMismatch"))));
+            .filter(|cell| cell.comparison_class == ComparisonClass::UnsupportedMapping)
+            .all(|cell| matches!(
+                cell.refusal,
+                Some(RefusalDetail::TargetOriginIntervalMismatch { .. })
+            )));
+        let refused = past
+            .iter()
+            .find(|cell| cell.formula_index == 1 && cell.position == 0)
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(refused).unwrap()["refusal"],
+            serde_json::json!({
+                "kind": "target_origin_interval_mismatch",
+                "operator": "historically",
+                "start": 0,
+                "end": 1
+            })
+        );
 
         let (verdict, safety) = replay_detailed("safety", &target(b"0:0,F\n0:1,T\n"));
         assert!(matches!(verdict, Replay::Accept { .. }));
         assert_eq!(safety.len(), 2);
-        assert_eq!(safety[0].comparison_class, "agreement");
-        assert_eq!(safety[1].comparison_class, "non_conclusive");
+        assert_eq!(safety[0].comparison_class, ComparisonClass::Agreement);
+        assert_eq!(safety[1].comparison_class, ComparisonClass::NonConclusive);
 
         let (verdict, unsafe_cells) = replay_detailed(
             "unsafe-since",
@@ -872,9 +885,16 @@ mod tests {
         assert_eq!(
             unsafe_cells
                 .iter()
-                .filter(|cell| cell.comparison_class == "non_conclusive")
+                .filter(|cell| cell.comparison_class == ComparisonClass::NonConclusive)
                 .count(),
             1
+        );
+        let drift = unsafe_cells.iter().find(|cell| cell.position == 2).unwrap();
+        assert_eq!(drift.expected, Some(false));
+        assert_eq!(drift.observed, Some(true));
+        assert_eq!(
+            drift.reason,
+            Some(DetailReason::KnownOriginMismatchUnsupported)
         );
     }
 
@@ -889,7 +909,7 @@ mod tests {
         assert_eq!(
             cells
                 .iter()
-                .filter(|cell| cell.comparison_class == "semantic_mismatch")
+                .filter(|cell| cell.comparison_class == ComparisonClass::SemanticMismatch)
                 .count(),
             1
         );
@@ -902,7 +922,10 @@ mod tests {
         assert_eq!(
             cells
                 .iter()
-                .filter(|cell| cell.comparison_class == "unavailable_target")
+                .filter(
+                    |cell| cell.comparison_class == ComparisonClass::NonConclusive
+                        && cell.reason == Some(DetailReason::AdmittedTargetRowMissing)
+                )
                 .count(),
             1
         );
@@ -961,10 +984,17 @@ mod tests {
             "../../../corpus/past-c2po-v1/target-4.2/unsafe-since.stdout"
         ));
         unsafe_rows.insert((0, 2), false);
+        let (verdict, cells) = replay_detailed("unsafe-since", &unsafe_rows);
         assert_eq!(
-            replay("unsafe-since", &unsafe_rows),
+            verdict,
             Replay::Reject("v10_static_known_origin_mismatch_changed")
         );
+        let drift = cells.iter().find(|cell| cell.position == 2).unwrap();
+        assert_eq!(drift.comparison_class, ComparisonClass::NonConclusive);
+        assert_eq!(drift.expected, Some(false));
+        assert_eq!(drift.observed, Some(false));
+        assert_eq!(drift.reason, Some(DetailReason::KnownOriginMismatchChanged));
+        assert!(drift.refusal.is_none());
 
         let mut safety_rows = target(b"0:0,F\n0:1,T\n");
         safety_rows.insert((0, 0), true);
