@@ -1,0 +1,2146 @@
+[
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace UnboundedInterval::start -> u32 with 0\n@@ -59,17 +59,17 @@\n \n impl UnboundedInterval {\n     /// Constructs `[start,)`. Every `u32` lower bound is valid.\n     pub const fn new(start: u32) -> Self {\n         Self { start }\n     }\n     /// Returns the inclusive lower bound.\n     pub const fn start(self) -> u32 {\n-        self.start\n+        0 /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Closed or unbounded temporal interval in the infinite formula edition.\n #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]\n #[cfg_attr(feature = \"serde\", derive(serde::Deserialize, serde::Serialize))]\n #[cfg_attr(feature = \"serde\", serde(tag = \"kind\", rename_all = \"snake_case\"))]\n pub enum TemporalInterval {\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "UnboundedInterval::start",
+      "return_type": "-> u32",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 68
+        },
+        "start": {
+          "column": 5,
+          "line": 65
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:67:9: replace UnboundedInterval::start -> u32 with 0",
+    "package": "tl-syntax",
+    "replacement": "0",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 67
+      },
+      "start": {
+        "column": 9,
+        "line": 67
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace UnboundedInterval::start -> u32 with 1\n@@ -59,17 +59,17 @@\n \n impl UnboundedInterval {\n     /// Constructs `[start,)`. Every `u32` lower bound is valid.\n     pub const fn new(start: u32) -> Self {\n         Self { start }\n     }\n     /// Returns the inclusive lower bound.\n     pub const fn start(self) -> u32 {\n-        self.start\n+        1 /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Closed or unbounded temporal interval in the infinite formula edition.\n #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]\n #[cfg_attr(feature = \"serde\", derive(serde::Deserialize, serde::Serialize))]\n #[cfg_attr(feature = \"serde\", serde(tag = \"kind\", rename_all = \"snake_case\"))]\n pub enum TemporalInterval {\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "UnboundedInterval::start",
+      "return_type": "-> u32",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 68
+        },
+        "start": {
+          "column": 5,
+          "line": 65
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:67:9: replace UnboundedInterval::start -> u32 with 1",
+    "package": "tl-syntax",
+    "replacement": "1",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 67
+      },
+      "start": {
+        "column": 9,
+        "line": 67
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace TemporalInterval::start -> u32 with 0\n@@ -77,20 +77,17 @@\n     Closed(Interval),\n     /// Open-upper interval `[a,)`.\n     Unbounded(UnboundedInterval),\n }\n \n impl TemporalInterval {\n     /// Returns the inclusive lower bound of either form.\n     pub const fn start(self) -> u32 {\n-        match self {\n-            Self::Closed(interval) => interval.start(),\n-            Self::Unbounded(interval) => interval.start(),\n-        }\n+        0 /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Refusal for a non-canonical temporal interval spelling.\n #[derive(Clone, Copy, Debug, Eq, PartialEq)]\n #[non_exhaustive]\n pub enum TemporalIntervalParseError {\n     /// The input is not `[a,b]` or `[a,)`.\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "TemporalInterval::start",
+      "return_type": "-> u32",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 89
+        },
+        "start": {
+          "column": 5,
+          "line": 83
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:85:9: replace TemporalInterval::start -> u32 with 0",
+    "package": "tl-syntax",
+    "replacement": "0",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 88
+      },
+      "start": {
+        "column": 9,
+        "line": 85
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace TemporalInterval::start -> u32 with 1\n@@ -77,20 +77,17 @@\n     Closed(Interval),\n     /// Open-upper interval `[a,)`.\n     Unbounded(UnboundedInterval),\n }\n \n impl TemporalInterval {\n     /// Returns the inclusive lower bound of either form.\n     pub const fn start(self) -> u32 {\n-        match self {\n-            Self::Closed(interval) => interval.start(),\n-            Self::Unbounded(interval) => interval.start(),\n-        }\n+        1 /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Refusal for a non-canonical temporal interval spelling.\n #[derive(Clone, Copy, Debug, Eq, PartialEq)]\n #[non_exhaustive]\n pub enum TemporalIntervalParseError {\n     /// The input is not `[a,b]` or `[a,)`.\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "TemporalInterval::start",
+      "return_type": "-> u32",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 89
+        },
+        "start": {
+          "column": 5,
+          "line": 83
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:85:9: replace TemporalInterval::start -> u32 with 1",
+    "package": "tl-syntax",
+    "replacement": "1",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 88
+      },
+      "start": {
+        "column": 9,
+        "line": 85
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl fmt::Display for TemporalIntervalParseError>::fmt -> fmt::Result with Ok(Default::default())\n@@ -98,17 +98,17 @@\n     /// A bound is not an unsigned 32-bit decimal integer.\n     InvalidBound,\n     /// A closed interval has its start after its end.\n     Inverted,\n }\n \n impl fmt::Display for TemporalIntervalParseError {\n     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {\n-        write!(formatter, \"invalid temporal interval: {self:?}\")\n+        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n impl FromStr for TemporalInterval {\n     type Err = TemporalIntervalParseError;\n \n     fn from_str(spelling: &str) -> Result<Self, Self::Err> {\n         let (body, unbounded) = match (spelling.strip_prefix('['), spelling.ends_with(')')) {\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl fmt::Display for TemporalIntervalParseError>::fmt",
+      "return_type": "-> fmt::Result",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 107
+        },
+        "start": {
+          "column": 5,
+          "line": 105
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:106:9: replace <impl fmt::Display for TemporalIntervalParseError>::fmt -> fmt::Result with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 65,
+        "line": 106
+      },
+      "start": {
+        "column": 9,
+        "line": 106
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl FromStr for TemporalInterval>::from_str -> Result<Self, Self::Err> with Ok(Default::default())\n@@ -106,40 +106,17 @@\n         write!(formatter, \"invalid temporal interval: {self:?}\")\n     }\n }\n \n impl FromStr for TemporalInterval {\n     type Err = TemporalIntervalParseError;\n \n     fn from_str(spelling: &str) -> Result<Self, Self::Err> {\n-        let (body, unbounded) = match (spelling.strip_prefix('['), spelling.ends_with(')')) {\n-            (Some(body), true) => (body.strip_suffix(')').ok_or(Self::Err::Malformed)?, true),\n-            (Some(body), false) => (body.strip_suffix(']').ok_or(Self::Err::Malformed)?, false),\n-            _ => return Err(Self::Err::Malformed),\n-        };\n-        let (start, end) = body.split_once(',').ok_or(Self::Err::Malformed)?;\n-        let parse_bound = |value: &str| {\n-            if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {\n-                return Err(Self::Err::InvalidBound);\n-            }\n-            value.parse::<u32>().map_err(|_| Self::Err::InvalidBound)\n-        };\n-        let start = parse_bound(start)?;\n-        if unbounded {\n-            if !end.is_empty() {\n-                return Err(Self::Err::Malformed);\n-            }\n-            Ok(Self::Unbounded(UnboundedInterval::new(start)))\n-        } else {\n-            let end = parse_bound(end)?;\n-            Interval::new(start, end)\n-                .map(Self::Closed)\n-                .map_err(|_| Self::Err::Inverted)\n-        }\n+        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// One canonical node in a formula-unbounded graph.\n #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]\n #[cfg_attr(feature = \"serde\", derive(serde::Serialize))]\n pub struct InfiniteNode {\n     /// Operator and operands.\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl FromStr for TemporalInterval>::from_str",
+      "return_type": "-> Result<Self, Self::Err>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 138
+        },
+        "start": {
+          "column": 5,
+          "line": 113
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:114:9: replace <impl FromStr for TemporalInterval>::from_str -> Result<Self, Self::Err> with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 137
+      },
+      "start": {
+        "column": 9,
+        "line": 114
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ delete match arm (Some(body), true) in <impl FromStr for TemporalInterval>::from_str\n@@ -107,17 +107,17 @@\n     }\n }\n \n impl FromStr for TemporalInterval {\n     type Err = TemporalIntervalParseError;\n \n     fn from_str(spelling: &str) -> Result<Self, Self::Err> {\n         let (body, unbounded) = match (spelling.strip_prefix('['), spelling.ends_with(')')) {\n-            (Some(body), true) => (body.strip_suffix(')').ok_or(Self::Err::Malformed)?, true),\n+             /* ~ changed by cargo-mutants ~ */\n             (Some(body), false) => (body.strip_suffix(']').ok_or(Self::Err::Malformed)?, false),\n             _ => return Err(Self::Err::Malformed),\n         };\n         let (start, end) = body.split_once(',').ok_or(Self::Err::Malformed)?;\n         let parse_bound = |value: &str| {\n             if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {\n                 return Err(Self::Err::InvalidBound);\n             }\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl FromStr for TemporalInterval>::from_str",
+      "return_type": "-> Result<Self, Self::Err>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 138
+        },
+        "start": {
+          "column": 5,
+          "line": 113
+        }
+      }
+    },
+    "genre": "MatchArm",
+    "name": "src/formula/infinite.rs:115:13: delete match arm (Some(body), true) in <impl FromStr for TemporalInterval>::from_str",
+    "package": "tl-syntax",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 95,
+        "line": 115
+      },
+      "start": {
+        "column": 13,
+        "line": 115
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ delete match arm (Some(body), false) in <impl FromStr for TemporalInterval>::from_str\n@@ -108,17 +108,17 @@\n }\n \n impl FromStr for TemporalInterval {\n     type Err = TemporalIntervalParseError;\n \n     fn from_str(spelling: &str) -> Result<Self, Self::Err> {\n         let (body, unbounded) = match (spelling.strip_prefix('['), spelling.ends_with(')')) {\n             (Some(body), true) => (body.strip_suffix(')').ok_or(Self::Err::Malformed)?, true),\n-            (Some(body), false) => (body.strip_suffix(']').ok_or(Self::Err::Malformed)?, false),\n+             /* ~ changed by cargo-mutants ~ */\n             _ => return Err(Self::Err::Malformed),\n         };\n         let (start, end) = body.split_once(',').ok_or(Self::Err::Malformed)?;\n         let parse_bound = |value: &str| {\n             if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {\n                 return Err(Self::Err::InvalidBound);\n             }\n             value.parse::<u32>().map_err(|_| Self::Err::InvalidBound)\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl FromStr for TemporalInterval>::from_str",
+      "return_type": "-> Result<Self, Self::Err>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 138
+        },
+        "start": {
+          "column": 5,
+          "line": 113
+        }
+      }
+    },
+    "genre": "MatchArm",
+    "name": "src/formula/infinite.rs:116:13: delete match arm (Some(body), false) in <impl FromStr for TemporalInterval>::from_str",
+    "package": "tl-syntax",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 97,
+        "line": 116
+      },
+      "start": {
+        "column": 13,
+        "line": 116
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace || with && in <impl FromStr for TemporalInterval>::from_str\n@@ -113,17 +113,17 @@\n     fn from_str(spelling: &str) -> Result<Self, Self::Err> {\n         let (body, unbounded) = match (spelling.strip_prefix('['), spelling.ends_with(')')) {\n             (Some(body), true) => (body.strip_suffix(')').ok_or(Self::Err::Malformed)?, true),\n             (Some(body), false) => (body.strip_suffix(']').ok_or(Self::Err::Malformed)?, false),\n             _ => return Err(Self::Err::Malformed),\n         };\n         let (start, end) = body.split_once(',').ok_or(Self::Err::Malformed)?;\n         let parse_bound = |value: &str| {\n-            if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {\n+            if value.is_empty() && /* ~ changed by cargo-mutants ~ */ !value.bytes().all(|byte| byte.is_ascii_digit()) {\n                 return Err(Self::Err::InvalidBound);\n             }\n             value.parse::<u32>().map_err(|_| Self::Err::InvalidBound)\n         };\n         let start = parse_bound(start)?;\n         if unbounded {\n             if !end.is_empty() {\n                 return Err(Self::Err::Malformed);\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl FromStr for TemporalInterval>::from_str",
+      "return_type": "-> Result<Self, Self::Err>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 138
+        },
+        "start": {
+          "column": 5,
+          "line": 113
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:121:33: replace || with && in <impl FromStr for TemporalInterval>::from_str",
+    "package": "tl-syntax",
+    "replacement": "&&",
+    "span": {
+      "end": {
+        "column": 35,
+        "line": 121
+      },
+      "start": {
+        "column": 33,
+        "line": 121
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ delete ! in <impl FromStr for TemporalInterval>::from_str\n@@ -113,17 +113,17 @@\n     fn from_str(spelling: &str) -> Result<Self, Self::Err> {\n         let (body, unbounded) = match (spelling.strip_prefix('['), spelling.ends_with(')')) {\n             (Some(body), true) => (body.strip_suffix(')').ok_or(Self::Err::Malformed)?, true),\n             (Some(body), false) => (body.strip_suffix(']').ok_or(Self::Err::Malformed)?, false),\n             _ => return Err(Self::Err::Malformed),\n         };\n         let (start, end) = body.split_once(',').ok_or(Self::Err::Malformed)?;\n         let parse_bound = |value: &str| {\n-            if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {\n+            if value.is_empty() ||  /* ~ changed by cargo-mutants ~ */value.bytes().all(|byte| byte.is_ascii_digit()) {\n                 return Err(Self::Err::InvalidBound);\n             }\n             value.parse::<u32>().map_err(|_| Self::Err::InvalidBound)\n         };\n         let start = parse_bound(start)?;\n         if unbounded {\n             if !end.is_empty() {\n                 return Err(Self::Err::Malformed);\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl FromStr for TemporalInterval>::from_str",
+      "return_type": "-> Result<Self, Self::Err>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 138
+        },
+        "start": {
+          "column": 5,
+          "line": 113
+        }
+      }
+    },
+    "genre": "UnaryOperator",
+    "name": "src/formula/infinite.rs:121:36: delete ! in <impl FromStr for TemporalInterval>::from_str",
+    "package": "tl-syntax",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 37,
+        "line": 121
+      },
+      "start": {
+        "column": 36,
+        "line": 121
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ delete ! in <impl FromStr for TemporalInterval>::from_str\n@@ -120,17 +120,17 @@\n         let parse_bound = |value: &str| {\n             if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {\n                 return Err(Self::Err::InvalidBound);\n             }\n             value.parse::<u32>().map_err(|_| Self::Err::InvalidBound)\n         };\n         let start = parse_bound(start)?;\n         if unbounded {\n-            if !end.is_empty() {\n+            if  /* ~ changed by cargo-mutants ~ */end.is_empty() {\n                 return Err(Self::Err::Malformed);\n             }\n             Ok(Self::Unbounded(UnboundedInterval::new(start)))\n         } else {\n             let end = parse_bound(end)?;\n             Interval::new(start, end)\n                 .map(Self::Closed)\n                 .map_err(|_| Self::Err::Inverted)\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl FromStr for TemporalInterval>::from_str",
+      "return_type": "-> Result<Self, Self::Err>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 138
+        },
+        "start": {
+          "column": 5,
+          "line": 113
+        }
+      }
+    },
+    "genre": "UnaryOperator",
+    "name": "src/formula/infinite.rs:128:16: delete ! in <impl FromStr for TemporalInterval>::from_str",
+    "package": "tl-syntax",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 17,
+        "line": 128
+      },
+      "start": {
+        "column": 16,
+        "line": 128
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl serde::Deserialize<'de> for InfiniteNode>::deserialize -> Result<Self, D::Error> with Ok(Default::default())\n@@ -256,109 +256,17 @@\n         #[serde(default)]\n         span: Option<SourceSpan>,\n     },\n }\n \n #[cfg(feature = \"serde\")]\n impl<'de> serde::Deserialize<'de> for InfiniteNode {\n     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {\n-        use InfiniteNodeKind as Kind;\n-        let (kind, span) = match InfiniteNodeWire::deserialize(deserializer)? {\n-            InfiniteNodeWire::False { span } => (Kind::False, span),\n-            InfiniteNodeWire::True { span } => (Kind::True, span),\n-            InfiniteNodeWire::Proposition { proposition, span } => {\n-                (Kind::Proposition { proposition }, span)\n-            }\n-            InfiniteNodeWire::Not { operand, span } => (Kind::Not { operand }, span),\n-            InfiniteNodeWire::And { left, right, span } => (Kind::And { left, right }, span),\n-            InfiniteNodeWire::Or { left, right, span } => (Kind::Or { left, right }, span),\n-            InfiniteNodeWire::Implies { left, right, span } => {\n-                (Kind::Implies { left, right }, span)\n-            }\n-            InfiniteNodeWire::Equivalent { left, right, span } => {\n-                (Kind::Equivalent { left, right }, span)\n-            }\n-            InfiniteNodeWire::Future {\n-                interval,\n-                operand,\n-                span,\n-            } => (Kind::Future { interval, operand }, span),\n-            InfiniteNodeWire::Globally {\n-                interval,\n-                operand,\n-                span,\n-            } => (Kind::Globally { interval, operand }, span),\n-            InfiniteNodeWire::Until {\n-                interval,\n-                left,\n-                right,\n-                span,\n-            } => (\n-                Kind::Until {\n-                    interval,\n-                    left,\n-                    right,\n-                },\n-                span,\n-            ),\n-            InfiniteNodeWire::Release {\n-                interval,\n-                left,\n-                right,\n-                span,\n-            } => (\n-                Kind::Release {\n-                    interval,\n-                    left,\n-                    right,\n-                },\n-                span,\n-            ),\n-            InfiniteNodeWire::Once {\n-                interval,\n-                operand,\n-                span,\n-            } => (Kind::Once { interval, operand }, span),\n-            InfiniteNodeWire::Historically {\n-                interval,\n-                operand,\n-                span,\n-            } => (Kind::Historically { interval, operand }, span),\n-            InfiniteNodeWire::StrongPrevious { operand, span } => {\n-                (Kind::StrongPrevious { operand }, span)\n-            }\n-            InfiniteNodeWire::Since {\n-                interval,\n-                left,\n-                right,\n-                span,\n-            } => (\n-                Kind::Since {\n-                    interval,\n-                    left,\n-                    right,\n-                },\n-                span,\n-            ),\n-            InfiniteNodeWire::Triggered {\n-                interval,\n-                left,\n-                right,\n-                span,\n-            } => (\n-                Kind::Triggered {\n-                    interval,\n-                    left,\n-                    right,\n-                },\n-                span,\n-            ),\n-        };\n-        Ok(Self { kind, span })\n+        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n impl InfiniteNode {\n     /// Constructs a node without a diagnostic span.\n     pub const fn new(kind: InfiniteNodeKind) -> Self {\n         Self { kind, span: None }\n     }\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl serde::Deserialize<'de> for InfiniteNode>::deserialize",
+      "return_type": "-> Result<Self, D::Error>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 357
+        },
+        "start": {
+          "column": 5,
+          "line": 263
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:264:9: replace <impl serde::Deserialize<'de> for InfiniteNode>::deserialize -> Result<Self, D::Error> with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 32,
+        "line": 356
+      },
+      "start": {
+        "column": 9,
+        "line": 264
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteNode::with_span -> Self with Default::default()\n@@ -359,20 +359,17 @@\n \n impl InfiniteNode {\n     /// Constructs a node without a diagnostic span.\n     pub const fn new(kind: InfiniteNodeKind) -> Self {\n         Self { kind, span: None }\n     }\n     /// Constructs a node with a checked source span.\n     pub const fn with_span(kind: InfiniteNodeKind, span: SourceSpan) -> Self {\n-        Self {\n-            kind,\n-            span: Some(span),\n-        }\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Closed operator vocabulary of the infinite-trace formula edition.\n #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]\n #[cfg_attr(feature = \"serde\", derive(serde::Serialize, serde::Deserialize))]\n #[cfg_attr(\n     feature = \"serde\",\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteNode::with_span",
+      "return_type": "-> Self",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 371
+        },
+        "start": {
+          "column": 5,
+          "line": 365
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:367:9: replace InfiniteNode::with_span -> Self with Default::default()",
+    "package": "tl-syntax",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 370
+      },
+      "start": {
+        "column": 9,
+        "line": 367
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteNodeKind::operands -> [Option<NodeId>; 2] with [None; 2]\n@@ -490,33 +490,17 @@\n         /// Right operand.\n         right: NodeId,\n     },\n }\n \n impl InfiniteNodeKind {\n     /// Returns the node's predecessor operands.\n     pub const fn operands(self) -> [Option<NodeId>; 2] {\n-        match self {\n-            Self::False | Self::True | Self::Proposition { .. } => [None, None],\n-            Self::Not { operand }\n-            | Self::Future { operand, .. }\n-            | Self::Globally { operand, .. }\n-            | Self::Once { operand, .. }\n-            | Self::Historically { operand, .. }\n-            | Self::StrongPrevious { operand } => [Some(operand), None],\n-            Self::And { left, right }\n-            | Self::Or { left, right }\n-            | Self::Implies { left, right }\n-            | Self::Equivalent { left, right }\n-            | Self::Until { left, right, .. }\n-            | Self::Release { left, right, .. }\n-            | Self::Since { left, right, .. }\n-            | Self::Triggered { left, right, .. } => [Some(left), Some(right)],\n-        }\n+        [None; 2] /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Exact discrete event-position clock selection.\n #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]\n #[cfg_attr(feature = \"serde\", derive(serde::Serialize, serde::Deserialize))]\n pub enum InfiniteClock {\n     /// One tick per event position, including each loop repetition.\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteNodeKind::operands",
+      "return_type": "-> [Option<NodeId>; 2]",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 515
+        },
+        "start": {
+          "column": 5,
+          "line": 496
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:498:9: replace InfiniteNodeKind::operands -> [Option<NodeId>; 2] with [None; 2]",
+    "package": "tl-syntax",
+    "replacement": "[None; 2]",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 514
+      },
+      "start": {
+        "column": 9,
+        "line": 498
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteNodeKind::operands -> [Option<NodeId>; 2] with [Some(Default::default()); 2]\n@@ -490,33 +490,17 @@\n         /// Right operand.\n         right: NodeId,\n     },\n }\n \n impl InfiniteNodeKind {\n     /// Returns the node's predecessor operands.\n     pub const fn operands(self) -> [Option<NodeId>; 2] {\n-        match self {\n-            Self::False | Self::True | Self::Proposition { .. } => [None, None],\n-            Self::Not { operand }\n-            | Self::Future { operand, .. }\n-            | Self::Globally { operand, .. }\n-            | Self::Once { operand, .. }\n-            | Self::Historically { operand, .. }\n-            | Self::StrongPrevious { operand } => [Some(operand), None],\n-            Self::And { left, right }\n-            | Self::Or { left, right }\n-            | Self::Implies { left, right }\n-            | Self::Equivalent { left, right }\n-            | Self::Until { left, right, .. }\n-            | Self::Release { left, right, .. }\n-            | Self::Since { left, right, .. }\n-            | Self::Triggered { left, right, .. } => [Some(left), Some(right)],\n-        }\n+        [Some(Default::default()); 2] /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Exact discrete event-position clock selection.\n #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]\n #[cfg_attr(feature = \"serde\", derive(serde::Serialize, serde::Deserialize))]\n pub enum InfiniteClock {\n     /// One tick per event position, including each loop repetition.\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteNodeKind::operands",
+      "return_type": "-> [Option<NodeId>; 2]",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 515
+        },
+        "start": {
+          "column": 5,
+          "line": 496
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:498:9: replace InfiniteNodeKind::operands -> [Option<NodeId>; 2] with [Some(Default::default()); 2]",
+    "package": "tl-syntax",
+    "replacement": "[Some(Default::default()); 2]",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 514
+      },
+      "start": {
+        "column": 9,
+        "line": 498
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteClock::as_str -> &'static str with \"\"\n@@ -522,17 +522,17 @@\n     /// One tick per event position, including each loop repetition.\n     #[cfg_attr(feature = \"serde\", serde(rename = \"event_position\"))]\n     EventPosition,\n }\n \n impl InfiniteClock {\n     /// Returns the stable identity.\n     pub const fn as_str(self) -> &'static str {\n-        EVENT_POSITION_CLOCK\n+        \"\" /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Refusal selecting the infinite-trace clock identity.\n #[derive(Clone, Copy, Debug, Eq, PartialEq)]\n pub enum InfiniteClockError {\n     /// No clock identity was supplied.\n     Missing,\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteClock::as_str",
+      "return_type": "-> &'static str",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 531
+        },
+        "start": {
+          "column": 5,
+          "line": 528
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:530:9: replace InfiniteClock::as_str -> &'static str with \"\"",
+    "package": "tl-syntax",
+    "replacement": "\"\"",
+    "span": {
+      "end": {
+        "column": 29,
+        "line": 530
+      },
+      "start": {
+        "column": 9,
+        "line": 530
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteClock::as_str -> &'static str with \"xyzzy\"\n@@ -522,17 +522,17 @@\n     /// One tick per event position, including each loop repetition.\n     #[cfg_attr(feature = \"serde\", serde(rename = \"event_position\"))]\n     EventPosition,\n }\n \n impl InfiniteClock {\n     /// Returns the stable identity.\n     pub const fn as_str(self) -> &'static str {\n-        EVENT_POSITION_CLOCK\n+        \"xyzzy\" /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Refusal selecting the infinite-trace clock identity.\n #[derive(Clone, Copy, Debug, Eq, PartialEq)]\n pub enum InfiniteClockError {\n     /// No clock identity was supplied.\n     Missing,\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteClock::as_str",
+      "return_type": "-> &'static str",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 531
+        },
+        "start": {
+          "column": 5,
+          "line": 528
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:530:9: replace InfiniteClock::as_str -> &'static str with \"xyzzy\"",
+    "package": "tl-syntax",
+    "replacement": "\"xyzzy\"",
+    "span": {
+      "end": {
+        "column": 29,
+        "line": 530
+      },
+      "start": {
+        "column": 9,
+        "line": 530
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl fmt::Display for InfiniteClockError>::fmt -> fmt::Result with Ok(Default::default())\n@@ -537,22 +537,17 @@\n     /// No clock identity was supplied.\n     Missing,\n     /// A clock other than exact event positions was selected.\n     Unsupported,\n }\n \n impl fmt::Display for InfiniteClockError {\n     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {\n-        match self {\n-            Self::Missing => formatter.write_str(\"infinite-trace clock identity is missing\"),\n-            Self::Unsupported => {\n-                formatter.write_str(\"infinite-trace clock requires event_position\")\n-            }\n-        }\n+        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n impl TryFrom<&str> for InfiniteClock {\n     type Error = InfiniteClockError;\n \n     fn try_from(value: &str) -> Result<Self, Self::Error> {\n         if value.is_empty() {\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl fmt::Display for InfiniteClockError>::fmt",
+      "return_type": "-> fmt::Result",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 551
+        },
+        "start": {
+          "column": 5,
+          "line": 544
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:545:9: replace <impl fmt::Display for InfiniteClockError>::fmt -> fmt::Result with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 550
+      },
+      "start": {
+        "column": 9,
+        "line": 545
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl TryFrom<&str> for InfiniteClock>::try_from -> Result<Self, Self::Error> with Ok(Default::default())\n@@ -550,23 +550,17 @@\n         }\n     }\n }\n \n impl TryFrom<&str> for InfiniteClock {\n     type Error = InfiniteClockError;\n \n     fn try_from(value: &str) -> Result<Self, Self::Error> {\n-        if value.is_empty() {\n-            Err(Self::Error::Missing)\n-        } else if value == EVENT_POSITION_CLOCK {\n-            Ok(Self::EventPosition)\n-        } else {\n-            Err(Self::Error::Unsupported)\n-        }\n+        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Refusal selecting the exact TL infinite-trace profile.\n #[derive(Clone, Copy, Debug, Eq, PartialEq)]\n pub enum InfiniteProfileError {\n     /// No TL profile identity was supplied.\n     Missing,\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl TryFrom<&str> for InfiniteClock>::try_from",
+      "return_type": "-> Result<Self, Self::Error>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 565
+        },
+        "start": {
+          "column": 5,
+          "line": 557
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:558:9: replace <impl TryFrom<&str> for InfiniteClock>::try_from -> Result<Self, Self::Error> with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 564
+      },
+      "start": {
+        "column": 9,
+        "line": 558
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace == with != in <impl TryFrom<&str> for InfiniteClock>::try_from\n@@ -552,17 +552,17 @@\n }\n \n impl TryFrom<&str> for InfiniteClock {\n     type Error = InfiniteClockError;\n \n     fn try_from(value: &str) -> Result<Self, Self::Error> {\n         if value.is_empty() {\n             Err(Self::Error::Missing)\n-        } else if value == EVENT_POSITION_CLOCK {\n+        } else if value != /* ~ changed by cargo-mutants ~ */ EVENT_POSITION_CLOCK {\n             Ok(Self::EventPosition)\n         } else {\n             Err(Self::Error::Unsupported)\n         }\n     }\n }\n \n /// Refusal selecting the exact TL infinite-trace profile.\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl TryFrom<&str> for InfiniteClock>::try_from",
+      "return_type": "-> Result<Self, Self::Error>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 565
+        },
+        "start": {
+          "column": 5,
+          "line": 557
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:560:25: replace == with != in <impl TryFrom<&str> for InfiniteClock>::try_from",
+    "package": "tl-syntax",
+    "replacement": "!=",
+    "span": {
+      "end": {
+        "column": 27,
+        "line": 560
+      },
+      "start": {
+        "column": 25,
+        "line": 560
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl fmt::Display for InfiniteProfileError>::fmt -> fmt::Result with Ok(Default::default())\n@@ -573,25 +573,17 @@\n     /// A different known TL profile was supplied.\n     Mismatched(SemanticProfile),\n     /// The spelling names no known TL profile.\n     Unknown,\n }\n \n impl fmt::Display for InfiniteProfileError {\n     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {\n-        match self {\n-            Self::Missing => formatter.write_str(\"infinite-trace TL profile identity is missing\"),\n-            Self::Mismatched(profile) => write!(\n-                formatter,\n-                \"TL profile {} is not infinite trace\",\n-                profile.as_str()\n-            ),\n-            Self::Unknown => formatter.write_str(\"unknown TL profile identity\"),\n-        }\n+        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Selects the exact TL infinite-trace profile without inferring one from syntax.\n pub fn select_infinite_profile(\n     identity: Option<&str>,\n ) -> Result<SemanticProfile, InfiniteProfileError> {\n     let identity = identity.ok_or(InfiniteProfileError::Missing)?;\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl fmt::Display for InfiniteProfileError>::fmt",
+      "return_type": "-> fmt::Result",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 590
+        },
+        "start": {
+          "column": 5,
+          "line": 580
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:581:9: replace <impl fmt::Display for InfiniteProfileError>::fmt -> fmt::Result with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 589
+      },
+      "start": {
+        "column": 9,
+        "line": 581
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace select_infinite_profile -> Result<SemanticProfile, InfiniteProfileError> with Ok(Default::default())\n@@ -589,28 +589,17 @@\n         }\n     }\n }\n \n /// Selects the exact TL infinite-trace profile without inferring one from syntax.\n pub fn select_infinite_profile(\n     identity: Option<&str>,\n ) -> Result<SemanticProfile, InfiniteProfileError> {\n-    let identity = identity.ok_or(InfiniteProfileError::Missing)?;\n-    if identity.is_empty() {\n-        return Err(InfiniteProfileError::Missing);\n-    }\n-    match SemanticProfile::ALL\n-        .into_iter()\n-        .find(|profile| profile.as_str() == identity)\n-    {\n-        Some(SemanticProfile::InfiniteTraceV1) => Ok(SemanticProfile::InfiniteTraceV1),\n-        Some(profile) => Err(InfiniteProfileError::Mismatched(profile)),\n-        None => Err(InfiniteProfileError::Unknown),\n-    }\n+    Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n }\n \n /// Typed admission error for an infinite formula graph.\n #[derive(Clone, Copy, Debug, Eq, PartialEq)]\n #[non_exhaustive]\n pub enum InfiniteFormulaError {\n     /// A different semantic profile was selected.\n     Profile {\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "select_infinite_profile",
+      "return_type": "-> Result<SemanticProfile, InfiniteProfileError>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 609
+        },
+        "start": {
+          "column": 1,
+          "line": 593
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:597:5: replace select_infinite_profile -> Result<SemanticProfile, InfiniteProfileError> with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 608
+      },
+      "start": {
+        "column": 5,
+        "line": 597
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace == with != in select_infinite_profile\n@@ -595,17 +595,17 @@\n     identity: Option<&str>,\n ) -> Result<SemanticProfile, InfiniteProfileError> {\n     let identity = identity.ok_or(InfiniteProfileError::Missing)?;\n     if identity.is_empty() {\n         return Err(InfiniteProfileError::Missing);\n     }\n     match SemanticProfile::ALL\n         .into_iter()\n-        .find(|profile| profile.as_str() == identity)\n+        .find(|profile| profile.as_str() != /* ~ changed by cargo-mutants ~ */ identity)\n     {\n         Some(SemanticProfile::InfiniteTraceV1) => Ok(SemanticProfile::InfiniteTraceV1),\n         Some(profile) => Err(InfiniteProfileError::Mismatched(profile)),\n         None => Err(InfiniteProfileError::Unknown),\n     }\n }\n \n /// Typed admission error for an infinite formula graph.\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "select_infinite_profile",
+      "return_type": "-> Result<SemanticProfile, InfiniteProfileError>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 609
+        },
+        "start": {
+          "column": 1,
+          "line": 593
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:603:42: replace == with != in select_infinite_profile",
+    "package": "tl-syntax",
+    "replacement": "!=",
+    "span": {
+      "end": {
+        "column": 44,
+        "line": 603
+      },
+      "start": {
+        "column": 42,
+        "line": 603
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl fmt::Display for InfiniteFormulaError>::fmt -> fmt::Result with Ok(Default::default())\n@@ -640,17 +640,17 @@\n         node: NodeId,\n     },\n     /// Generated node identities would overflow the 32-bit range.\n     GeneratedIdentityOverflow,\n }\n \n impl fmt::Display for InfiniteFormulaError {\n     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n-        write!(f, \"infinite formula admission: {self:?}\")\n+        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Borrowed, validated infinite formula graph.\n #[derive(Clone, Copy, Debug, Eq, PartialEq)]\n pub struct InfiniteFormula<'a> {\n     root: NodeId,\n     nodes: &'a [InfiniteNode],\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl fmt::Display for InfiniteFormulaError>::fmt",
+      "return_type": "-> fmt::Result",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 649
+        },
+        "start": {
+          "column": 5,
+          "line": 647
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:648:9: replace <impl fmt::Display for InfiniteFormulaError>::fmt -> fmt::Result with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 58,
+        "line": 648
+      },
+      "start": {
+        "column": 9,
+        "line": 648
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormula<'a>::root -> NodeId with Default::default()\n@@ -654,17 +654,17 @@\n pub struct InfiniteFormula<'a> {\n     root: NodeId,\n     nodes: &'a [InfiniteNode],\n }\n \n impl<'a> InfiniteFormula<'a> {\n     /// Returns the root identity.\n     pub const fn root(self) -> NodeId {\n-        self.root\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n     /// Returns nodes in canonical topological order.\n     pub const fn nodes(self) -> &'a [InfiniteNode] {\n         self.nodes\n     }\n     /// Looks up one node.\n     pub fn node(self, id: NodeId) -> Option<&'a InfiniteNode> {\n         usize::try_from(id.0)\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormula<'a>::root",
+      "return_type": "-> NodeId",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 663
+        },
+        "start": {
+          "column": 5,
+          "line": 660
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:662:9: replace InfiniteFormula<'a>::root -> NodeId with Default::default()",
+    "package": "tl-syntax",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 662
+      },
+      "start": {
+        "column": 9,
+        "line": 662
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormula<'a>::nodes -> &'a[InfiniteNode] with Vec::leak(Vec::new())\n@@ -658,17 +658,17 @@\n \n impl<'a> InfiniteFormula<'a> {\n     /// Returns the root identity.\n     pub const fn root(self) -> NodeId {\n         self.root\n     }\n     /// Returns nodes in canonical topological order.\n     pub const fn nodes(self) -> &'a [InfiniteNode] {\n-        self.nodes\n+        Vec::leak(Vec::new()) /* ~ changed by cargo-mutants ~ */\n     }\n     /// Looks up one node.\n     pub fn node(self, id: NodeId) -> Option<&'a InfiniteNode> {\n         usize::try_from(id.0)\n             .ok()\n             .and_then(|index| self.nodes.get(index))\n     }\n     /// Returns the only admitted profile.\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormula<'a>::nodes",
+      "return_type": "-> &'a[InfiniteNode]",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 667
+        },
+        "start": {
+          "column": 5,
+          "line": 664
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:666:9: replace InfiniteFormula<'a>::nodes -> &'a[InfiniteNode] with Vec::leak(Vec::new())",
+    "package": "tl-syntax",
+    "replacement": "Vec::leak(Vec::new())",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 666
+      },
+      "start": {
+        "column": 9,
+        "line": 666
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormula<'a>::nodes -> &'a[InfiniteNode] with Vec::leak(vec![Default::default()])\n@@ -658,17 +658,17 @@\n \n impl<'a> InfiniteFormula<'a> {\n     /// Returns the root identity.\n     pub const fn root(self) -> NodeId {\n         self.root\n     }\n     /// Returns nodes in canonical topological order.\n     pub const fn nodes(self) -> &'a [InfiniteNode] {\n-        self.nodes\n+        Vec::leak(vec![Default::default()]) /* ~ changed by cargo-mutants ~ */\n     }\n     /// Looks up one node.\n     pub fn node(self, id: NodeId) -> Option<&'a InfiniteNode> {\n         usize::try_from(id.0)\n             .ok()\n             .and_then(|index| self.nodes.get(index))\n     }\n     /// Returns the only admitted profile.\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormula<'a>::nodes",
+      "return_type": "-> &'a[InfiniteNode]",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 667
+        },
+        "start": {
+          "column": 5,
+          "line": 664
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:666:9: replace InfiniteFormula<'a>::nodes -> &'a[InfiniteNode] with Vec::leak(vec![Default::default()])",
+    "package": "tl-syntax",
+    "replacement": "Vec::leak(vec![Default::default()])",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 666
+      },
+      "start": {
+        "column": 9,
+        "line": 666
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormula<'a>::node -> Option<&'a InfiniteNode> with None\n@@ -662,19 +662,17 @@\n         self.root\n     }\n     /// Returns nodes in canonical topological order.\n     pub const fn nodes(self) -> &'a [InfiniteNode] {\n         self.nodes\n     }\n     /// Looks up one node.\n     pub fn node(self, id: NodeId) -> Option<&'a InfiniteNode> {\n-        usize::try_from(id.0)\n-            .ok()\n-            .and_then(|index| self.nodes.get(index))\n+        None /* ~ changed by cargo-mutants ~ */\n     }\n     /// Returns the only admitted profile.\n     pub const fn semantic_profile(self) -> SemanticProfile {\n         SemanticProfile::InfiniteTraceV1\n     }\n }\n \n /// Canonical three-node W/M lowering for the infinite formula edition.\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormula<'a>::node",
+      "return_type": "-> Option<&'a InfiniteNode>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 673
+        },
+        "start": {
+          "column": 5,
+          "line": 668
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:670:9: replace InfiniteFormula<'a>::node -> Option<&'a InfiniteNode> with None",
+    "package": "tl-syntax",
+    "replacement": "None",
+    "span": {
+      "end": {
+        "column": 53,
+        "line": 672
+      },
+      "start": {
+        "column": 9,
+        "line": 670
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormula<'a>::node -> Option<&'a InfiniteNode> with Some(Box::leak(Box::new(Default::default())))\n@@ -662,19 +662,17 @@\n         self.root\n     }\n     /// Returns nodes in canonical topological order.\n     pub const fn nodes(self) -> &'a [InfiniteNode] {\n         self.nodes\n     }\n     /// Looks up one node.\n     pub fn node(self, id: NodeId) -> Option<&'a InfiniteNode> {\n-        usize::try_from(id.0)\n-            .ok()\n-            .and_then(|index| self.nodes.get(index))\n+        Some(Box::leak(Box::new(Default::default()))) /* ~ changed by cargo-mutants ~ */\n     }\n     /// Returns the only admitted profile.\n     pub const fn semantic_profile(self) -> SemanticProfile {\n         SemanticProfile::InfiniteTraceV1\n     }\n }\n \n /// Canonical three-node W/M lowering for the infinite formula edition.\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormula<'a>::node",
+      "return_type": "-> Option<&'a InfiniteNode>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 673
+        },
+        "start": {
+          "column": 5,
+          "line": 668
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:670:9: replace InfiniteFormula<'a>::node -> Option<&'a InfiniteNode> with Some(Box::leak(Box::new(Default::default())))",
+    "package": "tl-syntax",
+    "replacement": "Some(Box::leak(Box::new(Default::default())))",
+    "span": {
+      "end": {
+        "column": 53,
+        "line": 672
+      },
+      "start": {
+        "column": 9,
+        "line": 670
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormula<'a>::semantic_profile -> SemanticProfile with Default::default()\n@@ -668,17 +668,17 @@\n     /// Looks up one node.\n     pub fn node(self, id: NodeId) -> Option<&'a InfiniteNode> {\n         usize::try_from(id.0)\n             .ok()\n             .and_then(|index| self.nodes.get(index))\n     }\n     /// Returns the only admitted profile.\n     pub const fn semantic_profile(self) -> SemanticProfile {\n-        SemanticProfile::InfiniteTraceV1\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n /// Canonical three-node W/M lowering for the infinite formula edition.\n ///\n /// The caller appends these nodes at `first_generated` and validates the\n /// resulting document. `W = (p U q) | G p`; `M = (p R q) & F p`.\n pub fn lower_infinite_future(\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormula<'a>::semantic_profile",
+      "return_type": "-> SemanticProfile",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 677
+        },
+        "start": {
+          "column": 5,
+          "line": 674
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:676:9: replace InfiniteFormula<'a>::semantic_profile -> SemanticProfile with Default::default()",
+    "package": "tl-syntax",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 41,
+        "line": 676
+      },
+      "start": {
+        "column": 9,
+        "line": 676
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace lower_infinite_future -> Result<[InfiniteNode; 3], InfiniteFormulaError> with Ok([Default::default(); 3])\n@@ -684,58 +684,17 @@\n pub fn lower_infinite_future(\n     kind: FutureKind,\n     left: NodeId,\n     right: NodeId,\n     interval: TemporalInterval,\n     first_generated: NodeId,\n     span: Option<SourceSpan>,\n ) -> Result<[InfiniteNode; 3], InfiniteFormulaError> {\n-    let second = first_generated\n-        .0\n-        .checked_add(1)\n-        .map(NodeId)\n-        .ok_or(InfiniteFormulaError::GeneratedIdentityOverflow)?;\n-    first_generated\n-        .0\n-        .checked_add(2)\n-        .ok_or(InfiniteFormulaError::GeneratedIdentityOverflow)?;\n-    let kinds = match kind {\n-        FutureKind::WeakUntil => [\n-            InfiniteNodeKind::Until {\n-                interval,\n-                left,\n-                right,\n-            },\n-            InfiniteNodeKind::Globally {\n-                interval,\n-                operand: left,\n-            },\n-            InfiniteNodeKind::Or {\n-                left: first_generated,\n-                right: second,\n-            },\n-        ],\n-        FutureKind::StrongRelease => [\n-            InfiniteNodeKind::Release {\n-                interval,\n-                left,\n-                right,\n-            },\n-            InfiniteNodeKind::Future {\n-                interval,\n-                operand: left,\n-            },\n-            InfiniteNodeKind::And {\n-                left: first_generated,\n-                right: second,\n-            },\n-        ],\n-    };\n-    Ok(kinds.map(|kind| InfiniteNode { kind, span }))\n+    Ok([Default::default(); 3]) /* ~ changed by cargo-mutants ~ */\n }\n \n /// Owned sibling of bounded formula v1/v2 with an open-upper interval vocabulary.\n #[cfg(feature = \"alloc\")]\n #[derive(Clone, Debug, Eq, PartialEq)]\n #[cfg_attr(feature = \"serde\", derive(serde::Serialize, serde::Deserialize))]\n #[cfg_attr(feature = \"serde\", serde(try_from = \"InfiniteFormulaWire\"))]\n pub struct InfiniteFormulaDocument {\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "lower_infinite_future",
+      "return_type": "-> Result<[InfiniteNode; 3], InfiniteFormulaError>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 734
+        },
+        "start": {
+          "column": 1,
+          "line": 680
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:692:5: replace lower_infinite_future -> Result<[InfiniteNode; 3], InfiniteFormulaError> with Ok([Default::default(); 3])",
+    "package": "tl-syntax",
+    "replacement": "Ok([Default::default(); 3])",
+    "span": {
+      "end": {
+        "column": 54,
+        "line": 733
+      },
+      "start": {
+        "column": 5,
+        "line": 692
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl serde::Serialize for InfiniteSemanticIdentity<'_>>::serialize -> Result<S::Ok, S::Error> with Ok(Default::default())\n@@ -751,40 +751,17 @@\n struct InfiniteSemanticIdentity<'a>(&'a InfiniteFormulaDocument);\n \n #[cfg(feature = \"serde\")]\n impl serde::Serialize for InfiniteSemanticIdentity<'_> {\n     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>\n     where\n         S: serde::Serializer,\n     {\n-        use serde::ser::{SerializeSeq, SerializeStruct};\n-\n-        struct NodeKinds<'a>(&'a [InfiniteNode]);\n-\n-        impl serde::Serialize for NodeKinds<'_> {\n-            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>\n-            where\n-                S: serde::Serializer,\n-            {\n-                let mut nodes = serializer.serialize_seq(Some(self.0.len()))?;\n-                for node in self.0 {\n-                    nodes.serialize_element(&node.kind)?;\n-                }\n-                nodes.end()\n-            }\n-        }\n-\n-        let mut document = serializer.serialize_struct(\"InfiniteFormulaDocument\", 5)?;\n-        document.serialize_field(\"schema_version\", &self.0.schema_version)?;\n-        document.serialize_field(\"semantic_profile\", &self.0.semantic_profile)?;\n-        document.serialize_field(\"clock\", &self.0.clock)?;\n-        document.serialize_field(\"root\", &self.0.root)?;\n-        document.serialize_field(\"nodes\", &NodeKinds(&self.0.nodes))?;\n-        document.end()\n+        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n #[cfg(feature = \"serde\")]\n #[derive(serde::Deserialize)]\n #[serde(deny_unknown_fields)]\n struct InfiniteFormulaWire {\n     schema_version: InfiniteFormulaSchemaVersion,\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl serde::Serialize for InfiniteSemanticIdentity<'_>>::serialize",
+      "return_type": "-> Result<S::Ok, S::Error>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 783
+        },
+        "start": {
+          "column": 5,
+          "line": 755
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:759:9: replace <impl serde::Serialize for InfiniteSemanticIdentity<'_>>::serialize -> Result<S::Ok, S::Error> with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 23,
+        "line": 782
+      },
+      "start": {
+        "column": 9,
+        "line": 759
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl serde::Serialize for InfiniteSemanticIdentity<'_>>::serialize::<impl serde::Serialize for NodeKinds<'_>>::serialize -> Result<S::Ok, S::Error> with Ok(Default::default())\n@@ -760,21 +760,17 @@\n \n         struct NodeKinds<'a>(&'a [InfiniteNode]);\n \n         impl serde::Serialize for NodeKinds<'_> {\n             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>\n             where\n                 S: serde::Serializer,\n             {\n-                let mut nodes = serializer.serialize_seq(Some(self.0.len()))?;\n-                for node in self.0 {\n-                    nodes.serialize_element(&node.kind)?;\n-                }\n-                nodes.end()\n+                Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n             }\n         }\n \n         let mut document = serializer.serialize_struct(\"InfiniteFormulaDocument\", 5)?;\n         document.serialize_field(\"schema_version\", &self.0.schema_version)?;\n         document.serialize_field(\"semantic_profile\", &self.0.semantic_profile)?;\n         document.serialize_field(\"clock\", &self.0.clock)?;\n         document.serialize_field(\"root\", &self.0.root)?;\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl serde::Serialize for InfiniteSemanticIdentity<'_>>::serialize::<impl serde::Serialize for NodeKinds<'_>>::serialize",
+      "return_type": "-> Result<S::Ok, S::Error>",
+      "span": {
+        "end": {
+          "column": 14,
+          "line": 773
+        },
+        "start": {
+          "column": 13,
+          "line": 764
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:768:17: replace <impl serde::Serialize for InfiniteSemanticIdentity<'_>>::serialize::<impl serde::Serialize for NodeKinds<'_>>::serialize -> Result<S::Ok, S::Error> with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 28,
+        "line": 772
+      },
+      "start": {
+        "column": 17,
+        "line": 768
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace deserialize_nodes -> Result<Vec<InfiniteNode>, D::Error> with Ok(vec![])\n@@ -795,35 +795,17 @@\n     nodes: Vec<InfiniteNode>,\n }\n \n #[cfg(feature = \"serde\")]\n fn deserialize_nodes<'de, D>(deserializer: D) -> Result<Vec<InfiniteNode>, D::Error>\n where\n     D: serde::Deserializer<'de>,\n {\n-    use serde::de::{Error as _, SeqAccess, Visitor};\n-    struct Nodes;\n-    impl<'de> Visitor<'de> for Nodes {\n-        type Value = Vec<InfiniteNode>;\n-        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n-            f.write_str(\"at most 100000 infinite formula nodes\")\n-        }\n-        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {\n-            let mut nodes = Vec::new();\n-            while let Some(node) = seq.next_element()? {\n-                if nodes.len() == crate::MAX_FORMULA_DOCUMENT_NODES {\n-                    return Err(A::Error::custom(\"infinite formula node limit exceeded\"));\n-                }\n-                nodes.push(node);\n-            }\n-            Ok(nodes)\n-        }\n-    }\n-    deserializer.deserialize_seq(Nodes)\n+    Ok(vec![]) /* ~ changed by cargo-mutants ~ */\n }\n \n #[cfg(feature = \"serde\")]\n impl TryFrom<InfiniteFormulaWire> for InfiniteFormulaDocument {\n     type Error = InfiniteFormulaError;\n     fn try_from(wire: InfiniteFormulaWire) -> Result<Self, Self::Error> {\n         let _ = wire.schema_version;\n         Self::new(wire.semantic_profile, wire.clock, wire.root, wire.nodes)\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "deserialize_nodes",
+      "return_type": "-> Result<Vec<InfiniteNode>, D::Error>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 822
+        },
+        "start": {
+          "column": 1,
+          "line": 798
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:803:5: replace deserialize_nodes -> Result<Vec<InfiniteNode>, D::Error> with Ok(vec![])",
+    "package": "tl-syntax",
+    "replacement": "Ok(vec![])",
+    "span": {
+      "end": {
+        "column": 40,
+        "line": 821
+      },
+      "start": {
+        "column": 5,
+        "line": 803
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace deserialize_nodes -> Result<Vec<InfiniteNode>, D::Error> with Ok(vec![Default::default()])\n@@ -795,35 +795,17 @@\n     nodes: Vec<InfiniteNode>,\n }\n \n #[cfg(feature = \"serde\")]\n fn deserialize_nodes<'de, D>(deserializer: D) -> Result<Vec<InfiniteNode>, D::Error>\n where\n     D: serde::Deserializer<'de>,\n {\n-    use serde::de::{Error as _, SeqAccess, Visitor};\n-    struct Nodes;\n-    impl<'de> Visitor<'de> for Nodes {\n-        type Value = Vec<InfiniteNode>;\n-        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n-            f.write_str(\"at most 100000 infinite formula nodes\")\n-        }\n-        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {\n-            let mut nodes = Vec::new();\n-            while let Some(node) = seq.next_element()? {\n-                if nodes.len() == crate::MAX_FORMULA_DOCUMENT_NODES {\n-                    return Err(A::Error::custom(\"infinite formula node limit exceeded\"));\n-                }\n-                nodes.push(node);\n-            }\n-            Ok(nodes)\n-        }\n-    }\n-    deserializer.deserialize_seq(Nodes)\n+    Ok(vec![Default::default()]) /* ~ changed by cargo-mutants ~ */\n }\n \n #[cfg(feature = \"serde\")]\n impl TryFrom<InfiniteFormulaWire> for InfiniteFormulaDocument {\n     type Error = InfiniteFormulaError;\n     fn try_from(wire: InfiniteFormulaWire) -> Result<Self, Self::Error> {\n         let _ = wire.schema_version;\n         Self::new(wire.semantic_profile, wire.clock, wire.root, wire.nodes)\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "deserialize_nodes",
+      "return_type": "-> Result<Vec<InfiniteNode>, D::Error>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 822
+        },
+        "start": {
+          "column": 1,
+          "line": 798
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:803:5: replace deserialize_nodes -> Result<Vec<InfiniteNode>, D::Error> with Ok(vec![Default::default()])",
+    "package": "tl-syntax",
+    "replacement": "Ok(vec![Default::default()])",
+    "span": {
+      "end": {
+        "column": 40,
+        "line": 821
+      },
+      "start": {
+        "column": 5,
+        "line": 803
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace deserialize_nodes::<impl Visitor<'de> for Nodes>::expecting -> fmt::Result with Ok(Default::default())\n@@ -800,17 +800,17 @@\n where\n     D: serde::Deserializer<'de>,\n {\n     use serde::de::{Error as _, SeqAccess, Visitor};\n     struct Nodes;\n     impl<'de> Visitor<'de> for Nodes {\n         type Value = Vec<InfiniteNode>;\n         fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n-            f.write_str(\"at most 100000 infinite formula nodes\")\n+            Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n         }\n         fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {\n             let mut nodes = Vec::new();\n             while let Some(node) = seq.next_element()? {\n                 if nodes.len() == crate::MAX_FORMULA_DOCUMENT_NODES {\n                     return Err(A::Error::custom(\"infinite formula node limit exceeded\"));\n                 }\n                 nodes.push(node);\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "deserialize_nodes::<impl Visitor<'de> for Nodes>::expecting",
+      "return_type": "-> fmt::Result",
+      "span": {
+        "end": {
+          "column": 10,
+          "line": 809
+        },
+        "start": {
+          "column": 9,
+          "line": 807
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:808:13: replace deserialize_nodes::<impl Visitor<'de> for Nodes>::expecting -> fmt::Result with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 65,
+        "line": 808
+      },
+      "start": {
+        "column": 13,
+        "line": 808
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace deserialize_nodes::<impl Visitor<'de> for Nodes>::visit_seq -> Result<Self::Value, A::Error> with Ok(Default::default())\n@@ -803,24 +803,17 @@\n     use serde::de::{Error as _, SeqAccess, Visitor};\n     struct Nodes;\n     impl<'de> Visitor<'de> for Nodes {\n         type Value = Vec<InfiniteNode>;\n         fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n             f.write_str(\"at most 100000 infinite formula nodes\")\n         }\n         fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {\n-            let mut nodes = Vec::new();\n-            while let Some(node) = seq.next_element()? {\n-                if nodes.len() == crate::MAX_FORMULA_DOCUMENT_NODES {\n-                    return Err(A::Error::custom(\"infinite formula node limit exceeded\"));\n-                }\n-                nodes.push(node);\n-            }\n-            Ok(nodes)\n+            Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n         }\n     }\n     deserializer.deserialize_seq(Nodes)\n }\n \n #[cfg(feature = \"serde\")]\n impl TryFrom<InfiniteFormulaWire> for InfiniteFormulaDocument {\n     type Error = InfiniteFormulaError;\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "deserialize_nodes::<impl Visitor<'de> for Nodes>::visit_seq",
+      "return_type": "-> Result<Self::Value, A::Error>",
+      "span": {
+        "end": {
+          "column": 10,
+          "line": 819
+        },
+        "start": {
+          "column": 9,
+          "line": 810
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:811:13: replace deserialize_nodes::<impl Visitor<'de> for Nodes>::visit_seq -> Result<Self::Value, A::Error> with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 22,
+        "line": 818
+      },
+      "start": {
+        "column": 13,
+        "line": 811
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace == with != in deserialize_nodes::<impl Visitor<'de> for Nodes>::visit_seq\n@@ -805,17 +805,17 @@\n     impl<'de> Visitor<'de> for Nodes {\n         type Value = Vec<InfiniteNode>;\n         fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n             f.write_str(\"at most 100000 infinite formula nodes\")\n         }\n         fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {\n             let mut nodes = Vec::new();\n             while let Some(node) = seq.next_element()? {\n-                if nodes.len() == crate::MAX_FORMULA_DOCUMENT_NODES {\n+                if nodes.len() != /* ~ changed by cargo-mutants ~ */ crate::MAX_FORMULA_DOCUMENT_NODES {\n                     return Err(A::Error::custom(\"infinite formula node limit exceeded\"));\n                 }\n                 nodes.push(node);\n             }\n             Ok(nodes)\n         }\n     }\n     deserializer.deserialize_seq(Nodes)\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "deserialize_nodes::<impl Visitor<'de> for Nodes>::visit_seq",
+      "return_type": "-> Result<Self::Value, A::Error>",
+      "span": {
+        "end": {
+          "column": 10,
+          "line": 819
+        },
+        "start": {
+          "column": 9,
+          "line": 810
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:813:32: replace == with != in deserialize_nodes::<impl Visitor<'de> for Nodes>::visit_seq",
+    "package": "tl-syntax",
+    "replacement": "!=",
+    "span": {
+      "end": {
+        "column": 34,
+        "line": 813
+      },
+      "start": {
+        "column": 32,
+        "line": 813
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl TryFrom<InfiniteFormulaWire> for InfiniteFormulaDocument>::try_from -> Result<Self, Self::Error> with Ok(Default::default())\n@@ -820,18 +820,17 @@\n     }\n     deserializer.deserialize_seq(Nodes)\n }\n \n #[cfg(feature = \"serde\")]\n impl TryFrom<InfiniteFormulaWire> for InfiniteFormulaDocument {\n     type Error = InfiniteFormulaError;\n     fn try_from(wire: InfiniteFormulaWire) -> Result<Self, Self::Error> {\n-        let _ = wire.schema_version;\n-        Self::new(wire.semantic_profile, wire.clock, wire.root, wire.nodes)\n+        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n #[cfg(feature = \"alloc\")]\n impl InfiniteFormulaDocument {\n     /// Constructs a canonical infinite formula after profile and graph checks.\n     pub fn new(\n         profile: SemanticProfile,\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl TryFrom<InfiniteFormulaWire> for InfiniteFormulaDocument>::try_from",
+      "return_type": "-> Result<Self, Self::Error>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 830
+        },
+        "start": {
+          "column": 5,
+          "line": 827
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:828:9: replace <impl TryFrom<InfiniteFormulaWire> for InfiniteFormulaDocument>::try_from -> Result<Self, Self::Error> with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 76,
+        "line": 829
+      },
+      "start": {
+        "column": 9,
+        "line": 828
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::formula -> InfiniteFormula<'_> with Default::default()\n@@ -881,20 +881,17 @@\n             semantic_profile: profile,\n             clock,\n             root,\n             nodes,\n         })\n     }\n     /// Returns a borrowed validated graph.\n     pub fn formula(&self) -> InfiniteFormula<'_> {\n-        InfiniteFormula {\n-            root: self.root,\n-            nodes: &self.nodes,\n-        }\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n     /// Returns the schema identity.\n     pub const fn schema_version(&self) -> &'static str {\n         FORMULA_UNBOUNDED_V1\n     }\n     /// Returns the exact TL profile identity.\n     pub const fn semantic_profile(&self) -> SemanticProfile {\n         self.semantic_profile\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::formula",
+      "return_type": "-> InfiniteFormula<'_>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 893
+        },
+        "start": {
+          "column": 5,
+          "line": 887
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:889:9: replace InfiniteFormulaDocument::formula -> InfiniteFormula<'_> with Default::default()",
+    "package": "tl-syntax",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 892
+      },
+      "start": {
+        "column": 9,
+        "line": 889
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::schema_version -> &'static str with \"\"\n@@ -888,17 +888,17 @@\n     pub fn formula(&self) -> InfiniteFormula<'_> {\n         InfiniteFormula {\n             root: self.root,\n             nodes: &self.nodes,\n         }\n     }\n     /// Returns the schema identity.\n     pub const fn schema_version(&self) -> &'static str {\n-        FORMULA_UNBOUNDED_V1\n+        \"\" /* ~ changed by cargo-mutants ~ */\n     }\n     /// Returns the exact TL profile identity.\n     pub const fn semantic_profile(&self) -> SemanticProfile {\n         self.semantic_profile\n     }\n     /// Returns the clock binding.\n     pub const fn clock(&self) -> InfiniteClock {\n         self.clock\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::schema_version",
+      "return_type": "-> &'static str",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 897
+        },
+        "start": {
+          "column": 5,
+          "line": 894
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:896:9: replace InfiniteFormulaDocument::schema_version -> &'static str with \"\"",
+    "package": "tl-syntax",
+    "replacement": "\"\"",
+    "span": {
+      "end": {
+        "column": 29,
+        "line": 896
+      },
+      "start": {
+        "column": 9,
+        "line": 896
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::schema_version -> &'static str with \"xyzzy\"\n@@ -888,17 +888,17 @@\n     pub fn formula(&self) -> InfiniteFormula<'_> {\n         InfiniteFormula {\n             root: self.root,\n             nodes: &self.nodes,\n         }\n     }\n     /// Returns the schema identity.\n     pub const fn schema_version(&self) -> &'static str {\n-        FORMULA_UNBOUNDED_V1\n+        \"xyzzy\" /* ~ changed by cargo-mutants ~ */\n     }\n     /// Returns the exact TL profile identity.\n     pub const fn semantic_profile(&self) -> SemanticProfile {\n         self.semantic_profile\n     }\n     /// Returns the clock binding.\n     pub const fn clock(&self) -> InfiniteClock {\n         self.clock\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::schema_version",
+      "return_type": "-> &'static str",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 897
+        },
+        "start": {
+          "column": 5,
+          "line": 894
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:896:9: replace InfiniteFormulaDocument::schema_version -> &'static str with \"xyzzy\"",
+    "package": "tl-syntax",
+    "replacement": "\"xyzzy\"",
+    "span": {
+      "end": {
+        "column": 29,
+        "line": 896
+      },
+      "start": {
+        "column": 9,
+        "line": 896
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::semantic_profile -> SemanticProfile with Default::default()\n@@ -892,17 +892,17 @@\n         }\n     }\n     /// Returns the schema identity.\n     pub const fn schema_version(&self) -> &'static str {\n         FORMULA_UNBOUNDED_V1\n     }\n     /// Returns the exact TL profile identity.\n     pub const fn semantic_profile(&self) -> SemanticProfile {\n-        self.semantic_profile\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n     /// Returns the clock binding.\n     pub const fn clock(&self) -> InfiniteClock {\n         self.clock\n     }\n     /// Returns the root.\n     pub const fn root(&self) -> NodeId {\n         self.root\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::semantic_profile",
+      "return_type": "-> SemanticProfile",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 901
+        },
+        "start": {
+          "column": 5,
+          "line": 898
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:900:9: replace InfiniteFormulaDocument::semantic_profile -> SemanticProfile with Default::default()",
+    "package": "tl-syntax",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 30,
+        "line": 900
+      },
+      "start": {
+        "column": 9,
+        "line": 900
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::clock -> InfiniteClock with Default::default()\n@@ -896,17 +896,17 @@\n         FORMULA_UNBOUNDED_V1\n     }\n     /// Returns the exact TL profile identity.\n     pub const fn semantic_profile(&self) -> SemanticProfile {\n         self.semantic_profile\n     }\n     /// Returns the clock binding.\n     pub const fn clock(&self) -> InfiniteClock {\n-        self.clock\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n     /// Returns the root.\n     pub const fn root(&self) -> NodeId {\n         self.root\n     }\n     /// Returns canonical graph nodes.\n     pub fn nodes(&self) -> &[InfiniteNode] {\n         &self.nodes\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::clock",
+      "return_type": "-> InfiniteClock",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 905
+        },
+        "start": {
+          "column": 5,
+          "line": 902
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:904:9: replace InfiniteFormulaDocument::clock -> InfiniteClock with Default::default()",
+    "package": "tl-syntax",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 904
+      },
+      "start": {
+        "column": 9,
+        "line": 904
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::root -> NodeId with Default::default()\n@@ -900,17 +900,17 @@\n         self.semantic_profile\n     }\n     /// Returns the clock binding.\n     pub const fn clock(&self) -> InfiniteClock {\n         self.clock\n     }\n     /// Returns the root.\n     pub const fn root(&self) -> NodeId {\n-        self.root\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n     /// Returns canonical graph nodes.\n     pub fn nodes(&self) -> &[InfiniteNode] {\n         &self.nodes\n     }\n     #[cfg(feature = \"serde\")]\n     fn maximum_depth(&self) -> usize {\n         let mut depths = Vec::<usize>::with_capacity(self.nodes.len());\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::root",
+      "return_type": "-> NodeId",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 909
+        },
+        "start": {
+          "column": 5,
+          "line": 906
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:908:9: replace InfiniteFormulaDocument::root -> NodeId with Default::default()",
+    "package": "tl-syntax",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 908
+      },
+      "start": {
+        "column": 9,
+        "line": 908
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::nodes -> &[InfiniteNode] with Vec::leak(Vec::new())\n@@ -904,17 +904,17 @@\n         self.clock\n     }\n     /// Returns the root.\n     pub const fn root(&self) -> NodeId {\n         self.root\n     }\n     /// Returns canonical graph nodes.\n     pub fn nodes(&self) -> &[InfiniteNode] {\n-        &self.nodes\n+        Vec::leak(Vec::new()) /* ~ changed by cargo-mutants ~ */\n     }\n     #[cfg(feature = \"serde\")]\n     fn maximum_depth(&self) -> usize {\n         let mut depths = Vec::<usize>::with_capacity(self.nodes.len());\n         let mut maximum = 0;\n         for node in &self.nodes {\n             let mut depth = 1_usize;\n             for operand in node.kind.operands().into_iter().flatten() {\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::nodes",
+      "return_type": "-> &[InfiniteNode]",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 913
+        },
+        "start": {
+          "column": 5,
+          "line": 910
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:912:9: replace InfiniteFormulaDocument::nodes -> &[InfiniteNode] with Vec::leak(Vec::new())",
+    "package": "tl-syntax",
+    "replacement": "Vec::leak(Vec::new())",
+    "span": {
+      "end": {
+        "column": 20,
+        "line": 912
+      },
+      "start": {
+        "column": 9,
+        "line": 912
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::nodes -> &[InfiniteNode] with Vec::leak(vec![Default::default()])\n@@ -904,17 +904,17 @@\n         self.clock\n     }\n     /// Returns the root.\n     pub const fn root(&self) -> NodeId {\n         self.root\n     }\n     /// Returns canonical graph nodes.\n     pub fn nodes(&self) -> &[InfiniteNode] {\n-        &self.nodes\n+        Vec::leak(vec![Default::default()]) /* ~ changed by cargo-mutants ~ */\n     }\n     #[cfg(feature = \"serde\")]\n     fn maximum_depth(&self) -> usize {\n         let mut depths = Vec::<usize>::with_capacity(self.nodes.len());\n         let mut maximum = 0;\n         for node in &self.nodes {\n             let mut depth = 1_usize;\n             for operand in node.kind.operands().into_iter().flatten() {\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::nodes",
+      "return_type": "-> &[InfiniteNode]",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 913
+        },
+        "start": {
+          "column": 5,
+          "line": 910
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:912:9: replace InfiniteFormulaDocument::nodes -> &[InfiniteNode] with Vec::leak(vec![Default::default()])",
+    "package": "tl-syntax",
+    "replacement": "Vec::leak(vec![Default::default()])",
+    "span": {
+      "end": {
+        "column": 20,
+        "line": 912
+      },
+      "start": {
+        "column": 9,
+        "line": 912
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::maximum_depth -> usize with 0\n@@ -908,29 +908,17 @@\n         self.root\n     }\n     /// Returns canonical graph nodes.\n     pub fn nodes(&self) -> &[InfiniteNode] {\n         &self.nodes\n     }\n     #[cfg(feature = \"serde\")]\n     fn maximum_depth(&self) -> usize {\n-        let mut depths = Vec::<usize>::with_capacity(self.nodes.len());\n-        let mut maximum = 0;\n-        for node in &self.nodes {\n-            let mut depth = 1_usize;\n-            for operand in node.kind.operands().into_iter().flatten() {\n-                let index = usize::try_from(operand.0).unwrap_or(usize::MAX);\n-                let operand_depth = depths.get(index).copied().unwrap_or(0);\n-                depth = depth.max(operand_depth.saturating_add(1));\n-            }\n-            maximum = maximum.max(depth);\n-            depths.push(depth);\n-        }\n-        maximum\n+        0 /* ~ changed by cargo-mutants ~ */\n     }\n     /// Serializes to canonical JSON.\n     #[cfg(feature = \"serde\")]\n     pub fn canonical_json_bytes(&self) -> Result<Vec<u8>, serde_json::Error> {\n         canonical_json(self)\n     }\n     /// Reads one exact, bounded canonical document.\n     #[cfg(feature = \"serde\")]\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::maximum_depth",
+      "return_type": "-> usize",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 929
+        },
+        "start": {
+          "column": 5,
+          "line": 914
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:916:9: replace InfiniteFormulaDocument::maximum_depth -> usize with 0",
+    "package": "tl-syntax",
+    "replacement": "0",
+    "span": {
+      "end": {
+        "column": 16,
+        "line": 928
+      },
+      "start": {
+        "column": 9,
+        "line": 916
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::maximum_depth -> usize with 1\n@@ -908,29 +908,17 @@\n         self.root\n     }\n     /// Returns canonical graph nodes.\n     pub fn nodes(&self) -> &[InfiniteNode] {\n         &self.nodes\n     }\n     #[cfg(feature = \"serde\")]\n     fn maximum_depth(&self) -> usize {\n-        let mut depths = Vec::<usize>::with_capacity(self.nodes.len());\n-        let mut maximum = 0;\n-        for node in &self.nodes {\n-            let mut depth = 1_usize;\n-            for operand in node.kind.operands().into_iter().flatten() {\n-                let index = usize::try_from(operand.0).unwrap_or(usize::MAX);\n-                let operand_depth = depths.get(index).copied().unwrap_or(0);\n-                depth = depth.max(operand_depth.saturating_add(1));\n-            }\n-            maximum = maximum.max(depth);\n-            depths.push(depth);\n-        }\n-        maximum\n+        1 /* ~ changed by cargo-mutants ~ */\n     }\n     /// Serializes to canonical JSON.\n     #[cfg(feature = \"serde\")]\n     pub fn canonical_json_bytes(&self) -> Result<Vec<u8>, serde_json::Error> {\n         canonical_json(self)\n     }\n     /// Reads one exact, bounded canonical document.\n     #[cfg(feature = \"serde\")]\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::maximum_depth",
+      "return_type": "-> usize",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 929
+        },
+        "start": {
+          "column": 5,
+          "line": 914
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:916:9: replace InfiniteFormulaDocument::maximum_depth -> usize with 1",
+    "package": "tl-syntax",
+    "replacement": "1",
+    "span": {
+      "end": {
+        "column": 16,
+        "line": 928
+      },
+      "start": {
+        "column": 9,
+        "line": 916
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::canonical_json_bytes -> Result<Vec<u8>, serde_json::Error> with Ok(vec![])\n@@ -925,17 +925,17 @@\n             maximum = maximum.max(depth);\n             depths.push(depth);\n         }\n         maximum\n     }\n     /// Serializes to canonical JSON.\n     #[cfg(feature = \"serde\")]\n     pub fn canonical_json_bytes(&self) -> Result<Vec<u8>, serde_json::Error> {\n-        canonical_json(self)\n+        Ok(vec![]) /* ~ changed by cargo-mutants ~ */\n     }\n     /// Reads one exact, bounded canonical document.\n     #[cfg(feature = \"serde\")]\n     pub fn from_json_bytes(\n         bytes: &[u8],\n         limits: SyntaxArtifactLimits,\n     ) -> Result<Self, StrictDocumentReadError> {\n         read_strict_document(bytes, limits)\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::canonical_json_bytes",
+      "return_type": "-> Result<Vec<u8>, serde_json::Error>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 934
+        },
+        "start": {
+          "column": 5,
+          "line": 930
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:933:9: replace InfiniteFormulaDocument::canonical_json_bytes -> Result<Vec<u8>, serde_json::Error> with Ok(vec![])",
+    "package": "tl-syntax",
+    "replacement": "Ok(vec![])",
+    "span": {
+      "end": {
+        "column": 29,
+        "line": 933
+      },
+      "start": {
+        "column": 9,
+        "line": 933
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::canonical_json_bytes -> Result<Vec<u8>, serde_json::Error> with Ok(vec![0])\n@@ -925,17 +925,17 @@\n             maximum = maximum.max(depth);\n             depths.push(depth);\n         }\n         maximum\n     }\n     /// Serializes to canonical JSON.\n     #[cfg(feature = \"serde\")]\n     pub fn canonical_json_bytes(&self) -> Result<Vec<u8>, serde_json::Error> {\n-        canonical_json(self)\n+        Ok(vec![0]) /* ~ changed by cargo-mutants ~ */\n     }\n     /// Reads one exact, bounded canonical document.\n     #[cfg(feature = \"serde\")]\n     pub fn from_json_bytes(\n         bytes: &[u8],\n         limits: SyntaxArtifactLimits,\n     ) -> Result<Self, StrictDocumentReadError> {\n         read_strict_document(bytes, limits)\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::canonical_json_bytes",
+      "return_type": "-> Result<Vec<u8>, serde_json::Error>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 934
+        },
+        "start": {
+          "column": 5,
+          "line": 930
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:933:9: replace InfiniteFormulaDocument::canonical_json_bytes -> Result<Vec<u8>, serde_json::Error> with Ok(vec![0])",
+    "package": "tl-syntax",
+    "replacement": "Ok(vec![0])",
+    "span": {
+      "end": {
+        "column": 29,
+        "line": 933
+      },
+      "start": {
+        "column": 9,
+        "line": 933
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::canonical_json_bytes -> Result<Vec<u8>, serde_json::Error> with Ok(vec![1])\n@@ -925,17 +925,17 @@\n             maximum = maximum.max(depth);\n             depths.push(depth);\n         }\n         maximum\n     }\n     /// Serializes to canonical JSON.\n     #[cfg(feature = \"serde\")]\n     pub fn canonical_json_bytes(&self) -> Result<Vec<u8>, serde_json::Error> {\n-        canonical_json(self)\n+        Ok(vec![1]) /* ~ changed by cargo-mutants ~ */\n     }\n     /// Reads one exact, bounded canonical document.\n     #[cfg(feature = \"serde\")]\n     pub fn from_json_bytes(\n         bytes: &[u8],\n         limits: SyntaxArtifactLimits,\n     ) -> Result<Self, StrictDocumentReadError> {\n         read_strict_document(bytes, limits)\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::canonical_json_bytes",
+      "return_type": "-> Result<Vec<u8>, serde_json::Error>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 934
+        },
+        "start": {
+          "column": 5,
+          "line": 930
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:933:9: replace InfiniteFormulaDocument::canonical_json_bytes -> Result<Vec<u8>, serde_json::Error> with Ok(vec![1])",
+    "package": "tl-syntax",
+    "replacement": "Ok(vec![1])",
+    "span": {
+      "end": {
+        "column": 29,
+        "line": 933
+      },
+      "start": {
+        "column": 9,
+        "line": 933
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::from_json_bytes -> Result<Self, StrictDocumentReadError> with Ok(Default::default())\n@@ -933,17 +933,17 @@\n         canonical_json(self)\n     }\n     /// Reads one exact, bounded canonical document.\n     #[cfg(feature = \"serde\")]\n     pub fn from_json_bytes(\n         bytes: &[u8],\n         limits: SyntaxArtifactLimits,\n     ) -> Result<Self, StrictDocumentReadError> {\n-        read_strict_document(bytes, limits)\n+        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n     }\n     /// Returns the domain-separated SHA-256 semantic content identity.\n     /// Diagnostic source spans remain on the wire but do not affect this identity.\n     #[cfg(feature = \"serde\")]\n     pub fn content_identity(&self) -> Result<String, serde_json::Error> {\n         canonical_json(&InfiniteSemanticIdentity(self))\n             .map(|bytes| crate::contracts::identity::content_identity(FORMULA_UNBOUNDED_V1, &bytes))\n     }\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::from_json_bytes",
+      "return_type": "-> Result<Self, StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 942
+        },
+        "start": {
+          "column": 5,
+          "line": 935
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:941:9: replace InfiniteFormulaDocument::from_json_bytes -> Result<Self, StrictDocumentReadError> with Ok(Default::default())",
+    "package": "tl-syntax",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 44,
+        "line": 941
+      },
+      "start": {
+        "column": 9,
+        "line": 941
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::content_identity -> Result<String, serde_json::Error> with Ok(String::new())\n@@ -939,18 +939,17 @@\n         limits: SyntaxArtifactLimits,\n     ) -> Result<Self, StrictDocumentReadError> {\n         read_strict_document(bytes, limits)\n     }\n     /// Returns the domain-separated SHA-256 semantic content identity.\n     /// Diagnostic source spans remain on the wire but do not affect this identity.\n     #[cfg(feature = \"serde\")]\n     pub fn content_identity(&self) -> Result<String, serde_json::Error> {\n-        canonical_json(&InfiniteSemanticIdentity(self))\n-            .map(|bytes| crate::contracts::identity::content_identity(FORMULA_UNBOUNDED_V1, &bytes))\n+        Ok(String::new()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n #[cfg(feature = \"serde\")]\n impl StrictDocument for InfiniteFormulaDocument {\n     fn preflight_resource_limits(\n         bytes: &[u8],\n         limits: SyntaxArtifactLimits,\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::content_identity",
+      "return_type": "-> Result<String, serde_json::Error>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 949
+        },
+        "start": {
+          "column": 5,
+          "line": 943
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:947:9: replace InfiniteFormulaDocument::content_identity -> Result<String, serde_json::Error> with Ok(String::new())",
+    "package": "tl-syntax",
+    "replacement": "Ok(String::new())",
+    "span": {
+      "end": {
+        "column": 101,
+        "line": 948
+      },
+      "start": {
+        "column": 9,
+        "line": 947
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace InfiniteFormulaDocument::content_identity -> Result<String, serde_json::Error> with Ok(\"xyzzy\".into())\n@@ -939,18 +939,17 @@\n         limits: SyntaxArtifactLimits,\n     ) -> Result<Self, StrictDocumentReadError> {\n         read_strict_document(bytes, limits)\n     }\n     /// Returns the domain-separated SHA-256 semantic content identity.\n     /// Diagnostic source spans remain on the wire but do not affect this identity.\n     #[cfg(feature = \"serde\")]\n     pub fn content_identity(&self) -> Result<String, serde_json::Error> {\n-        canonical_json(&InfiniteSemanticIdentity(self))\n-            .map(|bytes| crate::contracts::identity::content_identity(FORMULA_UNBOUNDED_V1, &bytes))\n+        Ok(\"xyzzy\".into()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n #[cfg(feature = \"serde\")]\n impl StrictDocument for InfiniteFormulaDocument {\n     fn preflight_resource_limits(\n         bytes: &[u8],\n         limits: SyntaxArtifactLimits,\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "InfiniteFormulaDocument::content_identity",
+      "return_type": "-> Result<String, serde_json::Error>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 949
+        },
+        "start": {
+          "column": 5,
+          "line": 943
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:947:9: replace InfiniteFormulaDocument::content_identity -> Result<String, serde_json::Error> with Ok(\"xyzzy\".into())",
+    "package": "tl-syntax",
+    "replacement": "Ok(\"xyzzy\".into())",
+    "span": {
+      "end": {
+        "column": 101,
+        "line": 948
+      },
+      "start": {
+        "column": 9,
+        "line": 947
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits -> Result<usize, StrictDocumentReadError> with Ok(0)\n@@ -950,25 +950,17 @@\n }\n \n #[cfg(feature = \"serde\")]\n impl StrictDocument for InfiniteFormulaDocument {\n     fn preflight_resource_limits(\n         bytes: &[u8],\n         limits: SyntaxArtifactLimits,\n     ) -> Result<usize, StrictDocumentReadError> {\n-        let nodes = array_field_population(bytes, b\"nodes\");\n-        if nodes > limits.formula_nodes {\n-            return Err(StrictDocumentReadError::ResourceLimitExceeded {\n-                resource: \"formula nodes\",\n-                actual: nodes,\n-                limit: limits.formula_nodes,\n-            });\n-        }\n-        Ok(nodes)\n+        Ok(0) /* ~ changed by cargo-mutants ~ */\n     }\n     fn validate_resource_limits(\n         &self,\n         limits: SyntaxArtifactLimits,\n     ) -> Result<(), StrictDocumentReadError> {\n         if self.nodes.len() > limits.formula_nodes {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula nodes\",\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits",
+      "return_type": "-> Result<usize, StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 967
+        },
+        "start": {
+          "column": 5,
+          "line": 954
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:958:9: replace <impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits -> Result<usize, StrictDocumentReadError> with Ok(0)",
+    "package": "tl-syntax",
+    "replacement": "Ok(0)",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 966
+      },
+      "start": {
+        "column": 9,
+        "line": 958
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits -> Result<usize, StrictDocumentReadError> with Ok(1)\n@@ -950,25 +950,17 @@\n }\n \n #[cfg(feature = \"serde\")]\n impl StrictDocument for InfiniteFormulaDocument {\n     fn preflight_resource_limits(\n         bytes: &[u8],\n         limits: SyntaxArtifactLimits,\n     ) -> Result<usize, StrictDocumentReadError> {\n-        let nodes = array_field_population(bytes, b\"nodes\");\n-        if nodes > limits.formula_nodes {\n-            return Err(StrictDocumentReadError::ResourceLimitExceeded {\n-                resource: \"formula nodes\",\n-                actual: nodes,\n-                limit: limits.formula_nodes,\n-            });\n-        }\n-        Ok(nodes)\n+        Ok(1) /* ~ changed by cargo-mutants ~ */\n     }\n     fn validate_resource_limits(\n         &self,\n         limits: SyntaxArtifactLimits,\n     ) -> Result<(), StrictDocumentReadError> {\n         if self.nodes.len() > limits.formula_nodes {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula nodes\",\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits",
+      "return_type": "-> Result<usize, StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 967
+        },
+        "start": {
+          "column": 5,
+          "line": 954
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:958:9: replace <impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits -> Result<usize, StrictDocumentReadError> with Ok(1)",
+    "package": "tl-syntax",
+    "replacement": "Ok(1)",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 966
+      },
+      "start": {
+        "column": 9,
+        "line": 958
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace > with == in <impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits\n@@ -951,17 +951,17 @@\n \n #[cfg(feature = \"serde\")]\n impl StrictDocument for InfiniteFormulaDocument {\n     fn preflight_resource_limits(\n         bytes: &[u8],\n         limits: SyntaxArtifactLimits,\n     ) -> Result<usize, StrictDocumentReadError> {\n         let nodes = array_field_population(bytes, b\"nodes\");\n-        if nodes > limits.formula_nodes {\n+        if nodes == /* ~ changed by cargo-mutants ~ */ limits.formula_nodes {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula nodes\",\n                 actual: nodes,\n                 limit: limits.formula_nodes,\n             });\n         }\n         Ok(nodes)\n     }\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits",
+      "return_type": "-> Result<usize, StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 967
+        },
+        "start": {
+          "column": 5,
+          "line": 954
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:959:18: replace > with == in <impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits",
+    "package": "tl-syntax",
+    "replacement": "==",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 959
+      },
+      "start": {
+        "column": 18,
+        "line": 959
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace > with < in <impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits\n@@ -951,17 +951,17 @@\n \n #[cfg(feature = \"serde\")]\n impl StrictDocument for InfiniteFormulaDocument {\n     fn preflight_resource_limits(\n         bytes: &[u8],\n         limits: SyntaxArtifactLimits,\n     ) -> Result<usize, StrictDocumentReadError> {\n         let nodes = array_field_population(bytes, b\"nodes\");\n-        if nodes > limits.formula_nodes {\n+        if nodes < /* ~ changed by cargo-mutants ~ */ limits.formula_nodes {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula nodes\",\n                 actual: nodes,\n                 limit: limits.formula_nodes,\n             });\n         }\n         Ok(nodes)\n     }\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits",
+      "return_type": "-> Result<usize, StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 967
+        },
+        "start": {
+          "column": 5,
+          "line": 954
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:959:18: replace > with < in <impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits",
+    "package": "tl-syntax",
+    "replacement": "<",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 959
+      },
+      "start": {
+        "column": 18,
+        "line": 959
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace > with >= in <impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits\n@@ -951,17 +951,17 @@\n \n #[cfg(feature = \"serde\")]\n impl StrictDocument for InfiniteFormulaDocument {\n     fn preflight_resource_limits(\n         bytes: &[u8],\n         limits: SyntaxArtifactLimits,\n     ) -> Result<usize, StrictDocumentReadError> {\n         let nodes = array_field_population(bytes, b\"nodes\");\n-        if nodes > limits.formula_nodes {\n+        if nodes >= /* ~ changed by cargo-mutants ~ */ limits.formula_nodes {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula nodes\",\n                 actual: nodes,\n                 limit: limits.formula_nodes,\n             });\n         }\n         Ok(nodes)\n     }\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits",
+      "return_type": "-> Result<usize, StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 967
+        },
+        "start": {
+          "column": 5,
+          "line": 954
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:959:18: replace > with >= in <impl StrictDocument for InfiniteFormulaDocument>::preflight_resource_limits",
+    "package": "tl-syntax",
+    "replacement": ">=",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 959
+      },
+      "start": {
+        "column": 18,
+        "line": 959
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits -> Result<(), StrictDocumentReadError> with Ok(())\n@@ -964,26 +964,11 @@\n             });\n         }\n         Ok(nodes)\n     }\n     fn validate_resource_limits(\n         &self,\n         limits: SyntaxArtifactLimits,\n     ) -> Result<(), StrictDocumentReadError> {\n-        if self.nodes.len() > limits.formula_nodes {\n-            return Err(StrictDocumentReadError::ResourceLimitExceeded {\n-                resource: \"formula nodes\",\n-                actual: self.nodes.len(),\n-                limit: limits.formula_nodes,\n-            });\n-        }\n-        let depth = self.maximum_depth();\n-        if depth > limits.formula_depth {\n-            return Err(StrictDocumentReadError::ResourceLimitExceeded {\n-                resource: \"formula depth\",\n-                actual: depth,\n-                limit: limits.formula_depth,\n-            });\n-        }\n-        Ok(())\n+        Ok(()) /* ~ changed by cargo-mutants ~ */\n     }\n }\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+      "return_type": "-> Result<(), StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 988
+        },
+        "start": {
+          "column": 5,
+          "line": 968
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/formula/infinite.rs:972:9: replace <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits -> Result<(), StrictDocumentReadError> with Ok(())",
+    "package": "tl-syntax",
+    "replacement": "Ok(())",
+    "span": {
+      "end": {
+        "column": 15,
+        "line": 987
+      },
+      "start": {
+        "column": 9,
+        "line": 972
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace > with == in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits\n@@ -964,17 +964,17 @@\n             });\n         }\n         Ok(nodes)\n     }\n     fn validate_resource_limits(\n         &self,\n         limits: SyntaxArtifactLimits,\n     ) -> Result<(), StrictDocumentReadError> {\n-        if self.nodes.len() > limits.formula_nodes {\n+        if self.nodes.len() == /* ~ changed by cargo-mutants ~ */ limits.formula_nodes {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula nodes\",\n                 actual: self.nodes.len(),\n                 limit: limits.formula_nodes,\n             });\n         }\n         let depth = self.maximum_depth();\n         if depth > limits.formula_depth {\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+      "return_type": "-> Result<(), StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 988
+        },
+        "start": {
+          "column": 5,
+          "line": 968
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:972:29: replace > with == in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+    "package": "tl-syntax",
+    "replacement": "==",
+    "span": {
+      "end": {
+        "column": 30,
+        "line": 972
+      },
+      "start": {
+        "column": 29,
+        "line": 972
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace > with < in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits\n@@ -964,17 +964,17 @@\n             });\n         }\n         Ok(nodes)\n     }\n     fn validate_resource_limits(\n         &self,\n         limits: SyntaxArtifactLimits,\n     ) -> Result<(), StrictDocumentReadError> {\n-        if self.nodes.len() > limits.formula_nodes {\n+        if self.nodes.len() < /* ~ changed by cargo-mutants ~ */ limits.formula_nodes {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula nodes\",\n                 actual: self.nodes.len(),\n                 limit: limits.formula_nodes,\n             });\n         }\n         let depth = self.maximum_depth();\n         if depth > limits.formula_depth {\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+      "return_type": "-> Result<(), StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 988
+        },
+        "start": {
+          "column": 5,
+          "line": 968
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:972:29: replace > with < in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+    "package": "tl-syntax",
+    "replacement": "<",
+    "span": {
+      "end": {
+        "column": 30,
+        "line": 972
+      },
+      "start": {
+        "column": 29,
+        "line": 972
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace > with >= in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits\n@@ -964,17 +964,17 @@\n             });\n         }\n         Ok(nodes)\n     }\n     fn validate_resource_limits(\n         &self,\n         limits: SyntaxArtifactLimits,\n     ) -> Result<(), StrictDocumentReadError> {\n-        if self.nodes.len() > limits.formula_nodes {\n+        if self.nodes.len() >= /* ~ changed by cargo-mutants ~ */ limits.formula_nodes {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula nodes\",\n                 actual: self.nodes.len(),\n                 limit: limits.formula_nodes,\n             });\n         }\n         let depth = self.maximum_depth();\n         if depth > limits.formula_depth {\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+      "return_type": "-> Result<(), StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 988
+        },
+        "start": {
+          "column": 5,
+          "line": 968
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:972:29: replace > with >= in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+    "package": "tl-syntax",
+    "replacement": ">=",
+    "span": {
+      "end": {
+        "column": 30,
+        "line": 972
+      },
+      "start": {
+        "column": 29,
+        "line": 972
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace > with == in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits\n@@ -972,17 +972,17 @@\n         if self.nodes.len() > limits.formula_nodes {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula nodes\",\n                 actual: self.nodes.len(),\n                 limit: limits.formula_nodes,\n             });\n         }\n         let depth = self.maximum_depth();\n-        if depth > limits.formula_depth {\n+        if depth == /* ~ changed by cargo-mutants ~ */ limits.formula_depth {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula depth\",\n                 actual: depth,\n                 limit: limits.formula_depth,\n             });\n         }\n         Ok(())\n     }\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+      "return_type": "-> Result<(), StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 988
+        },
+        "start": {
+          "column": 5,
+          "line": 968
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:980:18: replace > with == in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+    "package": "tl-syntax",
+    "replacement": "==",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 980
+      },
+      "start": {
+        "column": 18,
+        "line": 980
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace > with < in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits\n@@ -972,17 +972,17 @@\n         if self.nodes.len() > limits.formula_nodes {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula nodes\",\n                 actual: self.nodes.len(),\n                 limit: limits.formula_nodes,\n             });\n         }\n         let depth = self.maximum_depth();\n-        if depth > limits.formula_depth {\n+        if depth < /* ~ changed by cargo-mutants ~ */ limits.formula_depth {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula depth\",\n                 actual: depth,\n                 limit: limits.formula_depth,\n             });\n         }\n         Ok(())\n     }\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+      "return_type": "-> Result<(), StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 988
+        },
+        "start": {
+          "column": 5,
+          "line": 968
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:980:18: replace > with < in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+    "package": "tl-syntax",
+    "replacement": "<",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 980
+      },
+      "start": {
+        "column": 18,
+        "line": 980
+      }
+    }
+  },
+  {
+    "diff": "--- src/formula/infinite.rs\n+++ replace > with >= in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits\n@@ -972,17 +972,17 @@\n         if self.nodes.len() > limits.formula_nodes {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula nodes\",\n                 actual: self.nodes.len(),\n                 limit: limits.formula_nodes,\n             });\n         }\n         let depth = self.maximum_depth();\n-        if depth > limits.formula_depth {\n+        if depth >= /* ~ changed by cargo-mutants ~ */ limits.formula_depth {\n             return Err(StrictDocumentReadError::ResourceLimitExceeded {\n                 resource: \"formula depth\",\n                 actual: depth,\n                 limit: limits.formula_depth,\n             });\n         }\n         Ok(())\n     }\n",
+    "file": "src/formula/infinite.rs",
+    "function": {
+      "function_name": "<impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+      "return_type": "-> Result<(), StrictDocumentReadError>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 988
+        },
+        "start": {
+          "column": 5,
+          "line": 968
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/formula/infinite.rs:980:18: replace > with >= in <impl StrictDocument for InfiniteFormulaDocument>::validate_resource_limits",
+    "package": "tl-syntax",
+    "replacement": ">=",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 980
+      },
+      "start": {
+        "column": 18,
+        "line": 980
+      }
+    }
+  }
+]

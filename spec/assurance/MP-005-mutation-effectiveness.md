@@ -2,7 +2,7 @@
 id: MP-005
 title: "TL Rust mutation-pilot effectiveness"
 type: MeasurementPlan
-status: proposed
+status: retired
 owner: tl-verification-campaign-owner
 metric: tl.mutation-effectiveness
 definition_version: tl-mltl.mutation-effectiveness/v2
@@ -27,6 +27,9 @@ relationships:
 ---
 
 # TL Rust mutation-pilot effectiveness
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Decision Use
 

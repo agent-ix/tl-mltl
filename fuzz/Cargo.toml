@@ -1,0 +1,47 @@
+[package]
+name = "tl-mltl-fuzz"
+version = "0.0.0"
+publish = false
+license = "MIT"
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+sha2 = "=0.10.9"
+tl-mltl = { path = "..", features = ["infinite-trace"] }
+tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "6e2fc17fcfba60c33ab264772bb25550a9c81853", default-features = false, features = ["alloc", "serde"] }
+tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "9bf3994d4c67ee0a9a53dc31316404b9edf14df9" }
+
+[[bin]]
+name = "c2po_map"
+path = "fuzz_targets/c2po_map.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "closed_eval"
+path = "fuzz_targets/closed_eval.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "lasso_differential"
+path = "fuzz_targets/lasso_differential.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "partial_valuation_monotone"
+path = "fuzz_targets/partial_valuation_monotone.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]

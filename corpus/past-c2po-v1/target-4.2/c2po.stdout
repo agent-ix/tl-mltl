@@ -1,0 +1,43 @@
+TL n0  load   a0
+TL n1  since  True n0
+TL n2  return n1 0
+TL n3  trigger False n0
+TL n4  return n3 1
+TL n5  since  True n0
+TL n6  return n5 2
+TL n7  load   a1
+TL n8  since  n0 n7
+TL n9  return n8 3
+TL n10 not    n0
+TL n11 not    n7
+TL n12 since  n10 n11
+TL n13 not    n12
+TL n14 return n13 4
+TL n15 return n5 5
+CG TL SCQ q0 |1|
+CG TL SCQ q1 |1|
+CG TL SCQ q2 |1|
+CG TL SCQ q3 |1|
+CG TL SCQ q4 |1|
+CG TL SCQ q5 |2|
+CG TL SCQ q6 |1|
+CG TL SCQ q7 |1|
+CG TL SCQ q8 |1|
+CG TL SCQ q9 |1|
+CG TL SCQ q10 |1|
+CG TL SCQ q11 |1|
+CG TL SCQ q12 |1|
+CG TL SCQ q13 |1|
+CG TL SCQ q14 |1|
+CG TL SCQ q15 |1|
+CG TL TEMP q1 [0, 1]
+CG TL TEMP q3 [0, 1]
+CG TL TEMP q5 [1, 1]
+CG TL TEMP q8 [0, 2]
+CG TL TEMP q12 [0, 2]
+F __f0__ 0
+F __f1__ 1
+F __f2__ 2
+F __f3__ 3
+F __f4__ 4
+F __f5__ 5

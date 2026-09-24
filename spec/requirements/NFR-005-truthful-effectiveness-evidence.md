@@ -2,6 +2,7 @@
 id: NFR-005
 title: "Keep effectiveness evidence reproducible and bounded"
 type: NFR
+status: superseded
 quality_attribute: reliability
 relationships:
   - target: ix://agent-ix/tl-mltl/FR-020
@@ -17,6 +18,9 @@ relationships:
 ---
 
 # NFR-005: Keep effectiveness evidence reproducible and bounded
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Statement
 

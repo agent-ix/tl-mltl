@@ -1,3 +1,7 @@
+use tl_mltl::wire::{
+    self, CommandDocument, CommandSchemaVersion, Operation, OwnerLimits, OwnerReadErrorCode,
+    TraceDocument, TraceSchemaVersion, ValidatedCommand, ValidatedTrace,
+};
 use tl_mltl::{
     analyze_horizon, analyze_horizon_with_context, compare_external, compare_external_with_context,
     evaluate_closed_with_context, evaluate_prefix, evaluate_prefix_with_context, map_to_c2po,
@@ -12,6 +16,20 @@ use tl_syntax::{
     PropositionBinding, PropositionId, RequirementContextDocument, SemanticProfile,
     SignalCatalogDocument, SignalDomain, SignalId, SourceSpan, MAX_FORMULA_DOCUMENT_NODES,
 };
+
+fn stable_future_mapping_payload<T: serde::Serialize>(manifest: T) -> serde_json::Value {
+    let mut value = serde_json::to_value(manifest).unwrap();
+    let fields = value.as_object_mut().unwrap();
+    for field in [
+        "adapterVersion",
+        "syntaxRevision",
+        "requestSha256",
+        "resultSha256",
+    ] {
+        fields.remove(field);
+    }
+    value
+}
 
 fn overlay_nodes() -> Vec<Node> {
     vec![
@@ -89,6 +107,280 @@ fn tool() -> ToolIdentity {
     }
 }
 
+// Trace: TC-029, FR-007-AC-5, NFR-001-AC-1
+#[test]
+fn owner_command_round_trip_and_expected_identity_are_strict() {
+    let formula = FormulaDocument::new(
+        SemanticProfile::ClosedTraceV1,
+        NodeId(0),
+        vec![Node::new(NodeKind::Proposition {
+            proposition: PropositionId(7),
+        })],
+    )
+    .unwrap();
+    let trace = TraceDocument {
+        schema_version: TraceSchemaVersion::V1,
+        trace_id: "ordered".to_owned(),
+        closed: true,
+        instants: vec![vec![PropositionId(7), PropositionId(8)]],
+    };
+    let document = CommandDocument {
+        schema_version: CommandSchemaVersion::V1,
+        operation: Operation::Evaluate,
+        formula_id: "p".to_owned(),
+        formula,
+        trace: Some(trace),
+    };
+    let limits = OwnerLimits::owner_max();
+    let owner = wire::command::derive(&document, limits).unwrap();
+    let admitted = wire::command::read(owner.bytes(), &document, limits).unwrap();
+    assert_eq!(admitted.document(), &document);
+    assert_eq!(admitted.bytes(), owner.bytes());
+    assert_eq!(admitted.usage().formula_nodes, 1);
+    assert_eq!(admitted.usage().positions, 1);
+
+    let mut other = document.clone();
+    other.formula_id = "other".to_owned();
+    assert_eq!(
+        wire::command::read(owner.bytes(), &other, limits)
+            .unwrap_err()
+            .code(),
+        OwnerReadErrorCode::ExpectedMismatch
+    );
+    assert_eq!(
+        ValidatedCommand::from_json_bytes(&[&b" "[..], owner.bytes()].concat(), limits)
+            .unwrap_err()
+            .code(),
+        OwnerReadErrorCode::NonCanonical
+    );
+    other.formula_id.clear();
+    assert_eq!(
+        wire::command::derive(&other, limits).unwrap_err().code(),
+        OwnerReadErrorCode::InvalidCombination
+    );
+    other.formula_id = "x".repeat(257);
+    assert_eq!(
+        wire::command::derive(&other, limits).unwrap_err().field(),
+        "formulaId"
+    );
+    let mut horizon_only = document.clone();
+    horizon_only.operation = Operation::Analyze;
+    horizon_only.trace = None;
+    assert_eq!(
+        wire::command::derive(&horizon_only, limits)
+            .unwrap()
+            .usage()
+            .positions,
+        0
+    );
+    assert_eq!(
+        wire::command::derive(
+            &document,
+            OwnerLimits {
+                max_output_bytes: 1,
+                ..limits
+            }
+        )
+        .unwrap_err()
+        .code(),
+        OwnerReadErrorCode::ResourceIncomplete
+    );
+}
+
+// Trace: TC-029, FR-007-AC-5, NFR-001-AC-1
+#[test]
+fn owner_trace_refuses_unsorted_and_over_budget_observations() {
+    let limits = OwnerLimits::owner_max();
+    let trace = TraceDocument {
+        schema_version: TraceSchemaVersion::V1,
+        trace_id: "trace".to_owned(),
+        closed: false,
+        instants: vec![vec![PropositionId(7), PropositionId(8)]],
+    };
+    let owner = wire::trace::derive(&trace, limits).unwrap();
+    let admitted = ValidatedTrace::from_json_bytes(owner.bytes(), limits).unwrap();
+    assert_eq!(admitted.document(), &trace);
+    assert_eq!(admitted.canonical_json_bytes(), owner.bytes());
+    assert_eq!(
+        wire::trace::read(owner.bytes(), &trace, limits).unwrap(),
+        admitted
+    );
+
+    let mut unsorted = trace.clone();
+    unsorted.instants[0].reverse();
+    assert_eq!(
+        wire::trace::derive(&unsorted, limits).unwrap_err().code(),
+        OwnerReadErrorCode::InvalidCombination
+    );
+    assert_eq!(
+        wire::trace::derive(
+            &trace,
+            OwnerLimits {
+                max_positions: 0,
+                ..limits
+            }
+        )
+        .unwrap_err()
+        .code(),
+        OwnerReadErrorCode::ResourceIncomplete
+    );
+    assert_eq!(
+        ValidatedTrace::from_json_bytes(&[0xff], limits)
+            .unwrap_err()
+            .code(),
+        OwnerReadErrorCode::InvalidUtf8
+    );
+}
+
+// Trace: FR-050-AC-1, NFR-001-AC-1
+#[test]
+fn owner_semantic_limits_admit_the_boundary_and_type_one_over() {
+    use tl_mltl::wire::common::{produce, OwnerUsage};
+
+    macro_rules! boundary {
+        ($limit:ident, $usage:ident, $field:literal) => {{
+            let limits = OwnerLimits {
+                $limit: 1,
+                ..OwnerLimits::owner_max()
+            };
+            let usage = OwnerUsage {
+                $usage: 1,
+                ..OwnerUsage::default()
+            };
+            assert!(produce((), usage, limits).is_ok(), "{} at limit", $field);
+            let over = OwnerUsage { $usage: 2, ..usage };
+            let error = produce((), over, limits).unwrap_err();
+            assert_eq!(error.code(), OwnerReadErrorCode::ResourceIncomplete);
+            assert_eq!(error.field(), $field);
+        }};
+    }
+
+    boundary!(max_formula_nodes, formula_nodes, "formulaNodes");
+    boundary!(max_formula_depth, formula_depth, "formulaDepth");
+    boundary!(max_positions, positions, "positions");
+    boundary!(max_propositions, propositions, "propositions");
+    boundary!(max_support, support, "support");
+    boundary!(max_history_span, history_span, "historySpan");
+    boundary!(max_evaluation_steps, evaluation_steps, "evaluationSteps");
+    boundary!(max_recursion_depth, recursion_depth, "recursionDepth");
+}
+
+// Trace: FR-050-AC-1, NFR-001-AC-1
+#[test]
+fn owner_trace_limits_bind_wire_shape_and_expected_identity() {
+    let trace = TraceDocument {
+        schema_version: TraceSchemaVersion::V1,
+        trace_id: "edge".to_owned(),
+        closed: true,
+        instants: vec![vec![PropositionId(7), PropositionId(8)]],
+    };
+    let max = OwnerLimits::owner_max();
+    let bytes = wire::trace::derive(&trace, max).unwrap().bytes().to_vec();
+    let usage = ValidatedTrace::from_json_bytes(&bytes, max)
+        .unwrap()
+        .usage();
+    let bounded = OwnerLimits {
+        max_input_bytes: bytes.len(),
+        max_depth: usage.depth,
+        max_string_bytes: usage.string_bytes,
+        max_visited_fields: usage.visited_fields,
+        ..max
+    };
+    assert_eq!(
+        wire::trace::read(&bytes, &trace, bounded)
+            .unwrap()
+            .document(),
+        &trace
+    );
+    for (limits, field) in [
+        (
+            OwnerLimits {
+                max_input_bytes: bytes.len() - 1,
+                ..bounded
+            },
+            "inputBytes",
+        ),
+        (
+            OwnerLimits {
+                max_depth: usage.depth - 1,
+                ..bounded
+            },
+            "depth",
+        ),
+        (
+            OwnerLimits {
+                max_string_bytes: usage.string_bytes - 1,
+                ..bounded
+            },
+            "stringBytes",
+        ),
+        (
+            OwnerLimits {
+                max_visited_fields: usage.visited_fields - 1,
+                ..bounded
+            },
+            "visitedFields",
+        ),
+    ] {
+        let error = ValidatedTrace::from_json_bytes(&bytes, limits).unwrap_err();
+        assert_eq!(error.code(), OwnerReadErrorCode::ResourceIncomplete);
+        assert_eq!(error.field(), field);
+    }
+
+    let mut other = trace.clone();
+    other.trace_id = "other".to_owned();
+    let error = wire::trace::read(&bytes, &other, bounded).unwrap_err();
+    assert_eq!(error.code(), OwnerReadErrorCode::ExpectedMismatch);
+    assert_eq!(error.field(), "trace");
+
+    let mut nameless = trace.clone();
+    nameless.trace_id.clear();
+    let error = wire::trace::derive(&nameless, max).unwrap_err();
+    assert_eq!(error.code(), OwnerReadErrorCode::InvalidCombination);
+    assert_eq!(error.field(), "traceId");
+}
+
+// Trace: TC-029, FR-007-AC-5, NFR-001-AC-1
+#[test]
+fn owner_trace_binds_expected_identity_and_distinct_resource_ceilings() {
+    let limits = OwnerLimits::owner_max();
+    let trace = TraceDocument {
+        schema_version: TraceSchemaVersion::V1,
+        trace_id: "bound-trace".to_owned(),
+        closed: false,
+        instants: vec![vec![PropositionId(7), PropositionId(8)]],
+    };
+    let canonical = wire::trace::derive(&trace, limits).unwrap();
+
+    let mut foreign = trace.clone();
+    foreign.trace_id = "foreign-trace".to_owned();
+    let mismatch = wire::trace::read(canonical.bytes(), &foreign, limits).unwrap_err();
+    assert_eq!(mismatch.code(), OwnerReadErrorCode::ExpectedMismatch);
+    assert_eq!(mismatch.field(), "trace");
+
+    let mut invalid = trace.clone();
+    invalid.trace_id = "x".repeat(257);
+    let refusal = wire::trace::derive(&invalid, limits).unwrap_err();
+    assert_eq!(refusal.code(), OwnerReadErrorCode::InvalidCombination);
+    assert_eq!(refusal.field(), "traceId");
+
+    let proposition_limit = OwnerLimits {
+        max_propositions: 1,
+        ..limits
+    };
+    let refusal = wire::trace::derive(&trace, proposition_limit).unwrap_err();
+    assert_eq!(refusal.code(), OwnerReadErrorCode::ResourceIncomplete);
+    assert_eq!(refusal.field(), "propositions");
+
+    let input_limit = OwnerLimits {
+        max_input_bytes: canonical.bytes().len() - 1,
+        ..limits
+    };
+    let refusal = ValidatedTrace::from_json_bytes(canonical.bytes(), input_limit).unwrap_err();
+    assert_eq!(refusal.code(), OwnerReadErrorCode::ResourceIncomplete);
+    assert_eq!(refusal.field(), "inputBytes");
+}
+
 fn assert_stable_v1_wire<T>(record: T, v2_schema: &str)
 where
     T: serde::Serialize + serde::de::DeserializeOwned + Eq + core::fmt::Debug,
@@ -148,6 +440,63 @@ fn legacy_records_round_trip_as_exact_v1_wires_and_refuse_v2_labels() {
     assert_stable_v1_wire::<MappingManifest>(mapping, "tl-mltl.monitor-mapping/v2");
     assert_stable_v1_wire::<ExternalVerdict>(external, "tl-mltl.external-verdict/v2");
     assert_stable_v1_wire::<DifferentialReport>(differential, "tl-mltl.differential/v2");
+}
+
+// Trace: TC-163, FR-038-AC-2
+#[test]
+fn past_mapping_addition_preserved_bounded_future_behavioral_payload() {
+    let nodes = overlay_nodes();
+    let formula = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(3), &nodes).unwrap();
+    let source = MappingSourceIdentity {
+        revision: "fixture-source".to_owned(),
+        state: MappingSourceState::Clean,
+    };
+    let v1 = map_to_c2po(
+        formula,
+        "overlay-response",
+        b"overlay-response",
+        source.clone(),
+        None,
+        100,
+    )
+    .unwrap();
+    let v2 = map_to_c2po_with_context(
+        formula,
+        "overlay-response",
+        b"overlay-response",
+        source,
+        None,
+        100,
+        &catalog(),
+        Some(&context()),
+    )
+    .unwrap();
+    let actual = serde_json::json!({
+        "v1": stable_future_mapping_payload(v1),
+        "v2": stable_future_mapping_payload(v2),
+    });
+    let golden: serde_json::Value =
+        serde_json::from_str(include_str!("fixtures/legacy-future-mapping-stable.json")).unwrap();
+    assert_eq!(actual, golden);
+
+    // The commit that added past mapping changed only these two functions'
+    // visibility in the legacy implementation. The fixture above keeps the
+    // rendered payload checked at the current release graph as well.
+    let root = env!("CARGO_MANIFEST_DIR");
+    let source_at = |revision: &str| {
+        let output = std::process::Command::new("git")
+            .current_dir(root)
+            .args(["show", &format!("{revision}:src/mapping/legacy.rs")])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        String::from_utf8(output.stdout).unwrap()
+    };
+    let before = source_at("9c3d99907c64ccc5ccf59f79bbc56bc9cf4233b1");
+    let after = source_at("878e4f8c64b0f19fbd03978cc3cee814fc3367e8")
+        .replace("pub(crate) fn is_c2po_identifier", "fn is_c2po_identifier")
+        .replace("pub(crate) fn sha256_hex", "fn sha256_hex");
+    assert_eq!(before, after, "past mapping changed legacy future logic");
 }
 
 // Trace: TC-028, FR-007-AC-4, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4

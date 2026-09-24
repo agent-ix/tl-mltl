@@ -2,7 +2,7 @@
 id: MP-003
 title: "TL property-domain grounding coverage"
 type: MeasurementPlan
-status: proposed
+status: retired
 owner: tl-verification-campaign-owner
 metric: tl.property-domain-grounding
 definition_version: tl-mltl.property-domain-grounding/v2
@@ -27,6 +27,9 @@ relationships:
 ---
 
 # TL property-domain grounding coverage
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Decision Use
 

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "tl-mltl.fuzz-run/v1",
+  "target": "c2po_map",
+  "recordedAt": "2026-09-22",
+  "tool": "cargo-fuzz 0.13.1, libfuzzer-sys 0.4.13",
+  "rustc": "rustc 1.100.0-nightly (1303417c4 2026-09-21)",
+  "syntaxRevision": "75ebec8ec8d15dcdee3a821119ae3ceb18e61bb3",
+  "targetSourceSha256": "2b1391fe9a65f19afeff9dd34f5796313ca86700749a1f1d8d07a0cc54b7a316",
+  "seed": 174,
+  "runLimit": 200,
+  "perInputTimeoutSeconds": 5,
+  "inputMaxLengthBytes": 4096,
+  "initialCorpusCount": 8,
+  "completedRuns": 200,
+  "status": "passed",
+  "crashes": 0,
+  "hangs": 0,
+  "generatedSeedsRetained": 0,
+  "minimizedFailures": []
+}

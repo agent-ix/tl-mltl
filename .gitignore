@@ -1,4 +1,3 @@
-.venv-assurance/
 __pycache__/
 *.pyc
 Cargo.lock.bak
@@ -8,6 +7,9 @@ Cargo.lock.bak
 .vscode/
 
 target/
+fuzz/artifacts/
+fuzz/coverage/
+fuzz/target/
 *-target/
-target-*/
+/target-*/
 .worktrees/

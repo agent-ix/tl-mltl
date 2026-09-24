@@ -214,10 +214,18 @@ mod kani_proofs {
     fn horizon_bound_addition_matches_checked_add() {
         let bound: u32 = kani::any();
         let child: u64 = kani::any();
-        let expected = child
-            .checked_add(u64::from(bound))
-            .ok_or(HorizonError::ArithmeticOverflow { node: NodeId(0) });
-        assert_eq!(add_bound(NodeId(0), bound, child), expected);
+        let actual = add_bound(NodeId(0), bound, child);
+        match child.checked_add(u64::from(bound)) {
+            Some(expected) => {
+                assert!(matches!(actual, Ok(value) if value == expected));
+            }
+            None => {
+                assert!(matches!(
+                    actual,
+                    Err(HorizonError::ArithmeticOverflow { node: NodeId(0) })
+                ));
+            }
+        }
     }
 }
 

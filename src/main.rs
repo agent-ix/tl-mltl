@@ -71,6 +71,11 @@ fn run() -> Result<(), String> {
                             .to_owned(),
                     );
                 }
+                SemanticProfile::InfiniteTraceV1 => {
+                    return Err(
+                        "infinite-trace formulas require the opt-in provider API".to_owned()
+                    );
+                }
             }
             .map_err(|error| format!("evaluate formula: {error}"))?;
             serde_json::to_value(report)

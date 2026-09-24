@@ -1,6 +1,7 @@
 use tl_mltl::{
     analyze_horizon, evaluate_closed, evaluate_closed_at, evaluate_prefix, evaluate_prefix_at,
-    EvaluationError, EvaluationLimits, TruthValue, TL_SYNTAX_CORPUS_REVISION,
+    evaluate_prefix_at_with_stats, EvaluationError, EvaluationLimits, TruthValue,
+    TL_SYNTAX_CORPUS_REVISION,
 };
 use tl_syntax::{Formula, Interval, Node, NodeId, NodeKind, PropositionId, SemanticProfile};
 
@@ -16,6 +17,45 @@ fn p(id: u32) -> Node {
 
 fn default_limits() -> EvaluationLimits {
     EvaluationLimits::default()
+}
+
+// Trace: TC-004, FR-001-AC-3, NFR-001-AC-2
+#[test]
+fn prefix_stats_refuse_unsorted_trace_and_wrong_profile_before_evaluation() {
+    let nodes = [p(0)];
+    let (unsorted, stats) = evaluate_prefix_at_with_stats(
+        formula(SemanticProfile::OnlinePrefixV1, &nodes),
+        "p",
+        &[vec![PropositionId(1), PropositionId(0)]],
+        "unsorted",
+        false,
+        0,
+        default_limits(),
+    );
+    assert_eq!(
+        unsorted,
+        Err(EvaluationError::TraceNotStrictlyOrdered {
+            instant: 0,
+            previous: PropositionId(1),
+            current: PropositionId(0),
+        })
+    );
+    assert_eq!(stats.node_evaluations, 0);
+
+    let (wrong_profile, stats) = evaluate_prefix_at_with_stats(
+        formula(SemanticProfile::ClosedTraceV1, &nodes),
+        "p",
+        &[vec![PropositionId(0)]],
+        "closed",
+        false,
+        0,
+        default_limits(),
+    );
+    assert!(matches!(
+        wrong_profile,
+        Err(EvaluationError::UnsupportedProfile { .. })
+    ));
+    assert_eq!(stats.node_evaluations, 0);
 }
 
 fn proposition_at(trace: &[Vec<PropositionId>], time: u64, proposition: u32) -> bool {

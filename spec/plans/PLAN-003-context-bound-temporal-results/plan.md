@@ -150,7 +150,7 @@ manual-only and is not dispatched by this plan.
 6. The #57-shaped fixture and one existing native producer demonstrate the
    shared context through local operations and Quoin intake without importing
    contract IR, tl-rewrite, Quire, Quoin, or a generic evidence/runtime layer.
-7. The crate remains `publish = false`, `MIT OR Apache-2.0`, and makes no claim
+7. The crate remains `publish = false`, `MIT`, and makes no claim
    of provenance truth, external acceptance, universal rewrite equivalence,
    consuming-monitor qualification, accreditation, certification, or release.
 8. The exact-head full local gate passes, code review and gap analysis contain
