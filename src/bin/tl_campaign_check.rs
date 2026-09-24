@@ -1614,6 +1614,14 @@ fn argument(args: &[String], name: &str) -> Result<String, String> {
         .ok_or(format!("missing value for {name}"))
 }
 
+fn valid_member_requirement(name: &str, member: &Value) -> bool {
+    match member["required"].as_bool() {
+        Some(true) => true,
+        Some(false) => matches!(name, "V10.monitor.past" | "V10.monitor.unsafe-since"),
+        None => false,
+    }
+}
+
 fn run_args(args: &[String]) -> Result<(), String> {
     let input_path = argument(args, "--input")?;
     let input_bytes = fs::read(Path::new(&input_path)).map_err(|e| e.to_string())?;
@@ -1630,9 +1638,9 @@ fn run_args(args: &[String]) -> Result<(), String> {
         matches.next().is_none().then_some(first)
     });
     if definition["schemaVersion"] != "engineering-assurance.campaign-definition/v1"
-        || member.is_none_or(|entry| entry["required"] != true)
+        || member.is_none_or(|entry| !valid_member_requirement(&input.member, entry))
     {
-        return Err("campaign definition does not require exactly one named member".into());
+        return Err("campaign definition has no allowed exactly named member".into());
     }
     let member = member.ok_or("missing named campaign member")?;
     let output_path = argument(args, "--output")?;
@@ -2249,12 +2257,13 @@ mod tests {
         .unwrap()
     }
 
-    fn sealed_v10_monitor_receipt(
+    fn sealed_v10_monitor_receipt_with_requirement(
         root: &Path,
         case: &str,
         target_rows: &str,
         spec: &[u8],
         trace: &[u8],
+        required: bool,
     ) -> (Value, bool) {
         let member = format!("V10.monitor.{case}");
         let revision = "a".repeat(40);
@@ -2342,7 +2351,7 @@ mod tests {
             "sourceGraph":[{"repository":"tl-mltl","revision":revision,"digest":"b".repeat(64)}],
             "members":[{
                 "name":member,"planId":"MP-117", "definitionVersion":"tl.v10.v1-monitor/v1",
-                "required":true,
+                "required":required,
                 "dependsOn":depends_on
             }]
         });
@@ -2397,6 +2406,16 @@ mod tests {
         let accepted = super::run_args(&args).is_ok();
         let receipt = serde_json::from_slice(&fs::read(output_path).unwrap()).unwrap();
         (receipt, accepted)
+    }
+
+    fn sealed_v10_monitor_receipt(
+        root: &Path,
+        case: &str,
+        target_rows: &str,
+        spec: &[u8],
+        trace: &[u8],
+    ) -> (Value, bool) {
+        sealed_v10_monitor_receipt_with_requirement(root, case, target_rows, spec, trace, true)
     }
 
     // Trace: FR-055-AC-2, TC-198
@@ -2526,6 +2545,49 @@ mod tests {
             receipt["reasons"],
             json!(["v10_reviewed_input_bytes_unproved"])
         );
+    }
+
+    // Trace: FR-055-AC-2, TC-198
+    #[test]
+    fn optional_static_v10_diagnostics_emit_inconclusive_receipts() {
+        let directory = tempfile::tempdir().unwrap();
+        for (case, raw) in [
+            (
+                "past",
+                include_bytes!("../../corpus/past-c2po-v1/target-4.2/r2u2.stdout").as_slice(),
+            ),
+            (
+                "unsafe-since",
+                include_bytes!("../../corpus/past-c2po-v1/target-4.2/unsafe-since.stdout")
+                    .as_slice(),
+            ),
+        ] {
+            let inputs = super::v10_static::inputs(case).unwrap();
+            let (receipt, status) = sealed_v10_monitor_receipt_with_requirement(
+                directory.path(),
+                case,
+                std::str::from_utf8(raw).unwrap(),
+                inputs.spec,
+                inputs.trace,
+                false,
+            );
+            assert!(!status, "{case}: {receipt:#}");
+            assert_eq!(receipt["member"], format!("V10.monitor.{case}"));
+            assert_eq!(receipt["verdict"], "inconclusive");
+            assert_eq!(receipt["stdoutDigest"], super::sha256(raw));
+        }
+        assert!(super::valid_member_requirement(
+            "V10.monitor.bounded",
+            &json!({"required":true})
+        ));
+        assert!(!super::valid_member_requirement(
+            "V10.monitor.bounded",
+            &json!({"required":false})
+        ));
+        assert!(!super::valid_member_requirement(
+            "V10.monitor.past",
+            &json!({"required":"false"})
+        ));
     }
 
     // Trace: FR-055-AC-2, TC-198
