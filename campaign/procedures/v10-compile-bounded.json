@@ -6,7 +6,7 @@
   "repetitions": 1,
   "timeoutMillis": 120000,
   "producerName": "python3",
-  "producerVersion": "3.14.7",
+  "producerVersion": "3.13.11",
   "sourceRepository": "r2u2",
   "arguments": [
     {
