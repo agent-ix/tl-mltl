@@ -4,10 +4,11 @@ use sha2::{Digest as _, Sha256};
 use tl_mltl::{
     analyze_horizon, analyze_required_history, evaluate_closed, evaluate_past,
     fixed_sample_instant, ClockBinding, ClockError, ClockSample, EvaluationError, EvaluationLimits,
-    ExactNumber, ExactNumberError, HistoryError, HistoryRequirementError, HorizonError,
-    OwnerHistoryState, PastEvaluationError, PastEvaluationLimits, PastEvaluationRelationInput,
-    PastEvaluationReport, PastResultRelationKind, PastResultValidationError,
-    PositionHistoryDocument, PositionHistorySource, PositionObservation, UnsupportedClockKind,
+    ExactNumber, ExactNumberError, HistoryError, HistoryRequirementError,
+    HistoryRequirementValidationError, HorizonError, OwnerHistoryState, PastEvaluationError,
+    PastEvaluationLimits, PastEvaluationRelationInput, PastEvaluationReport,
+    PastResultRelationKind, PastResultValidationError, PositionHistoryDocument,
+    PositionHistorySource, PositionObservation, UnsupportedClockKind,
 };
 use tl_syntax::{
     Formula, Interval, Node, NodeId, NodeKind, PropositionId, SemanticProfile, SourceSpan,
@@ -418,6 +419,13 @@ fn history_admission_refuses_every_completeness_and_identity_dimension() {
     assert_eq!(
         PositionHistoryDocument::new("h", 0, 0, 0, clock.clone(), vec![row(0)]),
         Err(HistoryError::RevisionZero)
+    );
+    assert_eq!(
+        PositionHistoryDocument::new("h".repeat(257), 1, 0, 0, clock.clone(), vec![row(0)]),
+        Err(HistoryError::HistoryIdentityTooLong {
+            actual: 257,
+            limit: 256,
+        })
     );
     assert_eq!(
         PositionHistoryDocument::new("", 1, 0, 0, clock.clone(), vec![row(0)]),
@@ -888,6 +896,63 @@ fn persisted_corrections_reject_valid_reports_with_changed_predecessor_context()
     }
 }
 
+// Trace: TC-056, FR-012-AC-3
+#[test]
+fn past_evaluation_refuses_invalid_request_identities_and_zero_revision() {
+    let nodes = vec![Node::new(NodeKind::True)];
+    let history = event_history(&[(false, false)], 1);
+    for (formula_id, map_id, revision, expected) in [
+        (
+            String::new(),
+            "map-a".to_owned(),
+            1,
+            PastEvaluationError::InvalidIdentity { field: "formulaId" },
+        ),
+        (
+            "x".repeat(257),
+            "map-a".to_owned(),
+            1,
+            PastEvaluationError::InvalidIdentity { field: "formulaId" },
+        ),
+        (
+            "formula-a".to_owned(),
+            String::new(),
+            1,
+            PastEvaluationError::InvalidIdentity {
+                field: "propositionMapId",
+            },
+        ),
+        (
+            "formula-a".to_owned(),
+            "x".repeat(257),
+            1,
+            PastEvaluationError::InvalidIdentity {
+                field: "propositionMapId",
+            },
+        ),
+        (
+            "formula-a".to_owned(),
+            "map-a".to_owned(),
+            0,
+            PastEvaluationError::ResultRevisionInvalid,
+        ),
+    ] {
+        assert_eq!(
+            evaluate_past(
+                formula(&nodes),
+                formula_id,
+                &history,
+                0,
+                map_id,
+                revision,
+                PastEvaluationRelationInput::Original,
+                PastEvaluationLimits::default(),
+            ),
+            Err(expected)
+        );
+    }
+}
+
 // Trace: FR-012-AC-3, FR-012-AC-4, FR-050-AC-1
 #[test]
 fn persisted_past_result_refuses_typed_identity_work_and_lineage_mutations() {
@@ -942,6 +1007,11 @@ fn persisted_past_result_refuses_typed_identity_work_and_lineage_mutations() {
     refuses!(
         original,
         |r: &mut PastEvaluationReport| r.formula_id.clear(),
+        PastResultValidationError::IdentityMismatch { field: "formulaId" }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.formula_id = "x".repeat(257),
         PastResultValidationError::IdentityMismatch { field: "formulaId" }
     );
     refuses!(
@@ -1061,6 +1131,13 @@ fn persisted_past_result_refuses_typed_identity_work_and_lineage_mutations() {
     refuses!(
         original,
         |r: &mut PastEvaluationReport| r.relation.corrected_history = Some(r.history.clone()),
+        PastResultValidationError::RelationShape
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| {
+            r.relation.direct_predecessor = successor.relation.direct_predecessor.clone();
+        },
         PastResultValidationError::RelationShape
     );
     refuses!(
@@ -1218,6 +1295,14 @@ fn required_history_uses_checked_recursive_equations_and_ignores_spans() {
     assert_eq!(report.required_positions, 14);
     assert_eq!(report.unit, "positions");
     report.validate().unwrap();
+    for invalid_id in [String::new(), "x".repeat(257)] {
+        let mut invalid = report.clone();
+        invalid.formula_id = invalid_id;
+        assert_eq!(
+            invalid.validate(),
+            Err(HistoryRequirementValidationError::IdentityMismatch { field: "formulaId" })
+        );
+    }
     let wire = serde_json::to_value(&report).unwrap();
     assert_eq!(
         serde_json::from_value::<tl_mltl::HistoryRequirementReport>(wire.clone()).unwrap(),

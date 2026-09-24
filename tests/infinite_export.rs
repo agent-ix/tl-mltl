@@ -459,7 +459,7 @@ fn safety_export_refuses_unbounded_past_inside_the_finite_body() {
 
 // Trace: TC-172, TC-173; FR-041-AC-1, FR-041-AC-2
 #[test]
-fn reviewed_zero_window_historically_and_triggered_export_to_past_section() {
+fn reviewed_zero_window_historically_since_and_triggered_export_to_past_section() {
     let zero = TemporalInterval::Closed(Interval::new(0, 0).unwrap());
     let atom = node(K::Proposition {
         proposition: PropositionId(0),
@@ -487,10 +487,23 @@ fn reviewed_zero_window_historically_and_triggered_export_to_past_section() {
             operand: NodeId(1),
         }),
     ]);
+    let since = graph(vec![
+        atom,
+        node(K::Since {
+            interval: zero,
+            left: NodeId(0),
+            right: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
     let origin = TargetOriginContract::reviewed_r2u2_4_2();
     let observations = rows(PartialValue::True);
     for (formula, expected) in [
         (&historically, "H[0,0](p)"),
+        (&since, "(p S[0,0] p)"),
         (&triggered, "(!((!p) S[0,0] (!p)))"),
     ] {
         let graph_id = formula.content_identity().unwrap();
@@ -546,6 +559,43 @@ fn safety_export_refuses_catalog_name_without_exact_c2po_identifier() {
     );
 }
 
+// Trace: TC-172, FR-041-AC-2
+#[test]
+fn safety_export_refuses_a_catalog_without_the_requested_proposition() {
+    let safety = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(0),
+        }),
+    ]);
+    let graph_id = safety.content_identity().unwrap();
+    let observations = rows(PartialValue::True);
+    let request = PrefixRequest {
+        formula: &safety,
+        graph_id: &graph_id,
+        proposition_map_id: "map",
+        propositions: &[PropositionId(0)],
+        observations: &observations,
+        limit: EvaluationLimit::default(),
+    };
+    let unrelated = SignalCatalogDocument::new(
+        vec![OwnedSignalDeclaration::new(
+            SignalId(1),
+            "other".to_owned(),
+            SignalDomain::Boolean,
+        )],
+        vec![PropositionBinding::new(PropositionId(1), SignalId(1))],
+    )
+    .unwrap();
+    assert_eq!(
+        export_safety_monitor(&request, None, &unrelated, &contract(), 100),
+        Err(SafetyExportError::Catalog)
+    );
+}
+
 // Trace: TC-169, TC-170; FR-040-AC-1 and FR-040-AC-2
 #[test]
 fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive() {
@@ -577,6 +627,21 @@ fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive(
     assert_eq!(
         replay_target_step(&manifest, &request, step(0, false)).unwrap(),
         SafetyReplayDisposition::Refuted
+    );
+    let constrained = PrefixRequest {
+        formula: request.formula,
+        graph_id: request.graph_id,
+        proposition_map_id: request.proposition_map_id,
+        propositions: request.propositions,
+        observations: request.observations,
+        limit: EvaluationLimit {
+            max_nodes: 0,
+            ..EvaluationLimit::default()
+        },
+    };
+    assert_eq!(
+        replay_target_step(&manifest, &constrained, step(0, false)).unwrap(),
+        SafetyReplayDisposition::ResourceIncomplete
     );
     assert_eq!(
         replay_target_step(&manifest, &request, step(0, true)).unwrap(),

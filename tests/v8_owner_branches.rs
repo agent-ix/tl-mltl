@@ -36,6 +36,16 @@ fn owner_identity_omits_first_middle_and_last_members_without_losing_nested_json
         identity(contract, &json!([1, 2]), "a").unwrap_err().code(),
         OwnerReadErrorCode::Encoding
     );
+    assert_eq!(
+        identity(contract, &json!({"a": 1}), "a").unwrap(),
+        expected_identity(contract, "{}")
+    );
+    assert_eq!(
+        identity(contract, &json!({}), "absent")
+            .unwrap_err()
+            .field(),
+        "identityField"
+    );
 }
 
 // Trace: FR-050-AC-1
@@ -64,4 +74,56 @@ fn owner_wire_reports_real_output_limit_expected_mismatch_and_digest_syntax() {
     assert!(!is_sha256(&"A".repeat(64)));
     assert!(!is_sha256(&"g".repeat(64)));
     assert!(!is_sha256(&"0".repeat(63)));
+
+    let one_digit = produce(
+        json!({"a": [1]}),
+        OwnerUsage::default(),
+        OwnerLimits::default(),
+    )
+    .unwrap();
+    let two_digits = produce(
+        json!({"a": [12]}),
+        OwnerUsage::default(),
+        OwnerLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(
+        one_digit.usage().visited_fields,
+        two_digits.usage().visited_fields
+    );
+
+    let malformed = br#"{"a":"unterminated"#;
+    assert_eq!(
+        read_expected(malformed, &json!({}), OwnerLimits::default(), |_, _| {
+            Ok(OwnerUsage::default())
+        })
+        .unwrap_err()
+        .code(),
+        OwnerReadErrorCode::InvalidJson
+    );
+}
+
+#[derive(Clone)]
+struct FailingSerialization;
+
+impl serde::Serialize for FailingSerialization {
+    fn serialize<S: serde::Serializer>(&self, _: S) -> Result<S::Ok, S::Error> {
+        Err(<S::Error as serde::ser::Error>::custom(
+            "deliberate serialization failure",
+        ))
+    }
+}
+
+// Trace: FR-050-AC-1
+#[test]
+fn owner_producer_distinguishes_serialization_failure_from_output_budget() {
+    let error = produce(
+        FailingSerialization,
+        OwnerUsage::default(),
+        OwnerLimits::default(),
+    )
+    .err()
+    .unwrap();
+    assert_eq!(error.code(), OwnerReadErrorCode::Encoding);
+    assert_eq!(error.field(), "document");
 }

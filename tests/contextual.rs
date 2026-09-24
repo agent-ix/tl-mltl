@@ -158,6 +158,21 @@ fn owner_command_round_trip_and_expected_identity_are_strict() {
         wire::command::derive(&other, limits).unwrap_err().code(),
         OwnerReadErrorCode::InvalidCombination
     );
+    other.formula_id = "x".repeat(257);
+    assert_eq!(
+        wire::command::derive(&other, limits).unwrap_err().field(),
+        "formulaId"
+    );
+    let mut horizon_only = document.clone();
+    horizon_only.operation = Operation::Analyze;
+    horizon_only.trace = None;
+    assert_eq!(
+        wire::command::derive(&horizon_only, limits)
+            .unwrap()
+            .usage()
+            .positions,
+        0
+    );
     assert_eq!(
         wire::command::derive(
             &document,
