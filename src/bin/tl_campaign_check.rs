@@ -127,6 +127,15 @@ fn member_parser(member: &str) -> Option<&'static str> {
         | "V4.rewrite_infinite_rewrite"
         | "V4.mltl_c2po_map"
         | "V4.mltl_closed_eval" => Some("libfuzzer"),
+        "V7.embedded_core" | "V7.embedded_alloc" | "V7.embedded_serde" => Some("embedded-build"),
+        "V7.syntax_formula_limits"
+        | "V7.syntax_borrowed_ownership"
+        | "V7.parse_limits_utf8"
+        | "V7.mltl_lasso_limits"
+        | "V7.mltl_prefix_limits"
+        | "V7.rewrite_budgets"
+        | "V7.rewrite_record_limits"
+        | "V7.oracle_limits" => Some("miri"),
         _ => None,
     }
 }
@@ -416,6 +425,40 @@ fn libfuzzer(member: &str, stdout: &[u8], stderr: &[u8]) -> bool {
         && !raw.contains("SUMMARY: AddressSanitizer")
 }
 
+fn native_v7(member: &str, raw: &str) -> bool {
+    if member_parser(member) == Some("embedded-build") {
+        return raw.contains("Finished `dev` profile") || raw.contains("Finished `test` profile");
+    }
+    let test = match member {
+        "V7.syntax_formula_limits" => {
+            "strict_unbounded_reader_honors_lowered_node_and_depth_limits"
+        }
+        "V7.syntax_borrowed_ownership" => {
+            "borrowed_and_owned_catalogs_round_trip_with_distinct_identities"
+        }
+        "V7.parse_limits_utf8" => {
+            "parse_and_format_limits_are_exact_and_hostile_utf8_never_unwinds"
+        }
+        "V7.mltl_lasso_limits" => "every_lasso_resource_dimension_refuses_one_over_without_panic",
+        "V7.mltl_prefix_limits" => "prefix_resource_dimensions_refuse_one_over_without_panic",
+        "V7.rewrite_budgets" => "iteration_application_and_work_budgets_fail_closed",
+        "V7.rewrite_record_limits" => {
+            "tc_053_report_replay_and_all_work_limits_are_exact_and_fail_closed"
+        }
+        "V7.oracle_limits" => "tc_188_oracle_limit_edges_are_typed",
+        _ => return false,
+    };
+    let summaries: Vec<_> = raw
+        .lines()
+        .filter(|line| line.starts_with("test result: "))
+        .collect();
+    raw.contains("running 1 test")
+        && raw.contains(&format!("test {test} ... ok"))
+        && summaries.len() == 1
+        && summaries[0].starts_with("test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; ")
+        && summaries[0].contains(" filtered out;")
+}
+
 fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVerdict {
     let mut reasons = Vec::new();
     let mut request_digest = String::new();
@@ -459,6 +502,12 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                     if parser == "libfuzzer" {
                         if !libfuzzer(member, &process.stdout.bytes, &process.stderr.bytes) {
                             reasons.push("libfuzzer_budget_or_clean_exit_unproved".into());
+                        }
+                    } else if parser == "embedded-build" || parser == "miri" {
+                        let raw = String::from_utf8_lossy(&process.stdout.bytes).to_string()
+                            + &String::from_utf8_lossy(&process.stderr.bytes);
+                        if !native_v7(member, &raw) {
+                            reasons.push("native_v7_probe_unproved".into());
                         }
                     } else {
                         match String::from_utf8(process.stdout.bytes) {
