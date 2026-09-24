@@ -71,6 +71,7 @@ struct CheckInput {
     definition_version: String,
     source_graph_digest: String,
     request_digest: String,
+    request_path: String,
     result_path: String,
     result_digest: String,
     raw_artifacts: Vec<RawArtifact>,
@@ -108,8 +109,11 @@ struct DependencyResult {
     member: String,
     index: u64,
     request_digest: String,
+    request_path: String,
     result_digest: String,
     result_path: String,
+    raw_bundle_digest: String,
+    raw_bundle_path: String,
 }
 
 #[derive(Serialize)]
@@ -146,6 +150,28 @@ fn raw_bytes<'a>(bundle: &'a RawBundle, role: &str) -> Option<&'a [u8]> {
     let mut matches = bundle.artifacts.iter().filter(|item| item.role == role);
     let item = matches.next()?;
     matches.next().is_none().then_some(item.bytes.as_slice())
+}
+
+fn sealed_raw_bundle(path: &str, digest: &str) -> Result<RawBundle, String> {
+    let bytes = fs::read(path).map_err(|error| error.to_string())?;
+    let value: Value = serde_json::from_slice(&bytes).map_err(|error| error.to_string())?;
+    if canonical_digest(&value)? != digest {
+        return Err("raw bundle canonical digest mismatch".into());
+    }
+    let bundle: RawBundle = serde_json::from_value(value).map_err(|error| error.to_string())?;
+    if bundle.schema != "quoin.raw-artifact-bundle/v1"
+        || bundle
+            .artifacts
+            .windows(2)
+            .any(|pair| pair[0].role >= pair[1].role)
+        || bundle
+            .artifacts
+            .iter()
+            .any(|item| sha256(&item.bytes) != item.digest)
+    {
+        return Err("raw bundle bytes or inventory mismatch".into());
+    }
+    Ok(bundle)
 }
 
 fn member_parser(member: &str) -> Option<&'static str> {
@@ -1311,6 +1337,8 @@ fn run_args(args: &[String]) -> Result<(), String> {
     let output_path = argument(args, "--output")?;
     let bytes = fs::read(Path::new(&input.result_path)).map_err(|e| e.to_string())?;
     let result_value: Value = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+    let request_bytes = fs::read(Path::new(&input.request_path)).map_err(|e| e.to_string())?;
+    let request_value: Value = serde_json::from_slice(&request_bytes).map_err(|e| e.to_string())?;
     let mut verdict = check(&input.member, &input.definition_digest, &bytes);
     verdict.plan_id = input.plan_id.clone();
     verdict.definition_version = input.definition_version.clone();
@@ -1343,6 +1371,17 @@ fn run_args(args: &[String]) -> Result<(), String> {
     if result_value["requestIdentity"]["digest"] != input.request_digest {
         binding_reasons.push("request_digest_mismatch".into());
     }
+    if canonical_digest(&request_value)? != input.request_digest
+        || request_value["protocol"] != "engineering-assurance.producer-execution-request/v1"
+        || request_value["producer"] != result_value["producer"]
+        || definition["sourceGraph"].as_array().is_none_or(|sources| {
+            !sources
+                .iter()
+                .any(|source| source["revision"] == request_value["producer"]["sourceRevision"])
+        })
+    {
+        binding_reasons.push("request_bytes_or_producer_mismatch".into());
+    }
     if verdict.result_digest != input.result_digest {
         binding_reasons.push("result_digest_mismatch".into());
     }
@@ -1356,6 +1395,9 @@ fn run_args(args: &[String]) -> Result<(), String> {
         .map(|items| items.iter().filter_map(Value::as_str).collect())
         .unwrap_or_default();
     if expected_dependencies.len() != input.dependencies.len()
+        || input.dependencies.windows(2).any(|pair| {
+            (pair[0].member.as_str(), pair[0].index) >= (pair[1].member.as_str(), pair[1].index)
+        })
         || input.dependencies.iter().any(|dependency| {
             dependency.index != 1
                 || expected_dependencies
@@ -1369,10 +1411,18 @@ fn run_args(args: &[String]) -> Result<(), String> {
     }
     for dependency in &input.dependencies {
         let dependency_bytes = fs::read(&dependency.result_path).map_err(|e| e.to_string())?;
+        let dependency_request_bytes =
+            fs::read(&dependency.request_path).map_err(|e| e.to_string())?;
         let dependency_value: Value =
             serde_json::from_slice(&dependency_bytes).map_err(|e| e.to_string())?;
+        let dependency_request: Value =
+            serde_json::from_slice(&dependency_request_bytes).map_err(|e| e.to_string())?;
         if canonical_digest(&dependency_value)? != dependency.result_digest
             || dependency_value["requestIdentity"]["digest"] != dependency.request_digest
+            || canonical_digest(&dependency_request)? != dependency.request_digest
+            || dependency_request["producer"] != dependency_value["producer"]
+            || sealed_raw_bundle(&dependency.raw_bundle_path, &dependency.raw_bundle_digest)
+                .is_err()
         {
             binding_reasons.push("dependency_result_mismatch".into());
         }
@@ -1488,6 +1538,7 @@ mod tests {
     fn sealed_checker_input_rejects_stale_definition_digest() {
         let directory = tempfile::tempdir().unwrap();
         let definition_path = directory.path().join("definition.json");
+        let request_path = directory.path().join("request.json");
         let result_path = directory.path().join("result.json");
         let raw_bundle_path = directory.path().join("raw-bundle.json");
         let input_path = directory.path().join("input.json");
@@ -1503,7 +1554,14 @@ mod tests {
         )
         .unwrap();
         let raw = "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n";
-        let result: Value = serde_json::from_slice(&result(raw, "completed")).unwrap();
+        let request = json!({
+            "protocol":"engineering-assurance.producer-execution-request/v1",
+            "producer":{"sourceRevision":"a".repeat(40)}
+        });
+        fs::write(&request_path, serde_json::to_vec(&request).unwrap()).unwrap();
+        let mut result: Value = serde_json::from_slice(&result(raw, "completed")).unwrap();
+        result["requestIdentity"]["digest"] = json!(super::canonical_digest(&request).unwrap());
+        result["producer"] = request["producer"].clone();
         fs::write(&result_path, serde_json::to_vec_pretty(&result).unwrap()).unwrap();
         let raw_bundle = json!({"schema":"quoin.raw-artifact-bundle/v1","artifacts":[]});
         fs::write(&raw_bundle_path, serde_json::to_vec(&raw_bundle).unwrap()).unwrap();
@@ -1515,7 +1573,8 @@ mod tests {
             "planId":"MP-008",
             "definitionVersion":"tl.v1.v1-independent-oracle/v1",
             "sourceGraphDigest":super::canonical_digest(&definition["sourceGraph"]).unwrap(),
-            "requestDigest":"a".repeat(64),
+            "requestDigest":super::canonical_digest(&request).unwrap(),
+            "requestPath":request_path,
             "resultPath":result_path,
             "resultDigest":super::canonical_digest(&result).unwrap(),
             "rawArtifacts":[],
