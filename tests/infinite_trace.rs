@@ -703,6 +703,189 @@ fn every_lasso_resource_dimension_refuses_one_over_without_panic() {
 
 // Trace: TC-188; FR-049-AC-2, NFR-009-AC-1
 #[test]
+fn each_periodic_operator_refuses_at_its_own_state_budget_boundary() {
+    let atom = || K::Proposition {
+        proposition: PropositionId(7),
+    };
+    let cases = vec![
+        ("not", vec![atom(), K::Not { operand: NodeId(0) }]),
+        (
+            "future",
+            vec![
+                atom(),
+                K::Future {
+                    interval: open(0),
+                    operand: NodeId(0),
+                },
+            ],
+        ),
+        (
+            "globally",
+            vec![
+                atom(),
+                K::Globally {
+                    interval: open(0),
+                    operand: NodeId(0),
+                },
+            ],
+        ),
+        (
+            "once",
+            vec![
+                atom(),
+                K::Once {
+                    interval: closed(0, 0),
+                    operand: NodeId(0),
+                },
+            ],
+        ),
+        (
+            "historically",
+            vec![
+                atom(),
+                K::Historically {
+                    interval: closed(0, 0),
+                    operand: NodeId(0),
+                },
+            ],
+        ),
+        (
+            "strong_previous",
+            vec![atom(), K::StrongPrevious { operand: NodeId(0) }],
+        ),
+        (
+            "and",
+            vec![
+                atom(),
+                K::True,
+                K::And {
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+            ],
+        ),
+        (
+            "or",
+            vec![
+                atom(),
+                K::True,
+                K::Or {
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+            ],
+        ),
+        (
+            "implies",
+            vec![
+                atom(),
+                K::True,
+                K::Implies {
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+            ],
+        ),
+        (
+            "equivalent",
+            vec![
+                atom(),
+                K::True,
+                K::Equivalent {
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+            ],
+        ),
+        (
+            "until",
+            vec![
+                atom(),
+                K::True,
+                K::Until {
+                    interval: closed(0, 0),
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+            ],
+        ),
+        (
+            "release",
+            vec![
+                atom(),
+                K::True,
+                K::Release {
+                    interval: closed(0, 0),
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+            ],
+        ),
+        (
+            "since",
+            vec![
+                atom(),
+                K::True,
+                K::Since {
+                    interval: closed(0, 0),
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+            ],
+        ),
+        (
+            "triggered",
+            vec![
+                atom(),
+                K::True,
+                K::Triggered {
+                    interval: closed(0, 0),
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+            ],
+        ),
+    ];
+    let lasso = trace(&[], &[ObservationValue::True]);
+    let trace_id = lasso.content_identity().unwrap();
+    for (name, kinds) in cases {
+        let root = u32::try_from(kinds.len() - 1).unwrap();
+        let graph = formula(root, kinds.into_iter().map(node).collect());
+        let graph_id = graph.content_identity().unwrap();
+        let evaluate = |limit| {
+            evaluate_lasso(&LassoRequest {
+                formula: &graph,
+                trace: &lasso,
+                fairness: None,
+                evidence_closure: EvidenceClosure::Closed,
+                graph_id: &graph_id,
+                trace_id: &trace_id,
+                selected_position: 0,
+                limit,
+            })
+            .unwrap()
+        };
+        assert_ne!(
+            evaluate(EvaluationLimit::default()).disposition,
+            Disposition::Failed,
+            "{name}"
+        );
+        let bounded = evaluate(EvaluationLimit {
+            max_states: graph.nodes().len() - 1,
+            ..EvaluationLimit::default()
+        });
+        assert_eq!(bounded.disposition, Disposition::Failed, "{name}");
+        assert_eq!(
+            bounded.reason,
+            Some(ResultReason::ResourceIncomplete),
+            "{name}"
+        );
+        assert!(bounded.evidence.is_none(), "{name}");
+    }
+}
+
+// Trace: TC-188; FR-049-AC-2, NFR-009-AC-1
+#[test]
 fn prefix_resource_dimensions_refuse_one_over_without_panic() {
     let graph = formula(
         1,

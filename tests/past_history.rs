@@ -463,6 +463,119 @@ fn history_admission_refuses_every_completeness_and_identity_dimension() {
     );
 }
 
+// Trace: TC-051, TC-053, FR-012-AC-1
+#[test]
+fn exact_clock_and_formula_identity_boundaries_refuse_at_the_owner() {
+    assert_eq!(
+        ExactNumber::new(1, 0),
+        Err(ExactNumberError::ZeroDenominator)
+    );
+    assert_eq!(
+        fixed_sample_instant(
+            ExactNumber::new(0, 1).unwrap(),
+            ExactNumber::new(0, 1).unwrap(),
+            1,
+        ),
+        Err(ExactNumberError::NonPositivePeriod)
+    );
+
+    let row = PositionObservation::new(0, Vec::new(), None);
+    for (unit, expected) in [
+        (String::new(), ClockError::EmptyUnit),
+        (
+            "u".repeat(129),
+            ClockError::UnitTooLong {
+                actual: 129,
+                limit: 128,
+            },
+        ),
+    ] {
+        assert_eq!(
+            PositionHistoryDocument::new(
+                "history-a",
+                1,
+                0,
+                0,
+                Some(ClockBinding::FixedSample {
+                    epoch: ExactNumber::new(0, 1).unwrap(),
+                    period: ExactNumber::new(1, 1).unwrap(),
+                    unit,
+                }),
+                vec![row.clone()],
+            ),
+            Err(HistoryError::Clock(expected))
+        );
+    }
+
+    let nodes = [Node::new(NodeKind::True)];
+    for identity in [String::new(), "f".repeat(257)] {
+        assert_eq!(
+            analyze_required_history(formula(&nodes), identity),
+            Err(HistoryRequirementError::InvalidFormulaIdentity)
+        );
+    }
+}
+
+// Trace: TC-053, FR-012-AC-4
+#[test]
+fn correction_refuses_foreign_history_and_changed_context() {
+    let nodes = [Node::new(NodeKind::True)];
+    let history = event_history(&[(true, false), (false, false)], 1);
+    let prior = evaluate_past(
+        formula(&nodes),
+        "formula-a",
+        &history,
+        1,
+        "map-a",
+        1,
+        PastEvaluationRelationInput::Original,
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    let corrected = history
+        .corrected(2, 1, history.observations().to_vec())
+        .unwrap();
+    let foreign = PositionHistoryDocument::new(
+        "history-b",
+        2,
+        0,
+        1,
+        Some(ClockBinding::EventPosition),
+        history.observations().to_vec(),
+    )
+    .unwrap();
+    let attempt = |source: &PositionHistoryDocument, formula_id, map_id, anchor| {
+        evaluate_past(
+            formula(&nodes),
+            formula_id,
+            source,
+            anchor,
+            map_id,
+            2,
+            PastEvaluationRelationInput::Superseding(&prior),
+            PastEvaluationLimits::default(),
+        )
+    };
+    assert_eq!(
+        attempt(&foreign, "formula-a", "map-a", 1),
+        Err(PastEvaluationError::CorrectionContextMismatch { field: "historyId" })
+    );
+    assert_eq!(
+        attempt(&history, "formula-a", "map-a", 1),
+        Err(PastEvaluationError::HistoryRevisionNotAdvanced)
+    );
+    for (formula_id, map_id, anchor, field) in [
+        ("formula-b", "map-a", 1, "formulaId"),
+        ("formula-a", "map-b", 1, "propositionMapId"),
+        ("formula-a", "map-a", 0, "anchor"),
+    ] {
+        assert_eq!(
+            attempt(&corrected, formula_id, map_id, anchor),
+            Err(PastEvaluationError::CorrectionContextMismatch { field })
+        );
+    }
+}
+
 // Trace: TC-051, TC-056, FR-012-AC-3, FR-012-AC-4
 #[test]
 fn results_bind_all_dimensions_and_validate_direct_corrections() {
