@@ -593,6 +593,7 @@ mod tests {
     }
 
     #[test]
+    // Trace: TC-190, FR-051-AC-1
     fn synthetic_sealed_samples_pass_only_when_source_host_and_change_are_bounded() {
         let directory = tempfile::tempdir_in("/private/tmp").unwrap();
         let (base_request, base_result, base_bundle) = fixture(100.0, "host-a", "base");
@@ -709,6 +710,7 @@ mod tests {
     }
 
     #[test]
+    // Trace: TC-190, FR-051-AC-1
     fn synthetic_two_pairs_name_a_confirmed_regression() {
         let directory = tempfile::tempdir_in("/private/tmp").unwrap();
         let (base_request, base_result, base_bundle) = fixture(100.0, "host-a", "base");
@@ -829,6 +831,7 @@ mod tests {
     }
 
     #[test]
+    // Trace: TC-190, FR-051-AC-1
     fn synthetic_ea_style_source_projection_reaches_sealed_pair2_verdict() {
         let directory = tempfile::tempdir_in("/private/tmp").unwrap();
         let (accepted, status) = sealed_pair2_receipt(directory.path(), 110.0);
@@ -845,6 +848,7 @@ mod tests {
     }
 
     #[test]
+    // Trace: TC-190, FR-051-AC-1
     fn synthetic_missing_or_unbound_criterion_evidence_rejects() {
         let (request, result, mut bundle) = fixture(100.0, "host-a", "base");
         bundle
