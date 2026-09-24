@@ -220,7 +220,10 @@ fn member_parser(member: &str) -> Option<&'static str> {
         | "V4.parse_unbounded_roundtrip"
         | "V4.rewrite_infinite_rewrite"
         | "V4.mltl_c2po_map"
-        | "V4.mltl_closed_eval" => Some("libfuzzer"),
+        | "V4.mltl_closed_eval"
+        | "V4.mltl_wire_cli_decode"
+        | "V4.mltl_trace_history_intake"
+        | "V4.mltl_finite_oracle_differential" => Some("libfuzzer"),
         "V7.embedded_core" | "V7.embedded_alloc" | "V7.embedded_serde" => Some("embedded-build"),
         "V7.syntax_formula_limits"
         | "V7.syntax_borrowed_ownership"
@@ -534,16 +537,19 @@ fn semantic_properties(raw: &str) -> bool {
 }
 
 fn libfuzzer(member: &str, stdout: &[u8], stderr: &[u8]) -> bool {
-    let target = match member {
-        "V4.syntax_infinite_wire_decode" => "infinite_wire_decode",
-        "V4.parse_unbounded_roundtrip" => "unbounded_parse_roundtrip",
-        "V4.rewrite_infinite_rewrite" => "infinite_rewrite",
-        "V4.mltl_c2po_map" => "c2po_map",
-        "V4.mltl_closed_eval" => "closed_eval",
+    let (target, seed) = match member {
+        "V4.syntax_infinite_wire_decode" => ("infinite_wire_decode", 181),
+        "V4.parse_unbounded_roundtrip" => ("unbounded_parse_roundtrip", 181),
+        "V4.rewrite_infinite_rewrite" => ("infinite_rewrite", 181),
+        "V4.mltl_c2po_map" => ("c2po_map", 181),
+        "V4.mltl_closed_eval" => ("closed_eval", 181),
+        "V4.mltl_wire_cli_decode" => ("wire_cli_decode", 229),
+        "V4.mltl_trace_history_intake" => ("trace_history_intake", 230),
+        "V4.mltl_finite_oracle_differential" => ("finite_oracle_differential", 230),
         _ => return false,
     };
     let raw = String::from_utf8_lossy(stdout).to_string() + &String::from_utf8_lossy(stderr);
-    raw.contains("INFO: Seed: 181")
+    raw.contains(&format!("INFO: Seed: {seed}"))
         && raw
             .lines()
             .filter(|line| line.starts_with("#1000\tDONE "))
@@ -2807,6 +2813,42 @@ mod tests {
         assert!(member_parser("V4.fuzz_replay").is_none());
         let verdict = check("V4.fuzz_replay", &"b".repeat(64), &result("", "completed"));
         assert_eq!(verdict.verdict, "inconclusive");
+    }
+
+    // Trace: FR-046-AC-1, FR-046-AC-2, FR-043-AC-1, TL-229, TL-230.
+    #[test]
+    fn v4_new_boundaries_require_exact_target_seed_and_execution_budget() {
+        for (member, target, seed) in [
+            ("V4.mltl_wire_cli_decode", "wire_cli_decode", 229),
+            ("V4.mltl_trace_history_intake", "trace_history_intake", 230),
+            (
+                "V4.mltl_finite_oracle_differential",
+                "finite_oracle_differential",
+                230,
+            ),
+        ] {
+            assert_eq!(member_parser(member), Some("libfuzzer"));
+            let raw = format!(
+                "Running /tmp/{target} -runs=1000\nINFO: Seed: {seed}\n#1000\tDONE cov: 5\n"
+            );
+            assert!(super::libfuzzer(member, b"", raw.as_bytes()), "{member}");
+            assert!(!super::libfuzzer(
+                member,
+                b"",
+                raw.replace("#1000", "#999").as_bytes()
+            ));
+            assert!(!super::libfuzzer(
+                member,
+                b"",
+                raw.replace(&format!("Seed: {seed}"), "Seed: 181")
+                    .as_bytes(),
+            ));
+            assert!(!super::libfuzzer(
+                member,
+                b"",
+                raw.replace(target, "wrong_target").as_bytes(),
+            ));
+        }
     }
 
     // Trace: FR-055-AC-2, TC-198
