@@ -438,10 +438,15 @@ fn is_sha256(value: &str) -> bool {
 }
 
 fn is_hex_of_length(value: &str, length: usize) -> bool {
-    value.len() == length
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    if value.len() != length {
+        return false;
+    }
+    for byte in value.bytes() {
+        if !matches!(byte, b'0'..=b'9' | b'a'..=b'f') {
+            return false;
+        }
+    }
+    true
 }
 
 /// Maps a validated formula-v2 past graph under an explicit reviewed target
