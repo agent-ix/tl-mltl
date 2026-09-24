@@ -2223,24 +2223,27 @@ mod tests {
 
     fn sealed_v10_monitor_receipt(
         root: &Path,
+        case: &str,
         target_rows: &str,
         spec: &[u8],
         trace: &[u8],
     ) -> (Value, bool) {
-        let case = "zero-singleton-all-true";
         let member = format!("V10.monitor.{case}");
         let revision = "a".repeat(40);
         let producer = json!({"sourceRevision": revision});
         let binary = b"compiled monitor";
-        let dependency = |name: &str, artifacts: Value| -> Value {
+        let dependency = |name: &str, artifacts: Value, input_claims: Option<Value>| -> Value {
             let stem = name.replace('.', "-");
             let request_path = root.join(format!("{stem}-request.json"));
             let result_path = root.join(format!("{stem}-result.json"));
             let bundle_path = root.join(format!("{stem}-bundle.json"));
-            let dependency_request = json!({
+            let mut dependency_request = json!({
                 "protocol":"engineering-assurance.producer-execution-request/v1",
                 "producer":producer
             });
+            if let Some(claims) = input_claims {
+                dependency_request["inputs"] = claims;
+            }
             fs::write(
                 &request_path,
                 serde_json::to_vec(&dependency_request).unwrap(),
@@ -2277,9 +2280,21 @@ mod tests {
                 "rawBundlePath":bundle_path
             })
         };
+        let compile_inputs = super::v10_static::inputs(case).map(|static_inputs| {
+            let second = if let Some(map) = static_inputs.map {
+                ("map", "v10/input.map", map)
+            } else {
+                ("trace", "v10/input.csv", trace)
+            };
+            json!([
+                {"role":"spec","path":"v10/input.c2po","digest":super::sha256(spec)},
+                {"role":second.0,"path":second.1,"digest":super::sha256(second.2)}
+            ])
+        });
         let compile = dependency(
             &format!("V10.compile.{case}"),
             json!([{"role":"binary","digest":super::sha256(binary),"bytes":binary}]),
+            compile_inputs,
         );
         let inputs = dependency(
             "V10.inputs",
@@ -2287,6 +2302,7 @@ mod tests {
                 {"role":format!("inputs/{case}.c2po"),"digest":super::sha256(spec),"bytes":spec},
                 {"role":format!("inputs/{case}.csv"),"digest":super::sha256(trace),"bytes":trace}
             ]),
+            None,
         );
         let definition = json!({
             "schemaVersion":"engineering-assurance.campaign-definition/v1",
@@ -2358,8 +2374,13 @@ mod tests {
         let complete = (0..12)
             .flat_map(|formula| (0..6).map(move |position| format!("{formula}:{position},T\n")))
             .collect::<String>();
-        let (accepted, status) =
-            sealed_v10_monitor_receipt(directory.path(), &complete, &run.spec, &run.trace);
+        let (accepted, status) = sealed_v10_monitor_receipt(
+            directory.path(),
+            "zero-singleton-all-true",
+            &complete,
+            &run.spec,
+            &run.trace,
+        );
         assert!(status, "{accepted:#}");
         assert_eq!(accepted["schema"], "tl-mltl.domain-verdict/v1");
         assert_eq!(accepted["member"], "V10.monitor.zero-singleton-all-true");
@@ -2368,15 +2389,25 @@ mod tests {
         assert_eq!(accepted["stdoutDigest"], super::sha256(complete.as_bytes()));
 
         let flipped = complete.replacen("0:0,T\n", "0:0,F\n", 1);
-        let (rejected, status) =
-            sealed_v10_monitor_receipt(directory.path(), &flipped, &run.spec, &run.trace);
+        let (rejected, status) = sealed_v10_monitor_receipt(
+            directory.path(),
+            "zero-singleton-all-true",
+            &flipped,
+            &run.spec,
+            &run.trace,
+        );
         assert!(!status);
         assert_eq!(rejected["verdict"], "reject");
         assert_eq!(rejected["reasons"], json!(["v10_target_semantic_mismatch"]));
 
         let missing = complete.replacen("0:0,T\n", "", 1);
-        let (inconclusive, status) =
-            sealed_v10_monitor_receipt(directory.path(), &missing, &run.spec, &run.trace);
+        let (inconclusive, status) = sealed_v10_monitor_receipt(
+            directory.path(),
+            "zero-singleton-all-true",
+            &missing,
+            &run.spec,
+            &run.trace,
+        );
         assert!(!status);
         assert_eq!(inconclusive["verdict"], "inconclusive");
         assert_eq!(
@@ -2391,8 +2422,13 @@ mod tests {
             ),
             (run.spec.as_slice(), b"# p,q\n0,0\n".as_slice()),
         ] {
-            let (rejected, status) =
-                sealed_v10_monitor_receipt(directory.path(), &complete, spec, trace);
+            let (rejected, status) = sealed_v10_monitor_receipt(
+                directory.path(),
+                "zero-singleton-all-true",
+                &complete,
+                spec,
+                trace,
+            );
             assert!(!status);
             assert_eq!(rejected["verdict"], "reject");
             assert_eq!(
@@ -2400,6 +2436,63 @@ mod tests {
                 json!(["v10_reviewed_input_bytes_unproved"])
             );
         }
+    }
+
+    // Trace: FR-055-AC-2, TC-198
+    #[test]
+    fn sealed_static_v10_monitors_preserve_accept_inconclusive_and_reject() {
+        let directory = tempfile::tempdir().unwrap();
+        let cases: [(&str, &[u8], &str, bool); 4] = [
+            (
+                "bounded",
+                include_bytes!("../../corpus/r2u2-v4.2/r2u2.stdout"),
+                "accept",
+                true,
+            ),
+            (
+                "past",
+                include_bytes!("../../corpus/past-c2po-v1/target-4.2/r2u2.stdout"),
+                "inconclusive",
+                false,
+            ),
+            (
+                "unsafe-since",
+                include_bytes!("../../corpus/past-c2po-v1/target-4.2/unsafe-since.stdout"),
+                "inconclusive",
+                false,
+            ),
+            ("safety", b"0:0,F\n0:1,T\n", "accept", true),
+        ];
+        for (case, raw, expected_verdict, expected_status) in cases {
+            let inputs = super::v10_static::inputs(case).unwrap();
+            let target = std::str::from_utf8(raw).unwrap();
+            let (receipt, status) = sealed_v10_monitor_receipt(
+                directory.path(),
+                case,
+                target,
+                inputs.spec,
+                inputs.trace,
+            );
+            assert_eq!(status, expected_status, "{case}: {receipt:#}");
+            assert_eq!(receipt["member"], format!("V10.monitor.{case}"));
+            assert_eq!(receipt["verdict"], expected_verdict, "{case}: {receipt:#}");
+            assert_eq!(receipt["stdoutDigest"], super::sha256(raw));
+        }
+
+        let bounded = super::v10_static::inputs("bounded").unwrap();
+        let (receipt, status) = sealed_v10_monitor_receipt(
+            directory.path(),
+            "bounded",
+            std::str::from_utf8(cases[0].1).unwrap(),
+            b"wrong but sealed C2PO spec",
+            bounded.trace,
+        );
+        assert!(!status);
+        assert_eq!(receipt["verdict"], "reject");
+        assert_eq!(
+            receipt["reasons"],
+            json!(["v10_reviewed_input_bytes_unproved"])
+        );
     }
 
     // Trace: FR-055-AC-2, TC-198
