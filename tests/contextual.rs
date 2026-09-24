@@ -442,6 +442,38 @@ fn legacy_records_round_trip_as_exact_v1_wires_and_refuse_v2_labels() {
     assert_stable_v1_wire::<DifferentialReport>(differential, "tl-mltl.differential/v2");
 }
 
+// Trace: TC-029, FR-007-AC-5, FR-050-AC-1
+#[test]
+fn evaluation_schema_refusal_agrees_across_json_deserializer_forms() {
+    let nodes = overlay_nodes();
+    let formula = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(3), &nodes).unwrap();
+    let report = evaluate_prefix(
+        formula,
+        "schema-check",
+        &[vec![PropositionId(7)]],
+        "schema-trace",
+        false,
+        EvaluationLimits::default(),
+    )
+    .unwrap();
+    let valid = serde_json::to_value(&report).unwrap();
+    assert_eq!(
+        serde_json::from_value::<EvaluationReport>(valid.clone()).unwrap(),
+        report
+    );
+    assert_eq!(
+        serde_json::from_slice::<EvaluationReport>(&serde_json::to_vec(&valid).unwrap()).unwrap(),
+        report
+    );
+
+    let mut invalid = valid;
+    invalid["schemaVersion"] = serde_json::json!("tl-mltl.evaluation/v2");
+    assert!(serde_json::from_value::<EvaluationReport>(invalid.clone()).is_err());
+    assert!(
+        serde_json::from_slice::<EvaluationReport>(&serde_json::to_vec(&invalid).unwrap()).is_err()
+    );
+}
+
 // Trace: TC-163, FR-038-AC-2
 #[test]
 fn past_mapping_addition_preserved_bounded_future_behavioral_payload() {
