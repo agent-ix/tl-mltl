@@ -3,6 +3,7 @@
 
 use std::collections::BTreeMap;
 
+use serde::Serialize;
 use sha2::{Digest, Sha256};
 use tl_mltl::{
     evaluate_past, map_past_to_c2po, ClockBinding, MappingSourceIdentity, MappingSourceState,
@@ -29,6 +30,75 @@ const INTERVALS: [(&str, u32, u32); 6] = [
     ("nonzero-singleton", 2, 2),
 ];
 const TRACES: [&str; 3] = ["all-true", "all-false", "boundary-toggle"];
+
+// Trace: FR-052-AC-1, FR-052-AC-2, TC-191, TC-192.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct CellDetail {
+    pub(super) formula_index: usize,
+    pub(super) position: usize,
+    pub(super) comparison_class: &'static str,
+    pub(super) expected: Option<bool>,
+    pub(super) observed: Option<bool>,
+    pub(super) refusal: Option<String>,
+}
+
+impl CellDetail {
+    pub(super) fn compared(
+        formula_index: usize,
+        position: usize,
+        expected: bool,
+        observed: Option<bool>,
+    ) -> Self {
+        let comparison_class = match observed {
+            Some(value) if value == expected => "agreement",
+            Some(_) => "semantic_mismatch",
+            None => "unavailable_target",
+        };
+        Self {
+            formula_index,
+            position,
+            comparison_class,
+            expected: Some(expected),
+            observed,
+            refusal: None,
+        }
+    }
+
+    pub(super) fn unsupported(
+        formula_index: usize,
+        position: usize,
+        expected: bool,
+        observed: Option<bool>,
+        refusal: String,
+    ) -> Self {
+        Self {
+            formula_index,
+            position,
+            comparison_class: "unsupported_mapping",
+            expected: Some(expected),
+            observed,
+            refusal: Some(refusal),
+        }
+    }
+
+    pub(super) fn non_conclusive(
+        formula_index: usize,
+        position: usize,
+        expected: Option<bool>,
+        observed: Option<bool>,
+        refusal: &str,
+    ) -> Self {
+        Self {
+            formula_index,
+            position,
+            comparison_class: "non_conclusive",
+            expected,
+            observed,
+            refusal: Some(refusal.into()),
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Operator {
@@ -232,7 +302,25 @@ impl Run {
         })
     }
 
+    #[cfg(test)]
     pub(super) fn replay(&self, target: &BTreeMap<(usize, usize), bool>) -> Replay {
+        self.replay_detailed(target).0
+    }
+
+    pub(super) fn replay_detailed(
+        &self,
+        target: &BTreeMap<(usize, usize), bool>,
+    ) -> (Replay, Vec<CellDetail>) {
+        let mut cells = Vec::new();
+        let verdict = self.replay_collect(target, &mut cells);
+        (verdict, cells)
+    }
+
+    fn replay_collect(
+        &self,
+        target: &BTreeMap<(usize, usize), bool>,
+        cells: &mut Vec<CellDetail>,
+    ) -> Replay {
         if target
             .keys()
             .any(|(formula, _)| *formula >= self.cases.len())
@@ -312,13 +400,18 @@ impl Run {
                 &TargetOriginContract::reviewed_r2u2_4_2(),
                 100,
             );
-            match (expected_admitted, mapping) {
+            let refusal = match (expected_admitted, mapping) {
                 (true, Ok(mapped))
                     if mapped.expression == case.expression
-                        && mapped.output_sha256 == sha256(case.expression.as_bytes()) => {}
-                (false, Err(refusal)) if expected_refusal(case, &refusal) => {}
+                        && mapped.output_sha256 == sha256(case.expression.as_bytes()) =>
+                {
+                    None
+                }
+                (false, Err(refusal)) if expected_refusal(case, &refusal) => {
+                    Some(format!("{refusal:?}"))
+                }
                 _ => return Replay::Reject("v10_mapping_partition_unproved"),
-            }
+            };
             for position in 0..STEPS {
                 let Ok(tl) = evaluate_past(
                     graph,
@@ -345,6 +438,12 @@ impl Run {
                 }
                 if expected_admitted {
                     admitted_cells += 1;
+                    cells.push(CellDetail::compared(
+                        formula_id,
+                        position,
+                        tl.verdict,
+                        target.get(&(formula_id, position)).copied(),
+                    ));
                     match target.get(&(formula_id, position)) {
                         Some(observed) if *observed == tl.verdict => {}
                         Some(_) => mismatch = true,
@@ -352,6 +451,15 @@ impl Run {
                     }
                 } else {
                     unsupported_cells += 1;
+                    cells.push(CellDetail::unsupported(
+                        formula_id,
+                        position,
+                        tl.verdict,
+                        target.get(&(formula_id, position)).copied(),
+                        refusal
+                            .clone()
+                            .expect("validated unsupported mapping has refusal"),
+                    ));
                 }
             }
         }
@@ -621,6 +729,70 @@ mod tests {
         assert!(matches!(run.replay(&rows), Replay::Accept { .. }));
         rows.remove(&unsupported_key);
         assert!(matches!(run.replay(&rows), Replay::Accept { .. }));
+    }
+
+    // Trace: FR-052-AC-1, TC-191.
+    #[test]
+    fn generated_cell_details_cover_exact_population_and_target_faults() {
+        let run = Run::for_member("zero-unit-boundary-toggle").unwrap();
+        let mut rows = oracle_rows(&run);
+        let (verdict, cells) = run.replay_detailed(&rows);
+        assert!(matches!(verdict, Replay::Accept { .. }));
+        assert_eq!(cells.len(), run.cases.len() * STEPS);
+        assert_eq!(
+            cells
+                .iter()
+                .filter(|cell| cell.comparison_class == "agreement")
+                .count(),
+            run.cases
+                .iter()
+                .filter(|case| expected_admission(case))
+                .count()
+                * STEPS
+        );
+        assert_eq!(
+            cells
+                .iter()
+                .filter(|cell| cell.comparison_class == "unsupported_mapping")
+                .count(),
+            run.cases
+                .iter()
+                .filter(|case| !expected_admission(case))
+                .count()
+                * STEPS
+        );
+        assert!(cells
+            .iter()
+            .filter(|cell| cell.comparison_class == "unsupported_mapping")
+            .all(|cell| cell.refusal.is_some()));
+        let admitted = cells
+            .iter()
+            .find(|cell| cell.comparison_class == "agreement")
+            .unwrap();
+        let key = (admitted.formula_index, admitted.position);
+        rows.insert(key, !rows[&key]);
+        let (verdict, cells) = run.replay_detailed(&rows);
+        assert_eq!(verdict, Replay::Reject("v10_target_semantic_mismatch"));
+        assert_eq!(
+            cells
+                .iter()
+                .filter(|cell| cell.comparison_class == "semantic_mismatch")
+                .count(),
+            1
+        );
+        rows.remove(&key);
+        let (verdict, cells) = run.replay_detailed(&rows);
+        assert_eq!(
+            verdict,
+            Replay::Inconclusive("v10_admitted_target_row_missing")
+        );
+        assert_eq!(
+            cells
+                .iter()
+                .filter(|cell| cell.comparison_class == "unavailable_target")
+                .count(),
+            1
+        );
     }
 
     // Trace: FR-055-AC-2, TC-198

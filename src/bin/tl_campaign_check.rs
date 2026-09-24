@@ -141,6 +141,26 @@ struct DomainVerdict {
     dependencies_digest: String,
     stdout_digest: Option<String>,
     stderr_digest: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    details: Option<V10Details>,
+}
+
+// TL owns the interpretation of these rows. Quoin retains this typed payload
+// as opaque domain details beside the generic verdict and source identities.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct V10Details {
+    schema: &'static str,
+    cells: Vec<v10_replay::CellDetail>,
+}
+
+impl V10Details {
+    fn new(cells: Vec<v10_replay::CellDetail>) -> Self {
+        Self {
+            schema: "tl-mltl.v10-comparison-details/v1",
+            cells,
+        }
+    }
 }
 
 fn sha256(bytes: &[u8]) -> String {
@@ -1601,6 +1621,7 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
         dependencies_digest: String::new(),
         stdout_digest,
         stderr_digest,
+        details: None,
     }
 }
 
@@ -1617,7 +1638,10 @@ fn argument(args: &[String], name: &str) -> Result<String, String> {
 fn valid_member_requirement(name: &str, member: &Value) -> bool {
     match member["required"].as_bool() {
         Some(true) => true,
-        Some(false) => matches!(name, "V10.compile.unsafe-since" | "V10.monitor.unsafe-since"),
+        Some(false) => matches!(
+            name,
+            "V10.compile.unsafe-since" | "V10.monitor.unsafe-since"
+        ),
         None => false,
     }
 }
@@ -1826,11 +1850,12 @@ fn run_args(args: &[String]) -> Result<(), String> {
                 .stdout
                 .bytes;
             let rows = v10_target_rows(stdout).expect("accepted target rows were parsed by check");
-            let replay = if let Some(run) = generated {
-                run.replay(&rows)
+            let (replay, cells) = if let Some(run) = generated {
+                run.replay_detailed(&rows)
             } else {
-                v10_static::replay(case, &rows)
+                v10_static::replay_detailed(case, &rows)
             };
+            verdict.details = Some(V10Details::new(cells));
             match replay {
                 v10_replay::Replay::Accept { .. } => {}
                 v10_replay::Replay::Reject(reason) => {
@@ -2439,6 +2464,19 @@ mod tests {
         assert_eq!(accepted["verdict"], "accept");
         assert_eq!(accepted["reasons"], json!([]));
         assert_eq!(accepted["stdoutDigest"], super::sha256(complete.as_bytes()));
+        assert_eq!(
+            accepted["details"]["schema"],
+            "tl-mltl.v10-comparison-details/v1"
+        );
+        assert_eq!(
+            accepted["details"]["cells"].as_array().unwrap().len(),
+            12 * 6
+        );
+        assert!(accepted["details"]["cells"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|cell| cell["comparisonClass"].as_str().is_some()));
 
         let flipped = complete.replacen("0:0,T\n", "0:0,F\n", 1);
         let (rejected, status) = sealed_v10_monitor_receipt(
@@ -2529,6 +2567,20 @@ mod tests {
             assert_eq!(receipt["member"], format!("V10.monitor.{case}"));
             assert_eq!(receipt["verdict"], expected_verdict, "{case}: {receipt:#}");
             assert_eq!(receipt["stdoutDigest"], super::sha256(raw));
+            assert_eq!(
+                receipt["details"]["schema"],
+                "tl-mltl.v10-comparison-details/v1"
+            );
+            assert_eq!(
+                receipt["details"]["cells"].as_array().unwrap().len(),
+                match case {
+                    "bounded" => 8,
+                    "past" => 18,
+                    "unsafe-since" => 3,
+                    "safety" => 2,
+                    _ => unreachable!(),
+                }
+            );
         }
 
         let bounded = super::v10_static::inputs("bounded").unwrap();

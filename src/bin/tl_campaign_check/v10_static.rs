@@ -22,7 +22,7 @@ use tl_syntax::{
     SignalDomain, SignalId,
 };
 
-use super::v10_replay::Replay;
+use super::v10_replay::{CellDetail, Replay};
 
 const BOUNDED_MANIFEST: &[u8] = include_bytes!("../../../corpus/r2u2-v4.2/manifest.json");
 const BOUNDED_SPEC: &[u8] = include_bytes!("../../../corpus/r2u2-v4.2/formulas.c2po");
@@ -103,15 +103,33 @@ fn pinned_inputs(case: &str) -> bool {
     }
 }
 
+#[cfg(test)]
 pub(super) fn replay(case: &str, target: &BTreeMap<(usize, usize), bool>) -> Replay {
+    replay_detailed(case, target).0
+}
+
+pub(super) fn replay_detailed(
+    case: &str,
+    target: &BTreeMap<(usize, usize), bool>,
+) -> (Replay, Vec<CellDetail>) {
+    let mut cells = Vec::new();
+    let verdict = replay_collect(case, target, &mut cells);
+    (verdict, cells)
+}
+
+fn replay_collect(
+    case: &str,
+    target: &BTreeMap<(usize, usize), bool>,
+    cells: &mut Vec<CellDetail>,
+) -> Replay {
     if !pinned_inputs(case) {
         return Replay::Reject("v10_static_source_pin_unproved");
     }
     match case {
-        "bounded" => bounded(target),
-        "past" => past(target),
-        "unsafe-since" => unsafe_since(target),
-        "safety" => safety(target),
+        "bounded" => bounded(target, cells),
+        "past" => past(target, cells),
+        "unsafe-since" => unsafe_since(target, cells),
+        "safety" => safety(target, cells),
         _ => Replay::Reject("v10_unknown_static_monitor"),
     }
 }
@@ -134,7 +152,7 @@ fn bounded_formula(index: usize) -> Option<OracleFormula> {
     })
 }
 
-fn bounded(target: &BTreeMap<(usize, usize), bool>) -> Replay {
+fn bounded(target: &BTreeMap<(usize, usize), bool>, cells: &mut Vec<CellDetail>) -> Replay {
     if target.keys().any(|(formula, _)| *formula >= 6) {
         return Replay::Reject("v10_unknown_target_formula");
     }
@@ -214,6 +232,12 @@ fn bounded(target: &BTreeMap<(usize, usize), bool>) -> Replay {
         {
             return Replay::Reject("v10_bounded_source_oracle_disagreement");
         }
+        cells.push(CellDetail::compared(
+            index,
+            position,
+            oracle,
+            target.get(&(index, position)).copied(),
+        ));
         match target.get(&(index, position)) {
             Some(observed) if *observed == oracle => {}
             Some(_) => mismatch = true,
@@ -398,6 +422,7 @@ fn past_case(
     index: usize,
     observations: &[(bool, bool)],
     target: &BTreeMap<(usize, usize), bool>,
+    cells: &mut Vec<CellDetail>,
 ) -> Replay {
     let Some((nodes, oracle_formula, expression, expected_admitted)) = past_formula(index) else {
         return Replay::Reject("v10_past_formula_unproved");
@@ -447,13 +472,18 @@ fn past_case(
         &TargetOriginContract::reviewed_r2u2_4_2(),
         100,
     );
-    match (expected_admitted, mapping) {
+    let refusal = match (expected_admitted, mapping) {
         (true, Ok(mapped))
             if mapped.expression == expression
-                && mapped.output_sha256 == sha256(expression.as_bytes()) => {}
-        (false, Err(refusal)) if expected_past_refusal(index, &refusal) => {}
+                && mapped.output_sha256 == sha256(expression.as_bytes()) =>
+        {
+            None
+        }
+        (false, Err(refusal)) if expected_past_refusal(index, &refusal) => {
+            Some(format!("{refusal:?}"))
+        }
         _ => return Replay::Reject("v10_mapping_partition_unproved"),
-    }
+    };
     let word = past_word(observations);
     let mut missing = false;
     let mut mismatch = false;
@@ -479,11 +509,27 @@ fn past_case(
             return Replay::Reject("v10_past_source_oracle_disagreement");
         }
         if expected_admitted {
+            cells.push(CellDetail::compared(
+                index,
+                position,
+                oracle,
+                target.get(&(index, position)).copied(),
+            ));
             match target.get(&(index, position)) {
                 Some(observed) if *observed == oracle => {}
                 Some(_) => mismatch = true,
                 None => missing = true,
             }
+        } else {
+            cells.push(CellDetail::unsupported(
+                index,
+                position,
+                oracle,
+                target.get(&(index, position)).copied(),
+                refusal
+                    .clone()
+                    .expect("validated unsupported mapping has refusal"),
+            ));
         }
     }
     if mismatch {
@@ -498,15 +544,17 @@ fn past_case(
     }
 }
 
-fn past(target: &BTreeMap<(usize, usize), bool>) -> Replay {
+fn past(target: &BTreeMap<(usize, usize), bool>, cells: &mut Vec<CellDetail>) -> Replay {
     if target.keys().any(|(formula, _)| *formula >= 6) {
         return Replay::Reject("v10_unknown_target_formula");
     }
     let observations = [(false, false), (true, false), (true, true)];
     let mut admitted = 0;
     let mut unsupported = 0;
+    let mut missing = false;
+    let mut mismatch = false;
     for index in 0..6 {
-        match past_case(index, &observations, target) {
+        match past_case(index, &observations, target, cells) {
             Replay::Accept {
                 admitted_cells,
                 unsupported_cells,
@@ -514,11 +562,23 @@ fn past(target: &BTreeMap<(usize, usize), bool>) -> Replay {
                 admitted += admitted_cells;
                 unsupported += unsupported_cells;
             }
+            Replay::Reject("v10_target_semantic_mismatch") => {
+                mismatch = true;
+                admitted += 3;
+            }
+            Replay::Inconclusive("v10_admitted_target_row_missing") => {
+                missing = true;
+                admitted += 3;
+            }
             other => return other,
         }
     }
     if (admitted, unsupported) != (6, 12) {
         Replay::Reject("v10_past_population_unproved")
+    } else if mismatch {
+        Replay::Reject("v10_target_semantic_mismatch")
+    } else if missing {
+        Replay::Inconclusive("v10_admitted_target_row_missing")
     } else {
         Replay::Accept {
             admitted_cells: admitted,
@@ -527,7 +587,7 @@ fn past(target: &BTreeMap<(usize, usize), bool>) -> Replay {
     }
 }
 
-fn unsafe_since(target: &BTreeMap<(usize, usize), bool>) -> Replay {
+fn unsafe_since(target: &BTreeMap<(usize, usize), bool>, cells: &mut Vec<CellDetail>) -> Replay {
     if target.keys().any(|(formula, _)| *formula != 0) {
         return Replay::Reject("v10_unknown_target_formula");
     }
@@ -536,12 +596,43 @@ fn unsafe_since(target: &BTreeMap<(usize, usize), bool>) -> Replay {
     for ((formula, position), verdict) in target {
         remapped.insert((formula + 3, *position), *verdict);
     }
-    match past_case(3, &observations, &remapped) {
+    match past_case(3, &observations, &remapped, cells) {
         Replay::Accept {
             admitted_cells: 0,
             unsupported_cells: 3,
         } => {}
         other => return other,
+    }
+    for cell in cells.iter_mut() {
+        cell.formula_index = 0;
+    }
+    if let Some(cell) = cells.iter_mut().find(|cell| cell.position == 2) {
+        let observed = target.get(&(0, 2)).copied();
+        *cell = match observed {
+            Some(true) => CellDetail::non_conclusive(
+                0,
+                2,
+                cell.expected,
+                observed,
+                "v10_static_known_origin_mismatch_unsupported",
+            ),
+            Some(false) => CellDetail {
+                formula_index: 0,
+                position: 2,
+                comparison_class: "semantic_mismatch",
+                expected: cell.expected,
+                observed,
+                refusal: Some("v10_static_known_origin_mismatch_changed".into()),
+            },
+            None => CellDetail {
+                formula_index: 0,
+                position: 2,
+                comparison_class: "unavailable_target",
+                expected: cell.expected,
+                observed,
+                refusal: Some("v10_known_target_row_missing".into()),
+            },
+        };
     }
     match target.get(&(0, 2)) {
         Some(true) => Replay::Inconclusive("v10_static_known_origin_mismatch_unsupported"),
@@ -550,7 +641,7 @@ fn unsafe_since(target: &BTreeMap<(usize, usize), bool>) -> Replay {
     }
 }
 
-fn safety(target: &BTreeMap<(usize, usize), bool>) -> Replay {
+fn safety(target: &BTreeMap<(usize, usize), bool>, cells: &mut Vec<CellDetail>) -> Replay {
     if target.keys().any(|(formula, _)| *formula != 0) {
         return Replay::Reject("v10_unknown_target_formula");
     }
@@ -600,6 +691,23 @@ fn safety(target: &BTreeMap<(usize, usize), bool>) -> Replay {
     if oracle.verdict != OracleVerdict::Refuted {
         return Replay::Reject("v10_safety_source_oracle_disagreement");
     }
+    cells.push(CellDetail::compared(
+        0,
+        0,
+        false,
+        target.get(&(0, 0)).copied(),
+    ));
+    let second = target.get(&(0, 1)).copied();
+    cells.push(match second {
+        Some(true) => CellDetail::non_conclusive(
+            0,
+            1,
+            Some(true),
+            second,
+            "target_pass_does_not_prove_unbounded_safety",
+        ),
+        _ => CellDetail::compared(0, 1, true, second),
+    });
     let (Some(first), Some(second)) = (target.get(&(0, 0)), target.get(&(0, 1))) else {
         return Replay::Inconclusive("v10_admitted_target_row_missing");
     };
@@ -701,6 +809,119 @@ mod tests {
                 unsupported_cells: 1
             }
         );
+    }
+
+    // Trace: FR-052-AC-1, FR-052-AC-2, TC-191, TC-192.
+    #[test]
+    fn static_cell_details_cover_exact_cases_and_non_proving_safety_pass() {
+        let (verdict, bounded) = replay_detailed(
+            "bounded",
+            &target(include_bytes!("../../../corpus/r2u2-v4.2/r2u2.stdout")),
+        );
+        assert!(matches!(verdict, Replay::Accept { .. }));
+        assert_eq!(bounded.len(), 8);
+        assert!(bounded
+            .iter()
+            .all(|cell| cell.comparison_class == "agreement"));
+
+        let (verdict, past) = replay_detailed(
+            "past",
+            &target(include_bytes!(
+                "../../../corpus/past-c2po-v1/target-4.2/r2u2.stdout"
+            )),
+        );
+        assert!(matches!(verdict, Replay::Accept { .. }));
+        assert_eq!(past.len(), 18);
+        assert_eq!(
+            past.iter()
+                .filter(|cell| cell.comparison_class == "agreement")
+                .count(),
+            6
+        );
+        assert_eq!(
+            past.iter()
+                .filter(|cell| cell.comparison_class == "unsupported_mapping")
+                .count(),
+            12
+        );
+        assert!(past
+            .iter()
+            .filter(|cell| cell.comparison_class == "unsupported_mapping")
+            .all(|cell| cell
+                .refusal
+                .as_deref()
+                .is_some_and(|reason| reason.contains("TargetOriginIntervalMismatch"))));
+
+        let (verdict, safety) = replay_detailed("safety", &target(b"0:0,F\n0:1,T\n"));
+        assert!(matches!(verdict, Replay::Accept { .. }));
+        assert_eq!(safety.len(), 2);
+        assert_eq!(safety[0].comparison_class, "agreement");
+        assert_eq!(safety[1].comparison_class, "non_conclusive");
+
+        let (verdict, unsafe_cells) = replay_detailed(
+            "unsafe-since",
+            &target(include_bytes!(
+                "../../../corpus/past-c2po-v1/target-4.2/unsafe-since.stdout"
+            )),
+        );
+        assert_eq!(
+            verdict,
+            Replay::Inconclusive("v10_static_known_origin_mismatch_unsupported")
+        );
+        assert_eq!(unsafe_cells.len(), 3);
+        assert_eq!(
+            unsafe_cells
+                .iter()
+                .filter(|cell| cell.comparison_class == "non_conclusive")
+                .count(),
+            1
+        );
+    }
+
+    // Trace: FR-052-AC-1, TC-191.
+    #[test]
+    fn static_cell_details_preserve_mismatch_and_missing_rows() {
+        let mut bounded = target(include_bytes!("../../../corpus/r2u2-v4.2/r2u2.stdout"));
+        let key = *bounded.keys().next().unwrap();
+        bounded.insert(key, !bounded[&key]);
+        let (verdict, cells) = replay_detailed("bounded", &bounded);
+        assert_eq!(verdict, Replay::Reject("v10_target_semantic_mismatch"));
+        assert_eq!(
+            cells
+                .iter()
+                .filter(|cell| cell.comparison_class == "semantic_mismatch")
+                .count(),
+            1
+        );
+        bounded.remove(&key);
+        let (verdict, cells) = replay_detailed("bounded", &bounded);
+        assert_eq!(
+            verdict,
+            Replay::Inconclusive("v10_admitted_target_row_missing")
+        );
+        assert_eq!(
+            cells
+                .iter()
+                .filter(|cell| cell.comparison_class == "unavailable_target")
+                .count(),
+            1
+        );
+
+        let mut past = target(include_bytes!(
+            "../../../corpus/past-c2po-v1/target-4.2/r2u2.stdout"
+        ));
+        let admitted = (0, 0);
+        past.insert(admitted, !past[&admitted]);
+        let (verdict, cells) = replay_detailed("past", &past);
+        assert_eq!(verdict, Replay::Reject("v10_target_semantic_mismatch"));
+        assert_eq!(cells.len(), 18);
+        past.remove(&admitted);
+        let (verdict, cells) = replay_detailed("past", &past);
+        assert_eq!(
+            verdict,
+            Replay::Inconclusive("v10_admitted_target_row_missing")
+        );
+        assert_eq!(cells.len(), 18);
     }
 
     // Trace: FR-055-AC-2, TC-198
