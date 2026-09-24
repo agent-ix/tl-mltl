@@ -16,8 +16,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "e962f9cfeac7564f15263451f24ab99b1063d54a",
-      "digest": "cddebf79f79fe70e4087fab385c9cbec488703255298bb2828f5d9c3afcac9d2"
+      "revision": "333c202a54e87fb50f4a87e3f2981b987a6be1ea",
+      "digest": "c624415bfccfa207a58f02e88ff745c4909249d9508a3d6c2e8dfb3be5416153"
     },
     {
       "repository": "tl-rewrite",
@@ -215,7 +215,7 @@
       "name": "V1.oracle_dependency_boundary",
       "group": "V1",
       "planId": "MP-010",
-      "definitionVersion": "tl.v1.v1-oracle-dependency-boundary/v1",
+      "definitionVersion": "tl.v1.v1-oracle-dependency-boundary/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
