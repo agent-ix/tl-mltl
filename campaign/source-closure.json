@@ -7,7 +7,8 @@
       "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
       "treeDigest": "66ddeb99101843073e3e62f94a5b62aee6bb04a5e4f55c5987a7e0c33e78eee2",
       "cargoLockDigest": "e095c513a906735da3ff4f3243eb3e8d3c39707ccabb835ef3863260ece1172d",
-      "tlGitDependencies": []
+      "tlGitDependencies": [],
+      "cargoManifestDigest": "2d3c46109382ce4ec0b16625ee02995a7c8e3021e968b26b28b4a54420e1fe58"
     },
     {
       "repository": "tl-parse",
@@ -21,12 +22,13 @@
           "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
           "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
         }
-      ]
+      ],
+      "cargoManifestDigest": "fad7cf364432c49b1df969671a94f90b1381c7a74c18cccc74b6ffd747e82238"
     },
     {
       "repository": "tl-mltl",
-      "revision": "9d6b218eb02fa8c390bf741db624258c756348e4",
-      "treeDigest": "cc413b4200c6e342316894bc68b0caea5f28347402e4f0eebcb36c120a1c629d",
+      "revision": "219a232d6cd7aae4cfeea9a1778c92624a3e6155",
+      "treeDigest": "8d539c8e59e2874cb609b1f32e2e72578834d73eb63272606e3c659acd1b98c6",
       "cargoLockDigest": "402173883a14765dcd3c4205e2d75bda43c8f5221b62b6911d822e113836b2e7",
       "tlGitDependencies": [
         {
@@ -41,7 +43,8 @@
           "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
           "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
         }
-      ]
+      ],
+      "cargoManifestDigest": "e0230708aff02e63552c1f6e9d46f12163313cf982ed9a2e73eeb9d0104bb5ed"
     },
     {
       "repository": "tl-rewrite",
@@ -73,7 +76,8 @@
           "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
           "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
         }
-      ]
+      ],
+      "cargoManifestDigest": "11216e47ea68437f617202b7c0da7a476d3115a6cd2261d2da8ea73cd23fe986"
     },
     {
       "repository": "tl-oracle",
@@ -87,7 +91,8 @@
           "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
           "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
         }
-      ]
+      ],
+      "cargoManifestDigest": "8ed873ea0c7d91c322b650ba13b46252ab33809f34e6b03dfa4272b115827e65"
     },
     {
       "repository": "tl-parse-baseline",
@@ -101,7 +106,8 @@
           "revision": "fed48a2fab3f5277131a7012e1a8d10993330cb1",
           "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=fed48a2fab3f5277131a7012e1a8d10993330cb1#fed48a2fab3f5277131a7012e1a8d10993330cb1"
         }
-      ]
+      ],
+      "cargoManifestDigest": "43cf5cd548e599cb8d0e852fda35f455b11a522b075726f449b4b8ae9203a507"
     },
     {
       "repository": "tl-rewrite-baseline",
@@ -133,7 +139,8 @@
           "revision": "8bcbce984f7ec3d86a92f90d866e842cc98b39fb",
           "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=8bcbce984f7ec3d86a92f90d866e842cc98b39fb#8bcbce984f7ec3d86a92f90d866e842cc98b39fb"
         }
-      ]
+      ],
+      "cargoManifestDigest": "fb67c9cab398150500581fb1fa8b6f7e342ef21279a36d7ec9fa0ba4fbb3624f"
     },
     {
       "repository": "tl-mltl-baseline",
@@ -153,7 +160,8 @@
           "revision": "fed48a2fab3f5277131a7012e1a8d10993330cb1",
           "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=fed48a2fab3f5277131a7012e1a8d10993330cb1#fed48a2fab3f5277131a7012e1a8d10993330cb1"
         }
-      ]
+      ],
+      "cargoManifestDigest": "36d0115b40473825398eed5690208ce86b13d427a684abdee857919c0e80fd07"
     },
     {
       "repository": "r2u2",
@@ -171,35 +179,43 @@
       "identicalFiles": [
         {
           "path": "benches/inputs/SHA256SUMS",
-          "gitBlobOid": "607fed48662d1bfcfd4989c525aa501fcff7ecd3"
+          "gitBlobOid": "607fed48662d1bfcfd4989c525aa501fcff7ecd3",
+          "sha256": "7ddae464c4f27631bd3e08bce40f8c86797565deaf964262bb38bdedc9a726bd"
         },
         {
           "path": "benches/inputs/bounded-small.txt",
-          "gitBlobOid": "aa164c3768111b030c08b5c2ff1cedcced1a2d08"
+          "gitBlobOid": "aa164c3768111b030c08b5c2ff1cedcced1a2d08",
+          "sha256": "bfc96dd29dcb1c156ebec73519b3ffd960d9792a6e712823ec549b2cb149a67b"
         },
         {
           "path": "benches/inputs/infinite-fairness.txt",
-          "gitBlobOid": "f55f20a8f645e85b279d5d15670bbfcbabac4d6e"
+          "gitBlobOid": "f55f20a8f645e85b279d5d15670bbfcbabac4d6e",
+          "sha256": "5a50bb3d9990a524906f285978d58b466f575708b687c6f8b23149339da26edc"
         },
         {
           "path": "benches/inputs/infinite-small.txt",
-          "gitBlobOid": "7d0355778b28bf7dc87b4509253c269f52b988b0"
+          "gitBlobOid": "7d0355778b28bf7dc87b4509253c269f52b988b0",
+          "sha256": "26ff773ecffeae5e699bd679e7188c1b738433d69ba19adf2246328ab7bc32b1"
         },
         {
           "path": "benches/inputs/past-small.txt",
-          "gitBlobOid": "7d718498ec06cf0536ca0636eba8db3fd1c2762b"
+          "gitBlobOid": "7d718498ec06cf0536ca0636eba8db3fd1c2762b",
+          "sha256": "34ea943a6d881360e2db1fe924cac5c8e5df8e906948de386d0c6193f78281b7"
         },
         {
           "path": "benches/inputs/shared-median.txt",
-          "gitBlobOid": "5720ec53470c80181afa7477dc293ef9fbc1b466"
+          "gitBlobOid": "5720ec53470c80181afa7477dc293ef9fbc1b466",
+          "sha256": "24b01e0aeeec862a09551340157bc31ed90f74bbb7017a4f73b21790603696d8"
         },
         {
           "path": "benches/inputs/shared-near-node-cap.txt",
-          "gitBlobOid": "d203da5345779320314767096e7177a57807ce9c"
+          "gitBlobOid": "d203da5345779320314767096e7177a57807ce9c",
+          "sha256": "91a938737cb6e831967def1bfd2cce70d87203a8b75940776f6d56002b65df4c"
         },
         {
           "path": "benches/parser_roundtrip.rs",
-          "gitBlobOid": "07a53c9678b112af413b368db2853d734ccd5e88"
+          "gitBlobOid": "07a53c9678b112af413b368db2853d734ccd5e88",
+          "sha256": "6de05dd1fe8d5cfe31e1c5d25592fa7351bcaf4c197fa9d3e95cd5dc68d86fbf"
         }
       ]
     },
@@ -210,26 +226,30 @@
       "identicalFiles": [
         {
           "path": "benches/input-digests.json",
-          "gitBlobOid": "1aebbfd1c10fec264939cc1dee16620dc9cd7dcd"
+          "gitBlobOid": "1aebbfd1c10fec264939cc1dee16620dc9cd7dcd",
+          "sha256": "80a940314b3ac553854971ade71d39317cb68b9658dfc823b635b5debeeb6c32"
         },
         {
           "path": "benches/rewrite_rules.rs",
-          "gitBlobOid": "590a058c2880be5c68b92d71ccfd32bc7677285d"
+          "gitBlobOid": "590a058c2880be5c68b92d71ccfd32bc7677285d",
+          "sha256": "b6c5d7f74a84e402d4dcc9a4f1379531effb1e33b2abef14243adf5a09ef9ad5"
         }
       ]
     },
     {
       "repository": "tl-mltl",
       "baselineRevision": "ae85de4609fcdb1db525eb590f41ed3febcc211e",
-      "candidateRevision": "9d6b218eb02fa8c390bf741db624258c756348e4",
+      "candidateRevision": "219a232d6cd7aae4cfeea9a1778c92624a3e6155",
       "identicalFiles": [
         {
           "path": "benches/input-digests.json",
-          "gitBlobOid": "101e5d0e42efc0479f20b12fc9cc27df15bdf53b"
+          "gitBlobOid": "101e5d0e42efc0479f20b12fc9cc27df15bdf53b",
+          "sha256": "60a440e6e499cf993eb1d348b6a761cd7d83d73895be6ce193c4d581b06441d8"
         },
         {
           "path": "benches/v9_workloads.rs",
-          "gitBlobOid": "2cff93cc2b5869fab20e568049972a278a4ad088"
+          "gitBlobOid": "2cff93cc2b5869fab20e568049972a278a4ad088",
+          "sha256": "e82464c096bc0d547a63f8fa3dda54affccf8a5083da47a7502940d779503352"
         }
       ]
     }

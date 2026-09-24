@@ -3,9 +3,10 @@
 //! Trace: FR-055-AC-1, TC-197.
 
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     fs,
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use serde::Deserialize;
@@ -52,6 +53,48 @@ struct Definition {
 struct Source {
     repository: String,
     revision: String,
+    digest: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Closure {
+    schema: String,
+    campaign_definition: String,
+    sources: Vec<ClosureSource>,
+    equal_harness: Vec<Harness>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClosureSource {
+    repository: String,
+    revision: String,
+    tree_digest: String,
+    cargo_lock_digest: Option<String>,
+    cargo_manifest_digest: Option<String>,
+    tl_git_dependencies: Vec<LockedDependency>,
+}
+
+#[derive(Deserialize)]
+struct LockedDependency {
+    source: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Harness {
+    repository: String,
+    baseline_revision: String,
+    candidate_revision: String,
+    identical_files: Vec<HarnessFile>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HarnessFile {
+    path: String,
+    sha256: String,
 }
 
 #[derive(Deserialize)]
@@ -102,6 +145,193 @@ fn text<'a>(value: &'a Value, key: &str) -> Result<&'a str, String> {
         .ok_or_else(|| format!("missing contract {key}"))
 }
 
+fn sha256(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
+}
+
+fn git_output(checkout: &Path, args: &[&str]) -> Result<Vec<u8>, String> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(checkout)
+        .args(args)
+        .output()
+        .map_err(|error| format!("git {}: {error}", checkout.display()))?;
+    if !output.status.success() {
+        return Err(format!("git {} {:?} failed", checkout.display(), args));
+    }
+    Ok(output.stdout)
+}
+
+fn verify_checkout(checkout: &Path, source: &Source) -> Result<(), String> {
+    let head = git_output(checkout, &["rev-parse", "HEAD"])?;
+    if head.strip_suffix(b"\n") != Some(source.revision.as_bytes()) {
+        return Err(format!("{} checkout revision changed", source.repository));
+    }
+    if !git_output(
+        checkout,
+        &["status", "--porcelain", "--untracked-files=all"],
+    )?
+    .is_empty()
+    {
+        return Err(format!("{} checkout is dirty", source.repository));
+    }
+    let tree = git_output(
+        checkout,
+        &["ls-tree", "-r", "-z", "--full-tree", &source.revision],
+    )?;
+    if sha256(&tree) != source.digest {
+        return Err(format!("{} tree digest changed", source.repository));
+    }
+    Ok(())
+}
+
+fn verify_closure(
+    definition: &Definition,
+    machine: &Machine,
+    closure: &Closure,
+) -> Result<(), String> {
+    if closure.schema != "tl-mltl.campaign-source-closure/v1"
+        || closure.campaign_definition != "campaign/stage1-campaign-definition.json"
+        || closure.sources.len() != definition.source_graph.len()
+        || closure.equal_harness.len() != 3
+    {
+        return Err("source closure shape differs from CampaignDefinition".into());
+    }
+    let expected = definition
+        .source_graph
+        .iter()
+        .map(|source| {
+            (
+                source.repository.as_str(),
+                (source.revision.as_str(), source.digest.as_str()),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    if expected.len() != closure.sources.len() {
+        return Err("duplicate source graph or closure alias".into());
+    }
+    let mut seen_sources = BTreeSet::new();
+    for source in &closure.sources {
+        if !seen_sources.insert(&source.repository) {
+            return Err(format!("duplicate closure source {}", source.repository));
+        }
+        if expected.get(source.repository.as_str())
+            != Some(&(source.revision.as_str(), source.tree_digest.as_str()))
+        {
+            return Err(format!(
+                "{} closure identity differs from source graph",
+                source.repository
+            ));
+        }
+        let checkout = Path::new(
+            machine
+                .sources
+                .get(&source.repository)
+                .ok_or(format!("missing checkout {}", source.repository))?,
+        );
+        if !checkout.is_absolute() {
+            return Err(format!("{} checkout must be absolute", source.repository));
+        }
+        verify_checkout(
+            checkout,
+            &Source {
+                repository: source.repository.clone(),
+                revision: source.revision.clone(),
+                digest: source.tree_digest.clone(),
+            },
+        )?;
+        if let Some(digest) = &source.cargo_manifest_digest {
+            let manifest = fs::read(checkout.join("Cargo.toml"))
+                .map_err(|error| format!("{} Cargo.toml: {error}", source.repository))?;
+            if sha256(&manifest) != *digest {
+                return Err(format!("{} Cargo.toml changed", source.repository));
+            }
+        } else if source.repository != "r2u2" {
+            return Err(format!("{} has no Cargo.toml digest", source.repository));
+        }
+        if let Some(digest) = &source.cargo_lock_digest {
+            let lock = fs::read(checkout.join("Cargo.lock"))
+                .map_err(|error| format!("{} Cargo.lock: {error}", source.repository))?;
+            if sha256(&lock) != *digest {
+                return Err(format!("{} Cargo.lock changed", source.repository));
+            }
+            let text = String::from_utf8(lock).map_err(|error| error.to_string())?;
+            let mut actual = text
+                .lines()
+                .filter_map(|line| {
+                    line.trim()
+                        .strip_prefix("source = \"git+https://github.com/agent-ix/tl-")
+                        .and_then(|tail| tail.strip_suffix('"'))
+                        .map(|tail| format!("git+https://github.com/agent-ix/tl-{tail}"))
+                })
+                .collect::<Vec<_>>();
+            let mut declared = source
+                .tl_git_dependencies
+                .iter()
+                .map(|dep| dep.source.clone())
+                .collect::<Vec<_>>();
+            actual.sort();
+            declared.sort();
+            if actual != declared {
+                return Err(format!(
+                    "{} TL lock dependencies changed",
+                    source.repository
+                ));
+            }
+        } else if source.repository != "r2u2" || !source.tl_git_dependencies.is_empty() {
+            return Err(format!(
+                "{} has unreviewed absent Cargo.lock",
+                source.repository
+            ));
+        }
+    }
+    if seen_sources.len() != expected.len() {
+        return Err("source closure is incomplete".into());
+    }
+    let mut seen_harnesses = BTreeSet::new();
+    for harness in &closure.equal_harness {
+        if !seen_harnesses.insert(&harness.repository) {
+            return Err(format!("duplicate harness {}", harness.repository));
+        }
+        let candidate = expected
+            .get(harness.repository.as_str())
+            .ok_or(format!("missing candidate {}", harness.repository))?;
+        let baseline_name = format!("{}-baseline", harness.repository);
+        let baseline = expected
+            .get(baseline_name.as_str())
+            .ok_or(format!("missing baseline {baseline_name}"))?;
+        if candidate.0 != harness.candidate_revision
+            || baseline.0 != harness.baseline_revision
+            || harness.identical_files.is_empty()
+        {
+            return Err(format!("{} harness revision mismatch", harness.repository));
+        }
+        let mut seen_files = BTreeSet::new();
+        for file in &harness.identical_files {
+            if !seen_files.insert(&file.path) {
+                return Err(format!(
+                    "{} duplicate harness file {}",
+                    harness.repository, file.path
+                ));
+            }
+            for repo_name in [&harness.repository, &baseline_name] {
+                let checkout = Path::new(
+                    machine
+                        .sources
+                        .get(repo_name)
+                        .ok_or(format!("missing checkout {repo_name}"))?,
+                );
+                let bytes = fs::read(checkout.join(&file.path))
+                    .map_err(|error| format!("{repo_name}/{}: {error}", file.path))?;
+                if sha256(&bytes) != file.sha256 {
+                    return Err(format!("{repo_name}/{} harness bytes changed", file.path));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 fn procedure_path(member: &Member) -> Result<PathBuf, String> {
     let (group, suffix) = member.name.split_once('.').ok_or("invalid member name")?;
     let slug = if group == "V10" {
@@ -121,7 +351,7 @@ fn load_procedure(repo: &Path, member: &Member) -> Result<Procedure, String> {
     serde_json::from_slice(&bytes).map_err(|error| format!("{}: {error}", path.display()))
 }
 
-fn validate_plan(repo: &Path, member: &Member) -> Result<(), String> {
+fn validate_plan(repo: &Path, member: &Member) -> Result<PathBuf, String> {
     let directory = repo.join("spec/assurance");
     let mut matching = fs::read_dir(&directory)
         .map_err(|error| error.to_string())?
@@ -152,6 +382,22 @@ fn validate_plan(repo: &Path, member: &Member) -> Result<(), String> {
         return Err(format!(
             "{} does not bind procedure and version",
             path.display()
+        ));
+    }
+    Ok(path)
+}
+
+fn verify_control_file(control: &Path, measured: &Path, relative: &Path) -> Result<(), String> {
+    let control_path = control.join(relative);
+    let measured_path = measured.join(relative);
+    let control_bytes =
+        fs::read(&control_path).map_err(|error| format!("{}: {error}", control_path.display()))?;
+    let measured_bytes = fs::read(&measured_path)
+        .map_err(|error| format!("{}: {error}", measured_path.display()))?;
+    if control_bytes != measured_bytes {
+        return Err(format!(
+            "control and measured tl-mltl differ at {}",
+            relative.display()
         ));
     }
     Ok(())
@@ -325,9 +571,35 @@ fn build(repo: &Path, definition: Definition, machine: Machine) -> Result<Value,
     {
         return Err("machine source aliases differ from CampaignDefinition".into());
     }
+    let measured = Path::new(
+        machine
+            .sources
+            .get("tl-mltl")
+            .ok_or("missing tl-mltl source")?,
+    );
+    let control = repo.canonicalize().map_err(|error| error.to_string())?;
+    let measured_canonical = measured.canonicalize().map_err(|error| error.to_string())?;
+    if control == measured_canonical {
+        return Err("control checkout must differ from measured tl-mltl checkout".into());
+    }
+    let mut source_paths = BTreeSet::new();
+    for (alias, path) in &machine.sources {
+        let canonical = Path::new(path)
+            .canonicalize()
+            .map_err(|error| error.to_string())?;
+        if !source_paths.insert(canonical) {
+            return Err(format!("{alias} reuses another source checkout"));
+        }
+    }
+    verify_control_file(repo, measured, Path::new("src/bin/tl_campaign_check.rs"))?;
     let mut members = BTreeMap::new();
     for member in definition.members {
-        validate_plan(repo, &member)?;
+        let plan_path = validate_plan(repo, &member)?;
+        let plan_relative = plan_path
+            .strip_prefix(repo)
+            .map_err(|error| error.to_string())?;
+        verify_control_file(repo, measured, plan_relative)?;
+        verify_control_file(repo, measured, &procedure_path(&member)?)?;
         let procedure = load_procedure(repo, &member)?;
         let checker = member
             .checker_procedure
@@ -376,7 +648,9 @@ fn run() -> Result<(), String> {
             "usage: tl_campaign_config --definition FILE --machine FILE --output FILE".into(),
         );
     }
-    let definition_path = PathBuf::from(&args[2]);
+    let definition_path = PathBuf::from(&args[2])
+        .canonicalize()
+        .map_err(|error| format!("definition {}: {error}", args[2]))?;
     let repo = definition_path
         .parent()
         .and_then(Path::parent)
@@ -386,6 +660,11 @@ fn run() -> Result<(), String> {
             .map_err(|e| e.to_string())?;
     let machine: Machine = serde_json::from_slice(&fs::read(&args[4]).map_err(|e| e.to_string())?)
         .map_err(|e| e.to_string())?;
+    let closure: Closure = serde_json::from_slice(
+        &fs::read(repo.join("campaign/source-closure.json")).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string())?;
+    verify_closure(&definition, &machine, &closure)?;
     let config = build(repo, definition, machine)?;
     fs::write(
         &args[6],
@@ -403,7 +682,29 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{selected_inputs, Member, Procedure};
+    use super::{selected_inputs, verify_control_file, Member, Procedure};
+
+    // Trace: FR-055-AC-1, TC-197
+    #[test]
+    fn control_and_measured_procedure_bytes_must_match() {
+        let control = tempfile::tempdir().unwrap();
+        let measured = tempfile::tempdir().unwrap();
+        std::fs::write(control.path().join("procedure.json"), b"version-1").unwrap();
+        std::fs::write(measured.path().join("procedure.json"), b"version-2").unwrap();
+        assert!(verify_control_file(
+            control.path(),
+            measured.path(),
+            std::path::Path::new("procedure.json")
+        )
+        .is_err());
+        std::fs::write(measured.path().join("procedure.json"), b"version-1").unwrap();
+        assert!(verify_control_file(
+            control.path(),
+            measured.path(),
+            std::path::Path::new("procedure.json")
+        )
+        .is_ok());
+    }
 
     // Trace: FR-055-AC-1, TC-197
     #[test]

@@ -187,3 +187,48 @@ of that exact source and measurement.
 The retained campaign manifest/report, when present, identify their measured
 source commits. A report committed after the run is an artifact of those
 commits; it does not retroactively claim to have measured the artifact commit.
+
+## Mechanical Stage 1 Campaign
+
+`stage1-campaign-definition.json` is the external control-plane definition
+for 117 direct native EA measurements. Its `tl-mltl` source is the clean
+`219a232d6cd7aae4cfeea9a1778c92624a3e6155` checkout. Keep this
+control-plane checkout separate from that measured checkout: the definition
+and generated machine config are later artifacts that name the measured tree,
+so they cannot be part of their own source digest. Pass the clean measured
+checkout as Quoin's `--repo`, and pass the definition and config by their
+external paths. Every other source alias needs its own clean checkout at the
+definition's exact revision.
+
+`tl_campaign_config --definition FILE --machine FILE --output FILE` derives
+the Quoin configuration from authored procedures. It checks each selected
+checkout's Git revision, cleanliness, and full-tree inventory digest; selected
+Cargo manifests, locks, and historical V9 benchmark harness bytes; and exact
+plan, procedure, and checker source equality between the control-plane and
+measured tl-mltl checkouts. It checks executable file bytes against the
+machine table. A generated config is only an execution selection, never a
+measurement result. A member passes only after Quoin retains the bounded EA
+producer and checker results and independently reconciles their identities.
+
+The direct C2PO compile procedures bind Python 3.13.11. A bounded smoke on
+Linux host `cave` used R2U2 commit
+`336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a` with C2PO 4.1.0
+(`compiler/c2po.py` SHA-256
+`f978a32f667a8247c387a66bce35371c97b7d8f7b730035a8ee40cdfc428ce12`),
+`PYTHONPATH=compiler`, and the tracked bounded specification and map.
+The exact Python executable was `/usr/bin/python3.13`, SHA-256
+`bf9c0f7057bc1a4c9169ed54ce941a86c07ede3ba3793186a074887dd36af137`.
+The isolated Python 3.13 venv contained only `pip` 25.3; C2PO used its vendored
+compiler code. Invocation
+`python compiler/c2po.py --spec .../formulas.c2po --map .../signals.map --output .../bounded.bin`
+exited 0 and produced a binary with SHA-256
+`234c5f0a1fb827c1ef10cab4ed4ae9ce8ffdb07e6863c6fa9522730e49ca0da8`.
+The same pinned R2U2 source built its C monitor with `make -C monitors/c all`
+on `cave`; the Linux executable SHA-256 was
+`6b98ee5cfcad7073eef49a333b00be1e5b512ed9d3bed6b4e07418357a87ab92`.
+It exited 0 on that compiled binary and the tracked bounded trace, emitting
+14 target rows; retained stdout SHA-256 was
+`567306aaf08c6d4603f770c91a5cdcd56a2ab3214ada5e6ae68661ac518501c3`.
+This smoke proves only that the pinned compiler starts and compiles one
+tracked input and that the native monitor runs on that result. It is not a
+V10 Campaign pass.
