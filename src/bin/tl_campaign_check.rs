@@ -1143,6 +1143,146 @@ fn v10_inputs(input: &CheckInput, bundle: &RawBundle) -> bool {
     cells == 1350
 }
 
+fn selected_input_digests(request: &Value) -> Option<BTreeMap<String, String>> {
+    let mut selected = BTreeMap::new();
+    for input in request["inputs"].as_array()? {
+        let role = input["role"].as_str()?;
+        if role.starts_with("source/") || role.starts_with("source-exec/") {
+            continue;
+        }
+        let path = input["path"].as_str()?;
+        let digest = input["digest"].as_str()?;
+        if path.is_empty()
+            || digest.len() != 64
+            || selected
+                .insert(role.to_owned(), digest.to_owned())
+                .is_some()
+        {
+            return None;
+        }
+    }
+    Some(selected)
+}
+
+fn dependency_artifact_digest(input: &CheckInput, name: &str, role: &str) -> Option<String> {
+    let mut matches = input
+        .dependencies
+        .iter()
+        .filter(|dependency| dependency.member == name);
+    let dependency = matches.next()?;
+    if matches.next().is_some() || dependency.index != 1 {
+        return None;
+    }
+    let bundle =
+        sealed_raw_bundle(&dependency.raw_bundle_path, &dependency.raw_bundle_digest).ok()?;
+    let artifact = bundle
+        .artifacts
+        .iter()
+        .find(|artifact| artifact.role == role)?;
+    let result: Value = serde_json::from_slice(&fs::read(&dependency.result_path).ok()?).ok()?;
+    if result["artifacts"]
+        .as_array()?
+        .iter()
+        .filter(|item| item["role"] == role && item["digest"] == artifact.digest)
+        .count()
+        != 1
+    {
+        return None;
+    }
+    Some(artifact.digest.clone())
+}
+
+fn v10_compile_inputs(input: &CheckInput, request: &Value, source_root: &Path) -> bool {
+    let Some(case) = input.member.strip_prefix("V10.compile.") else {
+        return false;
+    };
+    let expected: &[(&str, &str, &str)] = match case {
+        "bounded" => &[
+            ("spec", "v10/input.c2po", "corpus/r2u2-v4.2/formulas.c2po"),
+            ("map", "v10/input.map", "corpus/r2u2-v4.2/signals.map"),
+        ],
+        "past" => &[
+            (
+                "spec",
+                "v10/input.c2po",
+                "corpus/past-c2po-v1/target-4.2/past.c2po",
+            ),
+            (
+                "trace",
+                "v10/input.csv",
+                "corpus/past-c2po-v1/target-4.2/trace.csv",
+            ),
+        ],
+        "unsafe-since" => &[
+            (
+                "spec",
+                "v10/input.c2po",
+                "corpus/past-c2po-v1/target-4.2/unsafe-since.c2po",
+            ),
+            (
+                "trace",
+                "v10/input.csv",
+                "corpus/past-c2po-v1/target-4.2/unsafe-since.csv",
+            ),
+        ],
+        _ if case
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase() || byte == b'-') =>
+        {
+            &[
+                ("spec", "v10/input.c2po", ""),
+                ("trace", "v10/input.csv", ""),
+            ]
+        }
+        _ => return false,
+    };
+    let Some(selected) = selected_input_digests(request) else {
+        return false;
+    };
+    if selected.len() != expected.len() {
+        return false;
+    }
+    for (role, path, tracked) in expected {
+        let observed = request["inputs"]
+            .as_array()
+            .and_then(|items| items.iter().find(|item| item["role"] == *role));
+        let Some(observed) = observed else {
+            return false;
+        };
+        if observed["path"] != *path {
+            return false;
+        }
+        let digest = if tracked.is_empty() {
+            let extension = if *role == "spec" { "c2po" } else { "csv" };
+            dependency_artifact_digest(input, "V10.inputs", &format!("inputs/{case}.{extension}"))
+        } else {
+            fs::read(source_root.join(tracked))
+                .ok()
+                .map(|bytes| sha256(&bytes))
+        };
+        if digest.as_deref() != selected.get(*role).map(String::as_str) {
+            return false;
+        }
+    }
+    true
+}
+
+fn v8_parse_example_input(input: &CheckInput, request: &Value) -> bool {
+    let Some(selected) = selected_input_digests(request) else {
+        return false;
+    };
+    selected.len() == 1
+        && request["inputs"].as_array().is_some_and(|items| {
+            items.iter().any(|item| {
+                item["role"] == "example"
+                    && item["path"] == ".quoin-target/debug/examples/fuzz_campaign"
+                    && item["executable"] == true
+            })
+        })
+        && dependency_artifact_digest(input, "V8.parse_example_prep", "example").as_deref()
+            == selected.get("example").map(String::as_str)
+}
+
 fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVerdict {
     let mut reasons = Vec::new();
     let mut request_digest = String::new();
@@ -1483,9 +1623,13 @@ fn run_args(args: &[String]) -> Result<(), String> {
             .collect();
         if binaries.len() != 1
             || raw_bytes(&raw_bundle, &binaries[0].role).is_none_or(|bytes| bytes.is_empty())
+            || !v10_compile_inputs(&input, &request_value, Path::new("."))
         {
             binding_reasons.push("v10_compiled_binary_unproved".into());
         }
+    }
+    if input.member == "V8.parse_default" && !v8_parse_example_input(&input, &request_value) {
+        binding_reasons.push("v8_example_input_provenance_unproved".into());
     }
     if !binding_reasons.is_empty() {
         verdict.verdict = "reject";
@@ -1514,9 +1658,115 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{cargo_summaries, check, member_parser};
+    use super::{
+        cargo_summaries, check, member_parser, v10_compile_inputs, v8_parse_example_input,
+        CheckInput,
+    };
     use serde_json::{json, Value};
     use std::fs;
+
+    // Trace: FR-055-AC-2, TC-198
+    #[test]
+    fn v10_compile_refuses_substituted_tracked_spec_and_generated_input() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path();
+        let corpus = root.join("corpus/r2u2-v4.2");
+        fs::create_dir_all(&corpus).unwrap();
+        fs::write(corpus.join("formulas.c2po"), b"pinned formula").unwrap();
+        fs::write(corpus.join("signals.map"), b"pinned map").unwrap();
+        let mut input: CheckInput = serde_json::from_value(json!({
+            "schema":"quoin.domain-check-input/v1", "definitionPath":"definition.json",
+            "definitionDigest":"a".repeat(64), "member":"V10.compile.bounded",
+            "planId":"MP-117", "definitionVersion":"v1", "sourceGraphDigest":"b".repeat(64),
+            "requestDigest":"c".repeat(64), "requestPath":"request.json",
+            "resultPath":"result.json", "resultDigest":"d".repeat(64),
+            "rawArtifacts":[], "rawBundlePath":"raw.json", "rawBundleDigest":"e".repeat(64)
+        }))
+        .unwrap();
+        let mut request = json!({"inputs":[
+            {"role":"spec","path":"v10/input.c2po","digest":super::sha256(b"pinned formula")},
+            {"role":"map","path":"v10/input.map","digest":super::sha256(b"pinned map")}
+        ]});
+        assert!(v10_compile_inputs(&input, &request, root));
+        request["inputs"][0]["digest"] = json!(super::sha256(b"substituted formula"));
+        assert!(!v10_compile_inputs(&input, &request, root));
+
+        input.member = "V10.compile.zero-upper-all-true".into();
+        let raw = b"generated formula";
+        let trace = b"time,signal\n0,1\n";
+        let bundle = json!({"schema":"quoin.raw-artifact-bundle/v1","artifacts":[
+            {"role":"inputs/zero-upper-all-true.c2po","digest":super::sha256(raw),"bytes":raw},
+            {"role":"inputs/zero-upper-all-true.csv","digest":super::sha256(trace),"bytes":trace}
+        ]});
+        let bundle_path = root.join("dependency-raw.json");
+        fs::write(&bundle_path, serde_json::to_vec(&bundle).unwrap()).unwrap();
+        let result_path = root.join("dependency-result.json");
+        fs::write(
+            &result_path,
+            serde_json::to_vec(&json!({"artifacts":[
+                {"role":"inputs/zero-upper-all-true.c2po","digest":super::sha256(raw)},
+                {"role":"inputs/zero-upper-all-true.csv","digest":super::sha256(trace)}
+            ]}))
+            .unwrap(),
+        )
+        .unwrap();
+        input.dependencies = vec![serde_json::from_value(json!({
+            "member":"V10.inputs", "index":1, "requestDigest":"f".repeat(64),
+            "requestPath":"dependency-request.json", "resultDigest":"0".repeat(64),
+            "resultPath":result_path, "rawBundleDigest":super::canonical_digest(&bundle).unwrap(),
+            "rawBundlePath":bundle_path
+        }))
+        .unwrap()];
+        let mut generated = json!({"inputs":[
+            {"role":"spec","path":"v10/input.c2po","digest":super::sha256(raw)},
+            {"role":"trace","path":"v10/input.csv","digest":super::sha256(trace)}
+        ]});
+        assert!(v10_compile_inputs(&input, &generated, root));
+        generated["inputs"][0]["digest"] = json!(super::sha256(b"substituted formula"));
+        assert!(!v10_compile_inputs(&input, &generated, root));
+    }
+
+    // Trace: FR-055-AC-2, TC-198
+    #[test]
+    fn v8_coverage_refuses_substituted_example_executable() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path();
+        let binary = b"example executable";
+        let raw_bundle = json!({"schema":"quoin.raw-artifact-bundle/v1","artifacts":[
+            {"role":"example","digest":super::sha256(binary),"bytes":binary}
+        ]});
+        let raw_path = root.join("raw.json");
+        let result_path = root.join("result.json");
+        fs::write(&raw_path, serde_json::to_vec(&raw_bundle).unwrap()).unwrap();
+        fs::write(
+            &result_path,
+            serde_json::to_vec(&json!({"artifacts":[
+                {"role":"example","digest":super::sha256(binary)}
+            ]}))
+            .unwrap(),
+        )
+        .unwrap();
+        let input: CheckInput = serde_json::from_value(json!({
+            "schema":"quoin.domain-check-input/v1", "definitionPath":"definition.json",
+            "definitionDigest":"a".repeat(64), "member":"V8.parse_default",
+            "planId":"MP-081", "definitionVersion":"v1", "sourceGraphDigest":"b".repeat(64),
+            "requestDigest":"c".repeat(64), "requestPath":"request.json",
+            "resultPath":"result.json", "resultDigest":"d".repeat(64),
+            "rawArtifacts":[], "rawBundlePath":"raw.json", "rawBundleDigest":"e".repeat(64),
+            "dependencies":[{"member":"V8.parse_example_prep","index":1,
+                "requestDigest":"f".repeat(64),"requestPath":"dep-request.json",
+                "resultDigest":"0".repeat(64),"resultPath":result_path,
+                "rawBundleDigest":super::canonical_digest(&raw_bundle).unwrap(),
+                "rawBundlePath":raw_path}]
+        }))
+        .unwrap();
+        let mut request = json!({"inputs":[{"role":"example",
+            "path":".quoin-target/debug/examples/fuzz_campaign", "executable":true,
+            "digest":super::sha256(binary)}]});
+        assert!(v8_parse_example_input(&input, &request));
+        request["inputs"][0]["digest"] = json!(super::sha256(b"different executable"));
+        assert!(!v8_parse_example_input(&input, &request));
+    }
 
     fn result(raw: &str, state: &str) -> Vec<u8> {
         let stdout = raw.as_bytes();
