@@ -2237,7 +2237,8 @@ fn no_local_evidence_framework_remains() {
         // Thirteen direct native procedure records bind V1/V2/V3/V11 lanes.
         // V9 adds twelve direct Criterion procedure records.
         // V10 adds fifty-one direct procedure records and their member inventory.
-        ("campaign", 177),
+        // One CampaignDefinition closes the full V1–V11 member inventory.
+        ("campaign", 178),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2387,8 +2388,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 687,
-        "the source census population changed from the reviewed 687 tracked files \
+        inspected, 688,
+        "the source census population changed from the reviewed 688 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
