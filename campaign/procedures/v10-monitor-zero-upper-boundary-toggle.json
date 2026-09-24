@@ -29,5 +29,19 @@
       "required": true
     }
   ],
+  "inputOrigins": [
+    {
+      "role": "binary",
+      "kind": "dependency",
+      "dependencyMember": "V10.compile.zero-upper-boundary-toggle",
+      "dependencyArtifactRole": "binary"
+    },
+    {
+      "role": "trace",
+      "kind": "dependency",
+      "dependencyMember": "V10.inputs",
+      "dependencyArtifactRole": "inputs/zero-upper-boundary-toggle.csv"
+    }
+  ],
   "outputs": []
 }

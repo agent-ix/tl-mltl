@@ -29,5 +29,19 @@
       "required": true
     }
   ],
+  "inputOrigins": [
+    {
+      "role": "binary",
+      "kind": "dependency",
+      "dependencyMember": "V10.compile.past",
+      "dependencyArtifactRole": "binary"
+    },
+    {
+      "role": "trace",
+      "kind": "source_file",
+      "sourceRepository": "tl-mltl",
+      "sourcePath": "corpus/past-c2po-v1/target-4.2/trace.csv"
+    }
+  ],
   "outputs": []
 }

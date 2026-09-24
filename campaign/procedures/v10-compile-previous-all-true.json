@@ -55,6 +55,20 @@
       "required": true
     }
   ],
+  "inputOrigins": [
+    {
+      "role": "spec",
+      "kind": "dependency",
+      "dependencyMember": "V10.inputs",
+      "dependencyArtifactRole": "inputs/previous-all-true.c2po"
+    },
+    {
+      "role": "trace",
+      "kind": "dependency",
+      "dependencyMember": "V10.inputs",
+      "dependencyArtifactRole": "inputs/previous-all-true.csv"
+    }
+  ],
   "outputs": [
     {
       "role": "binary",

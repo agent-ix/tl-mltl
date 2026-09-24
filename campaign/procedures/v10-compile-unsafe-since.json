@@ -55,6 +55,20 @@
       "required": true
     }
   ],
+  "inputOrigins": [
+    {
+      "role": "spec",
+      "kind": "source_file",
+      "sourceRepository": "tl-mltl",
+      "sourcePath": "corpus/past-c2po-v1/target-4.2/unsafe-since.c2po"
+    },
+    {
+      "role": "trace",
+      "kind": "source_file",
+      "sourceRepository": "tl-mltl",
+      "sourcePath": "corpus/past-c2po-v1/target-4.2/unsafe-since.csv"
+    }
+  ],
   "outputs": [
     {
       "role": "binary",

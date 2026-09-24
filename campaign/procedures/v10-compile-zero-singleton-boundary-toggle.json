@@ -55,6 +55,20 @@
       "required": true
     }
   ],
+  "inputOrigins": [
+    {
+      "role": "spec",
+      "kind": "dependency",
+      "dependencyMember": "V10.inputs",
+      "dependencyArtifactRole": "inputs/zero-singleton-boundary-toggle.c2po"
+    },
+    {
+      "role": "trace",
+      "kind": "dependency",
+      "dependencyMember": "V10.inputs",
+      "dependencyArtifactRole": "inputs/zero-singleton-boundary-toggle.csv"
+    }
+  ],
   "outputs": [
     {
       "role": "binary",

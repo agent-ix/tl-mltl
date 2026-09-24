@@ -29,5 +29,19 @@
       "required": true
     }
   ],
+  "inputOrigins": [
+    {
+      "role": "binary",
+      "kind": "dependency",
+      "dependencyMember": "V10.compile.zero-singleton-all-false",
+      "dependencyArtifactRole": "binary"
+    },
+    {
+      "role": "trace",
+      "kind": "dependency",
+      "dependencyMember": "V10.inputs",
+      "dependencyArtifactRole": "inputs/zero-singleton-all-false.csv"
+    }
+  ],
   "outputs": []
 }

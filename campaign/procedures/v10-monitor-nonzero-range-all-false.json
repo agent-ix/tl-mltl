@@ -29,5 +29,19 @@
       "required": true
     }
   ],
+  "inputOrigins": [
+    {
+      "role": "binary",
+      "kind": "dependency",
+      "dependencyMember": "V10.compile.nonzero-range-all-false",
+      "dependencyArtifactRole": "binary"
+    },
+    {
+      "role": "trace",
+      "kind": "dependency",
+      "dependencyMember": "V10.inputs",
+      "dependencyArtifactRole": "inputs/nonzero-range-all-false.csv"
+    }
+  ],
   "outputs": []
 }
