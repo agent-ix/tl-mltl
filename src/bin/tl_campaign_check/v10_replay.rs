@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use sha2::{Digest, Sha256};
 use tl_mltl::{
     evaluate_past, map_past_to_c2po, ClockBinding, MappingSourceIdentity, MappingSourceState,
-    PastEvaluationLimits, PastEvaluationRelationInput, PositionHistoryDocument,
+    PastEvaluationLimits, PastEvaluationRelationInput, PastMappingError, PositionHistoryDocument,
     PositionObservation, TargetOriginContract,
 };
 use tl_oracle::{
@@ -15,8 +15,8 @@ use tl_oracle::{
 };
 use tl_syntax::{
     Formula, FormulaDocument, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration,
-    PropositionBinding, PropositionId, SemanticProfile, SignalCatalogDocument, SignalDomain,
-    SignalId,
+    PastOperatorKind, PropositionBinding, PropositionId, SemanticProfile, SignalCatalogDocument,
+    SignalDomain, SignalId,
 };
 
 const STEPS: usize = 6;
@@ -50,6 +50,34 @@ struct Case {
     expression: String,
     nodes: Vec<Node>,
     oracle: OracleFormula,
+}
+
+fn expected_refusal(case: &Case, error: &PastMappingError) -> bool {
+    match (case.operator, case.interval, case.depth, error) {
+        (Operator::Previous, None, 3, PastMappingError::TargetOriginShapeUnverified(node)) => {
+            *node == NodeId(4)
+        }
+        (
+            operator,
+            Some((start, end)),
+            _,
+            PastMappingError::TargetOriginIntervalMismatch {
+                operator: refused_operator,
+                interval,
+            },
+        ) => {
+            let expected_operator = match operator {
+                Operator::Once => PastOperatorKind::Once,
+                Operator::Historically => PastOperatorKind::Historically,
+                Operator::Since => PastOperatorKind::Since,
+                Operator::Triggered => PastOperatorKind::Triggered,
+                Operator::Previous => return false,
+            };
+            *refused_operator == expected_operator
+                && *interval == Interval::new(start, end).expect("fixed interval")
+        }
+        _ => false,
+    }
 }
 
 fn make_case(operator: Operator, interval: Option<(u32, u32)>, depth: usize) -> Case {
@@ -288,7 +316,7 @@ impl Run {
                 (true, Ok(mapped))
                     if mapped.expression == case.expression
                         && mapped.output_sha256 == sha256(case.expression.as_bytes()) => {}
-                (false, Err(_typed_refusal)) => {}
+                (false, Err(refusal)) if expected_refusal(case, &refusal) => {}
                 _ => return Replay::Reject("v10_mapping_partition_unproved"),
             }
             for position in 0..STEPS {
@@ -500,6 +528,68 @@ mod tests {
             }
         }
         assert_eq!((admitted, unsupported), (360, 990));
+    }
+
+    // Trace: FR-055-AC-2, TC-198
+    #[test]
+    fn unsupported_grid_cells_require_exact_origin_refusals() {
+        let mut refused_cells = 0;
+        for group in INTERVALS
+            .iter()
+            .map(|(name, _, _)| *name)
+            .chain(std::iter::once("previous"))
+        {
+            for trace in TRACES {
+                let run = Run::for_member(&format!("{group}-{trace}")).unwrap();
+                for case in run.cases.iter().filter(|case| !expected_admission(case)) {
+                    refused_cells += STEPS;
+                    let expected = match (case.operator, case.interval, case.depth) {
+                        (Operator::Previous, None, 3) => {
+                            PastMappingError::TargetOriginShapeUnverified(NodeId(4))
+                        }
+                        (operator, Some((start, end)), _) => {
+                            let operator = match operator {
+                                Operator::Once => PastOperatorKind::Once,
+                                Operator::Historically => PastOperatorKind::Historically,
+                                Operator::Since => PastOperatorKind::Since,
+                                Operator::Triggered => PastOperatorKind::Triggered,
+                                Operator::Previous => unreachable!("previous has no interval"),
+                            };
+                            PastMappingError::TargetOriginIntervalMismatch {
+                                operator,
+                                interval: Interval::new(start, end).unwrap(),
+                            }
+                        }
+                        _ => panic!("unexpected unsupported shape"),
+                    };
+                    assert!(expected_refusal(case, &expected), "{group}-{trace}");
+                    assert!(!expected_refusal(
+                        case,
+                        &PastMappingError::ResourceIncomplete
+                    ));
+                    assert!(!expected_refusal(
+                        case,
+                        &PastMappingError::TargetOriginMismatch
+                    ));
+                    assert!(!expected_refusal(
+                        case,
+                        &PastMappingError::TargetOriginShapeUnverified(NodeId(0))
+                    ));
+                    if let PastMappingError::TargetOriginIntervalMismatch { operator, .. } =
+                        expected
+                    {
+                        assert!(!expected_refusal(
+                            case,
+                            &PastMappingError::TargetOriginIntervalMismatch {
+                                operator,
+                                interval: Interval::new(9, 9).unwrap(),
+                            }
+                        ));
+                    }
+                }
+            }
+        }
+        assert_eq!(refused_cells, 990);
     }
 
     // Trace: FR-055-AC-2, TC-198
