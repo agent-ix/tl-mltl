@@ -1,13 +1,13 @@
 ---
 id: MP-120
-title: TL Stage 1 V10.monitor.past direct foreign result
+title: TL Stage 1 V10.monitor.past foreign diagnostic
 type: MeasurementPlan
 status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v10.monitor_past.verified
 definition_version: tl.v10.monitor-past/v1
 execution_procedure: campaign/procedures/v10-monitor-past.json
-stage: gate
+stage: observe
 ground_truth_kind: mechanical
 objective:
   direction: higher
@@ -42,7 +42,7 @@ relationships:
 
 ## Decision Use
 
-This required V10 member is interpreted only from its retained native result and independently checked raw facts. The exact pinned R2U2 binary processes sealed compiled bytes and the sealed TL trace. The campaign combines every required member with `all-required`.
+This optional V10 diagnostic is interpreted only from its retained native result and independently checked raw facts. The exact pinned R2U2 binary processes sealed compiled bytes and the sealed TL trace. Six admitted comparison cells and twelve unsupported cells remain distinct. The required generated past-grid members test the admitted mapping population; this mixed static case cannot establish parity for its unsupported cells or block that admitted-only gate.
 
 ## Population
 
@@ -54,4 +54,4 @@ EA executes the typed procedure in the fresh source projection and retains stdou
 
 ## Interpretation
 
-The TL checker recomputes decisive facts from retained bytes. Missing, malformed, stale, or semantically mismatched evidence cannot pass.
+The TL checker recomputes decisive facts from retained bytes. Missing, malformed, stale, or semantically mismatched evidence cannot pass. Its inconclusive result remains visible in the Campaign receipt and is not rounded into an accepted mapping.
