@@ -362,6 +362,13 @@ fn history_admission_refuses_every_completeness_and_identity_dimension() {
         })
     );
     assert_eq!(
+        PositionHistoryDocument::new("h", 1, 0, 1, clock.clone(), vec![row(1)]),
+        Err(HistoryError::Gap {
+            expected: 0,
+            found: 1
+        })
+    );
+    assert_eq!(
         PositionHistoryDocument::new("h", 1, 0, 0, clock.clone(), vec![row(0), row(0)]),
         Err(HistoryError::DuplicatePosition { position: 0 })
     );
@@ -401,6 +408,18 @@ fn history_admission_refuses_every_completeness_and_identity_dimension() {
     let too_many_propositions = (0..=100_000)
         .map(PropositionId)
         .collect::<Vec<PropositionId>>();
+    let oversized_row = serde_json::to_vec(&PositionObservation::new(
+        0,
+        too_many_propositions.clone(),
+        None,
+    ))
+    .unwrap();
+    assert!(
+        serde_json::from_slice::<PositionObservation>(&oversized_row)
+            .unwrap_err()
+            .to_string()
+            .contains("too many propositions at one position")
+    );
     assert_eq!(
         PositionHistoryDocument::new(
             "h",
@@ -468,6 +487,54 @@ fn history_admission_refuses_every_completeness_and_identity_dimension() {
         Err(HistoryError::RevisionNotAdvanced {
             previous: 1,
             proposed: 1
+        })
+    );
+}
+
+// Trace: TC-051, FR-012-AC-1, FR-050-AC-1
+#[test]
+fn history_hard_cap_refuses_excess_rows_at_wire_and_constructor_boundaries() {
+    const EXCESS_ROWS: usize = 1_000_001;
+    let row = PositionObservation::new(0, Vec::new(), None);
+    let row_json = serde_json::to_string(&row).unwrap();
+    let valid = event_history(&[(false, false)], 1);
+    let valid_json = serde_json::to_string(&valid).unwrap();
+    let singleton = format!("[{row_json}]");
+    let (prefix, suffix) = valid_json.split_once(&singleton).unwrap();
+
+    // Stream one canonical-looking wire array without allocating a million
+    // serde_json::Value objects. The bounded visitor must stop at the first
+    // row beyond the cap, before semantic position checks run.
+    let mut oversized =
+        String::with_capacity(prefix.len() + suffix.len() + EXCESS_ROWS * (row_json.len() + 1) + 2);
+    oversized.push_str(prefix);
+    oversized.push('[');
+    for index in 0..EXCESS_ROWS {
+        if index != 0 {
+            oversized.push(',');
+        }
+        oversized.push_str(&row_json);
+    }
+    oversized.push(']');
+    oversized.push_str(suffix);
+    assert!(serde_json::from_str::<PositionHistoryDocument>(&oversized)
+        .unwrap_err()
+        .to_string()
+        .contains("position history exceeds wire limit"));
+    drop(oversized);
+
+    assert_eq!(
+        PositionHistoryDocument::new(
+            "history-a",
+            1,
+            0,
+            0,
+            Some(ClockBinding::EventPosition),
+            vec![row; EXCESS_ROWS],
+        ),
+        Err(HistoryError::PositionLimitExceeded {
+            actual: EXCESS_ROWS,
+            limit: 1_000_000,
         })
     );
 }
