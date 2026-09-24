@@ -205,13 +205,13 @@ fn member_parser(member: &str) -> Option<&'static str> {
     match member {
         "V1.independent_oracle"
         | "V1.oracle_fault_injection"
-        | "V1.oracle_dependency_boundary"
         | "V1.production_finite_faults"
         | "V1.production_infinite_faults"
         | "V1.finite_lasso_oracle"
         | "V11.infinite_oracle"
         | "V11.infinite_trace_behavior"
         | "V11.oracle_semantic_laws" => Some("cargo-test"),
+        "V1.oracle_dependency_boundary" => Some("cargo-tree"),
         "V2.finite_small_partition" => Some("finite-partition"),
         "V2.full_domain_census" => Some("full-domain"),
         "V3.semantic_properties" => Some("semantic-properties"),
@@ -270,6 +270,22 @@ fn member_parser(member: &str) -> Option<&'static str> {
             None
         }
     })
+}
+
+fn oracle_dependency_tree(stdout: &[u8]) -> bool {
+    let Ok(tree) = std::str::from_utf8(stdout) else {
+        return false;
+    };
+    let mut lines = tree.lines();
+    lines
+        .next()
+        .is_some_and(|line| line.starts_with("tl-oracle v0.1.0 "))
+        && tree
+            .lines()
+            .any(|line| line.starts_with("tl-syntax v0.4.0 "))
+        && !tree
+            .lines()
+            .any(|line| line.starts_with("tl-mltl ") || line.starts_with("tl-rewrite "))
 }
 
 fn cargo_summaries(raw: &str, minimum_total: u64, expected_summaries: usize) -> bool {
@@ -1508,7 +1524,11 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                     }) {
                         reasons.push("native_command_failed".into());
                     }
-                    if parser == "libfuzzer" {
+                    if parser == "cargo-tree" {
+                        if !oracle_dependency_tree(&process.stdout.bytes) {
+                            reasons.push("oracle_dependency_boundary_unproved".into());
+                        }
+                    } else if parser == "libfuzzer" {
                         if !libfuzzer(member, &process.stdout.bytes, &process.stderr.bytes) {
                             reasons.push("libfuzzer_budget_or_clean_exit_unproved".into());
                         }
@@ -2899,6 +2919,37 @@ mod tests {
             .verdict,
             "reject"
         );
+    }
+
+    // Trace: FR-043-AC-1, TC-175, FR-055-AC-2.
+    #[test]
+    fn direct_oracle_tree_accepts_only_the_independent_normal_graph() {
+        let good = "tl-oracle v0.1.0 (/source/tl-oracle)\ntl-syntax v0.4.0 (git+https://github.com/agent-ix/tl-syntax)\n";
+        assert_eq!(
+            check(
+                "V1.oracle_dependency_boundary",
+                &"b".repeat(64),
+                &result(good, "completed"),
+            )
+            .verdict,
+            "accept"
+        );
+        for bad in [
+            "tl-oracle v0.1.0 (/source/tl-oracle)\n",
+            "tl-oracle v0.1.0 (/source/tl-oracle)\ntl-syntax v0.4.0 (/source/tl-syntax)\ntl-mltl v0.4.0 (/source/tl-mltl)\n",
+            "tl-oracle v0.1.0 (/source/tl-oracle)\ntl-syntax v0.4.0 (/source/tl-syntax)\ntl-rewrite v0.4.0 (/source/tl-rewrite)\n",
+            "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n",
+        ] {
+            assert_eq!(
+                check(
+                    "V1.oracle_dependency_boundary",
+                    &"b".repeat(64),
+                    &result(bad, "completed"),
+                )
+                .verdict,
+                "reject"
+            );
+        }
     }
 
     // Trace: FR-055-AC-2, TC-198
