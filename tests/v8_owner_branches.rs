@@ -1,52 +1,9 @@
 //! Focused public owner-boundary cases from the FR-050 critical branch census.
 
 use serde_json::json;
-use sha2::{Digest as _, Sha256};
 use tl_mltl::wire::common::{
-    identity, is_sha256, produce, read_expected, OwnerLimits, OwnerReadErrorCode, OwnerUsage,
+    is_sha256, produce, read_expected, OwnerLimits, OwnerReadErrorCode, OwnerUsage,
 };
-
-fn expected_identity(contract: &str, preimage: &str) -> String {
-    let mut digest = Sha256::new();
-    digest.update(contract.as_bytes());
-    digest.update([0]);
-    digest.update(preimage.as_bytes());
-    format!("{:x}", digest.finalize())
-}
-
-// Trace: FR-050-AC-1
-#[test]
-fn owner_identity_omits_first_middle_and_last_members_without_losing_nested_json() {
-    let value = json!({"a": [{"q": "x\"y"}], "m": {"n": [1, 2]}, "z": "tail"});
-    let contract = "tl-owner-v8-case";
-    for (omitted, preimage) in [
-        ("a", r#"{"m":{"n":[1,2]},"z":"tail"}"#),
-        ("m", r#"{"a":[{"q":"x\"y"}],"z":"tail"}"#),
-        ("z", r#"{"a":[{"q":"x\"y"}],"m":{"n":[1,2]}}"#),
-    ] {
-        assert_eq!(
-            identity(contract, &value, omitted).unwrap(),
-            expected_identity(contract, preimage)
-        );
-    }
-    let missing = identity(contract, &value, "absent").unwrap_err();
-    assert_eq!(missing.code(), OwnerReadErrorCode::Encoding);
-    assert_eq!(missing.field(), "identityField");
-    assert_eq!(
-        identity(contract, &json!([1, 2]), "a").unwrap_err().code(),
-        OwnerReadErrorCode::Encoding
-    );
-    assert_eq!(
-        identity(contract, &json!({"a": 1}), "a").unwrap(),
-        expected_identity(contract, "{}")
-    );
-    assert_eq!(
-        identity(contract, &json!({}), "absent")
-            .unwrap_err()
-            .field(),
-        "identityField"
-    );
-}
 
 // Trace: FR-050-AC-1
 #[test]

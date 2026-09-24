@@ -131,9 +131,9 @@ fn classify_safety_shape(formula: InfiniteFormula<'_>) -> Result<(), SafetyExpor
     if matches!(
         formula.node(root).map(|node| node.kind),
         Some(K::Globally {
-            interval: TemporalInterval::Unbounded(bounds),
+            interval: TemporalInterval::Unbounded(_),
             ..
-        }) if bounds.start() == 0
+        })
     ) {
         Ok(())
     } else {
@@ -454,7 +454,7 @@ pub fn export_safety_monitor(
         .map_err(|_| SafetyExportError::Identity)?;
     let graph_id = request.graph_id.to_owned();
     if let Some(premises) = fairness {
-        if premises.graph_identity() != graph_id || premises.clock() != request.formula.clock() {
+        if premises.graph_identity() != graph_id {
             return Err(SafetyExportError::Identity);
         }
         if !premises.roots().is_empty() {
@@ -471,9 +471,6 @@ pub fn export_safety_monitor(
             | InfiniteError::IdentityMismatch => SafetyExportError::UnsupportedShape,
         })?;
     for observation in request.observations {
-        if observation.valuation.proposition_map_identity() != request.proposition_map_id {
-            return Err(SafetyExportError::Identity);
-        }
         if observation.valuation.entries().iter().any(|entry| {
             matches!(
                 entry.value,

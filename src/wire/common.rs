@@ -384,106 +384,6 @@ where
     Ok((value, usage))
 }
 
-/// Computes the stable content identity of `value` under `contract`,
-/// omitting the named `identity_field` from the preimage.
-pub fn identity<T: Serialize>(
-    contract: &str,
-    value: &T,
-    identity_field: &str,
-) -> Result<String, OwnerReadError> {
-    let bytes = serde_json::to_vec(value).map_err(|_| {
-        OwnerReadError::new(
-            OwnerReadErrorCode::Encoding,
-            "identityPreimage",
-            OwnerUsage::default(),
-        )
-    })?;
-    let bytes = omit_top_level_field(&bytes, identity_field)?;
-    let mut digest = Sha256::new();
-    digest.update(contract.as_bytes());
-    digest.update([0]);
-    digest.update(bytes);
-    Ok(hex(digest.finalize()))
-}
-
-fn omit_top_level_field(bytes: &[u8], omitted: &str) -> Result<Vec<u8>, OwnerReadError> {
-    if bytes.first() != Some(&b'{') || bytes.last() != Some(&b'}') {
-        return Err(encoding_error("identityPreimage"));
-    }
-    let mut member_start = 1usize;
-    while member_start < bytes.len() - 1 {
-        if bytes.get(member_start) != Some(&b'"') {
-            return Err(encoding_error("identityPreimage"));
-        }
-        let key_end = scan_string(bytes, member_start)?;
-        if bytes.get(key_end + 1) != Some(&b':') {
-            return Err(encoding_error("identityPreimage"));
-        }
-        let value_end = scan_value(bytes, key_end + 2)?;
-        if bytes.get(member_start + 1..key_end) == Some(omitted.as_bytes()) {
-            let (remove_start, remove_end) = if member_start == 1 {
-                let end = if bytes.get(value_end) == Some(&b',') {
-                    value_end + 1
-                } else {
-                    value_end
-                };
-                (member_start, end)
-            } else {
-                (member_start - 1, value_end)
-            };
-            let mut preimage = Vec::with_capacity(bytes.len() - (remove_end - remove_start));
-            preimage.extend_from_slice(&bytes[..remove_start]);
-            preimage.extend_from_slice(&bytes[remove_end..]);
-            return Ok(preimage);
-        }
-        if bytes.get(value_end) == Some(&b',') {
-            member_start = value_end + 1;
-        } else {
-            break;
-        }
-    }
-    Err(encoding_error("identityField"))
-}
-
-fn scan_string(bytes: &[u8], start: usize) -> Result<usize, OwnerReadError> {
-    let mut index = start + 1;
-    let mut escaped = false;
-    while let Some(byte) = bytes.get(index).copied() {
-        match (byte, escaped) {
-            (_, true) => escaped = false,
-            (b'\\', false) => escaped = true,
-            (b'"', false) => return Ok(index),
-            _ => {}
-        }
-        index += 1;
-    }
-    Err(encoding_error("identityPreimage"))
-}
-
-fn scan_value(bytes: &[u8], start: usize) -> Result<usize, OwnerReadError> {
-    let mut index = start;
-    let mut depth = 0usize;
-    while let Some(byte) = bytes.get(index).copied() {
-        match byte {
-            b'"' => index = scan_string(bytes, index)?,
-            b'{' | b'[' => {
-                depth = depth
-                    .checked_add(1)
-                    .ok_or_else(|| encoding_error("identityPreimage"))?;
-            }
-            b'}' | b']' if depth > 0 => depth -= 1,
-            b',' | b'}' if depth == 0 => return Ok(index),
-            _ => {}
-        }
-        index += 1;
-    }
-    Err(encoding_error("identityPreimage"))
-}
-
-fn encoding_error(field: &'static str) -> OwnerReadError {
-    OwnerReadError::new(OwnerReadErrorCode::Encoding, field, OwnerUsage::default())
-}
-
 /// Lower-case hex SHA-256 digest of `bytes`.
 pub fn raw_sha256(bytes: &[u8]) -> String {
     hex(Sha256::digest(bytes))
@@ -553,10 +453,10 @@ enum Container {
 }
 
 fn preflight(bytes: &[u8], limits: OwnerLimits, input: bool) -> Result<OwnerUsage, OwnerReadError> {
-    let byte_limit = if input {
-        limits.max_input_bytes
+    let (byte_limit, byte_field) = if input {
+        (limits.max_input_bytes, "inputBytes")
     } else {
-        limits.max_output_bytes
+        (limits.max_output_bytes, "outputBytes")
     };
     let mut usage = OwnerUsage {
         wire_bytes: bytes.len(),
@@ -565,7 +465,7 @@ fn preflight(bytes: &[u8], limits: OwnerLimits, input: bool) -> Result<OwnerUsag
     if bytes.len() > byte_limit {
         return Err(OwnerReadError::new(
             OwnerReadErrorCode::ResourceIncomplete,
-            if input { "inputBytes" } else { "outputBytes" },
+            byte_field,
             usage,
         ));
     }

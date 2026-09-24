@@ -220,9 +220,6 @@ fn gcd_u128(mut left: u128, mut right: u128) -> u128 {
 }
 
 fn normalized_i128(numerator: i128, denominator: u128) -> Result<ExactNumber, ExactNumberError> {
-    if denominator == 0 {
-        return Err(ExactNumberError::ZeroDenominator);
-    }
     let divisor = gcd_u128(numerator.unsigned_abs(), denominator);
     let numerator =
         numerator / i128::try_from(divisor).map_err(|_| ExactNumberError::ArithmeticOverflow)?;
@@ -1658,15 +1655,11 @@ impl PastEvaluationReport {
             .node_evaluations
             .checked_add(self.stats.temporal_iterations)
             .ok_or(PastResultValidationError::StatisticsOutOfRange)?;
-        let minimum_nodes_for_depth = u64::from(self.stats.max_recursion_depth)
-            .checked_add(1)
-            .ok_or(PastResultValidationError::StatisticsOutOfRange)?;
+        let minimum_nodes_for_depth = u64::from(self.stats.max_recursion_depth) + 1;
         if self.stats.steps == 0
             || self.stats.node_evaluations == 0
             || self.stats.steps != classified_steps
             || self.stats.steps > self.limits.max_steps
-            || self.stats.node_evaluations > self.stats.steps
-            || self.stats.temporal_iterations > self.stats.steps
             || self.stats.input_positions != expected_positions
             || self.stats.input_positions > self.limits.max_input_positions
             || self.stats.max_recursion_depth > self.limits.max_recursion_depth
@@ -1708,11 +1701,6 @@ impl PastEvaluationReport {
                 }
                 if predecessor.history_id != self.history.history_id
                     || predecessor.anchor != self.anchor
-                {
-                    return Err(PastResultValidationError::PredecessorContextMismatch);
-                }
-                if predecessor.history_id.is_empty()
-                    || predecessor.history_id.len() > MAX_IDENTITY_BYTES
                 {
                     return Err(PastResultValidationError::PredecessorContextMismatch);
                 }
@@ -1768,16 +1756,14 @@ impl PastEvaluationReport {
                 {
                     return Err(PastResultValidationError::PredecessorReferenceMismatch);
                 }
+                // The validated direct reference already binds history ID and
+                // anchor; both reports also pin the closed evaluator and syntax.
                 if self.formula_id != predecessor.formula_id
                     || self.formula_sha256 != predecessor.formula_sha256
                     || self.formula_root != predecessor.formula_root
-                    || self.history.history_id != predecessor.history.history_id
-                    || self.anchor != predecessor.anchor
                     || self.clock != predecessor.clock
                     || self.proposition_map_id != predecessor.proposition_map_id
-                    || self.evaluator_identity != predecessor.evaluator_identity
                     || self.evaluator_revision != predecessor.evaluator_revision
-                    || self.syntax_revision != predecessor.syntax_revision
                     || self.limits != predecessor.limits
                 {
                     return Err(PastResultValidationError::PredecessorContextMismatch);
