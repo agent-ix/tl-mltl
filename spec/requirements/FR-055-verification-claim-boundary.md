@@ -22,8 +22,10 @@ exhaustive partitions. Nightly fuzz, mutation, deeper enumeration, Miri,
 coverage, performance and Kani lanes retain their own actual run status.
 Live R2U2 runs in a deliberately invoked target lane. A not-run lane is
 not green. A failed mutation target, incomplete exhaustive population,
-unknown proof, stale corpus, unsupported feature graph or unreviewed
-semantic mismatch leaves its milestone open. The combined TL-215 review is a
+unknown proof, stale corpus, unclassified unsupported feature graph or unreviewed
+semantic mismatch in a required population leaves its milestone open. A
+reviewed target-origin refusal may satisfy a declared classification check;
+it never establishes target parity for the refused cells. The combined TL-215 review is a
 human prerequisite for implementation and is never set by a test result.
 
 ## Acceptance Criteria
