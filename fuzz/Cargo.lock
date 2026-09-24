@@ -319,7 +319,6 @@ dependencies = [
  "serde_json",
  "serde_json_canonicalizer",
  "sha2",
- "tl-oracle",
  "tl-syntax",
 ]
 
