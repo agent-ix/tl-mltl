@@ -9,8 +9,9 @@ import subprocess
 from pathlib import Path
 
 from v8_coverage import (CRATES, FEATURES, classify_export, critical_census,
-                         gap_key, parse_prep_binary, parse_prep_command, tool_path,
-                         validate_reviews)
+                         critical_deficits_accounted, critical_residuals, gap_key,
+                         parse_prep_binary, parse_prep_command, residual_key,
+                         tool_path, validate_reviews)
 
 
 def digest(data: bytes) -> str:
@@ -77,6 +78,7 @@ def verify(report_bytes: bytes, raw_dir: Path, graph: dict,
     artifacts = {"report": {"path": str((raw_dir.parent / "coverage-native.json").resolve()),
                             "sha256": digest(report_bytes)}}
     critical_uncovered = []
+    critical_unattributed = []
     covered = 0
     total = 0
     line_covered = 0
@@ -146,22 +148,25 @@ def verify(report_bytes: bytes, raw_dir: Path, graph: dict,
                   "covered": sum(item["covered"] for item in files.values())}
         if row.get("critical_branch_census") != census or row.get("critical_uncovered") != gaps:
             raise ValueError(f"V8 critical branch census tampered: {key}")
-        successful.append((row, key, files, missing, gaps))
+        residuals = critical_residuals(measured, files, key, records["export"]["sha256"])
+        successful.append((row, key, files, missing, gaps, residuals))
         total += measured["totals"]["branches"]["count"]
         covered += measured["totals"]["branches"]["covered"]
         line_total += measured["totals"]["lines"]["count"]
         line_covered += measured["totals"]["lines"]["covered"]
         critical_uncovered.extend({"run": key, **gap} for gap in gaps)
+        critical_unattributed.extend(residuals)
     reviews = report.get("reviewed_infeasibility", [])
-    reviewed = validate_reviews(reviews, critical_uncovered,
-                                {name: Path(graph[f"tl-{name}"]["path"]) for name in CRATES})
-    for row, key, files, missing, gaps in successful:
-        unreviewed = any(gap_key({"run": key, **gap}) not in reviewed for gap in gaps)
-        expected_status = "passed" if not missing and not unreviewed and all(
-            item["count"] == item["covered"] or any(
-                gap["file"] == file for gap in gaps
-            ) for file, item in files.items()
-        ) else "incomplete"
+    reviewed_locations, reviewed_residuals = validate_reviews(
+        reviews, critical_uncovered, critical_unattributed,
+        {name: Path(graph[f"tl-{name}"]["path"]) for name in CRATES})
+    for row, key, files, missing, gaps, residuals in successful:
+        unreviewed = (any(gap_key({"run": key, **gap}) not in reviewed_locations
+                          for gap in gaps) or
+                      any(residual_key(residual) not in reviewed_residuals
+                          for residual in residuals))
+        expected_status = "passed" if (not missing and not unreviewed and
+                                       critical_deficits_accounted(files, gaps, residuals)) else "incomplete"
         expected_reason = (None if expected_status == "passed" else
                            "critical_branches_not_instrumented" if missing else
                            "critical_branch_target_open")
@@ -175,6 +180,7 @@ def verify(report_bytes: bytes, raw_dir: Path, graph: dict,
                   "production_branches": {"count": total, "covered": covered},
                   "production_lines": {"count": line_total, "covered": line_covered},
                   "critical_uncovered": critical_uncovered,
+                  "critical_unattributed": critical_unattributed,
                   "reviewed_infeasibility": reviews,
                   "run_failures": failures, "source_revisions": revisions,
                   "cargo_lock_sha256": locks, "tools": tools}

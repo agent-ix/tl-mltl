@@ -152,6 +152,29 @@ class CoverageExportTests(unittest.TestCase):
                 {"line": 1, "column": 2, "true_count": 5, "false_count": 0}])
             self.assertEqual(measured["unattributed_missing_sides"], 0)
 
+    def test_named_gap_does_not_hide_a_second_compiled_copy_deficit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            file = root / "src" / "future.rs"
+            file.parent.mkdir()
+            file.write_text("fn check() {}\n")
+            branch_rows = [[1, 2, 1, 12, 5, 0, 0, 0, 4],
+                           [2, 2, 2, 12, 2, 0, 0, 0, 4],
+                           [2, 2, 2, 12, 3, 1, 0, 0, 4]]
+
+            def export(covered):
+                return {"type": "llvm.coverage.json.export", "data": [{"files": [{
+                    "filename": str(file),
+                    "summary": {"lines": {"count": 2, "covered": 2},
+                                "branches": {"count": 6, "covered": covered}},
+                    "branches": branch_rows,
+                }]}]}
+
+            measured = classify_export(export(4), root)["files"]["src/future.rs"]
+            self.assertEqual(measured["uncovered_branch_locations"], [
+                {"line": 1, "column": 2, "true_count": 5, "false_count": 0}])
+            self.assertEqual(measured["unattributed_missing_sides"], 1)
+
     def test_summary_counts_monomorphized_branches_beyond_unique_sites(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

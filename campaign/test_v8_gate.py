@@ -284,6 +284,83 @@ class V8GateTests(unittest.TestCase):
             v8_gate.verify(json.dumps(self.report).encode(), self.raw_dir,
                            self.graph, self.tools, expected_review_bytes=b"[]")
 
+    def test_named_gap_cannot_waive_export_bound_file_residual(self):
+        index = next(i for i, row in enumerate(self.report["runs"])
+                     if row["id"] == "mltl-default")
+        export_path = self.raw_dir / "mltl-default.json"
+        export = json.loads(export_path.read_text())
+        past = next(file for file in export["data"][0]["files"]
+                    if file["filename"].endswith("/src/past/mod.rs"))
+        past["summary"]["branches"] = {"count": 6, "covered": 4}
+        past["branches"] = [[1, 2, 1, 12, 5, 0, 0, 0, 4],
+                            [2, 2, 2, 12, 2, 0, 0, 0, 4],
+                            [2, 2, 2, 12, 3, 1, 0, 0, 4]]
+        self.restamp_export(index, export)
+        row = self.report["runs"][index]
+        self.assertEqual(self.verify()[0], "incomplete")
+
+        gap = row["critical_uncovered"][0]
+        source = Path(self.graph["tl-mltl"]["path"]) / gap["file"]
+        source_sha = v8_gate.digest(source.read_bytes())
+        location = {"run": row["id"], **gap,
+                    "source_file_sha256": source_sha,
+                    "reason": ("The absent source branch requires an impossible "
+                               "validated predecessor state in this measured file."),
+                    "reviewer": "Ada Reviewer"}
+        residual = {"kind": "file_residual", "run": row["id"], "file": gap["file"],
+                    "unattributed_missing_sides": 1,
+                    "source_file_sha256": source_sha,
+                    "raw_export_sha256": row["raw"]["export"]["sha256"],
+                    "reason": ("The second compiled copy specializes a fixed dialect "
+                               "condition, leaving its opposite side infeasible."),
+                    "reviewer": "Ada Reviewer"}
+        for reviews in ([location], [residual]):
+            self.report["reviewed_infeasibility"] = reviews
+            self.assertEqual(self.verify()[0], "incomplete")
+
+        self.report["reviewed_infeasibility"] = [location, residual]
+        row["status"] = "passed"
+        row.pop("reason", None)
+        self.report["status"] = "passed"
+        status, population, _ = self.verify()
+        self.assertEqual(status, "passed")
+        self.assertEqual(population["critical_unattributed"], [{
+            "run": row["id"], "file": gap["file"],
+            "unattributed_missing_sides": 1,
+            "raw_export_sha256": row["raw"]["export"]["sha256"],
+        }])
+
+        for field, replacement, message in (
+            ("unattributed_missing_sides", 2, "unknown or stale residual"),
+            ("raw_export_sha256", "0" * 64, "unknown or stale residual"),
+            ("source_file_sha256", "0" * 64, "source file digest is stale"),
+            ("reason", "unreachable", "substantive infeasibility reason"),
+            ("reviewer", "unknown", "named reviewer"),
+        ):
+            with self.subTest(field=field):
+                original = residual[field]
+                residual[field] = replacement
+                with self.assertRaisesRegex(ValueError, message):
+                    self.verify()
+                residual[field] = original
+
+        self.report["reviewed_infeasibility"].append(dict(residual))
+        with self.assertRaisesRegex(ValueError, "duplicate V8 review"):
+            self.verify()
+        self.report["reviewed_infeasibility"].pop()
+        row["coverage"]["files"][gap["file"]]["unattributed_missing_sides"] = 0
+        with self.assertRaisesRegex(ValueError, "production coverage tampered"):
+            self.verify()
+        row["coverage"]["files"][gap["file"]]["unattributed_missing_sides"] = 1
+
+        past["branches"][1][4] += 1
+        self.restamp_export(index, export)
+        self.report["runs"][index]["status"] = "passed"
+        self.report["runs"][index].pop("reason", None)
+        self.report["status"] = "passed"
+        with self.assertRaisesRegex(ValueError, "unknown or stale residual"):
+            self.verify()
+
     def test_stale_unknown_duplicate_or_weak_review_cannot_pass(self):
         review, source = self.reviewed_gap()
         for field, replacement, message in (
