@@ -43,16 +43,19 @@ relationships:
 
 The count is a display derived from the eleven Campaign groups. The
 `all_required` CampaignDefinition over its direct members is the executable
-gate. One missing or incomplete member leaves its group and the Campaign open.
+gate. One missing or incomplete required member leaves its group and the Campaign open.
 The derived count does not authorize a release or claim certification.
 
 ## Population
 
 The eleven identities V1 through V11 and their direct members are fixed by
 `campaign/stage1-campaign-definition.json`. V2's required completed depth-one partition is
-distinct from its disclosed unvisited depth-three research population. V10
-reports only admitted mappings to the pinned R2U2 target. The count never
-rounds an unsupported, noisy, or incomplete result into a pass.
+distinct from its disclosed unvisited depth-three research population. V10's
+required generated grid compares only admitted mappings to the pinned R2U2
+target. The static past and unsafe-since results remain optional source-bound
+diagnostics of unsupported target behavior. Their inconclusive verdicts remain
+visible and cannot be counted as accepted mappings. The count never rounds an
+unsupported, noisy, or incomplete required result into a pass.
 
 ## Collection Procedure
 
