@@ -28,7 +28,7 @@ under `spec/stubs/` do not count as executed coverage.
 | FR-052 | FR-052-AC-1 through FR-052-AC-2 | TC-191, TC-192 | 🚧 planned |
 | FR-053 | FR-053-AC-1 through FR-053-AC-2 | TC-193, TC-194 | 🚧 planned |
 | FR-054 | FR-054-AC-1 through FR-054-AC-2 | TC-195, TC-196 | 🚧 planned |
-| FR-055 | FR-055-AC-1 through FR-055-AC-3 | TC-197 through TC-199 | 🚧 planned |
+| FR-055 | FR-055-AC-1 through FR-055-AC-3 | TC-197 through TC-199 | ✅ implemented |
 
 ## Non-Functional Requirement Coverage
 
@@ -64,6 +64,6 @@ under `spec/stubs/` do not count as executed coverage.
 | TC-194 | Detect wrong fixed point, fairness filter, prefix proof and FR-341 axis with seeded faults | Analysis | P0 | FR-053-AC-2 | 🚧 planned |
 | TC-195 | Bind one report to actual lane outputs, exact pins, seeds and digests; reject stale substitute | Integration | P0 | FR-054-AC-1 | 🚧 planned |
 | TC-196 | Reproduce deterministic payload and preserve all incomplete/refused/failed populations | Integration | P0 | FR-054-AC-2, NFR-007-AC-1 | 🚧 planned |
-| TC-197 | Map V1–V11 milestones to named gates and pass/failure/incomplete states | Inspection | P0 | FR-055-AC-1 | 🚧 planned |
-| TC-198 | Force one missing, failed and stale lane each and keep siblings independently visible | Integration | P0 | FR-055-AC-2 | 🚧 planned |
-| TC-199 | Reject automated acceptance, release, parity or certification claims and exhausted success | Integration | P0 | FR-055-AC-3, NFR-009-AC-1 | 🚧 planned |
+| TC-197 | Map V1–V11 milestones to named gates and pass/failure/incomplete states | Inspection | P0 | FR-055-AC-1 | ✅ implemented |
+| TC-198 | Force one missing, failed and stale lane each and keep siblings independently visible | Integration | P0 | FR-055-AC-2 | ✅ implemented |
+| TC-199 | Reject automated acceptance, release, parity or certification claims and exhausted success | Integration | P0 | FR-055-AC-3, NFR-009-AC-1 | ✅ implemented |

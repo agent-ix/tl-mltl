@@ -658,11 +658,22 @@ class CampaignTests(unittest.TestCase):
     # All eleven declared gates exist; one failing or stale lane
     # cannot turn the aggregate green or suppress passing sibling evidence.
     def test_gate_mapping_and_failed_stale_missing_siblings(self) -> None:
+        stale_receipt = self.root / "stale.json"
+        stale_revisions = self.revisions.copy()
+        stale_revisions["tl-oracle"] = "0" * 40
+        stale_receipt.write_text(json.dumps({
+            "source_revisions": stale_revisions,
+            "input_sha256": {name: entry["sha256"]
+                             for name, entry in self.manifest["inputs"].items()},
+            "parser": "cargo_test",
+        }))
         self.manifest["lanes"] = [
             *self.real_v1_lanes(),
             self.lane("broken_comparison", "V2", f"print({self.cargo_summary(0, 1)!r})"),
             {"id": "semantic_properties", "milestone": "V3", "mode": "record",
              "parser": "cargo_test", "receipt": str(self.root / "missing.json")},
+            {"id": "infinite_oracle", "milestone": "V11", "mode": "record",
+             "parser": "cargo_test", "receipt": str(stale_receipt)},
         ]
         report = self.report()["semantic_payload"]
         self.assertEqual(set(report["milestones"]), set(campaign.REQUIRED))
@@ -675,8 +686,11 @@ class CampaignTests(unittest.TestCase):
                          ["lasso_population_census"]["kind"], "exact_command")
         self.assertEqual(report["milestones"]["V2"]["status"], "failed")
         self.assertEqual(report["milestones"]["V3"]["status"], "incomplete")
+        self.assertEqual(report["milestones"]["V11"]["status"], "incomplete")
         self.assertEqual(report["lanes"]["semantic_properties"]["reason"],
                          "unusable_record:FileNotFoundError")
+        self.assertEqual(report["lanes"]["infinite_oracle"]["reason"],
+                         "unusable_record:ValueError")
         self.assertEqual(report["lanes"]["independent_oracle"]["population"]["passed"], 1)
         self.assertEqual(report["aggregate_status"], "failed")
 
