@@ -1854,6 +1854,12 @@ fn run_args(args: &[String]) -> Result<(), String> {
                 verdict.verdict = "inconclusive";
                 verdict.reasons.push(reason.into());
             }
+            v9_replay::Replay::ConfirmedRegression(case) => {
+                verdict.verdict = "reject";
+                verdict
+                    .reasons
+                    .push(format!("v9_confirmed_regression_above_20pct:{case}"));
+            }
         }
     }
     if input.member == "V8.parse_default" && !v8_parse_example_input(&input, &request_value) {
