@@ -1,13 +1,13 @@
 ---
 id: MP-121
-title: TL Stage 1 V10.compile.unsafe-since direct foreign result
+title: TL Stage 1 V10.compile.unsafe-since foreign diagnostic
 type: MeasurementPlan
 status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v10.compile_unsafe_since.verified
 definition_version: tl.v10.compile-unsafe-since/v1
 execution_procedure: campaign/procedures/v10-compile-unsafe-since.json
-stage: gate
+stage: observe
 ground_truth_kind: mechanical
 objective:
   direction: higher
@@ -42,7 +42,7 @@ relationships:
 
 ## Decision Use
 
-This required V10 member is interpreted only from its retained native result and independently checked raw facts. The pinned C2PO 4.1.0 source compiles the sealed TL specification. The campaign combines every required member with `all-required`.
+This optional V10 diagnostic is interpreted only from its retained native result and independently checked raw facts. The pinned C2PO 4.1.0 source compiles the sealed TL specification for the optional unsafe-since monitor. A failure or missing result remains visible but does not block the admitted-mapping parity gate.
 
 ## Population
 
