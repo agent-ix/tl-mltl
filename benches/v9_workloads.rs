@@ -195,11 +195,34 @@ fn run_mapping(document: &FormulaDocument) -> usize {
 
 fn workloads(c: &mut Criterion) {
     let expected: BTreeMap<String, String> = serde_json::from_str(DIGESTS).unwrap();
-    assert_eq!(expected.len(), 15, "V9 workload census changed");
+    assert_eq!(expected.len(), 21, "V9 workload census changed");
     let mut group = c.benchmark_group("v9_workloads");
     group.sample_size(20);
     group.warm_up_time(Duration::from_millis(500));
     group.measurement_time(Duration::from_secs(1));
+    // Hold one dimension fixed so the two evaluation scaling curves are
+    // identifiable. An all-false trace prevents witness short-circuiting;
+    // the width cases scan their full admitted interval.
+    for (scale, size) in [("small", 2), ("median", 24), ("near_cap", 96)] {
+        for (family, trace_size, width) in [("closed_trace", size, 2), ("closed_width", 96, size)] {
+            let name = format!("{family}_{scale}");
+            let document = finite(width, SemanticProfile::ClosedTraceV1);
+            let trace = vec![Vec::new(); trace_size];
+            let wire = document.canonical_json_bytes().unwrap();
+            let trace_wire = serde_json::to_vec(&trace).unwrap();
+            let actual = digest(&[name.as_bytes(), &wire, &trace_wire]);
+            assert_eq!(actual, expected[&name], "V9 input changed: {name}");
+            assert_eq!(run_finite(&document, &trace, true), TruthValue::False);
+            group.throughput(Throughput::Elements(if family == "closed_trace" {
+                trace_size as u64
+            } else {
+                width as u64
+            }));
+            group.bench_function(&name, |b| {
+                b.iter(|| black_box(run_finite(black_box(&document), black_box(&trace), true)));
+            });
+        }
+    }
     for (scale, size) in [("small", 2), ("median", 24), ("near_cap", 96)] {
         let trace = observations(size);
         let trace_wire = serde_json::to_vec(&trace).unwrap();

@@ -1,6 +1,8 @@
 # V9 Criterion lane (FR-051)
 
-`v9_criterion.py` measures 28 pinned parser, rewrite, and mlTL cases. Each crate's
+`v9_criterion.py` measures 34 pinned parser, rewrite, and mlTL cases. The six
+additional closed-evaluation cases hold the interval width at two while trace
+length varies, or hold the trace length at 96 while width varies. Each crate's
 benchmark verifies its input digests before timing. The runner requires clean,
 exact baseline and candidate Git revisions and copies only the candidate bench
 sources and inputs into a fresh baseline source staging area. Each revision
@@ -18,7 +20,7 @@ provisioned Cargo home. All six paths below are clean worktrees, and pair output
 paths must be fresh. Repeat any case above the 20% threshold or overlapping it
 in a third pair before accepting a regression decision.
 
-The 0.3.0 release commits cannot serve as the baseline for all 28 cases: they
+The 0.3.0 release commits cannot serve as the baseline for all 34 cases: they
 predate the V4 parser and infinite-trace APIs, so those cases have no comparable
 old implementation. A pinned feature-complete baseline is required. One exact
 set is parse `225a3300963199e523958f4abe4c16cc9dcca641`, rewrite

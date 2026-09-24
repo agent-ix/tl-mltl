@@ -30,6 +30,9 @@ GROUPS = {
     "mltl": ("v9_workloads", "v9_workloads", tuple(
         f"{family}_{scale}" for scale in ("small", "median", "near_cap")
         for family in ("closed", "prefix", "lasso", "fairness", "c2po")
+    ) + tuple(
+        f"{family}_{scale}" for scale in ("small", "median", "near_cap")
+        for family in ("closed_trace", "closed_width")
     )),
 }
 SAMPLES = 20

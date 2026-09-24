@@ -72,7 +72,7 @@ class V9CriterionTests(unittest.TestCase):
     def test_two_paired_distributions_pass_below_threshold(self) -> None:
         result = self.report(self.pair(1), self.pair(2, 110.0))
         self.assertEqual(result["status"], "passed")
-        self.assertEqual(len(result["cases"]), 28)
+        self.assertEqual(len(result["cases"]), 34)
         self.assertEqual(result["cases"][0]["runs"][0]["baseline"]["sample_count"], 20)
 
     def test_spike_requires_repeat_and_two_confirmations_require_finding(self) -> None:
