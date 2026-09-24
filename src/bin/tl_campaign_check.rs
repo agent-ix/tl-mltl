@@ -86,6 +86,7 @@ fn member_parser(member: &str) -> Option<&'static str> {
         | "V11.oracle_semantic_laws" => Some("cargo-test"),
         "V2.finite_small_partition" => Some("finite-partition"),
         "V2.full_domain_census" => Some("full-domain"),
+        "V3.semantic_properties" => Some("semantic-properties"),
         "V11.lasso_population_census" => Some("lasso-partition"),
         _ => None,
     }
@@ -227,6 +228,134 @@ fn population(parser: &str, raw: &str) -> bool {
     }
 }
 
+const V3_CRITERIA: &[&str] = &[
+    "FR-027-AC-1",
+    "FR-027-AC-2",
+    "FR-027-AC-3",
+    "FR-028-AC-1",
+    "FR-028-AC-2",
+    "FR-028-AC-3",
+    "FR-029-AC-1",
+    "FR-029-AC-2",
+    "FR-029-AC-3",
+    "FR-030-AC-1",
+    "FR-030-AC-2",
+    "FR-030-AC-3",
+    "FR-031-AC-1",
+    "FR-031-AC-2",
+    "FR-031-AC-3",
+    "FR-032-AC-1",
+    "FR-032-AC-2",
+    "FR-032-AC-3",
+    "FR-033-AC-1",
+    "FR-033-AC-2",
+    "FR-033-AC-3",
+    "FR-034-AC-1",
+    "FR-034-AC-2",
+    "FR-034-AC-3",
+    "FR-038-AC-1",
+    "FR-038-AC-2",
+    "FR-038-AC-3",
+    "FR-039-AC-1",
+    "FR-039-AC-2",
+    "FR-040-AC-1",
+    "FR-040-AC-2",
+    "FR-040-AC-3",
+    "FR-041-AC-1",
+    "FR-041-AC-2",
+    "FR-042-AC-1",
+    "FR-042-AC-2",
+    "FR-043-AC-1",
+    "FR-043-AC-2",
+    "FR-044-AC-1",
+    "FR-044-AC-2",
+    "FR-045-AC-1",
+    "FR-045-AC-2",
+    "FR-046-AC-1",
+    "FR-046-AC-2",
+    "FR-047-AC-1",
+    "FR-047-AC-2",
+    "FR-048-AC-1",
+    "FR-048-AC-2",
+    "FR-049-AC-1",
+    "FR-049-AC-2",
+    "FR-050-AC-1",
+    "FR-051-AC-1",
+    "FR-052-AC-1",
+    "FR-052-AC-2",
+    "FR-053-AC-1",
+    "FR-053-AC-2",
+    "FR-054-AC-1",
+    "FR-054-AC-2",
+    "FR-055-AC-1",
+    "FR-055-AC-2",
+    "FR-055-AC-3",
+];
+
+fn semantic_properties(raw: &str) -> bool {
+    let Some(value) = marker(raw, "TL_CAMPAIGN_PROPERTIES ") else {
+        return false;
+    };
+    if value["schema"] != "tl-mltl.semantic-properties/v1"
+        || value["scope"] != "tl_mltl_v1_semantic_laws_and_owner_wires"
+        || value["seed_hex"] != "45".repeat(32)
+        || value["generated"] != 64
+        || value["accepted"] != 64
+        || value["rejected"] != 0
+        || value["wire_checks"] != 24
+        || value["rewrite_equivalence_owner"] != "tl-rewrite"
+        || !raw.contains("native_semantic_laws_and_strict_round_trips ... TL_CAMPAIGN_PROPERTIES")
+        || !raw.contains("seeded_law_fault_is_detected ... ok")
+    {
+        return false;
+    }
+    let Some(cases) = value["law_cases"].as_object() else {
+        return false;
+    };
+    let laws = [
+        "bounded_embedding",
+        "duality",
+        "fairness_weakening",
+        "finite_prefix_refutation",
+        "lasso_unrolling",
+        "partial_information_monotonicity",
+    ];
+    if cases.len() != laws.len()
+        || laws
+            .iter()
+            .any(|law| cases.get(*law).and_then(Value::as_u64) != Some(64))
+    {
+        return false;
+    }
+    let Some(classes) = value["classifications"].as_object() else {
+        return false;
+    };
+    if classes.len() != V3_CRITERIA.len() || V3_CRITERIA.iter().any(|id| !classes.contains_key(*id))
+    {
+        return false;
+    }
+    let mut properties = 0;
+    let mut examples = 0;
+    for class in classes.values() {
+        let (Some(kind), Some(evidence)) = (class["kind"].as_str(), class["evidence"].as_str())
+        else {
+            return false;
+        };
+        if evidence.is_empty() {
+            return false;
+        }
+        match kind {
+            "property" if laws.contains(&evidence) || evidence == "strict_round_trips" => {
+                properties += 1
+            }
+            "example" if raw.contains(&format!("{evidence} ... ok")) => examples += 1,
+            "excluded" if evidence.contains(':') => (),
+            _ => return false,
+        }
+    }
+    properties > 0 && examples > 0
+}
+
 fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVerdict {
     let mut reasons = Vec::new();
     let mut request_digest = String::new();
@@ -273,10 +402,14 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                             let (minimum, summaries) = match parser {
                                 "finite-partition" => (2, 1),
                                 "full-domain" => (3, 1),
+                                "semantic-properties" => (3, 3),
                                 _ => (1, 1),
                             };
                             if !cargo_summaries(&raw, minimum, summaries)
-                                || (parser != "cargo-test" && !population(parser, &raw))
+                                || (parser == "semantic-properties" && !semantic_properties(&raw))
+                                || (parser != "cargo-test"
+                                    && parser != "semantic-properties"
+                                    && !population(parser, &raw))
                             {
                                 reasons.push("native_result_unproved".into());
                             }
