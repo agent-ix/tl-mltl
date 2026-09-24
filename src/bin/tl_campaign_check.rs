@@ -1056,9 +1056,12 @@ fn v10_target_rows(raw: &[u8]) -> Option<BTreeMap<(usize, usize), bool>> {
     let mut rows = BTreeMap::new();
     for line in text.lines() {
         let (identity, value) = line.split_once(',')?;
-        let (formula, position) = identity.split_once(':')?;
-        let formula = formula.parse::<usize>().ok()?;
-        let position = position.parse::<usize>().ok()?;
+        let (formula_text, position_text) = identity.split_once(':')?;
+        let formula = formula_text.parse::<usize>().ok()?;
+        let position = position_text.parse::<usize>().ok()?;
+        if formula.to_string() != formula_text || position.to_string() != position_text {
+            return None;
+        }
         let verdict = match value {
             "T" => true,
             "F" => false,
@@ -1768,6 +1771,7 @@ mod tests {
     };
     use serde_json::{json, Value};
     use std::fs;
+    use std::path::Path;
 
     // Trace: FR-055-AC-2, TC-198
     #[test]
@@ -2015,6 +2019,187 @@ mod tests {
         .unwrap()
     }
 
+    fn sealed_v10_monitor_receipt(
+        root: &Path,
+        target_rows: &str,
+        spec: &[u8],
+        trace: &[u8],
+    ) -> (Value, bool) {
+        let case = "zero-singleton-all-true";
+        let member = format!("V10.monitor.{case}");
+        let revision = "a".repeat(40);
+        let producer = json!({"sourceRevision": revision});
+        let binary = b"compiled monitor";
+        let dependency = |name: &str, artifacts: Value| -> Value {
+            let stem = name.replace('.', "-");
+            let request_path = root.join(format!("{stem}-request.json"));
+            let result_path = root.join(format!("{stem}-result.json"));
+            let bundle_path = root.join(format!("{stem}-bundle.json"));
+            let dependency_request = json!({
+                "protocol":"engineering-assurance.producer-execution-request/v1",
+                "producer":producer
+            });
+            fs::write(
+                &request_path,
+                serde_json::to_vec(&dependency_request).unwrap(),
+            )
+            .unwrap();
+            let inventory = artifacts
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|artifact| json!({"role":artifact["role"],"digest":artifact["digest"]}))
+                .collect::<Vec<_>>();
+            let bundle = json!({
+                "schema":"quoin.raw-artifact-bundle/v1", "artifacts":artifacts
+            });
+            fs::write(&bundle_path, serde_json::to_vec(&bundle).unwrap()).unwrap();
+            let mut dependency_result: Value =
+                serde_json::from_slice(&result("", "completed")).unwrap();
+            dependency_result["producer"] = producer.clone();
+            dependency_result["requestIdentity"]["digest"] =
+                json!(super::canonical_digest(&dependency_request).unwrap());
+            dependency_result["artifacts"] = json!(inventory);
+            fs::write(
+                &result_path,
+                serde_json::to_vec(&dependency_result).unwrap(),
+            )
+            .unwrap();
+            json!({
+                "member":name, "index":1,
+                "requestDigest":super::canonical_digest(&dependency_request).unwrap(),
+                "requestPath":request_path,
+                "resultDigest":super::canonical_digest(&dependency_result).unwrap(),
+                "resultPath":result_path,
+                "rawBundleDigest":super::canonical_digest(&bundle).unwrap(),
+                "rawBundlePath":bundle_path
+            })
+        };
+        let compile = dependency(
+            &format!("V10.compile.{case}"),
+            json!([{"role":"binary","digest":super::sha256(binary),"bytes":binary}]),
+        );
+        let inputs = dependency(
+            "V10.inputs",
+            json!([
+                {"role":format!("inputs/{case}.c2po"),"digest":super::sha256(spec),"bytes":spec},
+                {"role":format!("inputs/{case}.csv"),"digest":super::sha256(trace),"bytes":trace}
+            ]),
+        );
+        let definition = json!({
+            "schemaVersion":"engineering-assurance.campaign-definition/v1",
+            "sourceGraph":[{"repository":"tl-mltl","revision":revision,"digest":"b".repeat(64)}],
+            "members":[{
+                "name":member,"planId":"MP-117", "definitionVersion":"tl.v10.v1-monitor/v1",
+                "required":true,
+                "dependsOn":[format!("V10.compile.{case}"),"V10.inputs"]
+            }]
+        });
+        let definition_path = root.join("definition.json");
+        fs::write(&definition_path, serde_json::to_vec(&definition).unwrap()).unwrap();
+        let request = json!({
+            "protocol":"engineering-assurance.producer-execution-request/v1",
+            "producer":producer,
+            "inputs":[
+                {"role":"binary","path":"v10/compiled.bin","digest":super::sha256(binary)},
+                {"role":"trace","path":"v10/trace.csv","digest":super::sha256(trace)}
+            ]
+        });
+        let request_path = root.join("request.json");
+        fs::write(&request_path, serde_json::to_vec(&request).unwrap()).unwrap();
+        let mut monitor_result: Value =
+            serde_json::from_slice(&result(target_rows, "completed")).unwrap();
+        monitor_result["producer"] = producer;
+        monitor_result["requestIdentity"]["digest"] =
+            json!(super::canonical_digest(&request).unwrap());
+        monitor_result["artifacts"] = json!([]);
+        let result_path = root.join("result.json");
+        fs::write(&result_path, serde_json::to_vec(&monitor_result).unwrap()).unwrap();
+        let bundle = json!({"schema":"quoin.raw-artifact-bundle/v1","artifacts":[]});
+        let bundle_path = root.join("bundle.json");
+        fs::write(&bundle_path, serde_json::to_vec(&bundle).unwrap()).unwrap();
+        let input = json!({
+            "schema":"quoin.domain-check-input/v1",
+            "definitionPath":definition_path,
+            "definitionDigest":super::canonical_digest(&definition).unwrap(),
+            "member":member, "planId":"MP-117",
+            "definitionVersion":"tl.v10.v1-monitor/v1",
+            "sourceGraphDigest":super::canonical_digest(&definition["sourceGraph"]).unwrap(),
+            "requestDigest":super::canonical_digest(&request).unwrap(),
+            "requestPath":request_path,
+            "resultDigest":super::canonical_digest(&monitor_result).unwrap(),
+            "resultPath":result_path,
+            "rawArtifacts":[],
+            "rawBundlePath":bundle_path,
+            "rawBundleDigest":super::canonical_digest(&bundle).unwrap(),
+            "dependencies":[compile,inputs]
+        });
+        let input_path = root.join("checker-input.json");
+        let output_path = root.join("checker-verdict.json");
+        fs::write(&input_path, serde_json::to_vec(&input).unwrap()).unwrap();
+        let args = vec![
+            "--input".into(),
+            input_path.display().to_string(),
+            "--output".into(),
+            output_path.display().to_string(),
+        ];
+        let accepted = super::run_args(&args).is_ok();
+        let receipt = serde_json::from_slice(&fs::read(output_path).unwrap()).unwrap();
+        (receipt, accepted)
+    }
+
+    // Trace: FR-055-AC-2, TC-198
+    #[test]
+    fn sealed_v10_monitor_replay_emits_fixed_accept_reject_and_inconclusive_receipts() {
+        let directory = tempfile::tempdir().unwrap();
+        let run = super::v10_replay::Run::for_member("zero-singleton-all-true").unwrap();
+        let complete = (0..12)
+            .flat_map(|formula| (0..6).map(move |position| format!("{formula}:{position},T\n")))
+            .collect::<String>();
+        let (accepted, status) =
+            sealed_v10_monitor_receipt(directory.path(), &complete, &run.spec, &run.trace);
+        assert!(status, "{accepted:#}");
+        assert_eq!(accepted["schema"], "tl-mltl.domain-verdict/v1");
+        assert_eq!(accepted["member"], "V10.monitor.zero-singleton-all-true");
+        assert_eq!(accepted["verdict"], "accept");
+        assert_eq!(accepted["reasons"], json!([]));
+        assert_eq!(accepted["stdoutDigest"], super::sha256(complete.as_bytes()));
+
+        let flipped = complete.replacen("0:0,T\n", "0:0,F\n", 1);
+        let (rejected, status) =
+            sealed_v10_monitor_receipt(directory.path(), &flipped, &run.spec, &run.trace);
+        assert!(!status);
+        assert_eq!(rejected["verdict"], "reject");
+        assert_eq!(rejected["reasons"], json!(["v10_target_semantic_mismatch"]));
+
+        let missing = complete.replacen("0:0,T\n", "", 1);
+        let (inconclusive, status) =
+            sealed_v10_monitor_receipt(directory.path(), &missing, &run.spec, &run.trace);
+        assert!(!status);
+        assert_eq!(inconclusive["verdict"], "inconclusive");
+        assert_eq!(
+            inconclusive["reasons"],
+            json!(["v10_admitted_target_row_missing"])
+        );
+
+        for (spec, trace) in [
+            (
+                b"wrong but sealed C2PO spec".as_slice(),
+                run.trace.as_slice(),
+            ),
+            (run.spec.as_slice(), b"# p,q\n0,0\n".as_slice()),
+        ] {
+            let (rejected, status) =
+                sealed_v10_monitor_receipt(directory.path(), &complete, spec, trace);
+            assert!(!status);
+            assert_eq!(rejected["verdict"], "reject");
+            assert_eq!(
+                rejected["reasons"],
+                json!(["v10_reviewed_input_bytes_unproved"])
+            );
+        }
+    }
+
     // Trace: FR-055-AC-2, TC-198
     #[test]
     fn sealed_checker_input_rejects_stale_definition_digest() {
@@ -2142,6 +2327,14 @@ mod tests {
         assert!(super::v10_target_rows(b"0:0,T\n0:0,F\n").is_none());
         assert!(super::v10_target_rows(b"0:0,unknown\n").is_none());
         assert!(super::v10_target_rows(b"0:0,T\n1:nope,F\n").is_none());
+        for noncanonical in [
+            b"00:0,T\n".as_slice(),
+            b"+0:0,T\n",
+            b"0:01,T\n",
+            b"0:+1,T\n",
+        ] {
+            assert!(super::v10_target_rows(noncanonical).is_none());
+        }
     }
 
     // Trace: FR-055-AC-1, TC-197
@@ -2152,6 +2345,26 @@ mod tests {
         assert!(member_parser("V4.fuzz_replay").is_none());
         let verdict = check("V4.fuzz_replay", &"b".repeat(64), &result("", "completed"));
         assert_eq!(verdict.verdict, "inconclusive");
+    }
+
+    // Trace: FR-055-AC-2, TC-198
+    #[test]
+    fn four_non_grid_v10_monitors_remain_explicitly_pending() {
+        for case in ["bounded", "past", "unsafe-since", "safety"] {
+            let verdict = check(
+                &format!("V10.monitor.{case}"),
+                &"b".repeat(64),
+                &result("0:0,T\n", "completed"),
+            );
+            assert_eq!(verdict.verdict, "inconclusive", "{case}");
+            assert!(
+                verdict
+                    .reasons
+                    .contains(&"v10_semantic_replay_pending".into()),
+                "{case}: {:?}",
+                verdict.reasons
+            );
+        }
     }
 
     // Trace: FR-055-AC-2, TC-198

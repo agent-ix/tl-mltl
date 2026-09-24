@@ -2291,7 +2291,8 @@ fn no_local_evidence_framework_remains() {
         // Direct EA producer results are checked by a TL-owned Rust binary.
         // The pure Rust V10 input generator adds one binary.
         // The Rust Quoin machine-config adapter adds one binary.
-        ("src", 29),
+        // V10 adds the source-bound generated past-grid replay checker module.
+        ("src", 30),
         // TL-179 deletes tests/tc_084_temporal_owner_wire.rs (1 file), the
         // dedicated test for the request/result/mapping owner boundary it
         // removed from src/. TL-173 then deletes the two files that test left
@@ -2389,8 +2390,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 690,
-        "the source census population changed from the reviewed 690 tracked files \
+        inspected, 691,
+        "the source census population changed from the reviewed 691 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
