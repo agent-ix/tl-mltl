@@ -133,6 +133,44 @@ fn exact_outer_safety_guard_exports_only_its_finite_horizon_body() {
     assert_eq!(evidence.decision_horizon, 1);
 }
 
+// Trace: TC-168, TC-169, FR-040-AC-1
+#[test]
+fn closed_until_and_release_export_under_the_exact_safety_guard() {
+    for (operator, expected) in [
+        (
+            K::Until {
+                interval: closed(),
+                left: NodeId(0),
+                right: NodeId(0),
+            },
+            "(p U[0,1] p)",
+        ),
+        (
+            K::Release {
+                interval: closed(),
+                left: NodeId(0),
+                right: NodeId(0),
+            },
+            "(p R[0,1] p)",
+        ),
+    ] {
+        let safety = graph(vec![
+            node(K::Proposition {
+                proposition: PropositionId(0),
+            }),
+            node(operator),
+            node(K::Globally {
+                interval: open(),
+                operand: NodeId(1),
+            }),
+        ]);
+        let manifest = export(&safety, &rows(PartialValue::True)).unwrap();
+        assert_eq!(manifest.section, "FTSPEC");
+        assert_eq!(manifest.expression, expected);
+        assert_eq!(manifest.decision_horizon, 1);
+    }
+}
+
 // Trace: TC-172, TC-173; FR-041-AC-1 and FR-041-AC-2
 #[test]
 fn unsupported_shape_partial_observation_and_mixed_target_context_refuse() {
