@@ -183,18 +183,23 @@ fn harness_inputs(
             .map(|path| (path, false))
             .or_else(|| role.strip_prefix("source-exec/").map(|path| (path, true)))?;
         let digest = input["digest"].as_str()?;
+        let serialized_executable = match input.get("executable") {
+            None => false,
+            Some(Value::Bool(value)) => *value,
+            _ => return None,
+        };
         if path != input["path"].as_str()?
             || path
                 .split('/')
                 .any(|part| part.is_empty() || part == "." || part == "..")
-            || input["executable"] != executable
+            || serialized_executable != executable
             || digest.len() != 64
             || !digest.bytes().all(|byte| byte.is_ascii_hexdigit())
             || !all_paths.insert(path)
         {
             return None;
         }
-        if path.starts_with("benches/") {
+        if required_harness_paths(member).contains(&path) {
             harness.insert(path.to_owned(), (digest.to_owned(), executable));
         }
     }
@@ -486,7 +491,7 @@ mod tests {
                 .map(|path| {
                     json!({
                         "role":format!("source/{path}"), "path":path,
-                        "digest":"c".repeat(64), "executable":false
+                        "digest":"c".repeat(64)
                     })
                 })
                 .collect();
@@ -615,6 +620,28 @@ mod tests {
                 "V9.rewrite_pair1_candidate",
                 &definition(),
                 &request,
+                &result,
+                &bundle,
+                &[dependency]
+            ),
+            Replay::Accept
+        ));
+        let dependency = make_dependency(
+            directory.path(),
+            "V9.rewrite_pair1_baseline",
+            &base_request,
+            &base_result,
+            &base_bundle,
+        );
+        let mut extra_report = request.clone();
+        extra_report["inputs"].as_array_mut().unwrap().push(json!({
+            "role":"source/benches/README.md","path":"benches/README.md","digest":"e".repeat(64)
+        }));
+        assert!(matches!(
+            replay(
+                "V9.rewrite_pair1_candidate",
+                &definition(),
+                &extra_report,
                 &result,
                 &bundle,
                 &[dependency]
@@ -849,6 +876,19 @@ mod tests {
         ));
         request["producer"]["sourceRevision"] = json!("base");
         request["arguments"][2]["value"] = json!("--release");
+        assert!(matches!(
+            replay(
+                "V9.rewrite_pair1_baseline",
+                &definition(),
+                &request,
+                &result,
+                &bundle,
+                &[]
+            ),
+            Replay::Reject("v9_criterion_invocation_mismatch")
+        ));
+        request["arguments"][2]["value"] = json!("--offline");
+        request["inputs"][0]["executable"] = json!(true);
         assert!(matches!(
             replay(
                 "V9.rewrite_pair1_baseline",
