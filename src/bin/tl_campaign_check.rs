@@ -1617,7 +1617,7 @@ fn argument(args: &[String], name: &str) -> Result<String, String> {
 fn valid_member_requirement(name: &str, member: &Value) -> bool {
     match member["required"].as_bool() {
         Some(true) => true,
-        Some(false) => name == "V10.monitor.unsafe-since",
+        Some(false) => matches!(name, "V10.compile.unsafe-since" | "V10.monitor.unsafe-since"),
         None => false,
     }
 }
@@ -2576,6 +2576,10 @@ mod tests {
         ));
         assert!(!super::valid_member_requirement(
             "V10.monitor.past",
+            &json!({"required":false})
+        ));
+        assert!(super::valid_member_requirement(
+            "V10.compile.unsafe-since",
             &json!({"required":false})
         ));
         assert!(!super::valid_member_requirement(
