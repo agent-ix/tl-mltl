@@ -2281,7 +2281,8 @@ fn no_local_evidence_framework_remains() {
         // gate-set guard.
         // Stage 1 adds the opt-in infinite provider (3 files) and the distinct
         // past-profile mapping adapter (1 file).
-        ("src", 26),
+        // Direct EA producer results are checked by a TL-owned Rust binary.
+        ("src", 27),
         // TL-179 deletes tests/tc_084_temporal_owner_wire.rs (1 file), the
         // dedicated test for the request/result/mapping owner boundary it
         // removed from src/. TL-173 then deletes the two files that test left
@@ -2379,8 +2380,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 446,
-        "the source census population changed from the reviewed 446 tracked files \
+        inspected, 447,
+        "the source census population changed from the reviewed 447 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
