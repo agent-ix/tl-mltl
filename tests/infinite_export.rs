@@ -502,23 +502,41 @@ fn safety_export_refuses_exhausted_work_and_unreviewed_past_operator() {
 // Trace: TC-172, TC-173; FR-041-AC-1, FR-041-AC-2
 #[test]
 fn safety_export_refuses_unbounded_past_inside_the_finite_body() {
-    let safety = graph(vec![
-        node(K::Proposition {
-            proposition: PropositionId(0),
-        }),
-        node(K::Once {
+    for past in [
+        K::Once {
             interval: open(),
             operand: NodeId(0),
-        }),
-        node(K::Globally {
+        },
+        K::Historically {
             interval: open(),
-            operand: NodeId(1),
-        }),
-    ]);
-    assert_eq!(
-        export(&safety, &rows(PartialValue::True)),
-        Err(SafetyExportError::UnboundedPast)
-    );
+            operand: NodeId(0),
+        },
+        K::Since {
+            interval: open(),
+            left: NodeId(0),
+            right: NodeId(0),
+        },
+        K::Triggered {
+            interval: open(),
+            left: NodeId(0),
+            right: NodeId(0),
+        },
+    ] {
+        let safety = graph(vec![
+            node(K::Proposition {
+                proposition: PropositionId(0),
+            }),
+            node(past),
+            node(K::Globally {
+                interval: open(),
+                operand: NodeId(1),
+            }),
+        ]);
+        assert_eq!(
+            export(&safety, &rows(PartialValue::True)),
+            Err(SafetyExportError::UnboundedPast)
+        );
+    }
 }
 
 // Trace: TC-172, TC-173; FR-041-AC-1, FR-041-AC-2
