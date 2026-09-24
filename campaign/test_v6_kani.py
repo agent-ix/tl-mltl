@@ -35,6 +35,7 @@ def false_output(rows: tuple[list[int], list[int]]) -> bytes:
 
 
 class V6KaniTests(unittest.TestCase):
+    # Trace: TC-185, FR-048-AC-1, FR-048
     def test_clean_parser_requires_complete_checked_assertion(self) -> None:
         good = clean_output(SYNTAX)
         result = v6_kani.parse_clean(good, 0, SYNTAX)
@@ -52,6 +53,7 @@ class V6KaniTests(unittest.TestCase):
             self.assertEqual(v6_kani.parse_clean(bad, 0, SYNTAX)["status"], "incomplete")
         self.assertEqual(v6_kani.parse_clean(good, 124, SYNTAX)["status"], "incomplete")
 
+    # Trace: TC-186, FR-048-AC-2, FR-048
     def test_false_assertion_requires_concrete_nontrivial_bytes(self) -> None:
         good = false_output(([0, 0, 0, 128], [0, 0, 0, 192]))
         result = v6_kani.parse_false(good, 1)
@@ -69,6 +71,7 @@ class V6KaniTests(unittest.TestCase):
         self.assertIn("u32::from_le_bytes([0, 0, 0, 128])",
                       v6_kani.replay_test(result["counterexample_bytes"]))
 
+    # Trace: TC-185, FR-048-AC-1
     def test_source_harness_rejects_vacuous_assumption(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

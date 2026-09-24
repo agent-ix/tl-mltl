@@ -154,6 +154,7 @@ class V8GateTests(unittest.TestCase):
         self.report["status"] = "passed"
         return review, source
 
+    # Trace: TC-189, FR-050-AC-1, FR-050
     def test_complete_raw_export_population_passes(self):
         status, population, artifacts = self.verify()
         self.assertEqual(status, "passed")
