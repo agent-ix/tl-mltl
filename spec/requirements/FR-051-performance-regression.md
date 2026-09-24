@@ -26,6 +26,10 @@ repeated run and a named finding; noisy or unmatched hosts remain
 non-conclusive. Resource ceilings remain functional gates independent of
 benchmark ratios.
 
+Comparability uses the executor-observed host context. A boot-scoped identity
+requires the same boot and observed CPU affinity in both receipts; an absent or
+malformed context leaves the comparison non-conclusive.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |

@@ -22,9 +22,9 @@ use tl_syntax::{
     SignalDomain, SignalId,
 };
 
-use super::v10_replay::{CellDetail, DetailReason, RefusalDetail, Replay};
 #[cfg(test)]
 use super::v10_replay::ComparisonClass;
+use super::v10_replay::{CellDetail, DetailReason, RefusalDetail, Replay};
 
 const BOUNDED_MANIFEST: &[u8] = include_bytes!("../../../corpus/r2u2-v4.2/manifest.json");
 const BOUNDED_SPEC: &[u8] = include_bytes!("../../../corpus/r2u2-v4.2/formulas.c2po");
