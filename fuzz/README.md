@@ -1,4 +1,33 @@
-# Past mapping and closed evaluation fuzz lanes
+# TL fuzz lanes
+
+## TL-229 untrusted-input boundaries
+
+`wire_cli_decode` sends each input through the CLI's actual
+`CommandDocument` JSON decode and the strict `ValidatedCommand` owner reader.
+`trace_history_intake` sends bytes through the strict trace reader and typed
+history decoder, then constructs bounded histories with appended, duplicate,
+out-of-order, missing-sample, and over-limit observations. The binaries and
+`tests/fuzz_boundaries.rs` call the same target logic. Each target discards
+inputs over 64 KiB before parsing; the CLI itself refuses requests over the
+published 8 MiB owner input limit before unbounded allocation or JSON decode.
+
+The seven command seeds and nine trace/history seeds are pinned by a
+`SHA256SUMS` in each corpus directory. To run a bounded nightly smoke campaign,
+copy seed files (excluding `SHA256SUMS`) into separate scratch directories and
+run, from the repository root:
+
+```sh
+cargo fuzz run --sanitizer address wire_cli_decode SCRATCH_WIRE -- \
+  -runs=1000 -seed=229 -max_total_time=30 -max_len=65536
+cargo fuzz run --sanitizer address trace_history_intake SCRATCH_HISTORY -- \
+  -runs=1000 -seed=230 -max_total_time=30 -max_len=65536
+```
+
+Use the pinned `nightly-2026-08-21` toolchain for these commands. Scratch
+corpora can grow during fuzzing; the checked-in seeds remain the reviewed
+starting corpus. Execution counts, coverage and any findings are evidence for
+the V9 Campaign report, not a proof of absence of crashes. Minimize and replay
+each crash on the measured source before promoting it to a regression test.
 
 `c2po_map` passes every admitted byte sequence through the real, bounded
 `tl-syntax` formula-v2 strict reader and `tl-mltl::map_past_to_c2po`. It checks

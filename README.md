@@ -54,7 +54,8 @@ ecosystem.
 
 The `tl-mltl` binary accepts one `tl-mltl.command/v1` JSON document, either by
 path or on stdin with `-`, and emits a versioned evaluation, horizon, or mapping
-record.
+record. Both input paths stop after the public owner's 8 MiB input ceiling;
+larger requests receive `TL-OWNER-RESOURCE-INCOMPLETE` before JSON decoding.
 
 ## Bounded formal check
 

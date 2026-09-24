@@ -1,0 +1,1 @@
+{"schemaVersion":"tl-mltl.position-history/v1","historyId":"fuzz-history-seed","revision":1,"historySha256":"97a172f21cf8cf835534bb90fa3ec5377cc3981b1f91bca33cce2690e6c7f97d","originPosition":0,"throughPosition":1,"clock":{"kind":"event_position"},"observations":[{"position":0,"truePropositions":[0],"sample":null},{"position":1,"truePropositions":[],"sample":null}]}
