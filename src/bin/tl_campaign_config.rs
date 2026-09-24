@@ -21,6 +21,8 @@ struct Machine {
     tools: BTreeMap<String, Tool>,
     contracts: Contracts,
     environment: BTreeMap<String, String>,
+    #[serde(default)]
+    member_environments: BTreeMap<String, BTreeMap<String, String>>,
     timestamp: String,
     toolchains: BTreeMap<String, String>,
     #[serde(default)]
@@ -53,6 +55,109 @@ fn member_toolchains<'a>(
     let selected = overrides.get(member).unwrap_or(defaults);
     validate_toolchains(selected).map_err(|error| format!("{member}: {error}"))?;
     Ok(selected)
+}
+
+fn member_environment(
+    defaults: &BTreeMap<String, String>,
+    overrides: &BTreeMap<String, BTreeMap<String, String>>,
+    member: &str,
+) -> BTreeMap<String, String> {
+    let mut selected = defaults.clone();
+    if let Some(override_values) = overrides.get(member) {
+        selected.extend(override_values.clone());
+    }
+    selected
+}
+
+fn observed_version(executable: &Path, argument: &str) -> Result<String, String> {
+    let output = Command::new(executable)
+        .arg(argument)
+        .output()
+        .map_err(|error| format!("{} {argument}: {error}", executable.display()))?;
+    if !output.status.success() {
+        return Err(format!("{} {argument} failed", executable.display()));
+    }
+    String::from_utf8(output.stdout).map_err(|error| error.to_string())
+}
+
+fn validate_rust_binding(
+    member: &str,
+    procedure: &Procedure,
+    toolchains: &BTreeMap<String, String>,
+    environment: &BTreeMap<String, String>,
+    tools: &BTreeMap<String, Tool>,
+) -> Result<(), String> {
+    if procedure.producer_name != "cargo" && !procedure.producer_name.starts_with("cargo-") {
+        return Ok(());
+    }
+    for name in ["RUSTC", "PATH"] {
+        if !procedure.environment.iter().any(|entry| {
+            entry.name == name && entry.kind == "runtime" && entry.value == format!("host:{name}")
+        }) {
+            return Err(format!(
+                "{member}: Cargo-family procedure must bind host:{name}"
+            ));
+        }
+    }
+    let identity = toolchains.get("rust").ok_or(format!(
+        "{member}: Rust producer has no rust toolchain identity"
+    ))?;
+    let rustc = Path::new(
+        environment
+            .get("RUSTC")
+            .ok_or(format!("{member}: Rust producer has no RUSTC"))?,
+    );
+    if !rustc.is_absolute() {
+        return Err(format!("{member}: RUSTC must be absolute"));
+    }
+    let path = environment
+        .get("PATH")
+        .ok_or(format!("{member}: Rust producer has no PATH"))?;
+    let resolved = std::env::split_paths(path)
+        .map(|directory| directory.join("rustc"))
+        .find(|candidate| candidate.is_file())
+        .ok_or(format!("{member}: PATH does not resolve rustc"))?;
+    if resolved.canonicalize().map_err(|error| error.to_string())?
+        != rustc.canonicalize().map_err(|error| error.to_string())?
+    {
+        return Err(format!(
+            "{member}: PATH resolves a different rustc than RUSTC"
+        ));
+    }
+    let verbose = observed_version(rustc, "-vV")?;
+    let field = |name: &str| {
+        verbose
+            .lines()
+            .find_map(|line| line.strip_prefix(name))
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or(format!("{member}: RUSTC -vV has no {name}"))
+    };
+    let release = field("release:")?;
+    let host = field("host:")?;
+    if identity != &format!("rustc {release} ({host})") {
+        return Err(format!(
+            "{member}: rust toolchain identity differs from observed RUSTC release/host"
+        ));
+    }
+    if procedure.producer_name == "cargo" {
+        if procedure.producer_version != release {
+            return Err(format!(
+                "{member}: Cargo procedure version differs from RUSTC release"
+            ));
+        }
+        let key = format!("cargo@{}", procedure.producer_version);
+        let cargo = tools
+            .get(&key)
+            .ok_or(format!("{member}: missing machine tool {key}"))?;
+        let observed = observed_version(Path::new(&cargo.executable), "--version")?;
+        if observed.split_whitespace().nth(1) != Some(procedure.producer_version.as_str()) {
+            return Err(format!(
+                "{member}: Cargo executable version differs from procedure"
+            ));
+        }
+    }
+    Ok(())
 }
 
 #[derive(Deserialize)]
@@ -491,6 +596,7 @@ fn binding(
     procedure: &Procedure,
     machine: &Machine,
     revisions: &BTreeMap<String, String>,
+    selected_environment: &BTreeMap<String, String>,
 ) -> Result<Value, String> {
     let tool_key = format!("{}@{}", procedure.producer_name, procedure.producer_version);
     let tool = machine
@@ -527,8 +633,7 @@ fn binding(
                 environment.insert(entry.name.clone(), entry.value.clone());
             }
             "runtime" if entry.value.starts_with("host:") => {
-                let value = machine
-                    .environment
+                let value = selected_environment
                     .get(&entry.name)
                     .ok_or(format!("missing explicit host environment {}", entry.name))?;
                 environment.insert(entry.name.clone(), value.clone());
@@ -655,6 +760,13 @@ fn build(repo: &Path, definition: Definition, machine: Machine) -> Result<Value,
             ));
         }
     }
+    for name in machine.member_environments.keys() {
+        if !member_names.contains(name.as_str()) {
+            return Err(format!(
+                "machine environment override names unknown member {name}"
+            ));
+        }
+    }
     let revisions = definition
         .source_graph
         .iter()
@@ -693,6 +805,11 @@ fn build(repo: &Path, definition: Definition, machine: Machine) -> Result<Value,
             &machine.member_toolchains,
             &member.name,
         )?;
+        let environment = member_environment(
+            &machine.environment,
+            &machine.member_environments,
+            &member.name,
+        );
         let plan_path = validate_plan(repo, &member)?;
         let plan_relative = plan_path
             .strip_prefix(repo)
@@ -700,6 +817,14 @@ fn build(repo: &Path, definition: Definition, machine: Machine) -> Result<Value,
         verify_control_file(repo, measured, plan_relative)?;
         verify_control_file(repo, measured, &procedure_path(&member)?)?;
         let procedure = load_procedure(repo, &member)?;
+        let producer_binding = binding(&procedure, &machine, &revisions, &environment)?;
+        validate_rust_binding(
+            &member.name,
+            &procedure,
+            toolchains,
+            &environment,
+            &machine.tools,
+        )?;
         let checker = member
             .checker_procedure
             .as_ref()
@@ -721,8 +846,8 @@ fn build(repo: &Path, definition: Definition, machine: Machine) -> Result<Value,
             .collect::<Result<BTreeMap<_, _>, String>>()?;
         let selected = selected_inputs(&member, &procedure)?;
         let row = json!({
-            "producer":binding(&procedure,&machine,&revisions)?,
-            "checker":binding(checker,&machine,&revisions)?,
+            "producer":producer_binding,
+            "checker":binding(checker,&machine,&revisions,&environment)?,
             "inputs":selected,
             "timestamp":machine.timestamp,
             "toolchains":toolchains,
@@ -786,8 +911,9 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        binding, member_toolchains, selected_inputs, sha256, validate_toolchains,
-        verify_checker_sources, verify_control_file, Contracts, Machine, Member, Procedure, Tool,
+        binding, member_environment, member_toolchains, selected_inputs, sha256,
+        validate_rust_binding, validate_toolchains, verify_checker_sources, verify_control_file,
+        Contracts, Machine, Member, Procedure, Tool,
     };
 
     // Trace: FR-055-AC-1, TC-197
@@ -824,6 +950,7 @@ mod tests {
                 .filter(|entry| entry.value.starts_with("host:"))
                 .map(|entry| (entry.name.clone(), "/tmp".into()))
                 .collect(),
+            member_environments: BTreeMap::new(),
             timestamp: String::new(),
             toolchains: BTreeMap::new(),
             member_toolchains: BTreeMap::new(),
@@ -831,7 +958,7 @@ mod tests {
         };
         let revision = "a".repeat(40);
         let revisions = BTreeMap::from([("tl-mltl".to_owned(), revision.clone())]);
-        let selected = binding(&procedure, &machine, &revisions).unwrap();
+        let selected = binding(&procedure, &machine, &revisions, &machine.environment).unwrap();
         assert_eq!(selected["environment"]["TL_MLTL_SOURCE_REVISION"], revision);
         assert_eq!(selected["environment"]["TL_MLTL_SOURCE_STATE"], "clean");
     }
@@ -926,6 +1053,152 @@ mod tests {
         );
         let invalid = BTreeMap::from([("V7.miri".into(), BTreeMap::new())]);
         assert!(member_toolchains(&defaults, &invalid, "V7.miri").is_err());
+    }
+
+    // Trace: FR-055-AC-4, TC-200
+    #[cfg(unix)]
+    #[test]
+    fn rust_producer_refuses_contradictory_toolchain_and_environment() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir().unwrap();
+        let stable = directory.path().join("stable");
+        let nightly = directory.path().join("nightly");
+        for (path, release) in [(&stable, "1.98.1"), (&nightly, "1.100.0-nightly")] {
+            std::fs::create_dir(path).unwrap();
+            for (name, response) in [
+                (
+                    "rustc",
+                    format!("release: {release}\nhost: x86_64-unknown-linux-gnu"),
+                ),
+                ("cargo", format!("cargo {release} (test)")),
+            ] {
+                let executable = path.join(name);
+                std::fs::write(
+                    &executable,
+                    format!("#!/bin/sh\nprintf '%s\\n' '{response}'\n"),
+                )
+                .unwrap();
+                std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755))
+                    .unwrap();
+            }
+        }
+        let stable_procedure: Procedure = serde_json::from_str(include_str!(
+            "../../campaign/procedures/v7-embedded-core.json"
+        ))
+        .unwrap();
+        let nightly_procedure: Procedure = serde_json::from_str(include_str!(
+            "../../campaign/procedures/v8-parse-example-prep.json"
+        ))
+        .unwrap();
+        let defaults = BTreeMap::from([
+            ("PATH".into(), stable.to_string_lossy().into_owned()),
+            (
+                "RUSTC".into(),
+                stable.join("rustc").to_string_lossy().into_owned(),
+            ),
+        ]);
+        let overrides = BTreeMap::from([(
+            "V8.parse_example_prep".into(),
+            BTreeMap::from([
+                ("PATH".into(), nightly.to_string_lossy().into_owned()),
+                (
+                    "RUSTC".into(),
+                    nightly.join("rustc").to_string_lossy().into_owned(),
+                ),
+            ]),
+        )]);
+        let stable_environment = member_environment(&defaults, &overrides, "V7.embedded_core");
+        let nightly_environment =
+            member_environment(&defaults, &overrides, "V8.parse_example_prep");
+        let stable_identity = BTreeMap::from([(
+            "rust".into(),
+            "rustc 1.98.1 (x86_64-unknown-linux-gnu)".into(),
+        )]);
+        let nightly_identity = BTreeMap::from([(
+            "rust".into(),
+            "rustc 1.100.0-nightly (x86_64-unknown-linux-gnu)".into(),
+        )]);
+        let tools = BTreeMap::from([
+            (
+                "cargo@1.98.1".into(),
+                Tool {
+                    executable: stable.join("cargo").to_string_lossy().into_owned(),
+                    digest: String::new(),
+                },
+            ),
+            (
+                "cargo@1.100.0-nightly".into(),
+                Tool {
+                    executable: nightly.join("cargo").to_string_lossy().into_owned(),
+                    digest: String::new(),
+                },
+            ),
+        ]);
+        assert!(validate_rust_binding(
+            "V7.embedded_core",
+            &stable_procedure,
+            &stable_identity,
+            &stable_environment,
+            &tools
+        )
+        .is_ok());
+        assert!(validate_rust_binding(
+            "V8.parse_example_prep",
+            &nightly_procedure,
+            &nightly_identity,
+            &nightly_environment,
+            &tools
+        )
+        .is_ok());
+        assert!(validate_rust_binding(
+            "V7.embedded_core",
+            &stable_procedure,
+            &nightly_identity,
+            &stable_environment,
+            &tools
+        )
+        .is_err());
+        assert!(validate_rust_binding(
+            "V8.parse_example_prep",
+            &nightly_procedure,
+            &stable_identity,
+            &nightly_environment,
+            &tools
+        )
+        .is_err());
+        let mut wrong_path = stable_environment.clone();
+        wrong_path.insert("PATH".into(), nightly.to_string_lossy().into_owned());
+        assert!(validate_rust_binding(
+            "V7.embedded_core",
+            &stable_procedure,
+            &stable_identity,
+            &wrong_path,
+            &tools
+        )
+        .is_err());
+        let mut wrong_cargo = stable_procedure;
+        wrong_cargo.producer_version = "1.100.0-nightly".into();
+        assert!(validate_rust_binding(
+            "V7.embedded_core",
+            &wrong_cargo,
+            &stable_identity,
+            &stable_environment,
+            &tools
+        )
+        .is_err());
+        let mut missing_binding = nightly_procedure;
+        missing_binding
+            .environment
+            .retain(|entry| entry.name != "RUSTC");
+        assert!(validate_rust_binding(
+            "V8.parse_example_prep",
+            &missing_binding,
+            &nightly_identity,
+            &nightly_environment,
+            &tools
+        )
+        .is_err());
     }
 
     // Trace: FR-055-AC-1, TC-197
