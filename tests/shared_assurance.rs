@@ -2239,7 +2239,9 @@ fn no_local_evidence_framework_remains() {
         // V10 adds fifty-one direct procedure records and their member inventory.
         // One CampaignDefinition closes the full V1–V11 member inventory.
         // The explicit Cargo closure inventory adds one source-bound record.
-        ("campaign", 179),
+        // Three additional V4 native procedures cover the TL-229 boundaries
+        // and TL-230 independent finite differential lane.
+        ("campaign", 182),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2260,7 +2262,9 @@ fn no_local_evidence_framework_remains() {
         // manifests and three campaign support/verification files.
         // TL-229 adds two boundary targets, one shared target driver, sixteen
         // seeds and two checksum manifests (21 tracked paths).
-        ("fuzz", 66),
+        // TL-230 adds the finite oracle target, fault control, runner, five
+        // seeds, manifest, shared comparator, and focused test (11 paths).
+        ("fuzz", 77),
         // Criterion inputs and runner for the V9 evaluator workloads.
         ("benches", 3),
         // The current-only Quire coverage adapter and its fault controls
@@ -2283,7 +2287,8 @@ fn no_local_evidence_framework_remains() {
         // Thirteen lane-level MeasurementPlans pair with those procedures.
         // V9 adds twelve lane-level MeasurementPlans.
         // V10 adds fifty-one direct MeasurementPlans.
-        ("spec", 297),
+        // Three direct V4 MeasurementPlans bind the new fuzz procedures.
+        ("spec", 300),
         // TL-179 deletes wire::request, wire::observation, wire::report, and
         // mapping::contract_ir (4 files): the quire-observation-coupled
         // request/result/mapping owner boundary now lives in quire-mltl.
@@ -2390,15 +2395,16 @@ fn no_local_evidence_framework_remains() {
     // Quire-bound feature control adds one script and the historical mapping
     // payload fixture adds one test fixture, bringing it to 445. The
     // generated infinite semantic law test brings it to 446.
-    // TL-229 adds 21 fuzz paths and one seed smoke test, bringing the current
-    // tracked population from 693 to 715.
+    // TL-229 adds 21 fuzz paths and one seed smoke test, bringing the tracked
+    // population from 693 to 715. TL-230 adds 11 fuzz paths; three V4 direct
+    // members add three plans and three procedures, bringing it to 732.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 715,
-        "the source census population changed from the reviewed 715 tracked files \
+        inspected, 732,
+        "the source census population changed from the reviewed 732 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

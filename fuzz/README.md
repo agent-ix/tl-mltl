@@ -26,7 +26,7 @@ cargo fuzz run --sanitizer address trace_history_intake SCRATCH_HISTORY -- \
 Use the pinned `nightly-2026-08-21` toolchain for these commands. Scratch
 corpora can grow during fuzzing; the checked-in seeds remain the reviewed
 starting corpus. Execution counts, coverage and any findings are evidence for
-the V9 Campaign report, not a proof of absence of crashes. Minimize and replay
+the V4 Campaign report, not a proof of absence of crashes. Minimize and replay
 each crash on the measured source before promoting it to a regression test.
 
 `c2po_map` passes every admitted byte sequence through the real, bounded
@@ -87,16 +87,16 @@ diagnostic target for proving that the comparison detects a seeded evaluator
 fault, not a clean-run target. Run it with the same corpus and expect a crash
 artifact; minimize and replay that artifact before citing the fault result.
 
-The V9 runner records toolchain, source and corpus digests, requested budget,
+The V4 runner records toolchain, source and corpus digests, requested budget,
 observed executions, raw streams, and any crash artifacts. From a clean
 reviewed commit with a nightly Rust toolchain selected:
 
 ```sh
-python3 fuzz/run_v9_finite_campaign.py --output fuzz/evidence/v9-finite-YYYY-MM-DD \
+python3 fuzz/run_v4_finite_campaign.py --output fuzz/evidence/v4-finite-YYYY-MM-DD \
   --runs 1000 --seed 230 --seconds 30
 ```
 
 A bounded clean run does not prove all finite semantics correct. Any real
 disagreement must be minimized, replayed on the same source revision, and
-promoted to a reviewed regression fixture before the Campaign V9 report
+promoted to a reviewed regression fixture before the Campaign V4 report
 claims its exit criteria.
