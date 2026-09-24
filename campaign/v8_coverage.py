@@ -49,11 +49,12 @@ EXPECTED_CRITICAL = {
                 "infinite": CRITICAL_PREFIXES["rewrite"]},
 }
 TOOLCHAIN = "nightly"
+SCHEMA = "tl-mltl.v8-coverage/v2"
 ZERO_BRANCH_POLICY_FILES = {"src/dialect/v4.rs", "src/disposition.rs"}
 REVIEW_FIELDS = {"run", "file", "line", "column", "true_count", "false_count",
                  "source_file_sha256", "reason", "reviewer"}
-RESIDUAL_REVIEW_FIELDS = {"kind", "run", "file", "unattributed_missing_sides",
-                          "source_file_sha256", "raw_export_sha256", "reason", "reviewer"}
+SUMMARY_REVIEW_FIELDS = {"kind", "run", "file", "summary_missing_sides",
+                         "source_file_sha256", "raw_export_sha256", "reason", "reviewer"}
 
 
 def unique_pairs(pairs: list[tuple[str, object]]) -> dict:
@@ -72,32 +73,21 @@ def gap_key(gap: dict) -> tuple:
                  ("run", "file", "line", "column", "true_count", "false_count"))
 
 
-def residual_key(residual: dict) -> tuple:
-    """Bind a file-level review to one measured export and exact deficit."""
-    return tuple(residual[field] for field in
-                 ("run", "file", "unattributed_missing_sides", "raw_export_sha256"))
+def summary_key(summary: dict) -> tuple:
+    """Bind a file-summary review to an exact run, deficit and raw export."""
+    return tuple(summary[field] for field in
+                 ("run", "file", "summary_missing_sides", "raw_export_sha256"))
 
 
-def one_sided_named_missing(locations: list[dict]) -> int:
-    """Count named missing sides with a hit on the opposite side.
-
-    LLVM detail can include 0/0 or one-sided records omitted from the file
-    summary. A 0/0 site remains a review obligation, but cannot be assigned
-    any part of the summary deficit from the export alone.
-    """
-    return sum((site["true_count"] == 0) != (site["false_count"] == 0)
-               for site in locations)
-
-
-def validate_reviews(reviews: object, gaps: list[dict], residuals: list[dict],
+def validate_reviews(reviews: object, gaps: list[dict], summaries: list[dict],
                      roots: dict[str, Path]) -> tuple[set[tuple], set[tuple]]:
     """Check explicit human infeasibility decisions against the live source graph."""
     if type(reviews) is not list:
         raise ValueError("V8 reviews must be a list")
     observed_locations = {gap_key(gap) for gap in gaps}
-    observed_residuals = {residual_key(residual) for residual in residuals}
+    observed_summaries = {summary_key(summary) for summary in summaries}
     accepted_locations = set()
-    accepted_residuals = set()
+    accepted_summaries = set()
     for review in reviews:
         if type(review) is not dict:
             raise ValueError("V8 review shape mismatch")
@@ -112,19 +102,19 @@ def validate_reviews(reviews: object, gaps: list[dict], residuals: list[dict],
             if key in accepted_locations:
                 raise ValueError("duplicate V8 review")
             accepted = accepted_locations
-        elif set(review) == RESIDUAL_REVIEW_FIELDS:
-            if (review["kind"] != "file_residual" or
+        elif set(review) == SUMMARY_REVIEW_FIELDS:
+            if (review["kind"] != "file_summary" or
                     type(review["run"]) is not str or type(review["file"]) is not str or
-                    type(review["unattributed_missing_sides"]) is not int or
-                    review["unattributed_missing_sides"] <= 0 or
+                    type(review["summary_missing_sides"]) is not int or
+                    review["summary_missing_sides"] <= 0 or
                     type(review["raw_export_sha256"]) is not str):
-                raise ValueError("V8 residual review identity malformed")
-            key = residual_key(review)
-            if key not in observed_residuals:
-                raise ValueError("V8 review names unknown or stale residual")
-            if key in accepted_residuals:
+                raise ValueError("V8 file-summary review identity malformed")
+            key = summary_key(review)
+            if key not in observed_summaries:
+                raise ValueError("V8 review names unknown or stale file summary")
+            if key in accepted_summaries:
                 raise ValueError("duplicate V8 review")
-            accepted = accepted_residuals
+            accepted = accepted_summaries
         else:
             raise ValueError("V8 review shape mismatch")
         reason = review["reason"]
@@ -142,7 +132,7 @@ def validate_reviews(reviews: object, gaps: list[dict], residuals: list[dict],
         if review["source_file_sha256"] != source_digest:
             raise ValueError("V8 review source file digest is stale")
         accepted.add(key)
-    return accepted_locations, accepted_residuals
+    return accepted_locations, accepted_summaries
 
 
 def parse_prep_command() -> list[str]:
@@ -252,13 +242,10 @@ def classify_export(raw: dict, root: Path) -> dict:
                                 "true_count": true_count, "false_count": false_count}
                     if location not in uncovered:
                         uncovered.append(location)
-        # LLVM's summary counts monomorphized branches separately and can omit
-        # detail records. Keep every named gap for review, but do not assign a
-        # 0/0 detail to the summary. One-sided details may also be omitted, so
-        # only the summary deficit beyond their count becomes a file residual.
-        summary_missing = branches["count"] - branches["covered"]
-        named_missing = one_sided_named_missing(uncovered)
-        unattributed_missing_sides = max(0, summary_missing - named_missing)
+        # The export does not link each source-site detail to a file-summary
+        # branch instance. Keep every named gap and the entire summary deficit
+        # as independent review obligations. One cannot waive the other.
+        summary_missing_sides = branches["count"] - branches["covered"]
         files[relative] = {"lines": {"count": lines["count"], "covered": lines["covered"]},
                            "branches": {"count": branches["count"],
                                         "covered": branches["covered"]},
@@ -267,7 +254,7 @@ def classify_export(raw: dict, root: Path) -> dict:
                            "regions": {key: regions.get(key, 0)
                                        for key in ("count", "covered")},
                            "uncovered_branch_locations": uncovered,
-                           "unattributed_missing_sides": unattributed_missing_sides}
+                           "summary_missing_sides": summary_missing_sides}
     if not files or not any(item["branches"]["count"] for item in files.values()):
         raise ValueError("no production branches were measured")
     return {"files": files, "totals": {
@@ -299,24 +286,23 @@ def critical_census(coverage: dict, name: str, feature: str) -> tuple[dict, list
     return files, missing, gaps
 
 
-def critical_residuals(coverage: dict, files: dict, run: str,
-                       raw_export_sha256: str) -> list[dict]:
-    """Name every critical file with a deficit not located to one source span."""
+def critical_summary_missing(coverage: dict, files: dict, run: str,
+                             raw_export_sha256: str) -> list[dict]:
+    """Name every critical file with a missing side in its LLVM summary."""
     return [{"run": run, "file": file,
-             "unattributed_missing_sides": coverage["files"][file]["unattributed_missing_sides"],
+             "summary_missing_sides": coverage["files"][file]["summary_missing_sides"],
              "raw_export_sha256": raw_export_sha256}
             for file in files
-            if coverage["files"][file]["unattributed_missing_sides"] > 0]
+            if coverage["files"][file]["summary_missing_sides"] > 0]
 
 
-def critical_deficits_accounted(files: dict, gaps: list[dict], residuals: list[dict]) -> bool:
-    """Reconcile summary deficits without counting detail omitted by LLVM."""
-    return all(item["count"] - item["covered"] ==
-               min(item["count"] - item["covered"], one_sided_named_missing(
-                   [gap for gap in gaps if gap["file"] == file])) +
-               sum(residual["unattributed_missing_sides"] for residual in residuals
-                   if residual["file"] == file)
-               for file, item in files.items())
+def critical_summaries_accounted(files: dict, summaries: list[dict]) -> bool:
+    """Require one exact file-summary record for each measured critical deficit."""
+    expected = {file: item["count"] - item["covered"] for file, item in files.items()
+                if item["count"] > item["covered"]}
+    observed = {summary["file"]: summary["summary_missing_sides"]
+                for summary in summaries}
+    return len(summaries) == len(expected) and observed == expected
 
 
 def main() -> int:
@@ -465,29 +451,29 @@ def main() -> int:
                if args.reviews else [])
     gaps = [{"run": row["id"], **gap} for row in results
             for gap in row.get("critical_uncovered", [])]
-    residuals_by_run = {
-        row["id"]: critical_residuals(row["coverage"],
-                                      row["critical_branch_census"]["files"], row["id"],
-                                      row["raw"]["export"]["sha256"])
+    summaries_by_run = {
+        row["id"]: critical_summary_missing(row["coverage"],
+                                            row["critical_branch_census"]["files"], row["id"],
+                                            row["raw"]["export"]["sha256"])
         for row in results if "critical_branch_census" in row
     }
-    residuals = [residual for rows in residuals_by_run.values() for residual in rows]
-    reviewed_locations, reviewed_residuals = validate_reviews(reviews, gaps, residuals, roots)
+    summaries = [summary for rows in summaries_by_run.values() for summary in rows]
+    reviewed_locations, reviewed_summaries = validate_reviews(reviews, gaps, summaries, roots)
     for row in results:
         if "critical_branch_census" not in row:
             continue
         missing = row["critical_branch_census"]["missing_files"]
-        file_residuals = residuals_by_run[row["id"]]
+        file_summaries = summaries_by_run[row["id"]]
         unreviewed = (any(gap_key({"run": row["id"], **gap}) not in reviewed_locations
                           for gap in row["critical_uncovered"]) or
-                      any(residual_key(residual) not in reviewed_residuals
-                          for residual in file_residuals))
-        complete = critical_deficits_accounted(row["critical_branch_census"]["files"],
-                                               row["critical_uncovered"], file_residuals)
+                      any(summary_key(summary) not in reviewed_summaries
+                          for summary in file_summaries))
+        complete = critical_summaries_accounted(row["critical_branch_census"]["files"],
+                                                file_summaries)
         if not missing and not unreviewed and complete:
             row["status"] = "passed"
             row.pop("reason", None)
-    report = {"schema": "tl-mltl.v8-coverage/v1", "source_revisions": revisions,
+    report = {"schema": SCHEMA, "source_revisions": revisions,
               "cargo_lock_sha256": cargo_locks,
               "tools": tools, "profile": "test", "test_selection": ["lib", "tests"],
               "host": {"system": platform.system(), "machine": platform.machine()},

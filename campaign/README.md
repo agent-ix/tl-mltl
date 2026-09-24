@@ -160,25 +160,27 @@ the branch cannot be reached through the public owner boundary. The standalone
 For a V1 aggregate, pass the same file with `make_manifest.py --v8-reviews`;
 the manifest declares its exact path and SHA-256, and the runner checks the
 bytes before and after native measurement and against the emitted V8 report.
-That JSON file is a list of two review record types. A source-location record
+The V8 native report uses `tl-mltl.v8-coverage/v2`. That JSON review file is a
+list of two review record types. A source-location record
 has exactly `run`, `file`, `line`, `column`, `true_count`, `false_count`,
 `source_file_sha256`, `reason`, and `reviewer`. The location and counts must
-match one measured gap in that run. A file-residual record has exactly `kind`
-(`file_residual`), `run`, `file`, `unattributed_missing_sides`,
-`source_file_sha256`, `raw_export_sha256`, `reason`, and `reviewer`. It covers
-the file-summary deficit remaining after one-sided named gaps are considered;
-the raw-export digest binds the decision to that measurement. LLVM can emit
-`0/0` or one-sided detail records omitted from the file summary. Those
-locations still need source-location reviews, while a `0/0` location does not
-claim any summary deficit and named detail beyond the summary is not subtracted.
+match one measured gap in that run. A file-summary record has exactly `kind`
+(`file_summary`), `run`, `file`, `summary_missing_sides`,
+`source_file_sha256`, `raw_export_sha256`, `reason`, and `reviewer`. It reviews
+all `branches.count - branches.covered` missing sides in that critical file's
+LLVM summary and binds the decision to the exact raw export. The summary's
+missing sides require this file-level review even when a named source gap is
+also present: LLVM does not identify which detail record contributes to the
+summary. `0/0` or one-sided detail omitted from the summary still needs its
+separate source-location review.
 Both types require the exact source-file digest, a substantive infeasibility
 reason, and the name of the person who checked it. An empty list records no
 decisions. Unknown, duplicate, stale, or cursory records are rejected. The
 native gate recomputes all deficits and reviews against the raw LLVM export
-and source bytes. Any unreviewed named gap or file residual, an unreconciled
-file-summary deficit, or a missing critical file keeps V8 incomplete. Reviewed
-deficits remain in `critical_uncovered` or
-`critical_unattributed` and in the measured count; review never masquerades as
+and source bytes. Any unreviewed named gap or file-summary deficit, or a
+missing critical file, keeps V8 incomplete. Reviewed deficits remain in
+`critical_uncovered` or `critical_summary_missing` and in the measured count;
+review never masquerades as
 executed coverage. Do not add a review record without an actual human review
 of that exact source and measurement.
 
