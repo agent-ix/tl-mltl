@@ -42,6 +42,13 @@ observation for those five named targets. The manifest builder adds this lane
 automatically with seed 181; stale or missing per-crate evidence leaves V4
 incomplete.
 
+The generic EA Stage 1 Campaign additionally runs the TL-229 CLI and
+trace/history boundaries and the TL-230 finite/past oracle differential as
+three direct V4 members. Build its TL-owned checker explicitly with
+`cargo build --locked --features campaign-check --bin tl_campaign_check`.
+The feature keeps the dev-only `tl-oracle` out of the normal consumer graph;
+the production library and CLI do not depend on it.
+
 V6 has a live native Kani gate. It runs the exact syntax interval and mlTL
 checked-horizon arithmetic harnesses with unwind bound 2, CaDiCaL, and Kani's
 default memory, overflow, assertion-reachability, and unwinding checks. The
