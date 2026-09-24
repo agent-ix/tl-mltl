@@ -1,4 +1,4 @@
-use std::{env, fs, io::Read, process::ExitCode};
+use std::{env, fs::File, io::Read, process::ExitCode};
 
 use tl_mltl::{
     analyze_horizon, evaluate_closed, evaluate_prefix, map_to_c2po, CommandDocument,
@@ -6,15 +6,33 @@ use tl_mltl::{
 };
 use tl_syntax::SemanticProfile;
 
+// The compatibility CLI shares the public owner's immutable byte ceiling.
+const MAX_REQUEST_BYTES: usize = tl_mltl::wire::OwnerLimits::owner_max().max_input_bytes;
+
+fn read_bounded_request(mut reader: impl Read) -> Result<Vec<u8>, String> {
+    let mut bytes = Vec::new();
+    let limit = u64::try_from(MAX_REQUEST_BYTES)
+        .map_err(|_| "owner request byte limit exceeds u64".to_owned())?;
+    reader
+        .by_ref()
+        .take(limit + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| format!("read request: {error}"))?;
+    if bytes.len() > MAX_REQUEST_BYTES {
+        return Err(format!(
+            "{}: request exceeds {MAX_REQUEST_BYTES}-byte owner limit",
+            tl_mltl::wire::OwnerReadErrorCode::ResourceIncomplete.as_str()
+        ));
+    }
+    Ok(bytes)
+}
+
 fn read_request(path: &str) -> Result<Vec<u8>, String> {
     if path == "-" {
-        let mut bytes = Vec::new();
-        std::io::stdin()
-            .read_to_end(&mut bytes)
-            .map_err(|error| format!("read stdin: {error}"))?;
-        Ok(bytes)
+        read_bounded_request(std::io::stdin().lock())
     } else {
-        fs::read(path).map_err(|error| format!("read {path}: {error}"))
+        let file = File::open(path).map_err(|error| format!("read {path}: {error}"))?;
+        read_bounded_request(file)
     }
 }
 
@@ -117,5 +135,45 @@ fn main() -> ExitCode {
             eprintln!("tl-mltl: {error}");
             ExitCode::from(2)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::Cursor;
+
+    use super::{read_bounded_request, MAX_REQUEST_BYTES};
+
+    // Trace: TL-229; FR-046-AC-1
+    #[test]
+    fn request_reader_accepts_exact_cap_and_refuses_cap_plus_one() {
+        let exact = vec![b' '; MAX_REQUEST_BYTES];
+        assert_eq!(
+            read_bounded_request(Cursor::new(&exact))
+                .expect("exact owner ceiling")
+                .len(),
+            MAX_REQUEST_BYTES
+        );
+        let over = vec![b' '; MAX_REQUEST_BYTES + 1];
+        assert!(read_bounded_request(Cursor::new(&over))
+            .expect_err("over owner ceiling")
+            .contains("TL-OWNER-RESOURCE-INCOMPLETE"));
+    }
+
+    // Trace: TL-229; FR-046-AC-1
+    #[test]
+    fn request_reader_admits_schema_maximum_trace_positions() {
+        let mut request = br#"{"schemaVersion":"tl-mltl.command/v1","operation":"analyze","formulaId":"large-trace","formula":{"schema_version":"tl-syntax.formula/v1","semantic_profile":"mltl.closed-trace/v1","root":0,"nodes":[{"kind":"true"}]},"trace":{"schemaVersion":"tl-mltl.trace/v1","traceId":"large-trace","closed":true,"instants":["#.to_vec();
+        for position in 0..1_000_000 {
+            if position != 0 {
+                request.push(b',');
+            }
+            request.extend_from_slice(b"[]");
+        }
+        request.extend_from_slice(b"]}}");
+        let admitted = read_bounded_request(Cursor::new(request)).expect("million-position trace");
+        let command: tl_mltl::CommandDocument =
+            serde_json::from_slice(&admitted).expect("valid maximum-position command");
+        assert_eq!(command.trace.expect("trace").instants.len(), 1_000_000);
     }
 }

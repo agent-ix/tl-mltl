@@ -328,6 +328,7 @@ name = "tl-mltl-fuzz"
 version = "0.0.0"
 dependencies = [
  "libfuzzer-sys",
+ "serde_json",
  "sha2",
  "tl-mltl",
  "tl-oracle",
