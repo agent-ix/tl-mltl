@@ -18,16 +18,16 @@
       "value": "--spec"
     },
     {
-      "kind": "input_artifact",
-      "value": "spec"
+      "kind": "literal",
+      "value": "v10/input.c2po"
     },
     {
       "kind": "literal",
       "value": "--map"
     },
     {
-      "kind": "input_artifact",
-      "value": "map"
+      "kind": "literal",
+      "value": "v10/input.map"
     },
     {
       "kind": "literal",
