@@ -627,7 +627,14 @@ fn binding(
         return Err("machine response contract differs from authored procedure".into());
     }
     let mut environment = BTreeMap::new();
+    let mut environment_names = BTreeSet::new();
     for entry in &procedure.environment {
+        if !environment_names.insert(entry.name.as_str()) {
+            return Err(format!(
+                "duplicate procedure environment name {}",
+                entry.name
+            ));
+        }
         match entry.kind.as_str() {
             "literal" => {
                 environment.insert(entry.name.clone(), entry.value.clone());
@@ -913,7 +920,7 @@ mod tests {
     use super::{
         binding, member_environment, member_toolchains, selected_inputs, sha256,
         validate_rust_binding, validate_toolchains, verify_checker_sources, verify_control_file,
-        Contracts, Machine, Member, Procedure, Tool,
+        Contracts, Machine, Member, Procedure, ProcedureEnvironment, Tool,
     };
 
     // Trace: FR-055-AC-1, TC-197
@@ -1199,6 +1206,62 @@ mod tests {
             &tools
         )
         .is_err());
+    }
+
+    // Trace: FR-055-AC-4, TC-200
+    #[test]
+    fn duplicate_procedure_environment_cannot_replace_emitted_rust_binding() {
+        let mut procedure: Procedure = serde_json::from_str(include_str!(
+            "../../campaign/procedures/v7-embedded-core.json"
+        ))
+        .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let executable = directory.path().join("cargo");
+        std::fs::write(&executable, b"test executable").unwrap();
+        let tool = Tool {
+            executable: executable.to_str().unwrap().to_owned(),
+            digest: sha256(b"test executable"),
+        };
+        let selected_environment = procedure
+            .environment
+            .iter()
+            .filter(|entry| entry.kind == "runtime" && entry.value.starts_with("host:"))
+            .map(|entry| (entry.name.clone(), format!("selected-{}", entry.name)))
+            .collect::<BTreeMap<_, _>>();
+        let machine = Machine {
+            schema: "tl-mltl.campaign-machine/v1".into(),
+            sources: BTreeMap::new(),
+            tools: BTreeMap::from([("cargo@1.98.1".into(), tool)]),
+            contracts: Contracts {
+                caller: json!({"kind":"test.caller"}),
+                containment: json!({"kind":"test.containment"}),
+                response_protocol: json!({"kind":procedure.response_protocol}),
+                response_adapter: json!({"kind":procedure.response_adapter,
+                    "version":procedure.response_adapter_version}),
+            },
+            environment: selected_environment.clone(),
+            member_environments: BTreeMap::new(),
+            timestamp: String::new(),
+            toolchains: BTreeMap::new(),
+            member_toolchains: BTreeMap::new(),
+            source_remotes: BTreeMap::new(),
+        };
+        let revisions = BTreeMap::from([("tl-syntax".into(), "a".repeat(40))]);
+        let emitted = binding(&procedure, &machine, &revisions, &selected_environment).unwrap();
+        for name in ["PATH", "RUSTC"] {
+            assert_eq!(emitted["environment"][name], format!("selected-{name}"));
+            procedure.environment.push(ProcedureEnvironment {
+                name: name.into(),
+                kind: "literal".into(),
+                value: "untrusted-override".into(),
+            });
+            assert!(
+                binding(&procedure, &machine, &revisions, &selected_environment)
+                    .unwrap_err()
+                    .contains("duplicate procedure environment name")
+            );
+            procedure.environment.pop();
+        }
     }
 
     // Trace: FR-055-AC-1, TC-197
