@@ -2235,7 +2235,8 @@ fn no_local_evidence_framework_remains() {
         // twelve V4/V5/V8/V9 native helpers and reviews were added since the
         // earlier 43-file census.
         // Thirteen direct native procedure records bind V1/V2/V3/V11 lanes.
-        ("campaign", 92),
+        // V9 adds twelve direct Criterion procedure records.
+        ("campaign", 125),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2275,7 +2276,8 @@ fn no_local_evidence_framework_remains() {
         // The V1 spec cycle adds its requirements, matrices, decisions and
         // combined review documents; AP-002 and MP-007 add two Stage 1 plans.
         // Thirteen lane-level MeasurementPlans pair with those procedures.
-        ("spec", 213),
+        // V9 adds twelve lane-level MeasurementPlans.
+        ("spec", 246),
         // TL-179 deletes wire::request, wire::observation, wire::report, and
         // mapping::contract_ir (4 files): the quire-observation-coupled
         // request/result/mapping owner boundary now lives in quire-mltl.
@@ -2382,8 +2384,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 517,
-        "the source census population changed from the reviewed 517 tracked files \
+        inspected, 583,
+        "the source census population changed from the reviewed 583 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 

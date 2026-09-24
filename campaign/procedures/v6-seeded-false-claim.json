@@ -2,10 +2,6 @@
   "arguments": [
     {
       "kind": "literal",
-      "value": "kani"
-    },
-    {
-      "kind": "literal",
       "value": "-Z"
     },
     {
@@ -97,12 +93,22 @@
       "kind": "literal",
       "name": "CARGO_NET_OFFLINE",
       "value": "true"
+    },
+    {
+      "kind": "runtime",
+      "name": "TL_MLTL_SOURCE_REVISION",
+      "value": "source:tl-mltl.revision"
+    },
+    {
+      "kind": "literal",
+      "name": "TL_MLTL_SOURCE_STATE",
+      "value": "clean"
     }
   ],
   "inputs": [],
   "outputs": [],
-  "producerName": "cargo",
-  "producerVersion": "1.98.1",
+  "producerName": "cargo-kani",
+  "producerVersion": "0.68.0",
   "repetitions": 1,
   "responseAdapter": "quoin.process-evidence-adapter",
   "responseAdapterVersion": "1",

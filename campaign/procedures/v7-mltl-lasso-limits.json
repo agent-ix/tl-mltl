@@ -90,12 +90,22 @@
       "kind": "literal",
       "name": "MIRIFLAGS",
       "value": "-Zmiri-strict-provenance -Zmiri-symbolic-alignment-check"
+    },
+    {
+      "kind": "runtime",
+      "name": "TL_MLTL_SOURCE_REVISION",
+      "value": "source:tl-mltl.revision"
+    },
+    {
+      "kind": "literal",
+      "name": "TL_MLTL_SOURCE_STATE",
+      "value": "clean"
     }
   ],
   "inputs": [],
   "outputs": [],
-  "producerName": "cargo",
-  "producerVersion": "1.100.0-nightly",
+  "producerName": "cargo-miri",
+  "producerVersion": "0.1.0",
   "repetitions": 1,
   "responseAdapter": "quoin.process-evidence-adapter",
   "responseAdapterVersion": "1",

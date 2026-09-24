@@ -93,6 +93,16 @@
       "kind": "literal",
       "name": "CARGO_NET_OFFLINE",
       "value": "true"
+    },
+    {
+      "kind": "runtime",
+      "name": "TL_MLTL_SOURCE_REVISION",
+      "value": "source:tl-mltl.revision"
+    },
+    {
+      "kind": "literal",
+      "name": "TL_MLTL_SOURCE_STATE",
+      "value": "clean"
     }
   ],
   "inputs": [],

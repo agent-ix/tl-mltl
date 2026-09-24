@@ -4,8 +4,13 @@
 //! command directly; Quoin retains that result and supplies its exact bytes.
 //! Trace: FR-055-AC-1, FR-055-AC-2, TC-197, TC-198.
 
-use std::{fs, path::Path};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::Path,
+};
 
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -69,6 +74,8 @@ struct CheckInput {
     result_path: String,
     result_digest: String,
     raw_artifacts: Vec<RawArtifact>,
+    #[serde(default)]
+    dependencies: Vec<DependencyResult>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -77,6 +84,16 @@ struct RawArtifact {
     role: String,
     path: String,
     digest: String,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct DependencyResult {
+    member: String,
+    index: u64,
+    request_digest: String,
+    result_digest: String,
+    result_path: String,
 }
 
 #[derive(Serialize)]
@@ -93,6 +110,7 @@ struct DomainVerdict {
     request_digest: String,
     result_digest: String,
     raw_artifacts_digest: String,
+    dependencies_digest: String,
     stdout_digest: Option<String>,
     stderr_digest: Option<String>,
 }
@@ -139,6 +157,26 @@ fn member_parser(member: &str) -> Option<&'static str> {
         "V6.syntax_interval_proof" | "V6.mltl_horizon_proof" => Some("kani-clean"),
         "V6.seeded_false_claim" => Some("kani-false"),
         "V6.ordinary_counterexample_replay" => Some("kani-replay"),
+        "V8.parse_example_prep" => Some("embedded-build"),
+        "V8.syntax_core"
+        | "V8.syntax_alloc"
+        | "V8.syntax_serde"
+        | "V8.parse_default"
+        | "V8.mltl_default"
+        | "V8.mltl_infinite"
+        | "V8.rewrite_default"
+        | "V8.rewrite_infinite" => Some("llvm-cov"),
+        "V5.parse_discovery"
+        | "V5.syntax_discovery"
+        | "V5.mltl_discovery"
+        | "V5.rewrite_discovery" => Some("mutants-discovery"),
+        "V5.parse_mutation" | "V5.syntax_mutation" | "V5.mltl_mutation" | "V5.rewrite_mutation" => {
+            Some("mutants-run")
+        }
+        "V5.parse_restored_control"
+        | "V5.syntax_restored_control"
+        | "V5.mltl_restored_control"
+        | "V5.rewrite_restored_control" => Some("mutants-restored"),
         _ => None,
     }
 }
@@ -553,6 +591,407 @@ fn kani_false(raw: &str) -> bool {
         && raw.contains("Complete - 0 successfully verified harnesses, 1 failures, 1 total.")
 }
 
+fn coverage_required_files(member: &str) -> Option<&'static [&'static str]> {
+    match member {
+        "V8.syntax_core" | "V8.syntax_alloc" => Some(&["src/future.rs", "src/formula/infinite.rs"]),
+        "V8.syntax_serde" => Some(&[
+            "src/future.rs",
+            "src/formula/infinite.rs",
+            "src/contracts/reader.rs",
+        ]),
+        "V8.parse_default" => Some(&[
+            "src/parser.rs",
+            "src/formatter.rs",
+            "src/dialect/v4.rs",
+            "src/infinite.rs",
+            "src/lexer.rs",
+        ]),
+        "V8.mltl_default" => Some(&[
+            "src/future/evaluate.rs",
+            "src/past/mod.rs",
+            "src/mapping/past.rs",
+            "src/wire/command.rs",
+            "src/wire/common.rs",
+            "src/wire/trace.rs",
+        ]),
+        "V8.mltl_infinite" => Some(&[
+            "src/future/evaluate.rs",
+            "src/past/mod.rs",
+            "src/infinite/periodic.rs",
+            "src/infinite/export.rs",
+            "src/mapping/past.rs",
+            "src/wire/command.rs",
+            "src/wire/common.rs",
+            "src/wire/trace.rs",
+        ]),
+        "V8.rewrite_default" => Some(&[
+            "src/engine/future.rs",
+            "src/engine/past.rs",
+            "src/report.rs",
+            "src/replay.rs",
+            "src/disposition.rs",
+        ]),
+        "V8.rewrite_infinite" => Some(&[
+            "src/engine/future.rs",
+            "src/engine/past.rs",
+            "src/infinite.rs",
+            "src/report.rs",
+            "src/replay.rs",
+            "src/disposition.rs",
+        ]),
+        _ => None,
+    }
+}
+
+fn coverage_accept(member: &str, bytes: &[u8]) -> bool {
+    let Ok(export) = serde_json::from_slice::<Value>(bytes) else {
+        return false;
+    };
+    if export["type"] != "llvm.coverage.json.export" {
+        return false;
+    }
+    let Some(data) = export["data"].as_array() else {
+        return false;
+    };
+    if data.len() != 1 {
+        return false;
+    }
+    let Some(files) = data[0]["files"].as_array() else {
+        return false;
+    };
+    let Some(required) = coverage_required_files(member) else {
+        return false;
+    };
+    let mut measured = BTreeMap::new();
+    for file in files {
+        let Some(filename) = file["filename"].as_str() else {
+            return false;
+        };
+        let relative = filename
+            .rsplit_once("/src/")
+            .map(|(_, tail)| format!("src/{tail}"));
+        let Some(relative) = relative else { continue };
+        if measured.insert(relative, file).is_some() {
+            return false;
+        }
+    }
+    for path in required {
+        let Some(file) = measured.get(*path) else {
+            return false;
+        };
+        let (Some(branch_count), Some(branch_covered)) = (
+            file["summary"]["branches"]["count"].as_u64(),
+            file["summary"]["branches"]["covered"].as_u64(),
+        ) else {
+            return false;
+        };
+        if branch_covered > branch_count {
+            return false;
+        }
+        if branch_count == 0 {
+            if !matches!(*path, "src/dialect/v4.rs" | "src/disposition.rs")
+                || ["lines", "functions", "regions"].iter().any(|metric| {
+                    file["summary"][metric]["covered"]
+                        .as_u64()
+                        .is_none_or(|value| value == 0)
+                })
+            {
+                return false;
+            }
+            continue;
+        }
+        if branch_covered != branch_count {
+            return false;
+        }
+        let Some(branches) = file["branches"].as_array() else {
+            return false;
+        };
+        if branches.is_empty() {
+            return false;
+        }
+        let mut sites: BTreeMap<Vec<i64>, (u64, u64)> = BTreeMap::new();
+        for branch in branches {
+            let Some(values) = branch.as_array() else {
+                return false;
+            };
+            if values.len() != 9 {
+                return false;
+            }
+            let numbers: Option<Vec<i64>> = values.iter().map(Value::as_i64).collect();
+            let Some(numbers) = numbers else { return false };
+            if numbers.iter().any(|value| *value < 0) {
+                return false;
+            }
+            let site = [numbers[..4].to_vec(), numbers[6..].to_vec()].concat();
+            let entry = sites.entry(site).or_default();
+            let (Ok(true_count), Ok(false_count)) =
+                (u64::try_from(numbers[4]), u64::try_from(numbers[5]))
+            else {
+                return false;
+            };
+            let (Some(next_true), Some(next_false)) = (
+                entry.0.checked_add(true_count),
+                entry.1.checked_add(false_count),
+            ) else {
+                return false;
+            };
+            *entry = (next_true, next_false);
+        }
+        if sites
+            .values()
+            .any(|(true_count, false_count)| *true_count == 0 || *false_count == 0)
+        {
+            return false;
+        }
+    }
+    true
+}
+
+fn v5_selection(member: &str) -> Option<(&'static str, &'static str)> {
+    match member.split('.').nth(1)?.split('_').next()? {
+        "parse" => Some(("src/infinite.rs", "parse_clean_ascii_v4|Parser.*::interval|Parser.*::lower_derived")),
+        "syntax" => Some(("src/formula/infinite.rs", "TemporalInterval::start|select_infinite_profile|validate_resource_limits|preflight_resource_limits|InfiniteFormulaDocument::content_identity")),
+        "mltl" => Some(("src/infinite/mod.rs", "evaluate_trace|evaluate_lasso")),
+        "rewrite" => Some(("src/infinite.rs", "check_infinite_rewrite|classify_infinite_results")),
+        _ => None,
+    }
+}
+
+fn discovered_names(member: &str, raw: &[u8]) -> Option<(Vec<String>, Vec<String>)> {
+    let discovered: Value = serde_json::from_slice(raw).ok()?;
+    let rows = discovered.as_array()?;
+    let (file, pattern) = v5_selection(member)?;
+    let selector = Regex::new(pattern).ok()?;
+    let mut all = Vec::new();
+    let mut selected = Vec::new();
+    for row in rows {
+        let name = row["name"].as_str()?;
+        let row_file = row["file"].as_str()?;
+        if name.is_empty() || row_file != file || all.iter().any(|seen| seen == name) {
+            return None;
+        }
+        all.push(name.to_owned());
+        if selector.is_match(name) {
+            selected.push(name.to_owned());
+        }
+    }
+    if all.is_empty() || selected.is_empty() {
+        return None;
+    }
+    Some((all, selected))
+}
+
+fn mutants_restored(raw: &str) -> bool {
+    let count = raw
+        .lines()
+        .filter(|line| line.starts_with("test result: "))
+        .count();
+    count > 0 && cargo_summaries(raw, 1, count)
+}
+
+fn v5_tail(member: &str) -> Option<&'static [&'static str]> {
+    match member.split('.').nth(1)?.split('_').next()? {
+        "parse" => Some(&[
+            "--test",
+            "infinite_v4",
+            "--test",
+            "infinite_trace_corpus",
+            "--test",
+            "owner_infinite_corpus",
+        ]),
+        "syntax" => Some(&[
+            "--test",
+            "infinite_formula",
+            "--test",
+            "infinite_trace",
+            "--test",
+            "infinite_trace_corpus",
+        ]),
+        "mltl" => Some(&[
+            "--lib",
+            "--test",
+            "infinite_trace",
+            "--test",
+            "infinite_oracle",
+        ]),
+        "rewrite" => Some(&[
+            "--lib",
+            "--test",
+            "infinite_conformance",
+            "--test",
+            "infinite_rules",
+            "--test",
+            "infinite_owner_corpus",
+        ]),
+        _ => None,
+    }
+}
+
+fn failed_status(status: &Value) -> bool {
+    status["Failure"].as_i64().is_some_and(|code| code != 0)
+}
+
+fn mutation_accept(input: &CheckInput) -> bool {
+    let prefix = input.member.split('_').next().unwrap_or("");
+    let discovery_member = format!("{prefix}_discovery");
+    let Some(dependency) = input
+        .dependencies
+        .iter()
+        .find(|row| row.member == discovery_member)
+    else {
+        return false;
+    };
+    let Ok(dependency_bytes) = fs::read(&dependency.result_path) else {
+        return false;
+    };
+    let Ok(discovery_result) = serde_json::from_slice::<ExecutionResult>(&dependency_bytes) else {
+        return false;
+    };
+    if discovery_result.state.kind != "completed" {
+        return false;
+    }
+    let Some(discovery_process) = discovery_result.process else {
+        return false;
+    };
+    if discovery_process
+        .terminal_status
+        .as_ref()
+        .is_none_or(|status| status.kind != "exit_code" || status.value != 0)
+        || discovery_process.stdout.truncated
+        || sha256(&discovery_process.stdout.bytes) != discovery_process.stdout.digest
+    {
+        return false;
+    }
+    let Some((_, expected_selected)) =
+        discovered_names(&discovery_member, &discovery_process.stdout.bytes)
+    else {
+        return false;
+    };
+    let artifact = |suffix: &str| -> Option<Value> {
+        let role = format!("mutants/mutants.out/{suffix}");
+        let path = &input
+            .raw_artifacts
+            .iter()
+            .find(|item| item.role == role)?
+            .path;
+        serde_json::from_slice(&fs::read(path).ok()?).ok()
+    };
+    let Some(selected) = artifact("mutants.json") else {
+        return false;
+    };
+    let Some(selected_rows) = selected.as_array() else {
+        return false;
+    };
+    let names: Option<Vec<&str>> = selected_rows
+        .iter()
+        .map(|row| row["name"].as_str())
+        .collect();
+    let Some(names) = names else { return false };
+    if names.len() != expected_selected.len()
+        || names
+            .iter()
+            .any(|name| !expected_selected.iter().any(|expected| expected == name))
+        || names
+            .iter()
+            .any(|name| names.iter().filter(|other| *other == name).count() != 1)
+    {
+        return false;
+    }
+    let Some(native) = artifact("outcomes.json") else {
+        return false;
+    };
+    if native["cargo_mutants_version"] != "27.0.0"
+        || native["total_mutants"].as_u64() != Some(names.len() as u64)
+    {
+        return false;
+    }
+    let Some(outcomes) = native["outcomes"].as_array() else {
+        return false;
+    };
+    if outcomes.len() != names.len() + 1
+        || outcomes[0]["scenario"] != "Baseline"
+        || outcomes[0]["summary"] != "Success"
+    {
+        return false;
+    }
+    let Some(baseline_phases) = outcomes[0]["phase_results"].as_array() else {
+        return false;
+    };
+    if baseline_phases.len() != 2
+        || baseline_phases[0]["phase"] != "Build"
+        || baseline_phases[1]["phase"] != "Test"
+        || baseline_phases
+            .iter()
+            .any(|phase| phase["process_status"] != "Success")
+    {
+        return false;
+    }
+    let Some(test_argv) = baseline_phases[1]["argv"].as_array() else {
+        return false;
+    };
+    let Some(tail) = v5_tail(&input.member) else {
+        return false;
+    };
+    if test_argv.len() < tail.len()
+        || test_argv[test_argv.len() - tail.len()..]
+            .iter()
+            .zip(tail.iter())
+            .any(|(actual, expected)| actual != expected)
+    {
+        return false;
+    }
+    let mut caught = 0_u64;
+    let mut unviable = 0_u64;
+    let mut observed_names = BTreeSet::new();
+    for outcome in outcomes.iter().skip(1) {
+        let Some(name) = outcome["scenario"]["Mutant"]["name"].as_str() else {
+            return false;
+        };
+        if !names.contains(&name) || !observed_names.insert(name) {
+            return false;
+        }
+        let Some(phases) = outcome["phase_results"].as_array() else {
+            return false;
+        };
+        let valid = match outcome["summary"].as_str() {
+            Some("CaughtMutant") => {
+                caught += 1;
+                phases.len() == 2
+                    && phases[0]["phase"] == "Build"
+                    && phases[0]["process_status"] == "Success"
+                    && phases[1]["phase"] == "Test"
+                    && failed_status(&phases[1]["process_status"])
+                    && phases[0]["argv"] == baseline_phases[0]["argv"]
+                    && phases[1]["argv"] == baseline_phases[1]["argv"]
+            }
+            Some("Unviable") => {
+                unviable += 1;
+                phases.len() == 1
+                    && phases[0]["phase"] == "Build"
+                    && failed_status(&phases[0]["process_status"])
+                    && phases[0]["argv"] == baseline_phases[0]["argv"]
+            }
+            _ => false,
+        };
+        if !valid {
+            return false;
+        }
+        for key in ["log_path", "diff_path"] {
+            if let Some(relative) = outcome[key].as_str() {
+                let role = format!("mutants/mutants.out/{relative}");
+                if !input.raw_artifacts.iter().any(|item| item.role == role) {
+                    return false;
+                }
+            }
+        }
+    }
+    caught > 0
+        && native["caught"].as_u64() == Some(caught)
+        && native["unviable"].as_u64() == Some(unviable)
+        && native["missed"].as_u64() == Some(0)
+        && native["timeout"].as_u64() == Some(0)
+}
+
 fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVerdict {
     let mut reasons = Vec::new();
     let mut request_digest = String::new();
@@ -627,6 +1066,20 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                         {
                             reasons.push("kani_counterexample_replay_unproved".into());
                         }
+                    } else if parser == "llvm-cov" {
+                        // The decisive export is a required retained output artifact.
+                    } else if parser == "mutants-discovery" {
+                        if discovered_names(member, &process.stdout.bytes).is_none() {
+                            reasons.push("mutant_discovery_unproved".into());
+                        }
+                    } else if parser == "mutants-run" {
+                        // The decisive outcome ledger is a bounded output tree.
+                    } else if parser == "mutants-restored" {
+                        let raw = String::from_utf8_lossy(&process.stdout.bytes).to_string()
+                            + &String::from_utf8_lossy(&process.stderr.bytes);
+                        if !mutants_restored(&raw) {
+                            reasons.push("mutant_restoration_unproved".into());
+                        }
                     } else {
                         match String::from_utf8(process.stdout.bytes) {
                             Err(_) => reasons.push("non_utf8_native_output".into()),
@@ -677,6 +1130,7 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
         request_digest,
         result_digest: String::new(),
         raw_artifacts_digest: String::new(),
+        dependencies_digest: String::new(),
         stdout_digest,
         stderr_digest,
     }
@@ -725,6 +1179,9 @@ fn run_args(args: &[String]) -> Result<(), String> {
     let artifact_inventory =
         serde_json::to_value(&input.raw_artifacts).map_err(|e| e.to_string())?;
     verdict.raw_artifacts_digest = canonical_digest(&artifact_inventory)?;
+    let dependency_inventory =
+        serde_json::to_value(&input.dependencies).map_err(|e| e.to_string())?;
+    verdict.dependencies_digest = canonical_digest(&dependency_inventory)?;
     let mut binding_reasons = Vec::new();
     if canonical_digest(&definition)? != input.definition_digest {
         binding_reasons.push("definition_digest_mismatch".into());
@@ -741,6 +1198,32 @@ fn run_args(args: &[String]) -> Result<(), String> {
     }
     if verdict.result_digest != input.result_digest {
         binding_reasons.push("result_digest_mismatch".into());
+    }
+    let expected_dependencies: Vec<_> = member["dependsOn"]
+        .as_array()
+        .map(|items| items.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+    if expected_dependencies.len() != input.dependencies.len()
+        || input.dependencies.iter().any(|dependency| {
+            dependency.index != 1
+                || expected_dependencies
+                    .iter()
+                    .filter(|name| **name == dependency.member)
+                    .count()
+                    != 1
+        })
+    {
+        binding_reasons.push("dependency_inventory_mismatch".into());
+    }
+    for dependency in &input.dependencies {
+        let dependency_bytes = fs::read(&dependency.result_path).map_err(|e| e.to_string())?;
+        let dependency_value: Value =
+            serde_json::from_slice(&dependency_bytes).map_err(|e| e.to_string())?;
+        if canonical_digest(&dependency_value)? != dependency.result_digest
+            || dependency_value["requestIdentity"]["digest"] != dependency.request_digest
+        {
+            binding_reasons.push("dependency_result_mismatch".into());
+        }
     }
     if input.raw_artifacts.len() != result_value["artifacts"].as_array().map_or(0, Vec::len) {
         binding_reasons.push("artifact_inventory_mismatch".into());
@@ -764,6 +1247,23 @@ fn run_args(args: &[String]) -> Result<(), String> {
     }
     if member_parser(&input.member) == Some("libfuzzer") && !input.raw_artifacts.is_empty() {
         binding_reasons.push("libfuzzer_crash_artifact_present".into());
+    }
+    if member_parser(&input.member) == Some("llvm-cov") {
+        let exports: Vec<_> = input
+            .raw_artifacts
+            .iter()
+            .filter(|artifact| artifact.role == "coverage")
+            .collect();
+        if exports.len() != 1
+            || fs::read(&exports[0].path)
+                .ok()
+                .is_none_or(|bytes| !coverage_accept(&input.member, &bytes))
+        {
+            binding_reasons.push("critical_coverage_unproved".into());
+        }
+    }
+    if member_parser(&input.member) == Some("mutants-run") && !mutation_accept(&input) {
+        binding_reasons.push("mutant_outcome_population_unproved".into());
     }
     if !binding_reasons.is_empty() {
         verdict.verdict = "reject";
@@ -811,6 +1311,7 @@ mod tests {
         .unwrap()
     }
 
+    // Trace: FR-055-AC-2, TC-198
     #[test]
     fn sealed_checker_input_rejects_stale_definition_digest() {
         let directory = tempfile::tempdir().unwrap();
@@ -865,6 +1366,7 @@ mod tests {
             .contains(&json!("definition_digest_mismatch")));
     }
 
+    // Trace: FR-055-AC-2, TC-198
     #[test]
     fn kani_checker_rejects_missing_or_failed_property() {
         let raw = "Checking harness formula::graph::kani_proofs::interval_cardinality_matches_wide_arithmetic...\nCBMC version 6.11.0 (cbmc-6.11.0)\nSolving with CaDiCaL 3.0.0\nCheck 1: formula::graph::kani_proofs::interval_cardinality_matches_wide_arithmetic.assertion.1\n - Status: SUCCESS\n ** 0 of 1 failed\nVERIFICATION:- SUCCESSFUL\nComplete - 1 successfully verified harnesses, 0 failures, 1 total.\n";
@@ -879,6 +1381,7 @@ mod tests {
         ));
     }
 
+    // Trace: FR-055-AC-2, TC-198
     #[test]
     fn false_kani_control_requires_replayable_bytes() {
         let raw = "Checking harness seeded_false_cardinality_claim...\nSolving with CaDiCaL 3.0.0\n ** 1 of 35 failed\nFailed Checks: assertion failed: interval.cardinality() == Some(1)\nVERIFICATION:- FAILED\nConcrete playback unit test for `seeded_false_cardinality_claim`:\nlet concrete_vals: Vec<Vec<u8>> = vec![\nvec![0, 0, 0, 128],\nvec![0, 0, 0, 192],\n];\nComplete - 0 successfully verified harnesses, 1 failures, 1 total.\n";
@@ -888,6 +1391,33 @@ mod tests {
         ));
     }
 
+    // Trace: FR-055-AC-2, TC-198
+    #[test]
+    fn coverage_checker_requires_both_critical_branch_sides() {
+        let file = |name: &str, false_count| {
+            json!({
+                "filename":format!("/staged/src/{name}"),
+                "summary":{"branches":{"count":2,"covered":if false_count == 0 {1} else {2}}},
+                "branches":[[1,1,1,2,1,false_count,0,0,0]]
+            })
+        };
+        let good = json!({"type":"llvm.coverage.json.export","data":[{"files":[
+            file("future.rs",1),file("formula/infinite.rs",1)
+        ]}]});
+        assert!(super::coverage_accept(
+            "V8.syntax_core",
+            &serde_json::to_vec(&good).unwrap()
+        ));
+        let bad = json!({"type":"llvm.coverage.json.export","data":[{"files":[
+            file("future.rs",0),file("formula/infinite.rs",1)
+        ]}]});
+        assert!(!super::coverage_accept(
+            "V8.syntax_core",
+            &serde_json::to_vec(&bad).unwrap()
+        ));
+    }
+
+    // Trace: FR-055-AC-1, TC-197
     #[test]
     fn fixed_member_inventory_refuses_unimplemented_lane() {
         assert_eq!(member_parser("V1.independent_oracle"), Some("cargo-test"));
@@ -897,6 +1427,7 @@ mod tests {
         assert_eq!(verdict.verdict, "inconclusive");
     }
 
+    // Trace: FR-055-AC-2, TC-198
     #[test]
     fn checker_reads_raw_bytes_not_claimed_observation() {
         let good = "running 2 tests\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n";
@@ -925,6 +1456,7 @@ mod tests {
         );
     }
 
+    // Trace: FR-055-AC-2, TC-198
     #[test]
     fn unavailable_execution_is_inconclusive() {
         let verdict = check(

@@ -2,10 +2,6 @@
   "arguments": [
     {
       "kind": "literal",
-      "value": "fuzz"
-    },
-    {
-      "kind": "literal",
       "value": "run"
     },
     {
@@ -89,6 +85,16 @@
       "kind": "literal",
       "name": "CARGO_NET_OFFLINE",
       "value": "true"
+    },
+    {
+      "kind": "runtime",
+      "name": "TL_MLTL_SOURCE_REVISION",
+      "value": "source:tl-mltl.revision"
+    },
+    {
+      "kind": "literal",
+      "name": "TL_MLTL_SOURCE_STATE",
+      "value": "clean"
     }
   ],
   "inputs": [],
@@ -98,8 +104,8 @@
       "role": "crash"
     }
   ],
-  "producerName": "cargo",
-  "producerVersion": "1.100.0-nightly",
+  "producerName": "cargo-fuzz",
+  "producerVersion": "0.13.2",
   "repetitions": 1,
   "responseAdapter": "quoin.process-evidence-adapter",
   "responseAdapterVersion": "1",
