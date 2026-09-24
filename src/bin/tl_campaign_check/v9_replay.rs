@@ -212,8 +212,37 @@ fn harness_inputs(
 fn host(result: &Value) -> Option<&Value> {
     let host = result.get("observedHost")?;
     let object = host.as_object()?;
+    let digest = |value: &Value| {
+        value.as_str().is_some_and(|value| {
+            value.len() == 64
+                && value
+                    .bytes()
+                    .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+        })
+    };
+    if !object.get("machineDigest").is_some_and(digest) {
+        return None;
+    }
+    match object.get("identitySource") {
+        None => {
+            if object.contains_key("cpuAffinityDigest") {
+                return None;
+            }
+        }
+        Some(Value::String(source)) if source == "kernel_boot_id" => {
+            if !object.get("cpuAffinityDigest").is_some_and(digest) {
+                return None;
+            }
+        }
+        Some(_) => return None,
+    }
+    if object
+        .get("cpuModelSource")
+        .is_some_and(|source| source != "arm_cpu_id")
+    {
+        return None;
+    }
     for key in [
-        "machineDigest",
         "os",
         "kernelRelease",
         "architecture",
@@ -512,7 +541,7 @@ mod tests {
                 "stdout":{"bytes":[],"digest":super::super::sha256(&[]),"truncated":false},
                 "stderr":{"bytes":[],"digest":super::super::sha256(&[]),"truncated":false}},
             "observedHost":{
-            "machineDigest":observed_machine, "os":"linux", "kernelRelease":"6.0",
+            "machineDigest":super::super::sha256(observed_machine.as_bytes()), "os":"linux", "kernelRelease":"6.0",
             "architecture":"x86_64", "cpuModel":"test cpu", "logicalCpus":8,
             "memoryBytes":1024, "runtimeClass":"native"
         }});
@@ -590,6 +619,27 @@ mod tests {
             raw_bundle_digest: super::super::canonical_digest(&bundle_value).unwrap(),
             raw_bundle_path: raw_bundle_path.to_string_lossy().into(),
         }
+    }
+
+    #[test]
+    // Trace: TC-190, FR-051-AC-1
+    fn boot_scoped_host_requires_exact_affinity_and_known_source() {
+        let (_, mut result, _) = fixture(100.0, "fictional-host", "base");
+        assert!(host(&result).is_some());
+        result["observedHost"]["identitySource"] = json!("kernel_boot_id");
+        assert!(host(&result).is_none());
+        result["observedHost"]["cpuAffinityDigest"] = json!("a".repeat(64));
+        assert!(host(&result).is_some());
+        result["observedHost"]["cpuAffinityDigest"] = json!("wrong");
+        assert!(host(&result).is_none());
+        result["observedHost"]["cpuAffinityDigest"] = json!("a".repeat(64));
+        result["observedHost"]["identitySource"] = json!("unrecognized");
+        assert!(host(&result).is_none());
+        result["observedHost"]["identitySource"] = json!("kernel_boot_id");
+        result["observedHost"]["cpuModelSource"] = json!("arm_cpu_id");
+        assert!(host(&result).is_some());
+        result["observedHost"]["machineDigest"] = json!("A".repeat(64));
+        assert!(host(&result).is_none());
     }
 
     #[test]
