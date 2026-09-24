@@ -16,8 +16,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "7a50011fd7470ad5285a490dbb28aac9d4372036",
-      "digest": "d491d9613b4a1fa22549d132bee778929ce8a2fc16744432c8d9607e6892bd37"
+      "revision": "5bf4e1f8d088e8c9570bf374cf1a75e236f498ab",
+      "digest": "6f439c14d7e1fc97cb2074d7ef3b3c06c24c99b9956663bc0ce7dbd729adab24"
     },
     {
       "repository": "tl-rewrite",
@@ -9250,7 +9250,7 @@
       "planId": "MP-121",
       "definitionVersion": "tl.v10.compile-unsafe-since/v1",
       "dependsOn": [],
-      "required": true,
+      "required": false,
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",

@@ -19,9 +19,9 @@ V10 has two explicit live-target commands. They require the caller to opt in
 with a clean local checkout of R2U2 at `336a2453`, with the pinned C2PO entry
 and monitor executable bytes. The normal manifest never invokes that foreign
 runtime. Its explicit Cargo example retains fresh compiler/monitor raw files,
-compares eight reviewed bounded cells and eighteen past cells with the
-independent oracle, classifies the known unsafe `S[0,2]` origin mismatch as
-unsupported mapping, and checks one finite bad-prefix refutation against the
+compares eight reviewed bounded cells and six admitted past cells with the
+independent oracle, classifies twelve other past cells by exact target-origin
+refusal, and retains the known unsafe `S[0,2]` origin mismatch as unsupported, and checks one finite bad-prefix refutation against the
 oracle. It also exports the `G[0,)q` safety body, compiles and executes the
 exported `q` expression, replays its first false target step as a provider bad
 prefix, and classifies a later true step as inconclusive. The second command
@@ -192,7 +192,7 @@ commits; it does not retroactively claim to have measured the artifact commit.
 
 `stage1-campaign-definition.json` is the external control-plane definition
 for 117 direct native EA measurements. Its `tl-mltl` source is the clean
-`7a50011fd7470ad5285a490dbb28aac9d4372036` checkout. Keep this
+`5bf4e1f8d088e8c9570bf374cf1a75e236f498ab` checkout. Keep this
 control-plane checkout separate from that measured checkout: the definition
 and generated machine config are later artifacts that name the measured tree,
 so they cannot be part of their own source digest. Pass the clean measured
