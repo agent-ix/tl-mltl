@@ -8,7 +8,8 @@ use sha2::{Digest, Sha256};
 use tl_mltl::{
     evaluate_past, evaluate_prefix_at, map_past_to_c2po, ClockBinding, EvaluationLimits,
     MappingSourceIdentity, MappingSourceState, PastEvaluationLimits, PastEvaluationRelationInput,
-    PositionHistoryDocument, PositionObservation, TargetOriginContract, TruthValue,
+    PastMappingError, PositionHistoryDocument, PositionObservation, TargetOriginContract,
+    TruthValue,
 };
 use tl_oracle::{
     evaluate as evaluate_lasso_oracle, evaluate_closed_trace_v1, evaluate_origin_complete,
@@ -17,8 +18,8 @@ use tl_oracle::{
 };
 use tl_syntax::{
     Formula, FormulaDocument, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration,
-    PropositionBinding, PropositionId, SemanticProfile, SignalCatalogDocument, SignalDomain,
-    SignalId,
+    PastOperatorKind, PropositionBinding, PropositionId, SemanticProfile, SignalCatalogDocument,
+    SignalDomain, SignalId,
 };
 
 use super::v10_replay::Replay;
@@ -366,6 +367,33 @@ fn past_catalog() -> Option<SignalCatalogDocument> {
     .ok()
 }
 
+fn expected_past_refusal(index: usize, error: &PastMappingError) -> bool {
+    let (expected_operator, expected_interval) = match index {
+        1 => (
+            PastOperatorKind::Historically,
+            Interval::new(0, 1).expect("fixed interval"),
+        ),
+        3 => (
+            PastOperatorKind::Since,
+            Interval::new(0, 2).expect("fixed interval"),
+        ),
+        4 => (
+            PastOperatorKind::Triggered,
+            Interval::new(0, 2).expect("fixed interval"),
+        ),
+        5 => (
+            PastOperatorKind::Once,
+            Interval::new(1, 1).expect("fixed interval"),
+        ),
+        _ => return false,
+    };
+    matches!(
+        error,
+        PastMappingError::TargetOriginIntervalMismatch { operator, interval }
+            if *operator == expected_operator && *interval == expected_interval
+    )
+}
+
 fn past_case(
     index: usize,
     observations: &[(bool, bool)],
@@ -423,7 +451,7 @@ fn past_case(
         (true, Ok(mapped))
             if mapped.expression == expression
                 && mapped.output_sha256 == sha256(expression.as_bytes()) => {}
-        (false, Err(_typed_refusal)) => {}
+        (false, Err(refusal)) if expected_past_refusal(index, &refusal) => {}
         _ => return Replay::Reject("v10_mapping_partition_unproved"),
     }
     let word = past_word(observations);
@@ -587,6 +615,46 @@ mod tests {
 
     fn target(bytes: &[u8]) -> BTreeMap<(usize, usize), bool> {
         super::super::v10_target_rows(bytes).unwrap()
+    }
+
+    // Trace: FR-055-AC-2, TC-198
+    #[test]
+    fn unsupported_past_cases_require_their_exact_origin_interval_refusal() {
+        for (index, operator, start, end) in [
+            (1, PastOperatorKind::Historically, 0, 1),
+            (3, PastOperatorKind::Since, 0, 2),
+            (4, PastOperatorKind::Triggered, 0, 2),
+            (5, PastOperatorKind::Once, 1, 1),
+        ] {
+            let expected = PastMappingError::TargetOriginIntervalMismatch {
+                operator,
+                interval: Interval::new(start, end).unwrap(),
+            };
+            assert!(expected_past_refusal(index, &expected));
+            assert!(!expected_past_refusal(
+                index,
+                &PastMappingError::ResourceIncomplete
+            ));
+            assert!(!expected_past_refusal(
+                index,
+                &PastMappingError::TargetOriginMismatch
+            ));
+            assert!(!expected_past_refusal(0, &expected));
+            assert!(!expected_past_refusal(
+                index,
+                &PastMappingError::TargetOriginIntervalMismatch {
+                    operator: PastOperatorKind::StrongPrevious,
+                    interval: Interval::new(start, end).unwrap(),
+                },
+            ));
+            assert!(!expected_past_refusal(
+                index,
+                &PastMappingError::TargetOriginIntervalMismatch {
+                    operator,
+                    interval: Interval::new(0, 0).unwrap(),
+                },
+            ));
+        }
     }
 
     // Trace: FR-055-AC-2, TC-198
