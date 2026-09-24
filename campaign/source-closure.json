@@ -27,8 +27,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "333c202a54e87fb50f4a87e3f2981b987a6be1ea",
-      "treeDigest": "c624415bfccfa207a58f02e88ff745c4909249d9508a3d6c2e8dfb3be5416153",
+      "revision": "6b9acde5408c2d87db687d7aa12f4ca63b3f84c0",
+      "treeDigest": "e4942025f84417a8a77646e97dfc265260e97c41efb31a222702f312b5572168",
       "cargoLockDigest": "402173883a14765dcd3c4205e2d75bda43c8f5221b62b6911d822e113836b2e7",
       "tlGitDependencies": [
         {
@@ -44,7 +44,7 @@
           "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
         }
       ],
-      "cargoManifestDigest": "d7c865a0d4a2a44113dba6e63854fba7c31568389d7e074c40040ac0ceed2cad"
+      "cargoManifestDigest": "590a967bf539566d7aa2a79a503981e1c25510dc7fc4c54b9f914a3d2a63a37c"
     },
     {
       "repository": "tl-rewrite",
@@ -239,7 +239,7 @@
     {
       "repository": "tl-mltl",
       "baselineRevision": "0e4a41083d420ccc85134f4f7e224698ab7859e0",
-      "candidateRevision": "333c202a54e87fb50f4a87e3f2981b987a6be1ea",
+      "candidateRevision": "6b9acde5408c2d87db687d7aa12f4ca63b3f84c0",
       "identicalFiles": [
         {
           "path": "benches/input-digests.json",
