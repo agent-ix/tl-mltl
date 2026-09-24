@@ -25,8 +25,9 @@ predate the V4 parser and infinite-trace APIs, so those cases have no comparable
 old implementation. A pinned feature-complete baseline is required. One exact
 set is parse `225a3300963199e523958f4abe4c16cc9dcca641`, rewrite
 `9056b8b31f3f7f3772d2bd811c4f6edd2d89b509`, and mlTL
-`ae85de4609fcdb1db525eb590f41ed3febcc211e` (the benchmark-introduction
-commits). A separate 0.3.0-to-current performance comparison can measure only
+`0e4a41083d420ccc85134f4f7e224698ab7859e0` (the feature-complete
+baseline with the shared 34-case harness). A separate 0.3.0-to-current
+performance comparison can measure only
 the APIs common to both releases; it cannot claim V4 or infinite results.
 
 ```sh

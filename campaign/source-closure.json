@@ -27,8 +27,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "af555f58339334830f23b587f2ddf73b25f55bb3",
-      "treeDigest": "ae3dfd2a5c79f2bb5d6e9c9362184b298132561aec27c5201bf90106b65fa340",
+      "revision": "648d60d04b80a33c97579b34e616d3c142f90f06",
+      "treeDigest": "74cc7921b992350cd9afc99ffcc10906da0f5482bd5c4632742f9d1d5fcf31f2",
       "cargoLockDigest": "402173883a14765dcd3c4205e2d75bda43c8f5221b62b6911d822e113836b2e7",
       "tlGitDependencies": [
         {
@@ -144,8 +144,8 @@
     },
     {
       "repository": "tl-mltl-baseline",
-      "revision": "ae85de4609fcdb1db525eb590f41ed3febcc211e",
-      "treeDigest": "ccac676c7d7ee306a9a151d3e9ac12e92cbb64b8cd8a6019c01fd0df577a74f7",
+      "revision": "0e4a41083d420ccc85134f4f7e224698ab7859e0",
+      "treeDigest": "b850d1a89491e0e6ca42708c74b97283ca9921212276a21a1e859ebd9fdfd5d2",
       "cargoLockDigest": "74bfc2e00884b6a6884d9a2ae0fc96f5e241cb425465d72b3c583ef7e3cc48c4",
       "tlGitDependencies": [
         {
@@ -238,18 +238,18 @@
     },
     {
       "repository": "tl-mltl",
-      "baselineRevision": "ae85de4609fcdb1db525eb590f41ed3febcc211e",
-      "candidateRevision": "af555f58339334830f23b587f2ddf73b25f55bb3",
+      "baselineRevision": "0e4a41083d420ccc85134f4f7e224698ab7859e0",
+      "candidateRevision": "648d60d04b80a33c97579b34e616d3c142f90f06",
       "identicalFiles": [
         {
           "path": "benches/input-digests.json",
-          "gitBlobOid": "101e5d0e42efc0479f20b12fc9cc27df15bdf53b",
-          "sha256": "60a440e6e499cf993eb1d348b6a761cd7d83d73895be6ce193c4d581b06441d8"
+          "gitBlobOid": "a8cc78f2292bcf43b4aba6fbc8c838b430e2e77e",
+          "sha256": "db3ad29374d1a19a9cf454c6b1cfe21463d3a138a14822733330809fbd6cfc11"
         },
         {
           "path": "benches/v9_workloads.rs",
-          "gitBlobOid": "2cff93cc2b5869fab20e568049972a278a4ad088",
-          "sha256": "e82464c096bc0d547a63f8fa3dda54affccf8a5083da47a7502940d779503352"
+          "gitBlobOid": "a1fc566adf1cad8ef9aa04d384c9826080bcb129",
+          "sha256": "7ac227843519f8d473ed4eb77944070ba8438f5759b11c9774d6473c0e31db24"
         }
       ]
     }
