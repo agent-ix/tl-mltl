@@ -1267,6 +1267,54 @@ fn v10_compile_inputs(input: &CheckInput, request: &Value, source_root: &Path) -
     true
 }
 
+fn v10_monitor_inputs(input: &CheckInput, request: &Value, source_root: &Path) -> bool {
+    let Some(case) = input.member.strip_prefix("V10.monitor.") else {
+        return false;
+    };
+    if case.is_empty()
+        || !case
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase() || byte == b'-')
+    {
+        return false;
+    }
+    let Some(selected) = selected_input_digests(request) else {
+        return false;
+    };
+    if selected.len() != 2
+        || request["inputs"].as_array().is_none_or(|items| {
+            !items
+                .iter()
+                .any(|item| item["role"] == "binary" && item["path"] == "v10/compiled.bin")
+                || !items
+                    .iter()
+                    .any(|item| item["role"] == "trace" && item["path"] == "v10/trace.csv")
+        })
+    {
+        return false;
+    }
+    if dependency_artifact_digest(input, &format!("V10.compile.{case}"), "binary").as_deref()
+        != selected.get("binary").map(String::as_str)
+    {
+        return false;
+    }
+    let trace_digest = match case {
+        "bounded" => fs::read(source_root.join("corpus/r2u2-v4.2/trace.csv"))
+            .ok()
+            .map(|bytes| sha256(&bytes)),
+        "past" => fs::read(source_root.join("corpus/past-c2po-v1/target-4.2/trace.csv"))
+            .ok()
+            .map(|bytes| sha256(&bytes)),
+        "unsafe-since" => {
+            fs::read(source_root.join("corpus/past-c2po-v1/target-4.2/unsafe-since.csv"))
+                .ok()
+                .map(|bytes| sha256(&bytes))
+        }
+        _ => dependency_artifact_digest(input, "V10.inputs", &format!("inputs/{case}.csv")),
+    };
+    trace_digest.as_deref() == selected.get("trace").map(String::as_str)
+}
+
 fn v8_parse_example_input(input: &CheckInput, request: &Value) -> bool {
     let Some(selected) = selected_input_digests(request) else {
         return false;
@@ -1628,6 +1676,11 @@ fn run_args(args: &[String]) -> Result<(), String> {
             binding_reasons.push("v10_compiled_binary_unproved".into());
         }
     }
+    if member_parser(&input.member) == Some("v10-monitor")
+        && !v10_monitor_inputs(&input, &request_value, Path::new("."))
+    {
+        binding_reasons.push("v10_monitor_inputs_unproved".into());
+    }
     if input.member == "V8.parse_default" && !v8_parse_example_input(&input, &request_value) {
         binding_reasons.push("v8_example_input_provenance_unproved".into());
     }
@@ -1659,8 +1712,8 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::{
-        cargo_summaries, check, member_parser, v10_compile_inputs, v8_parse_example_input,
-        CheckInput,
+        cargo_summaries, check, member_parser, v10_compile_inputs, v10_monitor_inputs,
+        v8_parse_example_input, CheckInput,
     };
     use serde_json::{json, Value};
     use std::fs;
@@ -1724,6 +1777,76 @@ mod tests {
         assert!(v10_compile_inputs(&input, &generated, root));
         generated["inputs"][0]["digest"] = json!(super::sha256(b"substituted formula"));
         assert!(!v10_compile_inputs(&input, &generated, root));
+    }
+
+    // Trace: FR-055-AC-2, TC-198
+    #[test]
+    fn v10_monitor_binds_binary_and_trace_to_exact_dependencies() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path();
+        let binary = b"compiled monitor";
+        let trace = b"# p,q\n1,0\n";
+        let dependency = |member: &str, role: &str, bytes: &[u8]| -> super::DependencyResult {
+            let bundle = json!({"schema":"quoin.raw-artifact-bundle/v1","artifacts":[
+                {"role":role,"digest":super::sha256(bytes),"bytes":bytes}
+            ]});
+            let bundle_path = root.join(format!("{member}-raw.json"));
+            let result_path = root.join(format!("{member}-result.json"));
+            fs::write(&bundle_path, serde_json::to_vec(&bundle).unwrap()).unwrap();
+            fs::write(
+                &result_path,
+                serde_json::to_vec(&json!({"artifacts":[
+                    {"role":role,"digest":super::sha256(bytes)}
+                ]}))
+                .unwrap(),
+            )
+            .unwrap();
+            serde_json::from_value(json!({
+                "member":member,"index":1,"requestDigest":"f".repeat(64),
+                "requestPath":"dependency-request.json","resultDigest":"0".repeat(64),
+                "resultPath":result_path,
+                "rawBundleDigest":super::canonical_digest(&bundle).unwrap(),
+                "rawBundlePath":bundle_path
+            }))
+            .unwrap()
+        };
+        let mut input: CheckInput = serde_json::from_value(json!({
+            "schema":"quoin.domain-check-input/v1", "definitionPath":"definition.json",
+            "definitionDigest":"a".repeat(64),
+            "member":"V10.monitor.zero-singleton-all-true",
+            "planId":"MP-117", "definitionVersion":"v1",
+            "sourceGraphDigest":"b".repeat(64), "requestDigest":"c".repeat(64),
+            "requestPath":"request.json", "resultPath":"result.json",
+            "resultDigest":"d".repeat(64), "rawArtifacts":[],
+            "rawBundlePath":"raw.json", "rawBundleDigest":"e".repeat(64),
+            "dependencies":[
+                dependency("V10.compile.zero-singleton-all-true", "binary", binary),
+                dependency("V10.inputs", "inputs/zero-singleton-all-true.csv", trace)
+            ]
+        }))
+        .unwrap();
+        let mut request = json!({"inputs":[
+            {"role":"binary","path":"v10/compiled.bin","digest":super::sha256(binary)},
+            {"role":"trace","path":"v10/trace.csv","digest":super::sha256(trace)}
+        ]});
+        assert!(v10_monitor_inputs(&input, &request, root));
+        request["inputs"][0]["digest"] = json!(super::sha256(b"substitute"));
+        assert!(!v10_monitor_inputs(&input, &request, root));
+        request["inputs"][0]["digest"] = json!(super::sha256(binary));
+        request["inputs"][1]["digest"] = json!(super::sha256(b"other trace"));
+        assert!(!v10_monitor_inputs(&input, &request, root));
+        request["inputs"][1]["digest"] = json!(super::sha256(trace));
+        input.member = "V10.monitor.zero-singleton-all-false".into();
+        assert!(!v10_monitor_inputs(&input, &request, root));
+
+        let tracked = root.join("corpus/r2u2-v4.2");
+        fs::create_dir_all(&tracked).unwrap();
+        fs::write(tracked.join("trace.csv"), trace).unwrap();
+        input.member = "V10.monitor.bounded".into();
+        input.dependencies = vec![dependency("V10.compile.bounded", "binary", binary)];
+        assert!(v10_monitor_inputs(&input, &request, root));
+        fs::write(tracked.join("trace.csv"), b"changed trace").unwrap();
+        assert!(!v10_monitor_inputs(&input, &request, root));
     }
 
     // Trace: FR-055-AC-2, TC-198
