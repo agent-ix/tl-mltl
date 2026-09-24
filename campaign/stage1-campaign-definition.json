@@ -16,8 +16,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "648d60d04b80a33c97579b34e616d3c142f90f06",
-      "digest": "74cc7921b992350cd9afc99ffcc10906da0f5482bd5c4632742f9d1d5fcf31f2"
+      "revision": "a331fc5e76a100466dd25c88d4a98a595283a4c6",
+      "digest": "18fce7c7f3080a32cb2f26f9502a1b1e6f0efed116f9fc30ff5ef414ecdca53d"
     },
     {
       "repository": "tl-rewrite",
