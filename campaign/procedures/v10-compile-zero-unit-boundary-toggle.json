@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "engineering-assurance.measurement-procedure/v1",
+  "responseProtocol": "quoin.process-evidence/v1",
+  "responseAdapter": "quoin.process-evidence-adapter",
+  "responseAdapterVersion": "1",
+  "repetitions": 1,
+  "timeoutMillis": 120000,
+  "producerName": "python3",
+  "producerVersion": "3.14.7",
+  "sourceRepository": "r2u2",
+  "arguments": [
+    {
+      "kind": "literal",
+      "value": "compiler/c2po.py"
+    },
+    {
+      "kind": "literal",
+      "value": "--spec"
+    },
+    {
+      "kind": "input_artifact",
+      "value": "spec"
+    },
+    {
+      "kind": "literal",
+      "value": "--trace"
+    },
+    {
+      "kind": "input_artifact",
+      "value": "trace"
+    },
+    {
+      "kind": "literal",
+      "value": "--output"
+    },
+    {
+      "kind": "output_artifact",
+      "value": "binary"
+    }
+  ],
+  "environment": [
+    {
+      "name": "PYTHONPATH",
+      "kind": "literal",
+      "value": "compiler"
+    }
+  ],
+  "inputs": [
+    {
+      "role": "spec",
+      "required": true
+    },
+    {
+      "role": "trace",
+      "required": true
+    }
+  ],
+  "outputs": [
+    {
+      "role": "binary",
+      "required": true
+    }
+  ]
+}

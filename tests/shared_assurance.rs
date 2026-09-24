@@ -2236,7 +2236,8 @@ fn no_local_evidence_framework_remains() {
         // earlier 43-file census.
         // Thirteen direct native procedure records bind V1/V2/V3/V11 lanes.
         // V9 adds twelve direct Criterion procedure records.
-        ("campaign", 125),
+        // V10 adds fifty-one direct procedure records and their member inventory.
+        ("campaign", 177),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2277,7 +2278,8 @@ fn no_local_evidence_framework_remains() {
         // combined review documents; AP-002 and MP-007 add two Stage 1 plans.
         // Thirteen lane-level MeasurementPlans pair with those procedures.
         // V9 adds twelve lane-level MeasurementPlans.
-        ("spec", 246),
+        // V10 adds fifty-one direct MeasurementPlans.
+        ("spec", 297),
         // TL-179 deletes wire::request, wire::observation, wire::report, and
         // mapping::contract_ir (4 files): the quire-observation-coupled
         // request/result/mapping owner boundary now lives in quire-mltl.
@@ -2286,7 +2288,8 @@ fn no_local_evidence_framework_remains() {
         // Stage 1 adds the opt-in infinite provider (3 files) and the distinct
         // past-profile mapping adapter (1 file).
         // Direct EA producer results are checked by a TL-owned Rust binary.
-        ("src", 27),
+        // The pure Rust V10 input generator adds one binary.
+        ("src", 28),
         // TL-179 deletes tests/tc_084_temporal_owner_wire.rs (1 file), the
         // dedicated test for the request/result/mapping owner boundary it
         // removed from src/. TL-173 then deletes the two files that test left
@@ -2384,8 +2387,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 583,
-        "the source census population changed from the reviewed 583 tracked files \
+        inspected, 687,
+        "the source census population changed from the reviewed 687 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
