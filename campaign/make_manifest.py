@@ -31,7 +31,13 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                   v8_cargo_home: Path | None = None,
                   v5_selection: Path | None = None,
                   v9_pair_dirs: list[Path] | None = None,
-                  v8_reviews: Path | None = None) -> dict:
+                  v8_reviews: Path | None = None,
+                  v8_retained_report: Path | None = None,
+                  v8_retained_raw_dir: Path | None = None) -> dict:
+    if (v8_retained_report is None) != (v8_retained_raw_dir is None):
+        raise ValueError("V8 retained report and raw directory must be supplied together")
+    if v8_cargo_home is not None and v8_retained_report is not None:
+        raise ValueError("V8 live and retained modes are mutually exclusive")
     sources = {}
     inputs = {}
     for name in SOURCE_NAMES:
@@ -50,6 +56,10 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
         selected = v8_reviews.resolve()
         inputs["v8_reviews"] = {"path": str(selected),
                                 "sha256": sha256(selected.read_bytes())}
+    if v8_retained_report is not None:
+        selected = v8_retained_report.resolve()
+        inputs["v8_retained_report"] = {"path": str(selected),
+                                        "sha256": sha256(selected.read_bytes())}
     for index, pair in enumerate(v9_pair_dirs or []):
         path = pair.resolve() / "pair.json"
         inputs[f"v9_pair_{index}"] = {"path": str(path.resolve()),
@@ -71,7 +81,7 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                 continue
             if lane_id == "embedded_miri_limits" and v7_cargo_home is None:
                 continue
-            if lane_id == "coverage" and v8_cargo_home is None:
+            if lane_id == "coverage" and v8_cargo_home is None and v8_retained_report is None:
                 continue
             if lane_id == "mutation_population" and v5_selection is None:
                 continue
@@ -89,8 +99,12 @@ def make_manifest(repos_root: Path, live_r2u2_source: Path | None = None,
                 lane["cargo_home"] = str(v7_cargo_home.resolve())
                 lane["timeout_seconds"] = 3600
             if lane_id == "coverage":
-                lane["cargo_home"] = str(v8_cargo_home.resolve())
-                lane["timeout_seconds"] = 7200
+                if v8_retained_report is not None:
+                    lane["retained_report_path"] = str(v8_retained_report.resolve())
+                    lane["retained_raw_dir"] = str(v8_retained_raw_dir.resolve())
+                else:
+                    lane["cargo_home"] = str(v8_cargo_home.resolve())
+                    lane["timeout_seconds"] = 7200
                 if v8_reviews is not None:
                     lane["reviews_path"] = str(v8_reviews.resolve())
             if lane_id == "mutation_population":
@@ -131,6 +145,14 @@ def main() -> None:
         help="Optional exact-input JSON of named reviews for measured V8 branch gaps",
     )
     parser.add_argument(
+        "--v8-retained-report", type=Path,
+        help="Verify an exact retained V8 measurement instead of rerunning coverage",
+    )
+    parser.add_argument(
+        "--v8-retained-raw-dir", type=Path,
+        help="Original absolute raw export directory for the retained V8 measurement",
+    )
+    parser.add_argument(
         "--v5-selection", type=Path,
         help="Opt into fresh four-crate mutation with a fixed source-pinned selection JSON",
     )
@@ -141,7 +163,8 @@ def main() -> None:
     args = parser.parse_args()
     manifest = make_manifest(args.repos_root, args.live_r2u2_source,
                              args.v7_cargo_home, args.v8_cargo_home, args.v5_selection,
-                             args.v9_pair_dir, args.v8_reviews)
+                             args.v9_pair_dir, args.v8_reviews,
+                             args.v8_retained_report, args.v8_retained_raw_dir)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
 

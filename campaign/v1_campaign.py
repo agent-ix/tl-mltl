@@ -736,6 +736,71 @@ def run_lane(lane: dict, graph: dict, inputs: dict, raw_dir: Path) -> tuple[dict
         timeout = lane.get("timeout_seconds", 600)
         if type(timeout) is not int or not 1 <= timeout <= 86400:
             raise ValueError(f"invalid timeout for {lane_id}")
+        if lane_id == "coverage" and (
+            "retained_report_path" in lane or "retained_raw_dir" in lane
+        ):
+            report_name = lane.get("retained_report_path")
+            raw_name = lane.get("retained_raw_dir")
+            if (not isinstance(report_name, str) or not Path(report_name).is_absolute() or
+                    not isinstance(raw_name, str) or not Path(raw_name).is_absolute() or
+                    "cargo_home" in lane):
+                return base | {"status": "incomplete",
+                               "reason": "v8_retained_path_invalid"}, {}
+            report_path = Path(report_name).resolve()
+            retained_raw_dir = Path(raw_name).resolve()
+            try:
+                report_bytes = report_path.read_bytes()
+            except OSError:
+                return base | {"status": "blocked",
+                               "reason": "v8_retained_report_unreadable"}, {}
+            report_digest = sha256(report_bytes)
+            if inputs.get("v8_retained_report") != {
+                "path": str(report_path), "sha256": report_digest,
+            }:
+                return base | {"status": "incomplete",
+                               "reason": "v8_retained_report_not_pinned"}, {}
+            reviews_path = lane.get("reviews_path")
+            review_bytes = b"[]"
+            review_path = None
+            if reviews_path is not None:
+                if not isinstance(reviews_path, str) or not Path(reviews_path).is_absolute():
+                    return base | {"status": "incomplete",
+                                   "reason": "v8_reviews_path_invalid"}, {}
+                review_path = Path(reviews_path).resolve()
+                try:
+                    review_bytes = review_path.read_bytes()
+                except OSError:
+                    return base | {"status": "blocked",
+                                   "reason": "v8_reviews_unreadable"}, {}
+                if inputs.get("v8_reviews") != {
+                    "path": str(review_path), "sha256": sha256(review_bytes),
+                }:
+                    return base | {"status": "incomplete",
+                                   "reason": "v8_reviews_not_pinned"}, {}
+            try:
+                tools = v8_gate.tool_versions()
+                status, population, artifacts = v8_gate.verify_retained(
+                    report_bytes, retained_raw_dir, graph, tools,
+                    review_bytes, report_path, review_path,
+                )
+                if (sha256(report_path.read_bytes()) != report_digest or
+                        (review_path is not None and
+                         sha256(review_path.read_bytes()) != inputs["v8_reviews"]["sha256"])):
+                    raise ValueError("V8 retained input changed during reconciliation")
+                for artifact in artifacts.values():
+                    if sha256(Path(artifact["path"]).read_bytes()) != artifact["sha256"]:
+                        raise ValueError("V8 retained raw artifact changed during reconciliation")
+            except (OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired,
+                    subprocess.CalledProcessError, json.JSONDecodeError):
+                return base | {"status": "failed",
+                               "reason": "malformed_v8_retained_evidence"}, {}
+            semantic = base | {
+                "status": status, "parser": parser, "argv": argv, "repo": repo,
+                "evidence_mode": "retained_raw_reconciliation",
+                "retained_report_sha256": report_digest,
+                "population": population,
+            }
+            return semantic, {"native_artifacts": artifacts}
         environment = None
         target_raw_dir = None
         v7_raw_dir = None

@@ -274,6 +274,102 @@ class CampaignTests(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             campaign.input_graph(manifest)
 
+    def test_v8_retained_measurement_is_pinned_and_reconciled_without_rerun(self) -> None:
+        retained_report = self.root / "coverage-native.json"
+        retained_report.write_text('{"schema":"retained-fixture"}\n')
+        retained_raw = self.root / "coverage-native"
+        retained_raw.mkdir()
+        raw_export = retained_raw / "mltl-default.json"
+        raw_export.write_text("measured export\n")
+        reviews = self.root / "v8-reviews.json"
+        reviews.write_text("[]\n")
+        with self.assertRaisesRegex(ValueError, "supplied together"):
+            make_manifest.make_manifest(self.root, v8_retained_report=retained_report)
+        with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+            make_manifest.make_manifest(self.root, v8_cargo_home=self.root,
+                                        v8_retained_report=retained_report,
+                                        v8_retained_raw_dir=retained_raw)
+        manifest = make_manifest.make_manifest(
+            self.root, v8_retained_report=retained_report,
+            v8_retained_raw_dir=retained_raw, v8_reviews=reviews,
+        )
+        lane = next(item for item in manifest["lanes"] if item["id"] == "coverage")
+        self.assertNotIn("cargo_home", lane)
+        self.assertEqual(lane["retained_report_path"], str(retained_report.resolve()))
+        self.assertEqual(lane["retained_raw_dir"], str(retained_raw.resolve()))
+        self.assertEqual(manifest["inputs"]["v8_retained_report"], {
+            "path": str(retained_report.resolve()),
+            "sha256": campaign.sha256(retained_report.read_bytes()),
+        })
+        graph = campaign.source_graph(manifest)
+        inputs = campaign.input_graph(manifest)
+        artifacts = {
+            "report": {"path": str(retained_report.resolve()),
+                       "sha256": inputs["v8_retained_report"]["sha256"]},
+            "mltl-default.export": {"path": str(raw_export.resolve()),
+                                    "sha256": campaign.sha256(raw_export.read_bytes())},
+        }
+        with (patch.object(campaign.v8_gate, "tool_versions", return_value={"tool": "v1"}),
+              patch.object(campaign.v8_gate, "verify_retained",
+                           return_value=("passed", {"declared": 8}, artifacts)) as verify,
+              patch.object(campaign.subprocess, "run",
+                           side_effect=AssertionError("retained V8 reran producer"))):
+            semantic, raw = campaign.run_lane(lane, graph, inputs, self.raw)
+        self.assertEqual(semantic["status"], "passed")
+        self.assertEqual(semantic["evidence_mode"], "retained_raw_reconciliation")
+        self.assertNotIn("exit_code", semantic)
+        self.assertEqual(raw["native_artifacts"], artifacts)
+        verify.assert_called_once_with(
+            retained_report.read_bytes(), retained_raw.resolve(), graph, {"tool": "v1"},
+            reviews.read_bytes(), retained_report.resolve(), reviews.resolve(),
+        )
+        self.assertFalse(self.raw.exists())
+
+        unreviewed = make_manifest.make_manifest(
+            self.root, v8_retained_report=retained_report,
+            v8_retained_raw_dir=retained_raw,
+        )
+        unreviewed_lane = next(item for item in unreviewed["lanes"]
+                               if item["id"] == "coverage")
+        self.assertNotIn("reviews_path", unreviewed_lane)
+        with (patch.object(campaign.v8_gate, "tool_versions", return_value={}),
+              patch.object(campaign.v8_gate, "verify_retained",
+                           return_value=("incomplete", {}, artifacts)) as verify):
+            result, _ = campaign.run_lane(
+                unreviewed_lane, graph, campaign.input_graph(unreviewed), self.raw,
+            )
+        self.assertEqual(result["status"], "incomplete")
+        self.assertEqual(verify.call_args.args[4:],
+                         (b"[]", retained_report.resolve(), None))
+
+        wrong = dict(lane, retained_report_path=str((self.root / "other.json").resolve()))
+        (self.root / "other.json").write_bytes(retained_report.read_bytes())
+        self.assertEqual(campaign.run_lane(wrong, graph, inputs, self.raw)[0]["reason"],
+                         "v8_retained_report_not_pinned")
+
+        def changed_raw(*_args):
+            raw_export.write_text("changed export\n")
+            return "passed", {"declared": 8}, artifacts
+
+        with (patch.object(campaign.v8_gate, "tool_versions", return_value={}),
+              patch.object(campaign.v8_gate, "verify_retained", side_effect=changed_raw)):
+            changed, _ = campaign.run_lane(lane, graph, inputs, self.raw)
+        self.assertEqual((changed["status"], changed["reason"]),
+                         ("failed", "malformed_v8_retained_evidence"))
+        raw_export.write_text("measured export\n")
+
+        def changed_report(*_args):
+            retained_report.write_text("changed\n")
+            return "passed", {"declared": 8}, artifacts
+
+        with (patch.object(campaign.v8_gate, "tool_versions", return_value={}),
+              patch.object(campaign.v8_gate, "verify_retained", side_effect=changed_report)):
+            changed, _ = campaign.run_lane(lane, graph, inputs, self.raw)
+        self.assertEqual((changed["status"], changed["reason"]),
+                         ("failed", "malformed_v8_retained_evidence"))
+        with self.assertRaisesRegex(ValueError, "v8_retained_report: stale input digest"):
+            campaign.input_graph(manifest)
+
     def test_live_target_is_explicit_and_native_population_is_fault_checked(self) -> None:
         ordinary = make_manifest.make_manifest(self.root)
         self.assertNotIn("live_r2u2", {lane["id"] for lane in ordinary["lanes"]})
