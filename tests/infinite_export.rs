@@ -252,6 +252,32 @@ fn each_unbounded_future_family_has_a_distinct_typed_refusal() {
         export(&future, &rows(PartialValue::True)),
         Err(SafetyExportError::UnboundedLiveness)
     );
+    let root_future = graph(vec![
+        atom,
+        node(K::Future {
+            interval: open(),
+            operand: NodeId(0),
+        }),
+    ]);
+    assert_eq!(
+        export(&root_future, &rows(PartialValue::True)),
+        Err(SafetyExportError::UnboundedLiveness)
+    );
+    let nested_globally = graph(vec![
+        atom,
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
+    assert_eq!(
+        export(&nested_globally, &rows(PartialValue::True)),
+        Err(SafetyExportError::UnboundedLiveness)
+    );
     for temporal in [
         K::Until {
             interval: open(),
