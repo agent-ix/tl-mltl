@@ -105,7 +105,7 @@ class V9GateTests(unittest.TestCase):
     def test_two_complete_pinned_pairs_pass(self):
         status, population, artifacts = self.verify()
         self.assertEqual(status, "passed")
-        self.assertEqual(len(population["cases"]), 28)
+        self.assertEqual(len(population["cases"]), 34)
         self.assertEqual(len(artifacts), 3)
 
     def test_restamped_change_and_mutated_raw_sample_refuse(self):
