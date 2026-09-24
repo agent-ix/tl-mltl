@@ -2258,7 +2258,9 @@ fn no_local_evidence_framework_remains() {
         ("examples", 6),
         // TL-223 adds two differential fuzz targets, nine seeds, two checksum
         // manifests and three campaign support/verification files.
-        ("fuzz", 45),
+        // TL-229 adds two boundary targets, one shared target driver, sixteen
+        // seeds and two checksum manifests (21 tracked paths).
+        ("fuzz", 66),
         // Criterion inputs and runner for the V9 evaluator workloads.
         ("benches", 3),
         // The current-only Quire coverage adapter and its fault controls
@@ -2308,7 +2310,8 @@ fn no_local_evidence_framework_remains() {
         // Stage 1 adds infinite, safety export, owner corpus, past mapping,
         // pinned corpus replay and public tl-oracle differential tests.
         // V2 adds one native finite production/oracle partition.
-        ("tests", 37),
+        // TL-229 adds one seed and boundary smoke test.
+        ("tests", 38),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2387,13 +2390,15 @@ fn no_local_evidence_framework_remains() {
     // Quire-bound feature control adds one script and the historical mapping
     // payload fixture adds one test fixture, bringing it to 445. The
     // generated infinite semantic law test brings it to 446.
+    // TL-229 adds 21 fuzz paths and one seed smoke test, bringing the current
+    // tracked population from 693 to 715.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 693,
-        "the source census population changed from the reviewed 693 tracked files \
+        inspected, 715,
+        "the source census population changed from the reviewed 715 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
