@@ -2296,21 +2296,26 @@ mod tests {
             json!([{"role":"binary","digest":super::sha256(binary),"bytes":binary}]),
             compile_inputs,
         );
-        let inputs = dependency(
-            "V10.inputs",
-            json!([
-                {"role":format!("inputs/{case}.c2po"),"digest":super::sha256(spec),"bytes":spec},
-                {"role":format!("inputs/{case}.csv"),"digest":super::sha256(trace),"bytes":trace}
-            ]),
-            None,
-        );
+        let mut dependencies = vec![compile];
+        let mut depends_on = vec![format!("V10.compile.{case}")];
+        if case == "safety" || super::v10_static::inputs(case).is_none() {
+            dependencies.push(dependency(
+                "V10.inputs",
+                json!([
+                    {"role":format!("inputs/{case}.c2po"),"digest":super::sha256(spec),"bytes":spec},
+                    {"role":format!("inputs/{case}.csv"),"digest":super::sha256(trace),"bytes":trace}
+                ]),
+                None,
+            ));
+            depends_on.push("V10.inputs".into());
+        }
         let definition = json!({
             "schemaVersion":"engineering-assurance.campaign-definition/v1",
             "sourceGraph":[{"repository":"tl-mltl","revision":revision,"digest":"b".repeat(64)}],
             "members":[{
                 "name":member,"planId":"MP-117", "definitionVersion":"tl.v10.v1-monitor/v1",
                 "required":true,
-                "dependsOn":[format!("V10.compile.{case}"),"V10.inputs"]
+                "dependsOn":depends_on
             }]
         });
         let definition_path = root.join("definition.json");
@@ -2350,7 +2355,7 @@ mod tests {
             "rawArtifacts":[],
             "rawBundlePath":bundle_path,
             "rawBundleDigest":super::canonical_digest(&bundle).unwrap(),
-            "dependencies":[compile,inputs]
+            "dependencies":dependencies
         });
         let input_path = root.join("checker-input.json");
         let output_path = root.join("checker-verdict.json");
