@@ -37,10 +37,80 @@ const TRACES: [&str; 3] = ["all-true", "all-false", "boundary-toggle"];
 pub(super) struct CellDetail {
     pub(super) formula_index: usize,
     pub(super) position: usize,
-    pub(super) comparison_class: &'static str,
+    pub(super) comparison_class: ComparisonClass,
     pub(super) expected: Option<bool>,
     pub(super) observed: Option<bool>,
-    pub(super) refusal: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) refusal: Option<RefusalDetail>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) reason: Option<DetailReason>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(super) enum ComparisonClass {
+    Agreement,
+    SemanticMismatch,
+    UnsupportedMapping,
+    NonConclusive,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(super) enum DetailReason {
+    AdmittedTargetRowMissing,
+    KnownOriginMismatchUnsupported,
+    KnownOriginMismatchChanged,
+    KnownTargetRowMissing,
+    TargetPassDoesNotProveUnboundedSafety,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub(super) enum RefusalDetail {
+    TargetOriginShapeUnverified {
+        node: u32,
+    },
+    TargetOriginIntervalMismatch {
+        operator: PastOperatorCode,
+        start: u32,
+        end: u32,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(super) enum PastOperatorCode {
+    Once,
+    Historically,
+    Since,
+    Triggered,
+    StrongPrevious,
+}
+
+impl RefusalDetail {
+    pub(super) fn validated(error: &PastMappingError) -> Self {
+        match error {
+            PastMappingError::TargetOriginShapeUnverified(node) => {
+                Self::TargetOriginShapeUnverified { node: node.0 }
+            }
+            PastMappingError::TargetOriginIntervalMismatch { operator, interval } => {
+                let operator = match operator {
+                    PastOperatorKind::Once => PastOperatorCode::Once,
+                    PastOperatorKind::Historically => PastOperatorCode::Historically,
+                    PastOperatorKind::Since => PastOperatorCode::Since,
+                    PastOperatorKind::Triggered => PastOperatorCode::Triggered,
+                    PastOperatorKind::StrongPrevious => PastOperatorCode::StrongPrevious,
+                };
+                Self::TargetOriginIntervalMismatch {
+                    operator,
+                    start: interval.start(),
+                    end: interval.end(),
+                }
+            }
+            _ => unreachable!("only a validated origin refusal reaches this receipt"),
+        }
+    }
 }
 
 impl CellDetail {
@@ -50,10 +120,13 @@ impl CellDetail {
         expected: bool,
         observed: Option<bool>,
     ) -> Self {
-        let comparison_class = match observed {
-            Some(value) if value == expected => "agreement",
-            Some(_) => "semantic_mismatch",
-            None => "unavailable_target",
+        let (comparison_class, reason) = match observed {
+            Some(value) if value == expected => (ComparisonClass::Agreement, None),
+            Some(_) => (ComparisonClass::SemanticMismatch, None),
+            None => (
+                ComparisonClass::NonConclusive,
+                Some(DetailReason::AdmittedTargetRowMissing),
+            ),
         };
         Self {
             formula_index,
@@ -62,6 +135,7 @@ impl CellDetail {
             expected: Some(expected),
             observed,
             refusal: None,
+            reason,
         }
     }
 
@@ -70,15 +144,16 @@ impl CellDetail {
         position: usize,
         expected: bool,
         observed: Option<bool>,
-        refusal: String,
+        refusal: RefusalDetail,
     ) -> Self {
         Self {
             formula_index,
             position,
-            comparison_class: "unsupported_mapping",
+            comparison_class: ComparisonClass::UnsupportedMapping,
             expected: Some(expected),
             observed,
             refusal: Some(refusal),
+            reason: None,
         }
     }
 
@@ -87,15 +162,16 @@ impl CellDetail {
         position: usize,
         expected: Option<bool>,
         observed: Option<bool>,
-        refusal: &str,
+        reason: DetailReason,
     ) -> Self {
         Self {
             formula_index,
             position,
-            comparison_class: "non_conclusive",
+            comparison_class: ComparisonClass::NonConclusive,
             expected,
             observed,
-            refusal: Some(refusal.into()),
+            refusal: None,
+            reason: Some(reason),
         }
     }
 }
@@ -408,7 +484,7 @@ impl Run {
                     None
                 }
                 (false, Err(refusal)) if expected_refusal(case, &refusal) => {
-                    Some(format!("{refusal:?}"))
+                    Some(RefusalDetail::validated(&refusal))
                 }
                 _ => return Replay::Reject("v10_mapping_partition_unproved"),
             };
@@ -742,7 +818,7 @@ mod tests {
         assert_eq!(
             cells
                 .iter()
-                .filter(|cell| cell.comparison_class == "agreement")
+                .filter(|cell| cell.comparison_class == ComparisonClass::Agreement)
                 .count(),
             run.cases
                 .iter()
@@ -753,7 +829,7 @@ mod tests {
         assert_eq!(
             cells
                 .iter()
-                .filter(|cell| cell.comparison_class == "unsupported_mapping")
+                .filter(|cell| cell.comparison_class == ComparisonClass::UnsupportedMapping)
                 .count(),
             run.cases
                 .iter()
@@ -763,11 +839,11 @@ mod tests {
         );
         assert!(cells
             .iter()
-            .filter(|cell| cell.comparison_class == "unsupported_mapping")
+            .filter(|cell| cell.comparison_class == ComparisonClass::UnsupportedMapping)
             .all(|cell| cell.refusal.is_some()));
         let admitted = cells
             .iter()
-            .find(|cell| cell.comparison_class == "agreement")
+            .find(|cell| cell.comparison_class == ComparisonClass::Agreement)
             .unwrap();
         let key = (admitted.formula_index, admitted.position);
         rows.insert(key, !rows[&key]);
@@ -776,7 +852,7 @@ mod tests {
         assert_eq!(
             cells
                 .iter()
-                .filter(|cell| cell.comparison_class == "semantic_mismatch")
+                .filter(|cell| cell.comparison_class == ComparisonClass::SemanticMismatch)
                 .count(),
             1
         );
@@ -789,9 +865,31 @@ mod tests {
         assert_eq!(
             cells
                 .iter()
-                .filter(|cell| cell.comparison_class == "unavailable_target")
+                .filter(
+                    |cell| cell.comparison_class == ComparisonClass::NonConclusive
+                        && cell.reason == Some(DetailReason::AdmittedTargetRowMissing)
+                )
                 .count(),
             1
+        );
+        let missing = cells
+            .iter()
+            .find(|cell| (cell.formula_index, cell.position) == key)
+            .unwrap();
+        let expected = oracle_rows(&run)[&key];
+        assert_eq!(missing.expected, Some(expected));
+        assert_eq!(missing.observed, None);
+        assert!(missing.refusal.is_none());
+        assert_eq!(
+            serde_json::to_value(missing).unwrap(),
+            serde_json::json!({
+                "formulaIndex": key.0,
+                "position": key.1,
+                "comparisonClass": "non_conclusive",
+                "expected": expected,
+                "observed": null,
+                "reason": "admitted_target_row_missing"
+            })
         );
     }
 
