@@ -11,8 +11,8 @@
     },
     {
       "repository": "tl-parse",
-      "revision": "6ce728472474a2a3835d93745331ec70f3d9197f",
-      "digest": "ad8d05d845577567371a2471cbe924202e1a7a7df25cffc729cde443afa3c429"
+      "revision": "f99321dd1568a7868e3a439a2dcbcbf31541496b",
+      "digest": "4d37ecc4620bd6f02b83e3a8f599433dea8f81db9e66c932cde92a2c91b82e8d"
     },
     {
       "repository": "tl-mltl",

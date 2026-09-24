@@ -12,8 +12,8 @@
     },
     {
       "repository": "tl-parse",
-      "revision": "6ce728472474a2a3835d93745331ec70f3d9197f",
-      "treeDigest": "ad8d05d845577567371a2471cbe924202e1a7a7df25cffc729cde443afa3c429",
+      "revision": "f99321dd1568a7868e3a439a2dcbcbf31541496b",
+      "treeDigest": "4d37ecc4620bd6f02b83e3a8f599433dea8f81db9e66c932cde92a2c91b82e8d",
       "cargoLockDigest": "70b9d0839caaa74fb4f9309bf9d1d14b07f0bcc2c6bd69d82b32ddc188f021f2",
       "tlGitDependencies": [
         {
@@ -175,7 +175,7 @@
     {
       "repository": "tl-parse",
       "baselineRevision": "225a3300963199e523958f4abe4c16cc9dcca641",
-      "candidateRevision": "6ce728472474a2a3835d93745331ec70f3d9197f",
+      "candidateRevision": "f99321dd1568a7868e3a439a2dcbcbf31541496b",
       "identicalFiles": [
         {
           "path": "benches/inputs/SHA256SUMS",
