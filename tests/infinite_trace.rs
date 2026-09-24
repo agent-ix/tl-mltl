@@ -703,6 +703,36 @@ fn every_lasso_resource_dimension_refuses_one_over_without_panic() {
 
 // Trace: TC-188; FR-049-AC-2, NFR-009-AC-1
 #[test]
+fn proposition_word_refuses_at_zero_state_budget() {
+    let graph = formula(
+        0,
+        vec![node(K::Proposition {
+            proposition: PropositionId(7),
+        })],
+    );
+    let lasso = trace(&[], &[ObservationValue::True]);
+    let graph_id = graph.content_identity().unwrap();
+    let trace_id = lasso.content_identity().unwrap();
+    let result = evaluate_lasso(&LassoRequest {
+        formula: &graph,
+        trace: &lasso,
+        fairness: None,
+        evidence_closure: EvidenceClosure::Closed,
+        graph_id: &graph_id,
+        trace_id: &trace_id,
+        selected_position: 0,
+        limit: EvaluationLimit {
+            max_states: 0,
+            ..EvaluationLimit::default()
+        },
+    })
+    .unwrap();
+    assert_eq!(result.disposition, Disposition::Failed);
+    assert_eq!(result.reason, Some(ResultReason::ResourceIncomplete));
+}
+
+// Trace: TC-188; FR-049-AC-2, NFR-009-AC-1
+#[test]
 fn each_periodic_operator_refuses_at_its_own_state_budget_boundary() {
     let atom = || K::Proposition {
         proposition: PropositionId(7),
