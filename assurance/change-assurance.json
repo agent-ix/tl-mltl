@@ -141,7 +141,7 @@
         },
         {
           "id": "PRESERVE-corpus-basis",
-          "statement": "The shared temporal corpus, the future-operator corpus, and the past-history corpus are all read from the single compiled tl-syntax dependency via tl_syntax::CORPUS_DIR; corpus/tl-syntax-v1, corpus/future-operators, and corpus/past-history are all deleted and there is no separate corpus basis to track for any of them. The compiled dependency moved to 87a5024c81caceb131806004e73234143c2ce257, retaining span-free infinite formula content identity; each corpus tracks whatever revision that pin names.",
+          "statement": "The shared temporal corpus, the future-operator corpus, and the past-history corpus are all read from the single compiled tl-syntax dependency via tl_syntax::CORPUS_DIR; corpus/tl-syntax-v1, corpus/future-operators, and corpus/past-history are all deleted and there is no separate corpus basis to track for any of them. The compiled dependency moved to 6e2fc17fcfba60c33ab264772bb25550a9c81853, retaining span-free infinite formula content identity; each corpus tracks whatever revision that pin names.",
           "source_ids": ["NFR-002", "assurance-pins"]
         },
         {

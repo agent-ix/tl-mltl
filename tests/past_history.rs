@@ -1,5 +1,6 @@
 use proptest::prelude::*;
 use serde_json::json;
+use sha2::{Digest as _, Sha256};
 use tl_mltl::{
     analyze_horizon, analyze_required_history, evaluate_closed, evaluate_past,
     fixed_sample_instant, ClockBinding, ClockError, ClockSample, EvaluationError, EvaluationLimits,
@@ -815,6 +816,76 @@ fn results_bind_all_dimensions_and_validate_direct_corrections() {
         changed.validate(),
         Err(PastResultValidationError::PredecessorNotEarlier)
     );
+}
+
+// Trace: TC-056, FR-012-AC-4, FR-050-AC-1
+#[test]
+fn persisted_corrections_reject_valid_reports_with_changed_predecessor_context() {
+    let nodes = unary_nodes(|operand| NodeKind::Once {
+        interval: Interval::new(0, 1).unwrap(),
+        operand,
+    });
+    let first_history = event_history(&[(false, false), (true, false)], 1);
+    let predecessor = evaluate_past(
+        formula(&nodes),
+        "formula-a",
+        &first_history,
+        1,
+        "map-a",
+        1,
+        PastEvaluationRelationInput::Original,
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    let corrected_history = first_history
+        .corrected(2, 1, first_history.observations().to_vec())
+        .unwrap();
+    let successor = evaluate_past(
+        formula(&nodes),
+        "formula-a",
+        &corrected_history,
+        1,
+        "map-a",
+        2,
+        PastEvaluationRelationInput::Superseding(&predecessor),
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    successor
+        .validate_with_predecessor(Some(&predecessor))
+        .unwrap();
+
+    let fixed_clock = ClockBinding::FixedSample {
+        epoch: ExactNumber::new(0, 1).unwrap(),
+        period: ExactNumber::new(1, 1).unwrap(),
+        unit: "ticks".to_owned(),
+    };
+    for (pointer, replacement) in [
+        ("/formulaId", json!("formula-b")),
+        ("/formulaSha256", json!("f".repeat(64))),
+        ("/formulaRoot", json!(0)),
+        ("/clock", serde_json::to_value(fixed_clock).unwrap()),
+        ("/propositionMapId", json!("map-b")),
+        ("/evaluatorRevision", json!("other-revision")),
+        ("/limits/maxSteps", json!(999_999)),
+    ] {
+        let mut persisted = serde_json::to_value(&successor).unwrap();
+        *persisted.pointer_mut(pointer).unwrap() = replacement;
+        let mut preimage = persisted.clone();
+        preimage.as_object_mut().unwrap().remove("resultSha256");
+        let mut digest = Sha256::new();
+        digest.update(b"tl-mltl.past-evaluation/v1\0");
+        digest.update(serde_json::to_vec(&preimage).unwrap());
+        persisted["resultSha256"] = json!(format!("{:x}", digest.finalize()));
+
+        let independent: PastEvaluationReport = serde_json::from_value(persisted).unwrap();
+        independent.validate().unwrap();
+        assert_eq!(
+            independent.validate_with_predecessor(Some(&predecessor)),
+            Err(PastResultValidationError::PredecessorContextMismatch),
+            "changed persisted field {pointer}"
+        );
+    }
 }
 
 // Trace: FR-012-AC-3, FR-012-AC-4, FR-050-AC-1
