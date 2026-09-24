@@ -15,6 +15,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
+#[path = "tl_campaign_check/v10_replay.rs"]
+mod v10_replay;
+
 const RESULT_PROTOCOL: &str = "engineering-assurance.producer-execution-result/v1";
 
 #[derive(Deserialize)]
@@ -1315,6 +1318,15 @@ fn v10_monitor_inputs(input: &CheckInput, request: &Value, source_root: &Path) -
     trace_digest.as_deref() == selected.get("trace").map(String::as_str)
 }
 
+fn v10_reviewed_inputs(input: &CheckInput, case: &str, run: &v10_replay::Run) -> bool {
+    let expected_spec = sha256(&run.spec);
+    let expected_trace = sha256(&run.trace);
+    dependency_artifact_digest(input, "V10.inputs", &format!("inputs/{case}.c2po")).as_deref()
+        == Some(expected_spec.as_str())
+        && dependency_artifact_digest(input, "V10.inputs", &format!("inputs/{case}.csv")).as_deref()
+            == Some(expected_trace.as_str())
+}
+
 fn v8_parse_example_input(input: &CheckInput, request: &Value) -> bool {
     let Some(selected) = selected_input_digests(request) else {
         return false;
@@ -1423,7 +1435,13 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                         if v10_target_rows(&process.stdout.bytes).is_none() {
                             reasons.push("malformed_r2u2_target_rows".into());
                         }
-                        reasons.push("v10_semantic_replay_pending".into());
+                        if member
+                            .strip_prefix("V10.monitor.")
+                            .and_then(v10_replay::Run::for_member)
+                            .is_none()
+                        {
+                            reasons.push("v10_semantic_replay_pending".into());
+                        }
                     } else if parser == "criterion-pending" {
                         reasons.push("v9_sample_and_host_replay_pending".into());
                     } else if parser == "v10-inputs" || parser == "v10-compile" {
@@ -1681,6 +1699,39 @@ fn run_args(args: &[String]) -> Result<(), String> {
     {
         binding_reasons.push("v10_monitor_inputs_unproved".into());
     }
+    if member_parser(&input.member) == Some("v10-monitor") && verdict.verdict == "accept" {
+        let Some(case) = input.member.strip_prefix("V10.monitor.") else {
+            unreachable!("fixed monitor member prefix")
+        };
+        let run = v10_replay::Run::for_member(case)
+            .expect("only generated past-grid monitors can pass the pending check");
+        if !v10_reviewed_inputs(&input, case, &run) {
+            verdict.verdict = "reject";
+            verdict
+                .reasons
+                .push("v10_reviewed_input_bytes_unproved".into());
+        } else {
+            let result: ExecutionResult =
+                serde_json::from_slice(&bytes).expect("accepted result was parsed by check");
+            let stdout = &result
+                .process
+                .expect("accepted result has process")
+                .stdout
+                .bytes;
+            let rows = v10_target_rows(stdout).expect("accepted target rows were parsed by check");
+            match run.replay(&rows) {
+                v10_replay::Replay::Accept { .. } => {}
+                v10_replay::Replay::Reject(reason) => {
+                    verdict.verdict = "reject";
+                    verdict.reasons.push(reason.into());
+                }
+                v10_replay::Replay::Inconclusive(reason) => {
+                    verdict.verdict = "inconclusive";
+                    verdict.reasons.push(reason.into());
+                }
+            }
+        }
+    }
     if input.member == "V8.parse_default" && !v8_parse_example_input(&input, &request_value) {
         binding_reasons.push("v8_example_input_provenance_unproved".into());
     }
@@ -1847,6 +1898,64 @@ mod tests {
         assert!(v10_monitor_inputs(&input, &request, root));
         fs::write(tracked.join("trace.csv"), b"changed trace").unwrap();
         assert!(!v10_monitor_inputs(&input, &request, root));
+    }
+
+    // Trace: FR-052-AC-1, FR-055-AC-2, TC-191, TC-198
+    #[test]
+    fn v10_replay_refuses_sealed_but_wrong_generated_spec_or_trace() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path();
+        let case = "zero-unit-boundary-toggle";
+        let run = super::v10_replay::Run::for_member(case).unwrap();
+        let make_input = |spec: &[u8], trace: &[u8]| -> CheckInput {
+            let spec_role = format!("inputs/{case}.c2po");
+            let trace_role = format!("inputs/{case}.csv");
+            let bundle = json!({"schema":"quoin.raw-artifact-bundle/v1","artifacts":[
+                {"role":spec_role,"digest":super::sha256(spec),"bytes":spec},
+                {"role":trace_role,"digest":super::sha256(trace),"bytes":trace}
+            ]});
+            let result = json!({"artifacts":[
+                {"role":spec_role,"digest":super::sha256(spec)},
+                {"role":trace_role,"digest":super::sha256(trace)}
+            ]});
+            let bundle_path = root.join("v10-input-bundle.json");
+            let result_path = root.join("v10-input-result.json");
+            fs::write(&bundle_path, serde_json::to_vec(&bundle).unwrap()).unwrap();
+            fs::write(&result_path, serde_json::to_vec(&result).unwrap()).unwrap();
+            serde_json::from_value(json!({
+                "schema":"quoin.domain-check-input/v1", "definitionPath":"definition.json",
+                "definitionDigest":"a".repeat(64),
+                "member":format!("V10.monitor.{case}"),
+                "planId":"MP-117", "definitionVersion":"v1",
+                "sourceGraphDigest":"b".repeat(64), "requestDigest":"c".repeat(64),
+                "requestPath":"request.json", "resultPath":"result.json",
+                "resultDigest":"d".repeat(64), "rawArtifacts":[],
+                "rawBundlePath":"raw.json", "rawBundleDigest":"e".repeat(64),
+                "dependencies":[{
+                    "member":"V10.inputs", "index":1,
+                    "requestDigest":"f".repeat(64), "requestPath":"dependency-request.json",
+                    "resultDigest":"0".repeat(64), "resultPath":result_path,
+                    "rawBundleDigest":super::canonical_digest(&bundle).unwrap(),
+                    "rawBundlePath":bundle_path
+                }]
+            }))
+            .unwrap()
+        };
+        assert!(super::v10_reviewed_inputs(
+            &make_input(&run.spec, &run.trace),
+            case,
+            &run
+        ));
+        assert!(!super::v10_reviewed_inputs(
+            &make_input(b"different C2PO spec", &run.trace),
+            case,
+            &run
+        ));
+        assert!(!super::v10_reviewed_inputs(
+            &make_input(&run.spec, b"# p,q\n0,0\n"),
+            case,
+            &run
+        ));
     }
 
     // Trace: FR-055-AC-2, TC-198
