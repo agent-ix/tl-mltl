@@ -28,6 +28,13 @@ class V9GateTests(unittest.TestCase):
             pair_dir.mkdir()
             crates = {}
             for name, (bench, group, cases) in v9_criterion.GROUPS.items():
+                staged = pair_dir / name / "baseline_source"
+                (staged / "benches" / "inputs").mkdir(parents=True)
+                (staged / "benches" / f"{bench}.rs").write_text("fn main() {}\n")
+                (staged / "benches" / "inputs" / "SHA256SUMS").write_text("")
+                (staged / "benches" / "input-digests.json").write_text("{}\n")
+                (staged / "Cargo.toml").write_text("[package]\nname = \"fixture\"\n")
+                (staged / "Cargo.lock").write_text("# fixture\n")
                 logs = {}
                 distributions = {}
                 for side, time in (("baseline", 1000.0), ("candidate", 1010.0)):
@@ -48,11 +55,18 @@ class V9GateTests(unittest.TestCase):
                         distributions.setdefault(case, {})[side] = v9_criterion.samples(sample_dir)
                 source = self.graph[f"tl-{name}"]
                 crates[name] = {
-                    "baseline_source": {"revision": "a" * 40},
+                    "baseline_source": {
+                        "revision": "a" * 40,
+                        "manifest_sha256": v9_criterion.sha256(
+                            (staged / "Cargo.toml").read_bytes()),
+                        "lock_sha256": v9_criterion.sha256(
+                            (staged / "Cargo.lock").read_bytes()),
+                    },
                     "candidate_source": {"revision": source["revision"],
                                          "manifest_sha256": source["cargo_toml_sha256"],
                                          "lock_sha256": source["cargo_lock_sha256"]},
-                    "copied_harness_sha256": {"bench": "b" * 64},
+                    "copied_harness_sha256": v9_criterion.harness(staged, name),
+                    "baseline_stage_sha256": v9_criterion.stage_digest(staged),
                     "baseline_run": logs["baseline"], "candidate_run": logs["candidate"],
                     "cases": distributions,
                 }

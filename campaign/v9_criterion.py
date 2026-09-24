@@ -14,6 +14,7 @@ import shutil
 import statistics
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -86,8 +87,7 @@ def source(path: Path, name: str) -> dict[str, str]:
 
 def harness(candidate: Path, name: str) -> dict[str, str]:
     bench, _, _ = GROUPS[name]
-    paths = [candidate / "Cargo.toml", candidate / "Cargo.lock",
-             candidate / "benches" / f"{bench}.rs"]
+    paths = [candidate / "benches" / f"{bench}.rs"]
     if name == "parse":
         paths += [candidate / "benches" / "inputs" / "SHA256SUMS"]
         paths += sorted((candidate / "benches" / "inputs").glob("*.txt"))
@@ -96,7 +96,29 @@ def harness(candidate: Path, name: str) -> dict[str, str]:
     return {str(path.relative_to(candidate)): sha256(path.read_bytes()) for path in paths}
 
 
-def stage_baseline(baseline: Path, candidate: Path, stage: Path) -> None:
+def stage_digest(stage: Path) -> str:
+    """Bind every staged baseline source byte, including the copied harness."""
+    digest = hashlib.sha256()
+    for path in sorted(file for file in stage.rglob("*") if file.is_file()):
+        relative = path.relative_to(stage).as_posix().encode()
+        content = path.read_bytes()
+        digest.update(len(relative).to_bytes(8, "little"))
+        digest.update(relative)
+        digest.update(len(content).to_bytes(8, "little"))
+        digest.update(content)
+    return digest.hexdigest()
+
+
+def stage_baseline(baseline: Path, candidate: Path, stage: Path, name: str) -> None:
+    bench, _, _ = GROUPS[name]
+    manifest = tomllib.loads((baseline / "Cargo.toml").read_text())
+    if ("criterion" not in manifest.get("dev-dependencies", {}) or
+            not any(item.get("name") == bench and item.get("harness") is False
+                    for item in manifest.get("bench", []))):
+        raise ValueError(
+            f"{name} baseline predates its Criterion workload/API; "
+            "select an exact feature-compatible baseline revision"
+        )
     if stage.exists():
         raise ValueError(f"baseline stage already exists: {stage}")
     stage.mkdir(parents=True)
@@ -111,8 +133,11 @@ def stage_baseline(baseline: Path, candidate: Path, stage: Path) -> None:
         shutil.copy2(baseline / relative, target)
     shutil.rmtree(stage / "benches", ignore_errors=True)
     shutil.copytree(candidate / "benches", stage / "benches")
-    shutil.copy2(candidate / "Cargo.toml", stage / "Cargo.toml")
-    shutil.copy2(candidate / "Cargo.lock", stage / "Cargo.lock")
+    if harness(stage, name) != harness(candidate, name):
+        raise ValueError(f"{name} copied benchmark harness or inputs changed")
+    for file in ("Cargo.toml", "Cargo.lock"):
+        if sha256((stage / file).read_bytes()) != sha256((baseline / file).read_bytes()):
+            raise ValueError(f"{name} baseline {file} changed while staging")
 
 
 def samples(path: Path) -> dict:
@@ -159,6 +184,16 @@ def validate_pair(path: Path, pair: dict) -> None:
         raise ValueError(f"incomplete V9 crate population: {path}")
     for name, (bench, _, cases) in GROUPS.items():
         crate = pair["crates"][name]
+        staged = path / name / "baseline_source"
+        if stage_digest(staged) != crate["baseline_stage_sha256"]:
+            raise ValueError(f"V9 staged baseline source changed: {name}")
+        if harness(staged, name) != crate["copied_harness_sha256"]:
+            raise ValueError(f"V9 staged harness changed: {name}")
+        baseline = crate["baseline_source"]
+        for file, field in (("Cargo.toml", "manifest_sha256"),
+                            ("Cargo.lock", "lock_sha256")):
+            if sha256((staged / file).read_bytes()) != baseline[field]:
+                raise ValueError(f"V9 baseline {file} changed: {name}")
         if set(crate["cases"]) != set(cases):
             raise ValueError(f"incomplete V9 case population: {name}")
         for side in ("baseline", "candidate"):
@@ -195,11 +230,12 @@ def measure(args: argparse.Namespace) -> int:
         if baseline == candidate:
             raise ValueError(f"{name} baseline and candidate paths must differ")
         staged = pair_dir / name / "baseline_source"
-        stage_baseline(baseline, candidate, staged)
+        stage_baseline(baseline, candidate, staged, name)
         source_sets = {"baseline": (staged, base_source),
                        "candidate": (candidate, current_source)}
         row = {"baseline_source": base_source, "candidate_source": current_source,
-               "copied_harness_sha256": harness(candidate, name), "cases": {}}
+               "copied_harness_sha256": harness(candidate, name),
+               "baseline_stage_sha256": stage_digest(staged), "cases": {}}
         for side, (source_dir, source_id) in source_sets.items():
             target = pair_dir / name / f"{side}_target"
             run_env = environment | {"CARGO_TARGET_DIR": str(target)}

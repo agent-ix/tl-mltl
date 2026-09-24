@@ -25,9 +25,23 @@ class V9CriterionTests(unittest.TestCase):
                 "rustc": "rustc 1.98.1", "cargo": "cargo 1.98.1"}
         crates = {}
         for name, (bench, _, cases) in v9.GROUPS.items():
+            staged = path / name / "baseline_source"
+            (staged / "benches" / "inputs").mkdir(parents=True, exist_ok=True)
+            (staged / "benches" / f"{bench}.rs").write_text("fn main() {}\n")
+            (staged / "benches" / "inputs" / "SHA256SUMS").write_text("")
+            (staged / "benches" / "input-digests.json").write_text("{}\n")
+            (staged / "Cargo.toml").write_text("[package]\nname = \"fixture\"\n")
+            (staged / "Cargo.lock").write_text("# fixture\n")
+            (staged / "src").mkdir(exist_ok=True)
+            (staged / "src" / "lib.rs").write_text("pub fn fixture() {}\n")
             row = {"baseline_source": {"revision": "a" * 40},
                    "candidate_source": {"revision": "b" * 40},
-                   "copied_harness_sha256": {"bench": "c" * 64}, "cases": {}}
+                   "copied_harness_sha256": v9.harness(staged, name),
+                   "baseline_stage_sha256": v9.stage_digest(staged), "cases": {}}
+            row["baseline_source"]["manifest_sha256"] = v9.sha256(
+                (staged / "Cargo.toml").read_bytes())
+            row["baseline_source"]["lock_sha256"] = v9.sha256(
+                (staged / "Cargo.lock").read_bytes())
             for side, duration in (("baseline", 100.0), ("candidate", candidate_ns)):
                 log = path / name / f"{side}.log"
                 log.parent.mkdir(parents=True, exist_ok=True)
@@ -88,6 +102,25 @@ class V9CriterionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "raw log changed"):
             self.report(first, second)
 
+    def test_changed_staged_harness_or_manifest_is_rejected(self) -> None:
+        first, second = self.pair(1), self.pair(2)
+        bench = first / "parse" / "baseline_source" / "benches" / "parser_roundtrip.rs"
+        bench.write_text("fn main() { panic!() }\n")
+        with self.assertRaisesRegex(ValueError, "staged baseline source changed"):
+            self.report(first, second)
+        self.pair(1)
+        manifest = first / "parse" / "baseline_source" / "Cargo.toml"
+        manifest.write_text("[package]\nname = \"other\"\n")
+        with self.assertRaisesRegex(ValueError, "staged baseline source changed"):
+            self.report(first, second)
+
+    def test_changed_staged_production_source_is_rejected(self) -> None:
+        first, second = self.pair(1), self.pair(2)
+        (first / "parse" / "baseline_source" / "src" / "lib.rs").write_text(
+            "pub fn changed() {}\n")
+        with self.assertRaisesRegex(ValueError, "staged baseline source changed"):
+            self.report(first, second)
+
     def test_empty_and_failed_population_remain_incomplete(self) -> None:
         self.assertEqual(self.report()["status"], "incomplete")
         first = self.pair(1)
@@ -96,6 +129,16 @@ class V9CriterionTests(unittest.TestCase):
         metadata["reason"] = "baseline_benchmark_failed"
         (first / "pair.json").write_text(json.dumps(metadata))
         self.assertEqual(self.report(first)["status"], "incomplete")
+
+    def test_pre_feature_baseline_refuses_before_staging(self) -> None:
+        baseline = self.root / "old-release"
+        baseline.mkdir()
+        (baseline / "Cargo.toml").write_text(
+            '[package]\nname = "tl-parse"\nversion = "0.3.0"\n')
+        staged = self.root / "stage"
+        with self.assertRaisesRegex(ValueError, "feature-compatible baseline"):
+            v9.stage_baseline(baseline, self.root, staged, "parse")
+        self.assertFalse(staged.exists())
 
 
 if __name__ == "__main__":
