@@ -16,13 +16,13 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "81c13b8c67f1fa604788c76494ab8abece574083",
-      "digest": "a9e162b7fc69def06c9dae756498ed955f767f7d800e1115c8ed7f5f1f05f987"
+      "revision": "59b98ee6f029fb5eb8ac02e18804ff970be5aae5",
+      "digest": "3245c639e16b688284395f6df85ff159c595d404a9058b0ea1fc1ac371a7d4b5"
     },
     {
       "repository": "tl-rewrite",
-      "revision": "fd3c150089713fe6b8c6241491922f463787870d",
-      "digest": "c83e3e324b649a3478c8e17848dda18346f5371e2ac0782569922282b2462322"
+      "revision": "3632122308a0e5d4d04bb5284e1bf832db86a1d2",
+      "digest": "c5eee632b4f7facf8352906620c1e0acf75378caa9e28468eacfab873e8e547b"
     },
     {
       "repository": "tl-oracle",
