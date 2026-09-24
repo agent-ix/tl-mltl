@@ -192,7 +192,7 @@ commits; it does not retroactively claim to have measured the artifact commit.
 
 `stage1-campaign-definition.json` is the external control-plane definition
 for 117 direct native EA measurements. Its `tl-mltl` source is the clean
-`75b4a6cbcb02bab9d2fb126165bcd8b08527dc79` checkout. Keep this
+`5ca956693edcb49c19140b1051dfcfd1385c754f` checkout. Keep this
 control-plane checkout separate from that measured checkout: the definition
 and generated machine config are later artifacts that name the measured tree,
 so they cannot be part of their own source digest. Pass the clean measured
