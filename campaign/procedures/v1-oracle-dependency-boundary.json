@@ -2,7 +2,7 @@
   "arguments": [
     {
       "kind": "literal",
-      "value": "test"
+      "value": "tree"
     },
     {
       "kind": "literal",
@@ -14,11 +14,19 @@
     },
     {
       "kind": "literal",
-      "value": "--test"
+      "value": "--edges"
     },
     {
       "kind": "literal",
-      "value": "dependency_boundary"
+      "value": "normal"
+    },
+    {
+      "kind": "literal",
+      "value": "--prefix"
+    },
+    {
+      "kind": "literal",
+      "value": "none"
     }
   ],
   "environment": [
