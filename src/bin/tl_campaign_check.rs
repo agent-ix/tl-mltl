@@ -19,6 +19,8 @@ use sha2::{Digest, Sha256};
 mod v10_replay;
 #[path = "tl_campaign_check/v10_static.rs"]
 mod v10_static;
+#[path = "tl_campaign_check/v9_replay.rs"]
+mod v9_replay;
 
 const RESULT_PROTOCOL: &str = "engineering-assurance.producer-execution-result/v1";
 
@@ -239,8 +241,8 @@ fn member_parser(member: &str) -> Option<&'static str> {
             Some("v10-compile")
         } else if member.starts_with("V10.monitor.") {
             Some("v10-monitor")
-        } else if member.starts_with("V9.") {
-            Some("criterion-pending")
+        } else if v9_replay::Member::parse(member).is_some() {
+            Some("criterion")
         } else {
             None
         }
@@ -1535,8 +1537,8 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                         }) {
                             reasons.push("v10_semantic_replay_pending".into());
                         }
-                    } else if parser == "criterion-pending" {
-                        reasons.push("v9_sample_and_host_replay_pending".into());
+                    } else if parser == "criterion" {
+                        // Sealed Criterion bytes and host context are replayed in run_args.
                     } else if parser == "v10-inputs" || parser == "v10-compile" {
                         // Decisive bytes are required EA output artifacts checked below.
                     } else {
@@ -1566,7 +1568,7 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                 }
                 if reasons.is_empty() {
                     "accept"
-                } else if matches!(parser, "v10-monitor" | "criterion-pending")
+                } else if parser == "v10-monitor"
                     || matches!(
                         result.state.kind.as_str(),
                         "unavailable"
@@ -1831,6 +1833,26 @@ fn run_args(args: &[String]) -> Result<(), String> {
                     verdict.verdict = "inconclusive";
                     verdict.reasons.push(reason.into());
                 }
+            }
+        }
+    }
+    if member_parser(&input.member) == Some("criterion") && verdict.verdict == "accept" {
+        match v9_replay::replay(
+            &input.member,
+            &definition,
+            &request_value,
+            &result_value,
+            &raw_bundle,
+            &input.dependencies,
+        ) {
+            v9_replay::Replay::Accept => {}
+            v9_replay::Replay::Reject(reason) => {
+                verdict.verdict = "reject";
+                verdict.reasons.push(reason.into());
+            }
+            v9_replay::Replay::Inconclusive(reason) => {
+                verdict.verdict = "inconclusive";
+                verdict.reasons.push(reason.into());
             }
         }
     }
