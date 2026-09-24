@@ -20,9 +20,10 @@ reported revisions and all required populations reconciled.
 The local gate runs deterministic unit, corpus, property and bounded
 exhaustive partitions. Nightly fuzz, mutation, deeper enumeration, Miri,
 coverage, performance and Kani lanes retain their own actual run status.
-The Campaign config refuses a machine toolchain map that names no supported
-language (`node`, `rust`, or `python`) or gives one an empty identity before
-starting a measurement.
+The Campaign config refuses a member's selected machine toolchain map that
+names no supported language (`node`, `rust`, or `python`) or gives one an empty
+identity before starting a measurement. Per-member overrides allow distinct
+stable and nightly toolchain identities in one Campaign.
 Live R2U2 runs in a deliberately invoked target lane. A not-run lane is
 not green. A failed mutation target, incomplete exhaustive population,
 unknown proof, stale corpus, unclassified unsupported feature graph or unreviewed

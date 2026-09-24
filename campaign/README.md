@@ -192,7 +192,7 @@ commits; it does not retroactively claim to have measured the artifact commit.
 
 `stage1-campaign-definition.json` is the external control-plane definition
 for 117 direct native EA measurements. Its `tl-mltl` source is the clean
-`70f7e0482ea5617f71283916d6d6ef403629e6b4` checkout. Keep this
+`8106a4f60d8c3e89c550e516921d59b18fe3be30` checkout. Keep this
 control-plane checkout separate from that measured checkout: the definition
 and generated machine config are later artifacts that name the measured tree,
 so they cannot be part of their own source digest. Pass the clean measured
@@ -210,12 +210,16 @@ machine table. A generated config is only an execution selection, never a
 measurement result. A member passes only after Quoin retains the bounded EA
 producer and checker results and independently reconciles their identities.
 
-The machine file's `toolchains` map must identify at least one language used
-by the run, using Quoin's exact `rust`, `python`, or `node` keys and nonempty
-identities observed on that machine (for example,
-`"rust": "rustc 1.98.1 (aarch64-unknown-linux-gnu)"`). Do not use executable
-names such as `rustc` as keys or leave the map empty. The config generator
-rejects both cases before any measurement starts. The producer executable and
+The machine file's `toolchains` map gives default language identities for
+members. `memberToolchains` may override it by exact Campaign member name when
+members use different toolchains, such as stable Cargo and nightly Miri. Each
+selected map must identify at least one language used by that member, using
+Quoin's exact `rust`, `python`, or `node` keys and nonempty identities observed
+on that machine (for example,
+`"rust": "rustc 1.98.1 (aarch64-unknown-linux-gnu)"`). The default
+may be `{}` only when every member has an override. The config generator
+rejects missing identities, unsupported keys such as `rustc`, and overrides
+for unknown members before measurement starts. The producer executable and
 version are pinned separately by each procedure and machine tool entry.
 
 The direct C2PO compile procedures bind Python 3.13.11. A bounded smoke on

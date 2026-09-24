@@ -23,6 +23,8 @@ struct Machine {
     environment: BTreeMap<String, String>,
     timestamp: String,
     toolchains: BTreeMap<String, String>,
+    #[serde(default)]
+    member_toolchains: BTreeMap<String, BTreeMap<String, String>>,
     source_remotes: BTreeMap<String, String>,
 }
 
@@ -41,6 +43,16 @@ fn validate_toolchains(toolchains: &BTreeMap<String, String>) -> Result<(), Stri
         }
     }
     Ok(())
+}
+
+fn member_toolchains<'a>(
+    defaults: &'a BTreeMap<String, String>,
+    overrides: &'a BTreeMap<String, BTreeMap<String, String>>,
+    member: &str,
+) -> Result<&'a BTreeMap<String, String>, String> {
+    let selected = overrides.get(member).unwrap_or(defaults);
+    validate_toolchains(selected).map_err(|error| format!("{member}: {error}"))?;
+    Ok(selected)
 }
 
 #[derive(Deserialize)]
@@ -588,7 +600,21 @@ fn build(repo: &Path, definition: Definition, machine: Machine) -> Result<Value,
     if machine.schema != "tl-mltl.campaign-machine/v1" {
         return Err("wrong TL machine schema".into());
     }
-    validate_toolchains(&machine.toolchains)?;
+    if !machine.toolchains.is_empty() {
+        validate_toolchains(&machine.toolchains)?;
+    }
+    let member_names = definition
+        .members
+        .iter()
+        .map(|member| member.name.as_str())
+        .collect::<BTreeSet<_>>();
+    for name in machine.member_toolchains.keys() {
+        if !member_names.contains(name.as_str()) {
+            return Err(format!(
+                "machine toolchain override names unknown member {name}"
+            ));
+        }
+    }
     let revisions = definition
         .source_graph
         .iter()
@@ -622,6 +648,11 @@ fn build(repo: &Path, definition: Definition, machine: Machine) -> Result<Value,
     verify_control_file(repo, measured, Path::new("src/bin/tl_campaign_check.rs"))?;
     let mut members = BTreeMap::new();
     for member in definition.members {
+        let toolchains = member_toolchains(
+            &machine.toolchains,
+            &machine.member_toolchains,
+            &member.name,
+        )?;
         let plan_path = validate_plan(repo, &member)?;
         let plan_relative = plan_path
             .strip_prefix(repo)
@@ -654,7 +685,7 @@ fn build(repo: &Path, definition: Definition, machine: Machine) -> Result<Value,
             "checker":binding(checker,&machine,&revisions)?,
             "inputs":selected,
             "timestamp":machine.timestamp,
-            "toolchains":machine.toolchains,
+            "toolchains":toolchains,
             "sourceRemotes":machine.source_remotes,
             "environmentSources":environment_sources
         });
@@ -715,8 +746,8 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        binding, selected_inputs, sha256, validate_toolchains, verify_control_file, Contracts,
-        Machine, Member, Procedure, Tool,
+        binding, member_toolchains, selected_inputs, sha256, validate_toolchains,
+        verify_control_file, Contracts, Machine, Member, Procedure, Tool,
     };
 
     // Trace: FR-055-AC-1, TC-197
@@ -755,6 +786,7 @@ mod tests {
                 .collect(),
             timestamp: String::new(),
             toolchains: BTreeMap::new(),
+            member_toolchains: BTreeMap::new(),
             source_remotes: BTreeMap::new(),
         };
         let revision = "a".repeat(40);
@@ -803,6 +835,26 @@ mod tests {
             ("python".into(), "Python 3.13.11".into()),
         ]))
         .is_ok());
+    }
+
+    // Trace: FR-055-AC-1, TC-197
+    #[test]
+    fn member_toolchain_overrides_bind_the_selected_producer() {
+        let defaults = BTreeMap::from([("rust".into(), "rustc 1.98.1".into())]);
+        let overrides = BTreeMap::from([(
+            "V7.miri".into(),
+            BTreeMap::from([("rust".into(), "rustc nightly-2026-08-21".into())]),
+        )]);
+        assert_eq!(
+            member_toolchains(&defaults, &overrides, "V1.oracle").unwrap(),
+            &defaults
+        );
+        assert_eq!(
+            member_toolchains(&defaults, &overrides, "V7.miri").unwrap(),
+            &overrides["V7.miri"]
+        );
+        let invalid = BTreeMap::from([("V7.miri".into(), BTreeMap::new())]);
+        assert!(member_toolchains(&defaults, &invalid, "V7.miri").is_err());
     }
 
     // Trace: FR-055-AC-1, TC-197
