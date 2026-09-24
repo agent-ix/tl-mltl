@@ -1153,7 +1153,7 @@ fn evaluator_has_no_derived_future_branch() {
         scanned += 1;
     }
     assert_eq!(
-        scanned, 30,
+        scanned, 31,
         "the reviewed subsystem source population changed"
     );
 }
