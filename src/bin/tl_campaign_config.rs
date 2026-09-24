@@ -432,6 +432,46 @@ fn verify_control_file(control: &Path, measured: &Path, relative: &Path) -> Resu
     Ok(())
 }
 
+fn checker_module_paths(root: &Path) -> Result<BTreeSet<PathBuf>, String> {
+    let mut pending = vec![PathBuf::from("src/bin/tl_campaign_check")];
+    let mut files = BTreeSet::new();
+    while let Some(relative) = pending.pop() {
+        for entry in fs::read_dir(root.join(&relative))
+            .map_err(|error| format!("{}: {error}", root.join(&relative).display()))?
+        {
+            let entry = entry.map_err(|error| error.to_string())?;
+            let path = relative.join(entry.file_name());
+            let kind = entry.file_type().map_err(|error| error.to_string())?;
+            if kind.is_dir() {
+                pending.push(path);
+            } else if kind.is_file() {
+                files.insert(path);
+            } else {
+                return Err(format!(
+                    "checker source is not a regular file: {}",
+                    path.display()
+                ));
+            }
+        }
+    }
+    if files.is_empty() {
+        return Err("checker module inventory is empty".into());
+    }
+    Ok(files)
+}
+
+fn verify_checker_sources(control: &Path, measured: &Path) -> Result<(), String> {
+    verify_control_file(control, measured, Path::new("src/bin/tl_campaign_check.rs"))?;
+    let control_modules = checker_module_paths(control)?;
+    if control_modules != checker_module_paths(measured)? {
+        return Err("control and measured checker module inventories differ".into());
+    }
+    for module in control_modules {
+        verify_control_file(control, measured, &module)?;
+    }
+    Ok(())
+}
+
 fn output_path(role: &str) -> Result<&'static str, String> {
     match role {
         "crash" => Ok("crash.bin"),
@@ -645,7 +685,7 @@ fn build(repo: &Path, definition: Definition, machine: Machine) -> Result<Value,
             return Err(format!("{alias} reuses another source checkout"));
         }
     }
-    verify_control_file(repo, measured, Path::new("src/bin/tl_campaign_check.rs"))?;
+    verify_checker_sources(repo, measured)?;
     let mut members = BTreeMap::new();
     for member in definition.members {
         let toolchains = member_toolchains(
@@ -747,7 +787,7 @@ mod tests {
 
     use super::{
         binding, member_toolchains, selected_inputs, sha256, validate_toolchains,
-        verify_control_file, Contracts, Machine, Member, Procedure, Tool,
+        verify_checker_sources, verify_control_file, Contracts, Machine, Member, Procedure, Tool,
     };
 
     // Trace: FR-055-AC-1, TC-197
@@ -816,6 +856,37 @@ mod tests {
             std::path::Path::new("procedure.json")
         )
         .is_ok());
+    }
+
+    // Trace: FR-055-AC-1, TC-197
+    #[test]
+    fn control_and_measured_checker_module_inventory_and_bytes_must_match() {
+        let control = tempfile::tempdir().unwrap();
+        let measured = tempfile::tempdir().unwrap();
+        for root in [control.path(), measured.path()] {
+            let bin = root.join("src/bin");
+            std::fs::create_dir_all(bin.join("tl_campaign_check")).unwrap();
+            std::fs::write(bin.join("tl_campaign_check.rs"), b"mod replay;").unwrap();
+            std::fs::write(bin.join("tl_campaign_check/replay.rs"), b"pub fn run() {}").unwrap();
+        }
+        assert!(verify_checker_sources(control.path(), measured.path()).is_ok());
+        std::fs::write(
+            measured.path().join("src/bin/tl_campaign_check/replay.rs"),
+            b"pub fn run() { panic!() }",
+        )
+        .unwrap();
+        assert!(verify_checker_sources(control.path(), measured.path()).is_err());
+        std::fs::write(
+            measured.path().join("src/bin/tl_campaign_check/replay.rs"),
+            b"pub fn run() {}",
+        )
+        .unwrap();
+        std::fs::write(
+            measured.path().join("src/bin/tl_campaign_check/extra.rs"),
+            b"pub fn extra() {}",
+        )
+        .unwrap();
+        assert!(verify_checker_sources(control.path(), measured.path()).is_err());
     }
 
     // Trace: FR-055-AC-1, TC-197
