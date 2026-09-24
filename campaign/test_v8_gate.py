@@ -261,6 +261,24 @@ class V8GateTests(unittest.TestCase):
                                   ["critical_branch_census"]["missing_files"])
                     self.restamp_export(index, original)
 
+    def test_zero_summary_policy_detail_still_requires_location_review(self):
+        for key, suffix in (("parse-default", "/src/dialect/v4.rs"),
+                            ("rewrite-default", "/src/disposition.rs")):
+            with self.subTest(key=key):
+                index = next(i for i, row in enumerate(self.report["runs"])
+                             if row["id"] == key)
+                export = json.loads((self.raw_dir / f"{key}.json").read_text())
+                policy = next(file for file in export["data"][0]["files"]
+                              if file["filename"].endswith(suffix))
+                policy["summary"]["branches"] = {"count": 0, "covered": 0}
+                policy["branches"] = [[1, 2, 1, 12, 0, 0, 0, 0, 4]]
+                self.restamp_export(index, export)
+                status, population, _ = self.verify()
+                self.assertEqual(status, "incomplete")
+                self.assertIn({"run": key, "file": suffix.removeprefix("/"),
+                               "line": 1, "column": 2, "true_count": 0,
+                               "false_count": 0}, population["critical_uncovered"])
+
     def test_past_reexport_cannot_replace_evaluator_coverage(self):
         index = next(i for i, row in enumerate(self.report["runs"])
                      if row["id"] == "mltl-default")

@@ -235,13 +235,12 @@ def classify_export(raw: dict, root: Path) -> dict:
                 branches["covered"] > raw_hit_sides):
             raise ValueError(f"branch summary exceeds detailed population: {relative}")
         uncovered = []
-        if branches["count"]:
-            for site, (true_count, false_count) in branch_sites.items():
-                if true_count == 0 or false_count == 0:
-                    location = {"line": site[0], "column": site[1],
-                                "true_count": true_count, "false_count": false_count}
-                    if location not in uncovered:
-                        uncovered.append(location)
+        for site, (true_count, false_count) in branch_sites.items():
+            if true_count == 0 or false_count == 0:
+                location = {"line": site[0], "column": site[1],
+                            "true_count": true_count, "false_count": false_count}
+                if location not in uncovered:
+                    uncovered.append(location)
         # The export does not link each source-site detail to a file-summary
         # branch instance. Keep every named gap and the entire summary deficit
         # as independent review obligations. One cannot waive the other.

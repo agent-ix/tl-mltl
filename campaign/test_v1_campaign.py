@@ -157,6 +157,29 @@ class CampaignTests(unittest.TestCase):
     def report(self) -> dict:
         return campaign.build_report(self.manifest, self.raw)
 
+    def test_source_and_input_changes_during_lanes_refuse_final_report(self) -> None:
+        for path, reason in ((self.repos["tl-syntax"] / "src/lib.rs",
+                              "uncommitted source changes"),
+                             (self.input, "stale input digest")):
+            with self.subTest(path=path):
+                original = path.read_bytes()
+                changed = False
+
+                def mutate_after_snapshot(lane, graph, inputs, raw_dir):
+                    nonlocal changed
+                    if not changed:
+                        path.write_bytes(original + b"changed\n")
+                        changed = True
+                    return {"id": lane["id"], "milestone": lane["milestone"],
+                            "status": "not_run"}, {}
+
+                try:
+                    with patch.object(campaign, "run_lane", side_effect=mutate_after_snapshot):
+                        with self.assertRaisesRegex(ValueError, reason):
+                            self.report()
+                finally:
+                    path.write_bytes(original)
+
     # TC-195: Execute a real subprocess, retain its exact stdout digest, and
     # reject a substituted source or changed input instead of crediting it.
     def test_actual_command_output_exact_graph_and_digest(self) -> None:

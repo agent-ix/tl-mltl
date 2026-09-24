@@ -1133,6 +1133,13 @@ def build_report(manifest: dict, raw_dir: Path) -> dict:
             semantic_lanes[lane_id], raw[lane_id] = run_lane(lane, graph, inputs, raw_dir)
     for lane_id, lane in sorted(defined.items()):
         semantic_lanes[lane_id], raw[lane_id] = run_lane(lane, graph, inputs, raw_dir)
+    # A lane may run for hours. Refuse a result if source or declared inputs
+    # changed after the initial snapshot, including while retained evidence
+    # was being reconciled.
+    if source_graph(manifest) != graph:
+        raise ValueError("campaign source graph changed during execution")
+    if input_graph(manifest) != inputs:
+        raise ValueError("campaign input graph changed during execution")
     milestones = {}
     for milestone, required_ids in REQUIRED.items():
         states = [semantic_lanes[lane_id]["status"] for lane_id in required_ids]

@@ -261,7 +261,9 @@ class CoverageExportTests(unittest.TestCase):
             ]}]}
             measured = classify_export(export, root)
             self.assertEqual(measured["files"]["src/limits.rs"]
-                             ["uncovered_branch_locations"], [])
+                             ["uncovered_branch_locations"], [
+                                 {"line": 1, "column": 2, "true_count": 0,
+                                  "false_count": 0}])
 
 
 if __name__ == "__main__":
