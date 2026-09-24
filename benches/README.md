@@ -9,8 +9,10 @@ renderer receives exactly its graph's node count as its work limit.
 
 The benchmark checks real successful outcomes before timing. Each generated
 input's length-prefixed canonical wire parts must match `input-digests.json`.
-Run `cargo bench --locked --features infinite-trace --bench v9_workloads --
---test` to exercise all fifteen cases without treating a smoke run as a
+The six additional closed cases vary trace length with width fixed at two,
+then vary interval width with trace length fixed at 96. Run `cargo bench
+--locked --features infinite-trace --bench v9_workloads -- --test` to exercise
+all 21 cases without treating a smoke run as a
 performance comparison.
 
 Criterion 0.5.1 uses 20 samples, a 500 ms warmup, and a one second minimum
