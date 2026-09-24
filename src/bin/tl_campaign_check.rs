@@ -137,6 +137,8 @@ fn member_parser(member: &str) -> Option<&'static str> {
         | "V7.rewrite_record_limits"
         | "V7.oracle_limits" => Some("miri"),
         "V6.syntax_interval_proof" | "V6.mltl_horizon_proof" => Some("kani-clean"),
+        "V6.seeded_false_claim" => Some("kani-false"),
+        "V6.ordinary_counterexample_replay" => Some("kani-replay"),
         _ => None,
     }
 }
@@ -503,6 +505,54 @@ fn kani_clean(member: &str, raw: &str) -> bool {
         && raw.contains("Complete - 1 successfully verified harnesses, 0 failures, 1 total.")
 }
 
+fn kani_false(raw: &str) -> bool {
+    let expected = ["vec![0, 0, 0, 128]", "vec![0, 0, 0, 192]"];
+    let Some(playback) =
+        raw.split_once("Concrete playback unit test for `seeded_false_cardinality_claim`:")
+    else {
+        return false;
+    };
+    let mut bytes = Vec::new();
+    for line in playback.1.lines() {
+        let line = line.trim();
+        let Some(inner) = line
+            .strip_prefix("vec![")
+            .and_then(|s| s.strip_suffix("],"))
+        else {
+            continue;
+        };
+        let values: Option<Vec<u8>> = inner
+            .split(',')
+            .map(|number| number.trim().parse::<u8>().ok())
+            .collect();
+        let Some(values) = values else {
+            return false;
+        };
+        bytes.push(values);
+    }
+    let expected_start = u32::from_le_bytes([0, 0, 0, 128]);
+    let expected_end = u32::from_le_bytes([0, 0, 0, 192]);
+    let replay = tl_syntax::Interval::new(expected_start, expected_end)
+        .ok()
+        .and_then(|interval| interval.cardinality())
+        == Some(1_073_741_825);
+    bytes == vec![vec![0, 0, 0, 128], vec![0, 0, 0, 192]]
+        && expected.iter().all(|token| raw.contains(token))
+        && replay
+        && raw.contains("Checking harness seeded_false_cardinality_claim...")
+        && raw.lines().any(|line| {
+            line.trim()
+                .strip_prefix("** 1 of ")
+                .and_then(|rest| rest.strip_suffix(" failed"))
+                .and_then(|count| count.parse::<u64>().ok())
+                .is_some_and(|count| count > 0)
+        })
+        && raw.contains("assertion failed: interval.cardinality() == Some(1)")
+        && raw.contains("Solving with CaDiCaL ")
+        && raw.contains("VERIFICATION:- FAILED")
+        && raw.contains("Complete - 0 successfully verified harnesses, 1 failures, 1 total.")
+}
+
 fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVerdict {
     let mut reasons = Vec::new();
     let mut request_digest = String::new();
@@ -536,11 +586,14 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                     {
                         reasons.push("raw_capture_mismatch".into());
                     }
-                    if process
-                        .terminal_status
-                        .as_ref()
-                        .is_none_or(|s| s.kind != "exit_code" || s.value != 0)
-                    {
+                    if process.terminal_status.as_ref().is_none_or(|s| {
+                        s.kind != "exit_code"
+                            || if parser == "kani-false" {
+                                s.value == 0
+                            } else {
+                                s.value != 0
+                            }
+                    }) {
                         reasons.push("native_command_failed".into());
                     }
                     if parser == "libfuzzer" {
@@ -558,6 +611,21 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                             + &String::from_utf8_lossy(&process.stderr.bytes);
                         if !kani_clean(member, &raw) {
                             reasons.push("kani_proof_unproved".into());
+                        }
+                    } else if parser == "kani-false" {
+                        let raw = String::from_utf8_lossy(&process.stdout.bytes).to_string()
+                            + &String::from_utf8_lossy(&process.stderr.bytes);
+                        if !kani_false(&raw) {
+                            reasons.push("kani_false_control_unproved".into());
+                        }
+                    } else if parser == "kani-replay" {
+                        let raw = String::from_utf8_lossy(&process.stdout.bytes).to_string()
+                            + &String::from_utf8_lossy(&process.stderr.bytes);
+                        if !raw
+                            .contains("test seeded_false_cardinality_counterexample_replays ... ok")
+                            || !cargo_summaries(&raw, 1, 1)
+                        {
+                            reasons.push("kani_counterexample_replay_unproved".into());
                         }
                     } else {
                         match String::from_utf8(process.stdout.bytes) {
@@ -808,6 +876,15 @@ mod tests {
         assert!(!super::kani_clean(
             "V6.syntax_interval_proof",
             &raw.replace("Check 1:", "Check 2:")
+        ));
+    }
+
+    #[test]
+    fn false_kani_control_requires_replayable_bytes() {
+        let raw = "Checking harness seeded_false_cardinality_claim...\nSolving with CaDiCaL 3.0.0\n ** 1 of 35 failed\nFailed Checks: assertion failed: interval.cardinality() == Some(1)\nVERIFICATION:- FAILED\nConcrete playback unit test for `seeded_false_cardinality_claim`:\nlet concrete_vals: Vec<Vec<u8>> = vec![\nvec![0, 0, 0, 128],\nvec![0, 0, 0, 192],\n];\nComplete - 0 successfully verified harnesses, 1 failures, 1 total.\n";
+        assert!(super::kani_false(raw));
+        assert!(!super::kani_false(
+            &raw.replace("vec![0, 0, 0, 192]", "vec![0, 0, 0, 128]")
         ));
     }
 
