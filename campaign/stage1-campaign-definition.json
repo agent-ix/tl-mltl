@@ -6,13 +6,13 @@
   "sourceGraph": [
     {
       "repository": "tl-syntax",
-      "revision": "fca935e00f66f7c5a35ad4e2fde53674786a41ac",
-      "digest": "83059de3fd8934cb679e47e7955385ec76e02be8bb90e5e41d87f866c033e2a5"
+      "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
+      "digest": "66ddeb99101843073e3e62f94a5b62aee6bb04a5e4f55c5987a7e0c33e78eee2"
     },
     {
       "repository": "tl-parse",
-      "revision": "4dc67dbd40c626679eced0abb3ec6c10907ef3ae",
-      "digest": "9d4af0cb3718a09185a00d381bd627079d4d4920363350ca2d1c2e9a9a38bf3c"
+      "revision": "6ce728472474a2a3835d93745331ec70f3d9197f",
+      "digest": "ad8d05d845577567371a2471cbe924202e1a7a7df25cffc729cde443afa3c429"
     },
     {
       "repository": "tl-mltl",
@@ -21,8 +21,8 @@
     },
     {
       "repository": "tl-rewrite",
-      "revision": "e8488e6f68a71d40f39f1ad9e0cf8ebe2c45a490",
-      "digest": "73cf42c5f24403fd3b2c6cb26a6d5e542560514acdc820062da142046e6b9237"
+      "revision": "fd3c150089713fe6b8c6241491922f463787870d",
+      "digest": "c83e3e324b649a3478c8e17848dda18346f5371e2ac0782569922282b2462322"
     },
     {
       "repository": "tl-oracle",

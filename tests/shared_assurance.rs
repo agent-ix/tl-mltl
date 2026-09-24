@@ -2238,7 +2238,8 @@ fn no_local_evidence_framework_remains() {
         // V9 adds twelve direct Criterion procedure records.
         // V10 adds fifty-one direct procedure records and their member inventory.
         // One CampaignDefinition closes the full V1–V11 member inventory.
-        ("campaign", 178),
+        // The explicit Cargo closure inventory adds one source-bound record.
+        ("campaign", 179),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2290,7 +2291,8 @@ fn no_local_evidence_framework_remains() {
         // past-profile mapping adapter (1 file).
         // Direct EA producer results are checked by a TL-owned Rust binary.
         // The pure Rust V10 input generator adds one binary.
-        ("src", 28),
+        // The Rust Quoin machine-config adapter adds one binary.
+        ("src", 29),
         // TL-179 deletes tests/tc_084_temporal_owner_wire.rs (1 file), the
         // dedicated test for the request/result/mapping owner boundary it
         // removed from src/. TL-173 then deletes the two files that test left
@@ -2388,8 +2390,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 688,
-        "the source census population changed from the reviewed 688 tracked files \
+        inspected, 690,
+        "the source census population changed from the reviewed 690 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
