@@ -464,7 +464,17 @@ fn binding(
                     .ok_or(format!("missing explicit host environment {}", entry.name))?;
                 environment.insert(entry.name.clone(), value.clone());
             }
-            "runtime" if entry.value.starts_with("source:") => {}
+            "runtime" if entry.value.starts_with("source:") => {
+                let repository = entry
+                    .value
+                    .strip_prefix("source:")
+                    .and_then(|value| value.strip_suffix(".revision"))
+                    .ok_or(format!("unknown source selector {}", entry.value))?;
+                let revision = revisions
+                    .get(repository)
+                    .ok_or(format!("missing source revision {repository}"))?;
+                environment.insert(entry.name.clone(), revision.clone());
+            }
             _ => return Err(format!("unsupported environment selector {}", entry.value)),
         }
     }
@@ -682,7 +692,59 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{selected_inputs, verify_control_file, Member, Procedure};
+    use std::collections::BTreeMap;
+
+    use serde_json::json;
+
+    use super::{
+        binding, selected_inputs, sha256, verify_control_file, Contracts, Machine, Member,
+        Procedure, Tool,
+    };
+
+    // Trace: FR-055-AC-1, TC-197
+    #[test]
+    fn v9_source_revision_environment_is_declared_for_quoin_replacement() {
+        let procedure: Procedure = serde_json::from_str(include_str!(
+            "../../campaign/procedures/v9-mltl-pair1-candidate.json"
+        ))
+        .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let executable = directory.path().join("cargo");
+        std::fs::write(&executable, b"test executable").unwrap();
+        let tool = Tool {
+            executable: executable.to_str().unwrap().to_owned(),
+            digest: sha256(b"test executable"),
+        };
+        let machine = Machine {
+            schema: "tl-mltl.campaign-machine/v1".into(),
+            sources: BTreeMap::new(),
+            tools: BTreeMap::from([(
+                format!("{}@{}", procedure.producer_name, procedure.producer_version),
+                tool,
+            )]),
+            contracts: Contracts {
+                caller: json!({"kind":"test.caller"}),
+                containment: json!({"kind":"test.containment"}),
+                response_protocol: json!({"kind":procedure.response_protocol}),
+                response_adapter: json!({"kind":procedure.response_adapter,
+                    "version":procedure.response_adapter_version}),
+            },
+            environment: procedure
+                .environment
+                .iter()
+                .filter(|entry| entry.value.starts_with("host:"))
+                .map(|entry| (entry.name.clone(), "/tmp".into()))
+                .collect(),
+            timestamp: String::new(),
+            toolchains: BTreeMap::new(),
+            source_remotes: BTreeMap::new(),
+        };
+        let revision = "a".repeat(40);
+        let revisions = BTreeMap::from([("tl-mltl".to_owned(), revision.clone())]);
+        let selected = binding(&procedure, &machine, &revisions).unwrap();
+        assert_eq!(selected["environment"]["TL_MLTL_SOURCE_REVISION"], revision);
+        assert_eq!(selected["environment"]["TL_MLTL_SOURCE_STATE"], "clean");
+    }
 
     // Trace: FR-055-AC-1, TC-197
     #[test]
