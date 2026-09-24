@@ -2319,9 +2319,10 @@ fn no_local_evidence_framework_remains() {
         // (plan, index, log, and seven tasks) beside it, and PLAN-008 adds a
         // further 10-file bundle of the same shape, as does PLAN-009 (TL-65).
         ("plan", 35),
-        // The readiness and formal gap-analysis skill artifacts live at the
-        // root review path required by their output contracts.
-        ("reviews", 3),
+        // The three QObs readiness/gap artifacts and two independent Stage 1
+        // Campaign assessments live at the root review path required by their
+        // output contracts.
+        ("reviews", 5),
     ]
     .into_iter()
     .map(|(area, count)| (area.to_owned(), count))
@@ -2386,14 +2387,16 @@ fn no_local_evidence_framework_remains() {
     // owner/CI inspection evidence adds one test, bringing it to 443. The
     // Quire-bound feature control adds one script and the historical mapping
     // payload fixture adds one test fixture, bringing it to 445. The
-    // generated infinite semantic law test brings it to 446.
+    // generated infinite semantic law test brings it to 446. Two independent
+    // Stage 1 Campaign review artifacts bring the current reviewed census
+    // from 693 to 695.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 693,
-        "the source census population changed from the reviewed 693 tracked files \
+        inspected, 695,
+        "the source census population changed from the reviewed 695 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
