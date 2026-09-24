@@ -136,6 +136,7 @@ fn member_parser(member: &str) -> Option<&'static str> {
         | "V7.rewrite_budgets"
         | "V7.rewrite_record_limits"
         | "V7.oracle_limits" => Some("miri"),
+        "V6.syntax_interval_proof" | "V6.mltl_horizon_proof" => Some("kani-clean"),
         _ => None,
     }
 }
@@ -459,6 +460,49 @@ fn native_v7(member: &str, raw: &str) -> bool {
         && summaries[0].contains(" filtered out;")
 }
 
+fn kani_clean(member: &str, raw: &str) -> bool {
+    let harness = match member {
+        "V6.syntax_interval_proof" => {
+            "formula::graph::kani_proofs::interval_cardinality_matches_wide_arithmetic"
+        }
+        "V6.mltl_horizon_proof" => {
+            "future::horizon::kani_proofs::horizon_bound_addition_matches_checked_add"
+        }
+        _ => return false,
+    };
+    let mut checks = 0_u64;
+    let mut assertions = 0_u64;
+    let mut statuses = 0_u64;
+    for line in raw.lines() {
+        if let Some(rest) = line.strip_prefix("Check ") {
+            let Some((number, name)) = rest.split_once(": ") else {
+                return false;
+            };
+            checks += 1;
+            if number.parse::<u64>().ok() != Some(checks) {
+                return false;
+            }
+            if name.contains(harness) && name.contains(".assertion.") {
+                assertions += 1;
+            }
+        } else if line.trim_start().starts_with("- Status: ") {
+            if line.trim() != "- Status: SUCCESS" {
+                return false;
+            }
+            statuses += 1;
+        }
+    }
+    checks > 0
+        && statuses == checks
+        && assertions > 0
+        && raw.contains(&format!("Checking harness {harness}..."))
+        && raw.contains(&format!(" ** 0 of {checks} failed"))
+        && raw.contains("Solving with CaDiCaL ")
+        && raw.contains("CBMC version ")
+        && raw.contains("VERIFICATION:- SUCCESSFUL")
+        && raw.contains("Complete - 1 successfully verified harnesses, 0 failures, 1 total.")
+}
+
 fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVerdict {
     let mut reasons = Vec::new();
     let mut request_digest = String::new();
@@ -508,6 +552,12 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                             + &String::from_utf8_lossy(&process.stderr.bytes);
                         if !native_v7(member, &raw) {
                             reasons.push("native_v7_probe_unproved".into());
+                        }
+                    } else if parser == "kani-clean" {
+                        let raw = String::from_utf8_lossy(&process.stdout.bytes).to_string()
+                            + &String::from_utf8_lossy(&process.stderr.bytes);
+                        if !kani_clean(member, &raw) {
+                            reasons.push("kani_proof_unproved".into());
                         }
                     } else {
                         match String::from_utf8(process.stdout.bytes) {
@@ -745,6 +795,20 @@ mod tests {
             .as_array()
             .unwrap()
             .contains(&json!("definition_digest_mismatch")));
+    }
+
+    #[test]
+    fn kani_checker_rejects_missing_or_failed_property() {
+        let raw = "Checking harness formula::graph::kani_proofs::interval_cardinality_matches_wide_arithmetic...\nCBMC version 6.11.0 (cbmc-6.11.0)\nSolving with CaDiCaL 3.0.0\nCheck 1: formula::graph::kani_proofs::interval_cardinality_matches_wide_arithmetic.assertion.1\n - Status: SUCCESS\n ** 0 of 1 failed\nVERIFICATION:- SUCCESSFUL\nComplete - 1 successfully verified harnesses, 0 failures, 1 total.\n";
+        assert!(super::kani_clean("V6.syntax_interval_proof", raw));
+        assert!(!super::kani_clean(
+            "V6.syntax_interval_proof",
+            &raw.replace("- Status: SUCCESS", "- Status: FAILURE")
+        ));
+        assert!(!super::kani_clean(
+            "V6.syntax_interval_proof",
+            &raw.replace("Check 1:", "Check 2:")
+        ));
     }
 
     #[test]
