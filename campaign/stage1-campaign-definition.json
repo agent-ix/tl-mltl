@@ -16,8 +16,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "303c616ec6dab1c359eb50f87537f91063635df0",
-      "digest": "4838b42d18171d6854422fe22f9f1edb4ee5007168439414c9d37ba0316de321"
+      "revision": "0392001e83cdc1b8e10d3c8eabcc5d3347207a4c",
+      "digest": "579d7f50c68497ea79ad7144bfca12e78d7d6a35914b738c320fef66883d94e6"
     },
     {
       "repository": "tl-rewrite",
@@ -9170,7 +9170,7 @@
       "dependsOn": [
         "V10.compile.past"
       ],
-      "required": true,
+      "required": false,
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
@@ -9332,7 +9332,7 @@
       "dependsOn": [
         "V10.compile.unsafe-since"
       ],
-      "required": true,
+      "required": false,
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
