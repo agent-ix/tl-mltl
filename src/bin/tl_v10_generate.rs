@@ -1,9 +1,12 @@
 //! Deterministic V10 C2PO input producer. It does not execute a foreign tool.
 //! Trace: FR-052-AC-1, FR-055-AC-1, TC-191, TC-197.
 
-use std::{fs, path::{Path, PathBuf}};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 const STEPS: usize = 6;
@@ -16,7 +19,7 @@ const INTERVALS: [(&str, u32, u32); 6] = [
     ("nonzero-singleton", 2, 2),
 ];
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct GeneratedCase {
     id: String,
@@ -26,10 +29,10 @@ struct GeneratedCase {
     trace_digest: String,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Manifest {
-    schema: &'static str,
+    schema: String,
     formula_trace_cases: usize,
     per_step_cells: usize,
     cases: Vec<GeneratedCase>,
@@ -112,14 +115,9 @@ fn emit(
     })
 }
 
-fn run() -> Result<(), String> {
-    let args = std::env::args().collect::<Vec<_>>();
-    if args.len() != 5 || args[1] != "--output-dir" || args[3] != "--manifest" {
-        return Err("usage: tl_v10_generate --output-dir DIR --manifest FILE".into());
-    }
-    let out = PathBuf::from(&args[2]);
-    fs::create_dir_all(&out).map_err(|error| error.to_string())?;
-    if fs::read_dir(&out)
+fn generate(out: &Path, manifest_path: &Path) -> Result<(), String> {
+    fs::create_dir_all(out).map_err(|error| error.to_string())?;
+    if fs::read_dir(out)
         .map_err(|error| error.to_string())?
         .next()
         .is_some()
@@ -143,7 +141,7 @@ fn run() -> Result<(), String> {
             .collect::<Vec<_>>();
         for trace_kind in ["all-true", "all-false", "boundary-toggle"] {
             let id = format!("{group}-{trace_kind}");
-            cases.push(emit(&out, &id, &expressions, &trace(trace_kind, boundary))?);
+            cases.push(emit(out, &id, &expressions, &trace(trace_kind, boundary))?);
         }
     }
     let safety_spec = "INPUT\n q: bool;\nFTSPEC\n q;\n";
@@ -159,7 +157,7 @@ fn run() -> Result<(), String> {
     });
     let grid_cases: usize = cases[..21].iter().map(|case| case.formulas).sum();
     let manifest = Manifest {
-        schema: "tl-mltl.v10-input-manifest/v1",
+        schema: "tl-mltl.v10-input-manifest/v1".into(),
         formula_trace_cases: grid_cases,
         per_step_cells: grid_cases * STEPS,
         cases,
@@ -168,7 +166,15 @@ fn run() -> Result<(), String> {
         return Err("V10 grid axis count changed".into());
     }
     let bytes = serde_json::to_vec_pretty(&manifest).map_err(|error| error.to_string())?;
-    fs::write(&args[4], bytes).map_err(|error| error.to_string())
+    fs::write(manifest_path, bytes).map_err(|error| error.to_string())
+}
+
+fn run() -> Result<(), String> {
+    let args = std::env::args().collect::<Vec<_>>();
+    if args.len() != 5 || args[1] != "--output-dir" || args[3] != "--manifest" {
+        return Err("usage: tl_v10_generate --output-dir DIR --manifest FILE".into());
+    }
+    generate(&PathBuf::from(&args[2]), &PathBuf::from(&args[4]))
 }
 
 fn main() {
@@ -187,27 +193,30 @@ mod tests {
     fn grid_is_exactly_1350_cells() {
         let directory = tempfile::tempdir().unwrap();
         let out = directory.path().join("inputs");
-        fs::create_dir(&out).unwrap();
-        let mut cases = 0;
-        for (group, interval, _) in INTERVALS
-            .map(|(name, a, b)| (name, Some((a, b)), b as usize))
-            .into_iter()
-            .chain(std::iter::once(("previous", None, 1)))
-        {
-            let operators: &[&str] = if interval.is_some() {
-                &["once", "historically", "since", "triggered"]
-            } else {
-                &["previous"]
-            };
-            let expressions = operators
-                .iter()
-                .flat_map(|operator| {
-                    (1..=3).map(move |depth| expression(operator, interval, depth))
-                })
-                .collect::<Vec<_>>();
-            let case = emit(&out, group, &expressions, &trace("boundary-toggle", 2)).unwrap();
-            cases += case.formulas * case.trace_positions * 3;
+        let manifest_path = directory.path().join("manifest.json");
+        generate(&out, &manifest_path).unwrap();
+        let manifest: Manifest =
+            serde_json::from_slice(&fs::read(&manifest_path).unwrap()).unwrap();
+        assert_eq!(manifest.formula_trace_cases, 225);
+        assert_eq!(manifest.per_step_cells, 1350);
+        assert_eq!(manifest.cases.len(), 22);
+        assert_eq!(fs::read_dir(&out).unwrap().count(), 44);
+        let mut ids = std::collections::BTreeSet::new();
+        let mut observed_cells = 0;
+        for (index, case) in manifest.cases.iter().enumerate() {
+            assert!(ids.insert(case.id.as_str()));
+            let spec = fs::read(out.join(format!("{}.c2po", case.id))).unwrap();
+            let trace = fs::read(out.join(format!("{}.csv", case.id))).unwrap();
+            assert_eq!(digest(&spec), case.spec_digest);
+            assert_eq!(digest(&trace), case.trace_digest);
+            assert_eq!(
+                std::str::from_utf8(&trace).unwrap().lines().count() - 1,
+                case.trace_positions
+            );
+            if index < 21 {
+                observed_cells += case.formulas * case.trace_positions;
+            }
         }
-        assert_eq!(cases, 1350);
+        assert_eq!(observed_cells, 1350);
     }
 }

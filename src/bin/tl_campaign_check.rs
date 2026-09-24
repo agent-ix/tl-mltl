@@ -74,6 +74,8 @@ struct CheckInput {
     result_path: String,
     result_digest: String,
     raw_artifacts: Vec<RawArtifact>,
+    raw_bundle_path: String,
+    raw_bundle_digest: String,
     #[serde(default)]
     dependencies: Vec<DependencyResult>,
 }
@@ -82,8 +84,22 @@ struct CheckInput {
 #[serde(deny_unknown_fields)]
 struct RawArtifact {
     role: String,
-    path: String,
     digest: String,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct RawArtifactBytes {
+    role: String,
+    digest: String,
+    bytes: Vec<u8>,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct RawBundle {
+    schema: String,
+    artifacts: Vec<RawArtifactBytes>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -110,6 +126,7 @@ struct DomainVerdict {
     request_digest: String,
     result_digest: String,
     raw_artifacts_digest: String,
+    raw_bundle_digest: String,
     dependencies_digest: String,
     stdout_digest: Option<String>,
     stderr_digest: Option<String>,
@@ -123,6 +140,12 @@ fn canonical_digest(value: &Value) -> Result<String, String> {
     serde_json_canonicalizer::to_vec(value)
         .map(|bytes| sha256(&bytes))
         .map_err(|error| format!("cannot canonicalize JSON: {error}"))
+}
+
+fn raw_bytes<'a>(bundle: &'a RawBundle, role: &str) -> Option<&'a [u8]> {
+    let mut matches = bundle.artifacts.iter().filter(|item| item.role == role);
+    let item = matches.next()?;
+    matches.next().is_none().then_some(item.bytes.as_slice())
 }
 
 fn member_parser(member: &str) -> Option<&'static str> {
@@ -177,8 +200,20 @@ fn member_parser(member: &str) -> Option<&'static str> {
         | "V5.syntax_restored_control"
         | "V5.mltl_restored_control"
         | "V5.rewrite_restored_control" => Some("mutants-restored"),
+        "V10.inputs" => Some("v10-inputs"),
         _ => None,
     }
+    .or_else(|| {
+        if member.starts_with("V10.compile.") {
+            Some("v10-compile")
+        } else if member.starts_with("V10.monitor.") {
+            Some("v10-monitor")
+        } else if member.starts_with("V9.") {
+            Some("criterion-pending")
+        } else {
+            None
+        }
+    })
 }
 
 fn cargo_summaries(raw: &str, minimum_total: u64, expected_summaries: usize) -> bool {
@@ -831,7 +866,7 @@ fn failed_status(status: &Value) -> bool {
     status["Failure"].as_i64().is_some_and(|code| code != 0)
 }
 
-fn mutation_accept(input: &CheckInput) -> bool {
+fn mutation_accept(input: &CheckInput, bundle: &RawBundle) -> bool {
     let prefix = input.member.split('_').next().unwrap_or("");
     let discovery_member = format!("{prefix}_discovery");
     let Some(dependency) = input
@@ -869,12 +904,7 @@ fn mutation_accept(input: &CheckInput) -> bool {
     };
     let artifact = |suffix: &str| -> Option<Value> {
         let role = format!("mutants/mutants.out/{suffix}");
-        let path = &input
-            .raw_artifacts
-            .iter()
-            .find(|item| item.role == role)?
-            .path;
-        serde_json::from_slice(&fs::read(path).ok()?).ok()
+        serde_json::from_slice(raw_bytes(bundle, &role)?).ok()
     };
     let Some(selected) = artifact("mutants.json") else {
         return false;
@@ -992,6 +1022,101 @@ fn mutation_accept(input: &CheckInput) -> bool {
         && native["timeout"].as_u64() == Some(0)
 }
 
+fn v10_target_rows(raw: &[u8]) -> Option<BTreeMap<(usize, usize), bool>> {
+    let text = std::str::from_utf8(raw).ok()?;
+    let mut rows = BTreeMap::new();
+    for line in text.lines() {
+        let (identity, value) = line.split_once(',')?;
+        let (formula, position) = identity.split_once(':')?;
+        let formula = formula.parse::<usize>().ok()?;
+        let position = position.parse::<usize>().ok()?;
+        let verdict = match value {
+            "T" => true,
+            "F" => false,
+            _ => return None,
+        };
+        if rows.insert((formula, position), verdict).is_some() {
+            return None;
+        }
+    }
+    (!rows.is_empty()).then_some(rows)
+}
+
+fn v10_inputs(input: &CheckInput, bundle: &RawBundle) -> bool {
+    let manifests: Vec<_> = input
+        .raw_artifacts
+        .iter()
+        .filter(|artifact| artifact.role == "manifest")
+        .collect();
+    let Some(manifest_artifact) = manifests.first() else {
+        return false;
+    };
+    if manifests.len() != 1 {
+        return false;
+    }
+    let Some(bytes) = raw_bytes(bundle, &manifest_artifact.role) else {
+        return false;
+    };
+    let Ok(manifest) = serde_json::from_slice::<Value>(bytes) else {
+        return false;
+    };
+    if manifest["schema"] != "tl-mltl.v10-input-manifest/v1"
+        || manifest["formulaTraceCases"] != 225
+        || manifest["perStepCells"] != 1350
+    {
+        return false;
+    }
+    let Some(cases) = manifest["cases"].as_array() else {
+        return false;
+    };
+    if cases.len() != 22 || input.raw_artifacts.len() != 45 {
+        return false;
+    }
+    let mut names = BTreeSet::new();
+    let mut cells = 0_u64;
+    for (index, case) in cases.iter().enumerate() {
+        let Some(id) = case["id"].as_str() else {
+            return false;
+        };
+        if !names.insert(id)
+            || !id
+                .bytes()
+                .all(|byte| byte.is_ascii_lowercase() || byte == b'-')
+        {
+            return false;
+        }
+        let Some(formulas) = case["formulas"].as_u64() else {
+            return false;
+        };
+        let Some(positions) = case["tracePositions"].as_u64() else {
+            return false;
+        };
+        if index < 21 {
+            if !matches!((formulas, positions), (12, 6) | (3, 6)) {
+                return false;
+            }
+            cells += formulas * positions;
+        } else if id != "safety" || (formulas, positions) != (1, 2) {
+            return false;
+        }
+        for (extension, key) in [("c2po", "specDigest"), ("csv", "traceDigest")] {
+            let role = format!("inputs/{id}.{extension}");
+            let matching: Vec<_> = input
+                .raw_artifacts
+                .iter()
+                .filter(|item| item.role == role)
+                .collect();
+            if matching.len() != 1
+                || case[key].as_str() != Some(matching[0].digest.as_str())
+                || raw_bytes(bundle, &role).is_none()
+            {
+                return false;
+            }
+        }
+    }
+    cells == 1350
+}
+
 fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVerdict {
     let mut reasons = Vec::new();
     let mut request_digest = String::new();
@@ -1080,6 +1205,15 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                         if !mutants_restored(&raw) {
                             reasons.push("mutant_restoration_unproved".into());
                         }
+                    } else if parser == "v10-monitor" {
+                        if v10_target_rows(&process.stdout.bytes).is_none() {
+                            reasons.push("malformed_r2u2_target_rows".into());
+                        }
+                        reasons.push("v10_semantic_replay_pending".into());
+                    } else if parser == "criterion-pending" {
+                        reasons.push("v9_sample_and_host_replay_pending".into());
+                    } else if parser == "v10-inputs" || parser == "v10-compile" {
+                        // Decisive bytes are required EA output artifacts checked below.
                     } else {
                         match String::from_utf8(process.stdout.bytes) {
                             Err(_) => reasons.push("non_utf8_native_output".into()),
@@ -1107,10 +1241,16 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                 }
                 if reasons.is_empty() {
                     "accept"
-                } else if matches!(
-                    result.state.kind.as_str(),
-                    "unavailable" | "refused" | "timed_out" | "containment_failure" | "cancelled"
-                ) {
+                } else if matches!(parser, "v10-monitor" | "criterion-pending")
+                    || matches!(
+                        result.state.kind.as_str(),
+                        "unavailable"
+                            | "refused"
+                            | "timed_out"
+                            | "containment_failure"
+                            | "cancelled"
+                    )
+                {
                     "inconclusive"
                 } else {
                     "reject"
@@ -1130,6 +1270,7 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
         request_digest,
         result_digest: String::new(),
         raw_artifacts_digest: String::new(),
+        raw_bundle_digest: String::new(),
         dependencies_digest: String::new(),
         stdout_digest,
         stderr_digest,
@@ -1179,6 +1320,12 @@ fn run_args(args: &[String]) -> Result<(), String> {
     let artifact_inventory =
         serde_json::to_value(&input.raw_artifacts).map_err(|e| e.to_string())?;
     verdict.raw_artifacts_digest = canonical_digest(&artifact_inventory)?;
+    let raw_bundle_bytes = fs::read(&input.raw_bundle_path).map_err(|e| e.to_string())?;
+    let raw_bundle_value: Value =
+        serde_json::from_slice(&raw_bundle_bytes).map_err(|e| e.to_string())?;
+    let raw_bundle: RawBundle =
+        serde_json::from_value(raw_bundle_value.clone()).map_err(|e| e.to_string())?;
+    verdict.raw_bundle_digest = canonical_digest(&raw_bundle_value)?;
     let dependency_inventory =
         serde_json::to_value(&input.dependencies).map_err(|e| e.to_string())?;
     verdict.dependencies_digest = canonical_digest(&dependency_inventory)?;
@@ -1198,6 +1345,11 @@ fn run_args(args: &[String]) -> Result<(), String> {
     }
     if verdict.result_digest != input.result_digest {
         binding_reasons.push("result_digest_mismatch".into());
+    }
+    if raw_bundle.schema != "quoin.raw-artifact-bundle/v1"
+        || verdict.raw_bundle_digest != input.raw_bundle_digest
+    {
+        binding_reasons.push("raw_bundle_identity_mismatch".into());
     }
     let expected_dependencies: Vec<_> = member["dependsOn"]
         .as_array()
@@ -1225,12 +1377,17 @@ fn run_args(args: &[String]) -> Result<(), String> {
             binding_reasons.push("dependency_result_mismatch".into());
         }
     }
-    if input.raw_artifacts.len() != result_value["artifacts"].as_array().map_or(0, Vec::len) {
+    if input.raw_artifacts.len() != result_value["artifacts"].as_array().map_or(0, Vec::len)
+        || input.raw_artifacts.len() != raw_bundle.artifacts.len()
+    {
         binding_reasons.push("artifact_inventory_mismatch".into());
     } else {
-        for artifact in &input.raw_artifacts {
-            let artifact_bytes = fs::read(&artifact.path).map_err(|e| e.to_string())?;
-            if sha256(&artifact_bytes) != artifact.digest
+        for (index, artifact) in input.raw_artifacts.iter().enumerate() {
+            let bundled = &raw_bundle.artifacts[index];
+            if bundled.role != artifact.role
+                || bundled.digest != artifact.digest
+                || sha256(&bundled.bytes) != artifact.digest
+                || (index > 0 && raw_bundle.artifacts[index - 1].role >= bundled.role)
                 || result_value["artifacts"].as_array().is_none_or(|items| {
                     items
                         .iter()
@@ -1255,15 +1412,30 @@ fn run_args(args: &[String]) -> Result<(), String> {
             .filter(|artifact| artifact.role == "coverage")
             .collect();
         if exports.len() != 1
-            || fs::read(&exports[0].path)
-                .ok()
-                .is_none_or(|bytes| !coverage_accept(&input.member, &bytes))
+            || raw_bytes(&raw_bundle, &exports[0].role)
+                .is_none_or(|bytes| !coverage_accept(&input.member, bytes))
         {
             binding_reasons.push("critical_coverage_unproved".into());
         }
     }
-    if member_parser(&input.member) == Some("mutants-run") && !mutation_accept(&input) {
+    if member_parser(&input.member) == Some("mutants-run") && !mutation_accept(&input, &raw_bundle)
+    {
         binding_reasons.push("mutant_outcome_population_unproved".into());
+    }
+    if member_parser(&input.member) == Some("v10-inputs") && !v10_inputs(&input, &raw_bundle) {
+        binding_reasons.push("v10_input_census_unproved".into());
+    }
+    if member_parser(&input.member) == Some("v10-compile") {
+        let binaries: Vec<_> = input
+            .raw_artifacts
+            .iter()
+            .filter(|item| item.role == "binary")
+            .collect();
+        if binaries.len() != 1
+            || raw_bytes(&raw_bundle, &binaries[0].role).is_none_or(|bytes| bytes.is_empty())
+        {
+            binding_reasons.push("v10_compiled_binary_unproved".into());
+        }
     }
     if !binding_reasons.is_empty() {
         verdict.verdict = "reject";
@@ -1317,6 +1489,7 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let definition_path = directory.path().join("definition.json");
         let result_path = directory.path().join("result.json");
+        let raw_bundle_path = directory.path().join("raw-bundle.json");
         let input_path = directory.path().join("input.json");
         let output_path = directory.path().join("verdict.json");
         let definition = json!({
@@ -1332,6 +1505,8 @@ mod tests {
         let raw = "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n";
         let result: Value = serde_json::from_slice(&result(raw, "completed")).unwrap();
         fs::write(&result_path, serde_json::to_vec_pretty(&result).unwrap()).unwrap();
+        let raw_bundle = json!({"schema":"quoin.raw-artifact-bundle/v1","artifacts":[]});
+        fs::write(&raw_bundle_path, serde_json::to_vec(&raw_bundle).unwrap()).unwrap();
         let mut input = json!({
             "schema":"quoin.domain-check-input/v1",
             "definitionPath":definition_path,
@@ -1343,7 +1518,9 @@ mod tests {
             "requestDigest":"a".repeat(64),
             "resultPath":result_path,
             "resultDigest":super::canonical_digest(&result).unwrap(),
-            "rawArtifacts":[]
+            "rawArtifacts":[],
+            "rawBundlePath":raw_bundle_path,
+            "rawBundleDigest":super::canonical_digest(&raw_bundle).unwrap()
         });
         let args = vec![
             "--input".into(),
@@ -1415,6 +1592,15 @@ mod tests {
             "V8.syntax_core",
             &serde_json::to_vec(&bad).unwrap()
         ));
+    }
+
+    // Trace: FR-052-AC-1, TC-191
+    #[test]
+    fn v10_target_parser_rejects_duplicate_and_unknown_rows() {
+        assert_eq!(super::v10_target_rows(b"0:0,T\n0:1,F\n").unwrap().len(), 2);
+        assert!(super::v10_target_rows(b"0:0,T\n0:0,F\n").is_none());
+        assert!(super::v10_target_rows(b"0:0,unknown\n").is_none());
+        assert!(super::v10_target_rows(b"0:0,T\n1:nope,F\n").is_none());
     }
 
     // Trace: FR-055-AC-1, TC-197
