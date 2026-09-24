@@ -55,6 +55,30 @@ struct ExecutionResult {
     state: ExecutionState,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct CheckInput {
+    schema: String,
+    definition_path: String,
+    definition_digest: String,
+    member: String,
+    plan_id: String,
+    definition_version: String,
+    source_graph_digest: String,
+    request_digest: String,
+    result_path: String,
+    result_digest: String,
+    raw_artifacts: Vec<RawArtifact>,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct RawArtifact {
+    role: String,
+    path: String,
+    digest: String,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct DomainVerdict {
@@ -63,14 +87,24 @@ struct DomainVerdict {
     verdict: &'static str,
     reasons: Vec<String>,
     definition_digest: String,
+    plan_id: String,
+    definition_version: String,
+    source_graph_digest: String,
     request_digest: String,
     result_digest: String,
+    raw_artifacts_digest: String,
     stdout_digest: Option<String>,
     stderr_digest: Option<String>,
 }
 
 fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
+}
+
+fn canonical_digest(value: &Value) -> Result<String, String> {
+    serde_json_canonicalizer::to_vec(value)
+        .map(|bytes| sha256(&bytes))
+        .map_err(|error| format!("cannot canonicalize JSON: {error}"))
 }
 
 fn member_parser(member: &str) -> Option<&'static str> {
@@ -88,6 +122,11 @@ fn member_parser(member: &str) -> Option<&'static str> {
         "V2.full_domain_census" => Some("full-domain"),
         "V3.semantic_properties" => Some("semantic-properties"),
         "V11.lasso_population_census" => Some("lasso-partition"),
+        "V4.syntax_infinite_wire_decode"
+        | "V4.parse_unbounded_roundtrip"
+        | "V4.rewrite_infinite_rewrite"
+        | "V4.mltl_c2po_map"
+        | "V4.mltl_closed_eval" => Some("libfuzzer"),
         _ => None,
     }
 }
@@ -356,6 +395,27 @@ fn semantic_properties(raw: &str) -> bool {
     properties > 0 && examples > 0
 }
 
+fn libfuzzer(member: &str, stdout: &[u8], stderr: &[u8]) -> bool {
+    let target = match member {
+        "V4.syntax_infinite_wire_decode" => "infinite_wire_decode",
+        "V4.parse_unbounded_roundtrip" => "unbounded_parse_roundtrip",
+        "V4.rewrite_infinite_rewrite" => "infinite_rewrite",
+        "V4.mltl_c2po_map" => "c2po_map",
+        "V4.mltl_closed_eval" => "closed_eval",
+        _ => return false,
+    };
+    let raw = String::from_utf8_lossy(stdout).to_string() + &String::from_utf8_lossy(stderr);
+    raw.contains("INFO: Seed: 181")
+        && raw
+            .lines()
+            .filter(|line| line.starts_with("#1000\tDONE "))
+            .count()
+            == 1
+        && raw.contains(&format!("/{target} "))
+        && !raw.contains("ERROR: libFuzzer")
+        && !raw.contains("SUMMARY: AddressSanitizer")
+}
+
 fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVerdict {
     let mut reasons = Vec::new();
     let mut request_digest = String::new();
@@ -396,22 +456,29 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                     {
                         reasons.push("native_command_failed".into());
                     }
-                    match String::from_utf8(process.stdout.bytes) {
-                        Err(_) => reasons.push("non_utf8_native_output".into()),
-                        Ok(raw) => {
-                            let (minimum, summaries) = match parser {
-                                "finite-partition" => (2, 1),
-                                "full-domain" => (3, 1),
-                                "semantic-properties" => (3, 3),
-                                _ => (1, 1),
-                            };
-                            if !cargo_summaries(&raw, minimum, summaries)
-                                || (parser == "semantic-properties" && !semantic_properties(&raw))
-                                || (parser != "cargo-test"
-                                    && parser != "semantic-properties"
-                                    && !population(parser, &raw))
-                            {
-                                reasons.push("native_result_unproved".into());
+                    if parser == "libfuzzer" {
+                        if !libfuzzer(member, &process.stdout.bytes, &process.stderr.bytes) {
+                            reasons.push("libfuzzer_budget_or_clean_exit_unproved".into());
+                        }
+                    } else {
+                        match String::from_utf8(process.stdout.bytes) {
+                            Err(_) => reasons.push("non_utf8_native_output".into()),
+                            Ok(raw) => {
+                                let (minimum, summaries) = match parser {
+                                    "finite-partition" => (2, 1),
+                                    "full-domain" => (3, 1),
+                                    "semantic-properties" => (3, 3),
+                                    _ => (1, 1),
+                                };
+                                if !cargo_summaries(&raw, minimum, summaries)
+                                    || (parser == "semantic-properties"
+                                        && !semantic_properties(&raw))
+                                    || (parser != "cargo-test"
+                                        && parser != "semantic-properties"
+                                        && !population(parser, &raw))
+                                {
+                                    reasons.push("native_result_unproved".into());
+                                }
                             }
                         }
                     }
@@ -437,8 +504,12 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
         verdict,
         reasons,
         definition_digest: definition_digest.into(),
+        plan_id: String::new(),
+        definition_version: String::new(),
+        source_graph_digest: String::new(),
         request_digest,
-        result_digest: sha256(result_bytes),
+        result_digest: String::new(),
+        raw_artifacts_digest: String::new(),
         stdout_digest,
         stderr_digest,
     }
@@ -454,21 +525,83 @@ fn argument(args: &[String], name: &str) -> Result<String, String> {
         .ok_or(format!("missing value for {name}"))
 }
 
-fn run() -> Result<(), String> {
-    let args: Vec<String> = std::env::args().skip(1).collect();
-    let member = argument(&args, "--member")?;
-    let definition_digest = argument(&args, "--definition-digest")?;
-    if definition_digest.len() != 64
-        || !definition_digest
-            .bytes()
-            .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
-    {
-        return Err("definition digest must be lowercase SHA-256".into());
+fn run_args(args: &[String]) -> Result<(), String> {
+    let input_path = argument(args, "--input")?;
+    let input_bytes = fs::read(Path::new(&input_path)).map_err(|e| e.to_string())?;
+    let input: CheckInput = serde_json::from_slice(&input_bytes).map_err(|e| e.to_string())?;
+    if input.schema != "quoin.domain-check-input/v1" {
+        return Err("unsupported checker input schema".into());
     }
-    let result_path = argument(&args, "--result")?;
-    let output_path = argument(&args, "--output")?;
-    let bytes = fs::read(Path::new(&result_path)).map_err(|e| e.to_string())?;
-    let verdict = check(&member, &definition_digest, &bytes);
+    let definition_bytes =
+        fs::read(Path::new(&input.definition_path)).map_err(|e| e.to_string())?;
+    let definition: Value = serde_json::from_slice(&definition_bytes).map_err(|e| e.to_string())?;
+    let member = definition["members"].as_array().and_then(|members| {
+        let mut matches = members.iter().filter(|entry| entry["name"] == input.member);
+        let first = matches.next()?;
+        matches.next().is_none().then_some(first)
+    });
+    if definition["schemaVersion"] != "engineering-assurance.campaign-definition/v1"
+        || member.is_none_or(|entry| entry["required"] != true)
+    {
+        return Err("campaign definition does not require exactly one named member".into());
+    }
+    let member = member.ok_or("missing named campaign member")?;
+    let output_path = argument(args, "--output")?;
+    let bytes = fs::read(Path::new(&input.result_path)).map_err(|e| e.to_string())?;
+    let result_value: Value = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+    let mut verdict = check(&input.member, &input.definition_digest, &bytes);
+    verdict.plan_id = input.plan_id.clone();
+    verdict.definition_version = input.definition_version.clone();
+    verdict.source_graph_digest = input.source_graph_digest.clone();
+    verdict.request_digest = input.request_digest.clone();
+    verdict.result_digest = canonical_digest(&result_value)?;
+    let artifact_inventory =
+        serde_json::to_value(&input.raw_artifacts).map_err(|e| e.to_string())?;
+    verdict.raw_artifacts_digest = canonical_digest(&artifact_inventory)?;
+    let mut binding_reasons = Vec::new();
+    if canonical_digest(&definition)? != input.definition_digest {
+        binding_reasons.push("definition_digest_mismatch".into());
+    }
+    if canonical_digest(&definition["sourceGraph"])? != input.source_graph_digest {
+        binding_reasons.push("source_graph_digest_mismatch".into());
+    }
+    if member["planId"] != input.plan_id || member["definitionVersion"] != input.definition_version
+    {
+        binding_reasons.push("member_plan_binding_mismatch".into());
+    }
+    if result_value["requestIdentity"]["digest"] != input.request_digest {
+        binding_reasons.push("request_digest_mismatch".into());
+    }
+    if verdict.result_digest != input.result_digest {
+        binding_reasons.push("result_digest_mismatch".into());
+    }
+    if input.raw_artifacts.len() != result_value["artifacts"].as_array().map_or(0, Vec::len) {
+        binding_reasons.push("artifact_inventory_mismatch".into());
+    } else {
+        for artifact in &input.raw_artifacts {
+            let artifact_bytes = fs::read(&artifact.path).map_err(|e| e.to_string())?;
+            if sha256(&artifact_bytes) != artifact.digest
+                || result_value["artifacts"].as_array().is_none_or(|items| {
+                    items
+                        .iter()
+                        .filter(|item| {
+                            item["role"] == artifact.role && item["digest"] == artifact.digest
+                        })
+                        .count()
+                        != 1
+                })
+            {
+                binding_reasons.push("artifact_digest_mismatch".into());
+            }
+        }
+    }
+    if member_parser(&input.member) == Some("libfuzzer") && !input.raw_artifacts.is_empty() {
+        binding_reasons.push("libfuzzer_crash_artifact_present".into());
+    }
+    if !binding_reasons.is_empty() {
+        verdict.verdict = "reject";
+        verdict.reasons.extend(binding_reasons);
+    }
     let encoded = serde_json::to_vec_pretty(&verdict).map_err(|e| e.to_string())?;
     fs::write(output_path, encoded).map_err(|e| e.to_string())?;
     if verdict.verdict == "accept" {
@@ -476,6 +609,11 @@ fn run() -> Result<(), String> {
     } else {
         Err(verdict.reasons.join(", "))
     }
+}
+
+fn run() -> Result<(), String> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    run_args(&args)
 }
 
 fn main() {
@@ -489,6 +627,7 @@ fn main() {
 mod tests {
     use super::{cargo_summaries, check, member_parser};
     use serde_json::{json, Value};
+    use std::fs;
 
     fn result(raw: &str, state: &str) -> Vec<u8> {
         let stdout = raw.as_bytes();
@@ -503,6 +642,60 @@ mod tests {
             "state": {"kind": state}
         }))
         .unwrap()
+    }
+
+    #[test]
+    fn sealed_checker_input_rejects_stale_definition_digest() {
+        let directory = tempfile::tempdir().unwrap();
+        let definition_path = directory.path().join("definition.json");
+        let result_path = directory.path().join("result.json");
+        let input_path = directory.path().join("input.json");
+        let output_path = directory.path().join("verdict.json");
+        let definition = json!({
+            "schemaVersion":"engineering-assurance.campaign-definition/v1",
+            "sourceGraph":[{"repository":"tl-mltl","revision":"a".repeat(40),"digest":"b".repeat(64)}],
+            "members":[{"name":"V1.independent_oracle","planId":"MP-008","definitionVersion":"tl.v1.v1-independent-oracle/v1","required":true}]
+        });
+        fs::write(
+            &definition_path,
+            serde_json::to_vec_pretty(&definition).unwrap(),
+        )
+        .unwrap();
+        let raw = "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n";
+        let result: Value = serde_json::from_slice(&result(raw, "completed")).unwrap();
+        fs::write(&result_path, serde_json::to_vec_pretty(&result).unwrap()).unwrap();
+        let mut input = json!({
+            "schema":"quoin.domain-check-input/v1",
+            "definitionPath":definition_path,
+            "definitionDigest":super::canonical_digest(&definition).unwrap(),
+            "member":"V1.independent_oracle",
+            "planId":"MP-008",
+            "definitionVersion":"tl.v1.v1-independent-oracle/v1",
+            "sourceGraphDigest":super::canonical_digest(&definition["sourceGraph"]).unwrap(),
+            "requestDigest":"a".repeat(64),
+            "resultPath":result_path,
+            "resultDigest":super::canonical_digest(&result).unwrap(),
+            "rawArtifacts":[]
+        });
+        let args = vec![
+            "--input".into(),
+            input_path.display().to_string(),
+            "--output".into(),
+            output_path.display().to_string(),
+        ];
+        fs::write(&input_path, serde_json::to_vec(&input).unwrap()).unwrap();
+        super::run_args(&args).unwrap();
+        let accepted: Value = serde_json::from_slice(&fs::read(&output_path).unwrap()).unwrap();
+        assert_eq!(accepted["verdict"], "accept");
+        input["definitionDigest"] = json!("c".repeat(64));
+        fs::write(&input_path, serde_json::to_vec(&input).unwrap()).unwrap();
+        assert!(super::run_args(&args).is_err());
+        let rejected: Value = serde_json::from_slice(&fs::read(&output_path).unwrap()).unwrap();
+        assert_eq!(rejected["verdict"], "reject");
+        assert!(rejected["reasons"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("definition_digest_mismatch")));
     }
 
     #[test]

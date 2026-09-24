@@ -1,0 +1,110 @@
+{
+  "arguments": [
+    {
+      "kind": "literal",
+      "value": "fuzz"
+    },
+    {
+      "kind": "literal",
+      "value": "run"
+    },
+    {
+      "kind": "literal",
+      "value": "--sanitizer"
+    },
+    {
+      "kind": "literal",
+      "value": "address"
+    },
+    {
+      "kind": "literal",
+      "value": "infinite_wire_decode"
+    },
+    {
+      "kind": "literal",
+      "value": "fuzz/corpus/infinite_wire_decode"
+    },
+    {
+      "kind": "literal",
+      "value": "--"
+    },
+    {
+      "kind": "literal",
+      "value": "-runs=1000"
+    },
+    {
+      "kind": "literal",
+      "value": "-seed=181"
+    },
+    {
+      "kind": "literal",
+      "value": "-max_total_time=30"
+    },
+    {
+      "kind": "literal",
+      "value": "-max_len=4096"
+    },
+    {
+      "kind": "literal",
+      "value": "-exact_artifact_path=crash.bin"
+    }
+  ],
+  "environment": [
+    {
+      "kind": "runtime",
+      "name": "PATH",
+      "value": "host:PATH"
+    },
+    {
+      "kind": "runtime",
+      "name": "HOME",
+      "value": "host:HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "CARGO_HOME",
+      "value": "host:CARGO_HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "RUSTUP_HOME",
+      "value": "host:RUSTUP_HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "CARGO_TARGET_DIR",
+      "value": "host:CARGO_TARGET_DIR"
+    },
+    {
+      "kind": "runtime",
+      "name": "TMPDIR",
+      "value": "host:TMPDIR"
+    },
+    {
+      "kind": "runtime",
+      "name": "RUSTC",
+      "value": "host:RUSTC"
+    },
+    {
+      "kind": "literal",
+      "name": "CARGO_NET_OFFLINE",
+      "value": "true"
+    }
+  ],
+  "inputs": [],
+  "outputs": [
+    {
+      "required": false,
+      "role": "crash"
+    }
+  ],
+  "producerName": "cargo",
+  "producerVersion": "1.100.0-nightly",
+  "repetitions": 1,
+  "responseAdapter": "quoin.process-evidence-adapter",
+  "responseAdapterVersion": "1",
+  "responseProtocol": "quoin.process-evidence/v1",
+  "schemaVersion": "engineering-assurance.measurement-procedure/v1",
+  "sourceRepository": "tl-syntax",
+  "timeoutMillis": 180000
+}
