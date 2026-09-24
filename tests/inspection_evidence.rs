@@ -289,6 +289,24 @@ fn retained_owner_contracts_have_pinned_schemas_and_strict_readers() {
     )
     .unwrap();
     let history_bytes = history::derive(&history_document, limits).unwrap();
+    let other_history = PositionHistoryDocument::new(
+        "history-other",
+        1,
+        0,
+        1,
+        Some(ClockBinding::EventPosition),
+        vec![
+            PositionObservation::new(0, vec![PropositionId(0)], None),
+            PositionObservation::new(1, vec![], None),
+        ],
+    )
+    .unwrap();
+    assert_eq!(
+        history::read(history_bytes.bytes(), &other_history, limits)
+            .unwrap_err()
+            .code(),
+        OwnerReadErrorCode::ExpectedMismatch
+    );
     assert_output_ceiling("position-history", history_bytes.bytes(), |limits| {
         history::derive(&history_document, limits)
             .map(|_| ())
@@ -342,6 +360,13 @@ fn retained_owner_contracts_have_pinned_schemas_and_strict_readers() {
     .unwrap();
     let requirement_report = analyze_required_history(past_formula, "formula-1").unwrap();
     let requirement_bytes = requirement::derive(&requirement_report, limits).unwrap();
+    let other_requirement = analyze_required_history(past_formula, "formula-other").unwrap();
+    assert_eq!(
+        requirement::read(requirement_bytes.bytes(), &other_requirement, limits)
+            .unwrap_err()
+            .code(),
+        OwnerReadErrorCode::ExpectedMismatch
+    );
     assert_output_ceiling("history-requirement", requirement_bytes.bytes(), |limits| {
         requirement::derive(&requirement_report, limits)
             .map(|_| ())
@@ -383,6 +408,23 @@ fn retained_owner_contracts_have_pinned_schemas_and_strict_readers() {
     )
     .unwrap();
     let past_bytes = result::derive(&past_report, limits).unwrap();
+    let other_past_report = evaluate_past(
+        past_formula,
+        "formula-1",
+        &history_document,
+        1,
+        "map-other",
+        1,
+        PastEvaluationRelationInput::Original,
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(
+        result::read(past_bytes.bytes(), &other_past_report, limits)
+            .unwrap_err()
+            .code(),
+        OwnerReadErrorCode::ExpectedMismatch
+    );
     assert_output_ceiling("past-evaluation", past_bytes.bytes(), |limits| {
         result::derive(&past_report, limits)
             .map(|_| ())
