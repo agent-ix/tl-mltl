@@ -78,6 +78,17 @@ def residual_key(residual: dict) -> tuple:
                  ("run", "file", "unattributed_missing_sides", "raw_export_sha256"))
 
 
+def one_sided_named_missing(locations: list[dict]) -> int:
+    """Count named missing sides with a hit on the opposite side.
+
+    LLVM detail can include 0/0 or one-sided records omitted from the file
+    summary. A 0/0 site remains a review obligation, but cannot be assigned
+    any part of the summary deficit from the export alone.
+    """
+    return sum((site["true_count"] == 0) != (site["false_count"] == 0)
+               for site in locations)
+
+
 def validate_reviews(reviews: object, gaps: list[dict], residuals: list[dict],
                      roots: dict[str, Path]) -> tuple[set[tuple], set[tuple]]:
     """Check explicit human infeasibility decisions against the live source graph."""
@@ -241,16 +252,13 @@ def classify_export(raw: dict, root: Path) -> dict:
                                 "true_count": true_count, "false_count": false_count}
                     if location not in uncovered:
                         uncovered.append(location)
-        # LLVM's summary counts monomorphized branches separately. Named
-        # locations account for one missing side per zero aggregate count;
-        # any remaining deficit belongs to an unidentifiable compiled copy.
-        # Keep it even when a different site in the file has a named gap.
+        # LLVM's summary counts monomorphized branches separately and can omit
+        # detail records. Keep every named gap for review, but do not assign a
+        # 0/0 detail to the summary. One-sided details may also be omitted, so
+        # only the summary deficit beyond their count becomes a file residual.
         summary_missing = branches["count"] - branches["covered"]
-        named_missing = sum(int(site["true_count"] == 0) +
-                            int(site["false_count"] == 0) for site in uncovered)
-        if named_missing > summary_missing:
-            raise ValueError(f"named branch gaps exceed summary deficit: {relative}")
-        unattributed_missing_sides = summary_missing - named_missing
+        named_missing = one_sided_named_missing(uncovered)
+        unattributed_missing_sides = max(0, summary_missing - named_missing)
         files[relative] = {"lines": {"count": lines["count"], "covered": lines["covered"]},
                            "branches": {"count": branches["count"],
                                         "covered": branches["covered"]},
@@ -302,10 +310,10 @@ def critical_residuals(coverage: dict, files: dict, run: str,
 
 
 def critical_deficits_accounted(files: dict, gaps: list[dict], residuals: list[dict]) -> bool:
-    """Require named and file-level deficits to exactly partition each summary gap."""
+    """Reconcile summary deficits without counting detail omitted by LLVM."""
     return all(item["count"] - item["covered"] ==
-               sum(int(gap["true_count"] == 0) + int(gap["false_count"] == 0)
-                   for gap in gaps if gap["file"] == file) +
+               min(item["count"] - item["covered"], one_sided_named_missing(
+                   [gap for gap in gaps if gap["file"] == file])) +
                sum(residual["unattributed_missing_sides"] for residual in residuals
                    if residual["file"] == file)
                for file, item in files.items())

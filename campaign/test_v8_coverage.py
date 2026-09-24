@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from v8_coverage import classify_export
+from v8_coverage import classify_export, critical_deficits_accounted
 
 
 class CoverageExportTests(unittest.TestCase):
@@ -175,6 +175,30 @@ class CoverageExportTests(unittest.TestCase):
                 {"line": 1, "column": 2, "true_count": 5, "false_count": 0}])
             self.assertEqual(measured["unattributed_missing_sides"], 1)
 
+    def test_detail_omitted_from_fully_covered_summary_remains_reviewable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            file = root / "src" / "future.rs"
+            file.parent.mkdir()
+            file.write_text("fn check() {}\n")
+            for true_count, false_count in ((0, 0), (5, 0)):
+                with self.subTest(detail=(true_count, false_count)):
+                    export = {"type": "llvm.coverage.json.export", "data": [{"files": [{
+                        "filename": str(file),
+                        "summary": {"lines": {"count": 2, "covered": 2},
+                                    "branches": {"count": 2, "covered": 2}},
+                        "branches": [[1, 2, 1, 12, 7, 8, 0, 0, 4],
+                                     [2, 2, 2, 12, true_count, false_count, 0, 0, 4]],
+                    }]}]}
+                    measured = classify_export(export, root)["files"]["src/future.rs"]
+                    gap = {"file": "src/future.rs", "line": 2, "column": 2,
+                           "true_count": true_count, "false_count": false_count}
+                    self.assertEqual(measured["uncovered_branch_locations"], [
+                        {key: value for key, value in gap.items() if key != "file"}])
+                    self.assertEqual(measured["unattributed_missing_sides"], 0)
+                    self.assertTrue(critical_deficits_accounted(
+                        {"src/future.rs": measured["branches"]}, [gap], []))
+
     def test_summary_counts_monomorphized_branches_beyond_unique_sites(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -193,6 +217,8 @@ class CoverageExportTests(unittest.TestCase):
                              ["uncovered_branch_locations"], [
                                  {"line": 1, "column": 2, "true_count": 0,
                                   "false_count": 0}])
+            self.assertEqual(measured["files"]["src/future.rs"]
+                             ["unattributed_missing_sides"], 4)
 
     def test_zero_summary_may_have_uninstantiated_detail(self):
         with tempfile.TemporaryDirectory() as directory:

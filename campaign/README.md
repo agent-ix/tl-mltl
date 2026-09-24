@@ -166,15 +166,18 @@ has exactly `run`, `file`, `line`, `column`, `true_count`, `false_count`,
 match one measured gap in that run. A file-residual record has exactly `kind`
 (`file_residual`), `run`, `file`, `unattributed_missing_sides`,
 `source_file_sha256`, `raw_export_sha256`, `reason`, and `reviewer`. It covers
-the exact deficit remaining after named gaps are subtracted from LLVM's file
-branch summary; the raw-export digest binds the decision to that measurement.
+the file-summary deficit remaining after one-sided named gaps are considered;
+the raw-export digest binds the decision to that measurement. LLVM can emit
+`0/0` or one-sided detail records omitted from the file summary. Those
+locations still need source-location reviews, while a `0/0` location does not
+claim any summary deficit and named detail beyond the summary is not subtracted.
 Both types require the exact source-file digest, a substantive infeasibility
 reason, and the name of the person who checked it. An empty list records no
 decisions. Unknown, duplicate, stale, or cursory records are rejected. The
 native gate recomputes all deficits and reviews against the raw LLVM export
-and source bytes. Any unreviewed named gap or file residual, a mismatch in
-their sum against the file summary, or a missing critical file keeps V8
-incomplete. Reviewed deficits remain in `critical_uncovered` or
+and source bytes. Any unreviewed named gap or file residual, an unreconciled
+file-summary deficit, or a missing critical file keeps V8 incomplete. Reviewed
+deficits remain in `critical_uncovered` or
 `critical_unattributed` and in the measured count; review never masquerades as
 executed coverage. Do not add a review record without an actual human review
 of that exact source and measurement.

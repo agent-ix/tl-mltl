@@ -361,6 +361,39 @@ class V8GateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown or stale residual"):
             self.verify()
 
+    def test_detail_omitted_from_summary_still_requires_named_review(self):
+        index = next(i for i, row in enumerate(self.report["runs"])
+                     if row["id"] == "mltl-default")
+        export = json.loads((self.raw_dir / "mltl-default.json").read_text())
+        past = next(file for file in export["data"][0]["files"]
+                    if file["filename"].endswith("/src/past/mod.rs"))
+        for true_count, false_count in ((0, 0), (5, 0)):
+            with self.subTest(detail=(true_count, false_count)):
+                self.report["reviewed_infeasibility"] = []
+                past["branches"] = [[1, 2, 1, 12, 7, 8, 0, 0, 4],
+                                    [2, 2, 2, 12, true_count, false_count, 0, 0, 4]]
+                self.restamp_export(index, export)
+                row = self.report["runs"][index]
+                self.assertEqual(row["critical_branch_census"]["files"]["src/past/mod.rs"],
+                                 {"count": 2, "covered": 2})
+                self.assertEqual(len(row["critical_uncovered"]), 1)
+                self.assertEqual(self.verify()[0], "incomplete")
+                gap = row["critical_uncovered"][0]
+                source = Path(self.graph["tl-mltl"]["path"]) / gap["file"]
+                review = {"run": row["id"], **gap,
+                          "source_file_sha256": v8_gate.digest(source.read_bytes()),
+                          "reason": ("The emitted detail belongs to a specialized "
+                                     "instance absent from the file summary."),
+                          "reviewer": "Ada Reviewer"}
+                self.report["reviewed_infeasibility"] = [review]
+                row["status"] = "passed"
+                row.pop("reason", None)
+                self.report["status"] = "passed"
+                status, population, _ = self.verify()
+                self.assertEqual(status, "passed")
+                self.assertFalse(any(item["run"] == row["id"]
+                                     for item in population["critical_unattributed"]))
+
     def test_stale_unknown_duplicate_or_weak_review_cannot_pass(self):
         review, source = self.reviewed_gap()
         for field, replacement, message in (
