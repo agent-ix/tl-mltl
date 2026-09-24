@@ -11,18 +11,18 @@
     },
     {
       "repository": "tl-parse",
-      "revision": "f99321dd1568a7868e3a439a2dcbcbf31541496b",
-      "digest": "4d37ecc4620bd6f02b83e3a8f599433dea8f81db9e66c932cde92a2c91b82e8d"
+      "revision": "2b0ca2e8f673d305bd9af842b3911d4caabdbffa",
+      "digest": "f06dd9582be6f328245fc424fa6f4328c4fc2199e98816f69faffc94d74f4d26"
     },
     {
       "repository": "tl-mltl",
-      "revision": "7490889ad96364892a2ef52c228d9e7f06aa653a",
-      "digest": "ae65adcb30aed06ccd83ce6b98c8172cb83e114e725dcd3b7b6eb59ae73765cc"
+      "revision": "0c4a72490ed3cf610ae7804a85ebb0fecfcab9a2",
+      "digest": "fc76dad02944098022d205da20b43c4cf16bd13a2a32e36643ce5c252ec16f1c"
     },
     {
       "repository": "tl-rewrite",
-      "revision": "3632122308a0e5d4d04bb5284e1bf832db86a1d2",
-      "digest": "c5eee632b4f7facf8352906620c1e0acf75378caa9e28468eacfab873e8e547b"
+      "revision": "bf32d177cd68f92482bbe1036555f2f6acd07634",
+      "digest": "36a4975797c7ef386aea6c086cf42cf54cb216af81530aa40e9f5d4e6a6002ba"
     },
     {
       "repository": "tl-oracle",

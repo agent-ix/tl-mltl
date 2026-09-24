@@ -200,13 +200,20 @@ commits; it does not retroactively claim to have measured the artifact commit.
 `stage1-campaign-definition.json` is the external control-plane definition
 for 120 direct native EA measurements (118 required and two optional
 diagnostics). Its `tl-mltl` source is the clean
-`7490889ad96364892a2ef52c228d9e7f06aa653a` checkout. Keep this
+`0c4a72490ed3cf610ae7804a85ebb0fecfcab9a2` checkout. Keep this
 control-plane checkout separate from that measured checkout: the definition
 and generated machine config are later artifacts that name the measured tree,
 so they cannot be part of their own source digest. Pass the clean measured
 checkout as Quoin's `--repo`, and pass the definition and config by their
 external paths. Every other source alias needs its own clean checkout at the
 definition's exact revision.
+
+The authored `tl-mltl-baseline` alias remains
+`0e4a41083d420ccc85134f4f7e224698ab7859e0`, whose benchmark harness
+bytes match this Campaign's candidate. A separate native V9 run stages the
+candidate harness into baseline revision `ae85de4609fcdb1db525eb590f41ed3febcc211e`.
+That run is an exact-graph diagnostic for its own revisions; its receipt does
+not prove the 120-member Campaign's different source graph.
 
 `tl_campaign_config --definition FILE --machine FILE --output FILE` derives
 the Quoin configuration from authored procedures. It checks each selected
@@ -229,6 +236,16 @@ may be `{}` only when every member has an override. The config generator
 rejects missing identities, unsupported keys such as `rustc`, and overrides
 for unknown members before measurement starts. The producer executable and
 version are pinned separately by each procedure and machine tool entry.
+
+For a Cargo-family producer, `memberEnvironments` overlays the machine's
+default `environment` by exact member name. Set both `RUSTC` and `PATH` for
+members that select another Rust toolchain. The selected `rust` identity must
+use the observed `rustc -vV` release and host, for example
+`"rust": "rustc 1.100.0-nightly (x86_64-unknown-linux-gnu)"`; the nightly
+date remains explicit in the chosen `RUSTC` path. The first `rustc` found on
+`PATH` must resolve to `RUSTC`. A `cargo` procedure's authored version must
+agree with that release and the selected Cargo executable's `--version`.
+The generator refuses contradictory selections before measurement.
 
 The direct C2PO compile procedures bind Python 3.13.11. A bounded smoke on
 Linux host `cave` used R2U2 commit
