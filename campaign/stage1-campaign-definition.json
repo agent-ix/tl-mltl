@@ -16,8 +16,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "3c584ffdc7a02d14f9c62c40064184d0de8541cd",
-      "digest": "61c1c82ef654caf832b90a22d0c34128ac834e648b34089746526eaf59221185"
+      "revision": "857b785076caf91c442bcaa4df5a9d5a29b2cca3",
+      "digest": "c9ffbc5d76844f6d4fbba55df4e8e4518bdfe09e13fddadcdc2672618c3627c5"
     },
     {
       "repository": "tl-rewrite",
@@ -4641,6 +4641,8 @@
       "planId": "MP-065",
       "definitionVersion": "tl.v9.parse-pair2-candidate/v1",
       "dependsOn": [
+        "V9.parse_pair1_baseline",
+        "V9.parse_pair1_candidate",
         "V9.parse_pair2_baseline"
       ],
       "required": true,
@@ -4967,6 +4969,8 @@
       "planId": "MP-069",
       "definitionVersion": "tl.v9.rewrite-pair2-candidate/v1",
       "dependsOn": [
+        "V9.rewrite_pair1_baseline",
+        "V9.rewrite_pair1_candidate",
         "V9.rewrite_pair2_baseline"
       ],
       "required": true,
@@ -5293,6 +5297,8 @@
       "planId": "MP-073",
       "definitionVersion": "tl.v9.mltl-pair2-candidate/v1",
       "dependsOn": [
+        "V9.mltl_pair1_baseline",
+        "V9.mltl_pair1_candidate",
         "V9.mltl_pair2_baseline"
       ],
       "required": true,
