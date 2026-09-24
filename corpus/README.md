@@ -5,7 +5,7 @@ cases, and their manifest), the future-operator corpus (`future-operators`
 under `tl_syntax::CORPUS_DIR`), and the past-history corpus (`past-history`
 under `tl_syntax::CORPUS_DIR`) are all read straight out of the compiled
 `tl-syntax` dependency via `tl_syntax::CORPUS_DIR`, currently
-`08c23fa319a0ed2cf4535367b3670aa1f2033acd` (tl-syntax
+`87a5024c81caceb131806004e73234143c2ce257` (tl-syntax
 `v0.4.0` candidate revision). There is no
 retained copy of any of them in this repository and no separate corpus-basis
 revision to track for any of them: each tracks whatever `TL_SYNTAX_REVISION`
