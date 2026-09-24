@@ -520,7 +520,10 @@ fn past(target: &BTreeMap<(usize, usize), bool>) -> Replay {
     if (admitted, unsupported) != (6, 12) {
         Replay::Reject("v10_past_population_unproved")
     } else {
-        Replay::Inconclusive("v10_static_unsupported_mapping_12_cells")
+        Replay::Accept {
+            admitted_cells: admitted,
+            unsupported_cells: unsupported,
+        }
     }
 }
 
@@ -677,7 +680,10 @@ mod tests {
                     "../../../corpus/past-c2po-v1/target-4.2/r2u2.stdout"
                 ))
             ),
-            Replay::Inconclusive("v10_static_unsupported_mapping_12_cells")
+            Replay::Accept {
+                admitted_cells: 6,
+                unsupported_cells: 12
+            }
         );
         assert_eq!(
             replay(
@@ -724,7 +730,10 @@ mod tests {
         past.insert((1, 0), true);
         assert_eq!(
             replay("past", &past),
-            Replay::Inconclusive("v10_static_unsupported_mapping_12_cells")
+            Replay::Accept {
+                admitted_cells: 6,
+                unsupported_cells: 12
+            }
         );
 
         let mut unsafe_rows = target(include_bytes!(

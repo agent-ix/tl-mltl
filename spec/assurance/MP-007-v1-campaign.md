@@ -52,10 +52,13 @@ The eleven identities V1 through V11 and their direct members are fixed by
 `campaign/stage1-campaign-definition.json`. V2's required completed depth-one partition is
 distinct from its disclosed unvisited depth-three research population. V10's
 required generated grid compares only admitted mappings to the pinned R2U2
-target. The static past and unsafe-since results remain optional source-bound
-diagnostics of unsupported target behavior. Their inconclusive verdicts remain
-visible and cannot be counted as accepted mappings. The count never rounds an
-unsupported, noisy, or incomplete required result into a pass.
+target. The required static past member checks six admitted cells and verifies
+twelve exact target-origin refusals; its acceptance is not parity for those
+unsupported cells. The static unsafe-since result remains an optional
+source-bound diagnostic of a known origin mismatch. Its inconclusive verdict
+remains visible and cannot be counted as an accepted mapping. The count never
+rounds an unclassified refusal, noisy run, or incomplete required result into
+a pass.
 
 ## Collection Procedure
 

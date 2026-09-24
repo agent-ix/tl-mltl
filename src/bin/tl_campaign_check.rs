@@ -1617,7 +1617,7 @@ fn argument(args: &[String], name: &str) -> Result<String, String> {
 fn valid_member_requirement(name: &str, member: &Value) -> bool {
     match member["required"].as_bool() {
         Some(true) => true,
-        Some(false) => matches!(name, "V10.monitor.past" | "V10.monitor.unsafe-since"),
+        Some(false) => name == "V10.monitor.unsafe-since",
         None => false,
     }
 }
@@ -2504,8 +2504,8 @@ mod tests {
             (
                 "past",
                 include_bytes!("../../corpus/past-c2po-v1/target-4.2/r2u2.stdout"),
-                "inconclusive",
-                false,
+                "accept",
+                true,
             ),
             (
                 "unsafe-since",
@@ -2549,33 +2549,23 @@ mod tests {
 
     // Trace: FR-055-AC-2, TC-198
     #[test]
-    fn optional_static_v10_diagnostics_emit_inconclusive_receipts() {
+    fn optional_static_v10_diagnostic_emits_inconclusive_receipt() {
         let directory = tempfile::tempdir().unwrap();
-        for (case, raw) in [
-            (
-                "past",
-                include_bytes!("../../corpus/past-c2po-v1/target-4.2/r2u2.stdout").as_slice(),
-            ),
-            (
-                "unsafe-since",
-                include_bytes!("../../corpus/past-c2po-v1/target-4.2/unsafe-since.stdout")
-                    .as_slice(),
-            ),
-        ] {
-            let inputs = super::v10_static::inputs(case).unwrap();
-            let (receipt, status) = sealed_v10_monitor_receipt_with_requirement(
-                directory.path(),
-                case,
-                std::str::from_utf8(raw).unwrap(),
-                inputs.spec,
-                inputs.trace,
-                false,
-            );
-            assert!(!status, "{case}: {receipt:#}");
-            assert_eq!(receipt["member"], format!("V10.monitor.{case}"));
-            assert_eq!(receipt["verdict"], "inconclusive");
-            assert_eq!(receipt["stdoutDigest"], super::sha256(raw));
-        }
+        let case = "unsafe-since";
+        let raw = include_bytes!("../../corpus/past-c2po-v1/target-4.2/unsafe-since.stdout");
+        let inputs = super::v10_static::inputs(case).unwrap();
+        let (receipt, status) = sealed_v10_monitor_receipt_with_requirement(
+            directory.path(),
+            case,
+            std::str::from_utf8(raw).unwrap(),
+            inputs.spec,
+            inputs.trace,
+            false,
+        );
+        assert!(!status, "{case}: {receipt:#}");
+        assert_eq!(receipt["member"], format!("V10.monitor.{case}"));
+        assert_eq!(receipt["verdict"], "inconclusive");
+        assert_eq!(receipt["stdoutDigest"], super::sha256(raw));
         assert!(super::valid_member_requirement(
             "V10.monitor.bounded",
             &json!({"required":true})
@@ -2586,8 +2576,34 @@ mod tests {
         ));
         assert!(!super::valid_member_requirement(
             "V10.monitor.past",
+            &json!({"required":false})
+        ));
+        assert!(!super::valid_member_requirement(
+            "V10.monitor.past",
             &json!({"required":"false"})
         ));
+    }
+
+    // Trace: FR-055-AC-2, TC-198
+    #[test]
+    fn required_static_past_receipt_accepts_only_admitted_agreement_and_exact_refusals() {
+        let directory = tempfile::tempdir().unwrap();
+        let case = "past";
+        let raw = include_bytes!("../../corpus/past-c2po-v1/target-4.2/r2u2.stdout");
+        let inputs = super::v10_static::inputs(case).unwrap();
+        let (receipt, status) = sealed_v10_monitor_receipt_with_requirement(
+            directory.path(),
+            case,
+            std::str::from_utf8(raw).unwrap(),
+            inputs.spec,
+            inputs.trace,
+            true,
+        );
+        assert!(status, "{receipt:#}");
+        assert_eq!(receipt["member"], "V10.monitor.past");
+        assert_eq!(receipt["verdict"], "accept");
+        assert_eq!(receipt["reasons"], json!([]));
+        assert_eq!(receipt["stdoutDigest"], super::sha256(raw));
     }
 
     // Trace: FR-055-AC-2, TC-198
