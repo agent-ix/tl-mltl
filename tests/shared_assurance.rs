@@ -1701,7 +1701,7 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // The current V1 matrix has 346 declared rows; 199 have native trace
+    // The current V1 matrix has 346 declared rows; 201 have native trace
     // backing, including the V5 mutation population's TC-183 binding.
     // Suite registry rows are included; the two intentionally non-runnable
     // suites are checked separately below. An unbacked row is not counted as
@@ -1711,7 +1711,7 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
         "the declared-row population changed: {totals}; review the exact Quire export."
     );
     assert_eq!(
-        totals["backed"], 199,
+        totals["backed"], 201,
         "backed-row count changed: {totals}; review the exact Quire export and trace tags."
     );
     // The aggregate alone cannot identify which suite rows are absent, so check
@@ -2293,7 +2293,7 @@ fn no_local_evidence_framework_remains() {
         // The Rust Quoin machine-config adapter adds one binary.
         // V10 adds the source-bound generated past-grid replay checker module.
         // V10 adds the four retained static monitor replay cases.
-        ("src", 31),
+        ("src", 32),
         // TL-179 deletes tests/tc_084_temporal_owner_wire.rs (1 file), the
         // dedicated test for the request/result/mapping owner boundary it
         // removed from src/. TL-173 then deletes the two files that test left
@@ -2391,8 +2391,8 @@ fn no_local_evidence_framework_remains() {
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 692,
-        "the source census population changed from the reviewed 692 tracked files \
+        inspected, 693,
+        "the source census population changed from the reviewed 693 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
