@@ -99,6 +99,14 @@
       "role": "example"
     }
   ],
+  "inputOrigins": [
+    {
+      "role": "example",
+      "kind": "dependency",
+      "dependencyMember": "V8.parse_example_prep",
+      "dependencyArtifactRole": "example"
+    }
+  ],
   "outputs": [
     {
       "required": true,
