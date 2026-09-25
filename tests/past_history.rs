@@ -1,12 +1,14 @@
 use proptest::prelude::*;
 use serde_json::json;
+use sha2::{Digest as _, Sha256};
 use tl_mltl::{
     analyze_horizon, analyze_required_history, evaluate_closed, evaluate_past,
     fixed_sample_instant, ClockBinding, ClockError, ClockSample, EvaluationError, EvaluationLimits,
-    ExactNumber, ExactNumberError, HistoryError, HistoryRequirementError, HorizonError,
-    OwnerHistoryState, PastEvaluationError, PastEvaluationLimits, PastEvaluationRelationInput,
-    PastEvaluationReport, PastResultRelationKind, PastResultValidationError,
-    PositionHistoryDocument, PositionHistorySource, PositionObservation, UnsupportedClockKind,
+    ExactNumber, ExactNumberError, HistoryError, HistoryRequirementError,
+    HistoryRequirementValidationError, HorizonError, OwnerHistoryState, PastEvaluationError,
+    PastEvaluationLimits, PastEvaluationRelationInput, PastEvaluationReport,
+    PastResultRelationKind, PastResultValidationError, PositionHistoryDocument,
+    PositionHistorySource, PositionObservation, UnsupportedClockKind,
 };
 use tl_syntax::{
     Formula, Interval, Node, NodeId, NodeKind, PropositionId, SemanticProfile, SourceSpan,
@@ -360,6 +362,13 @@ fn history_admission_refuses_every_completeness_and_identity_dimension() {
         })
     );
     assert_eq!(
+        PositionHistoryDocument::new("h", 1, 0, 1, clock.clone(), vec![row(1)]),
+        Err(HistoryError::Gap {
+            expected: 0,
+            found: 1
+        })
+    );
+    assert_eq!(
         PositionHistoryDocument::new("h", 1, 0, 0, clock.clone(), vec![row(0), row(0)]),
         Err(HistoryError::DuplicatePosition { position: 0 })
     );
@@ -399,6 +408,18 @@ fn history_admission_refuses_every_completeness_and_identity_dimension() {
     let too_many_propositions = (0..=100_000)
         .map(PropositionId)
         .collect::<Vec<PropositionId>>();
+    let oversized_row = serde_json::to_vec(&PositionObservation::new(
+        0,
+        too_many_propositions.clone(),
+        None,
+    ))
+    .unwrap();
+    assert!(
+        serde_json::from_slice::<PositionObservation>(&oversized_row)
+            .unwrap_err()
+            .to_string()
+            .contains("too many propositions at one position")
+    );
     assert_eq!(
         PositionHistoryDocument::new(
             "h",
@@ -417,6 +438,13 @@ fn history_admission_refuses_every_completeness_and_identity_dimension() {
     assert_eq!(
         PositionHistoryDocument::new("h", 0, 0, 0, clock.clone(), vec![row(0)]),
         Err(HistoryError::RevisionZero)
+    );
+    assert_eq!(
+        PositionHistoryDocument::new("h".repeat(257), 1, 0, 0, clock.clone(), vec![row(0)]),
+        Err(HistoryError::HistoryIdentityTooLong {
+            actual: 257,
+            limit: 256,
+        })
     );
     assert_eq!(
         PositionHistoryDocument::new("", 1, 0, 0, clock.clone(), vec![row(0)]),
@@ -461,6 +489,167 @@ fn history_admission_refuses_every_completeness_and_identity_dimension() {
             proposed: 1
         })
     );
+}
+
+// Trace: TC-051, FR-012-AC-1, FR-050-AC-1
+#[test]
+fn history_hard_cap_refuses_excess_rows_at_wire_and_constructor_boundaries() {
+    const EXCESS_ROWS: usize = 1_000_001;
+    let row = PositionObservation::new(0, Vec::new(), None);
+    let row_json = serde_json::to_string(&row).unwrap();
+    let valid = event_history(&[(false, false)], 1);
+    let valid_json = serde_json::to_string(&valid).unwrap();
+    let singleton = format!("[{row_json}]");
+    let (prefix, suffix) = valid_json.split_once(&singleton).unwrap();
+
+    // Stream one canonical-looking wire array without allocating a million
+    // serde_json::Value objects. The bounded visitor must stop at the first
+    // row beyond the cap, before semantic position checks run.
+    let mut oversized =
+        String::with_capacity(prefix.len() + suffix.len() + EXCESS_ROWS * (row_json.len() + 1) + 2);
+    oversized.push_str(prefix);
+    oversized.push('[');
+    for index in 0..EXCESS_ROWS {
+        if index != 0 {
+            oversized.push(',');
+        }
+        oversized.push_str(&row_json);
+    }
+    oversized.push(']');
+    oversized.push_str(suffix);
+    assert!(serde_json::from_str::<PositionHistoryDocument>(&oversized)
+        .unwrap_err()
+        .to_string()
+        .contains("position history exceeds wire limit"));
+    drop(oversized);
+
+    assert_eq!(
+        PositionHistoryDocument::new(
+            "history-a",
+            1,
+            0,
+            0,
+            Some(ClockBinding::EventPosition),
+            vec![row; EXCESS_ROWS],
+        ),
+        Err(HistoryError::PositionLimitExceeded {
+            actual: EXCESS_ROWS,
+            limit: 1_000_000,
+        })
+    );
+}
+
+// Trace: TC-051, TC-053, FR-012-AC-1
+#[test]
+fn exact_clock_and_formula_identity_boundaries_refuse_at_the_owner() {
+    assert_eq!(
+        ExactNumber::new(1, 0),
+        Err(ExactNumberError::ZeroDenominator)
+    );
+    assert_eq!(
+        fixed_sample_instant(
+            ExactNumber::new(0, 1).unwrap(),
+            ExactNumber::new(0, 1).unwrap(),
+            1,
+        ),
+        Err(ExactNumberError::NonPositivePeriod)
+    );
+
+    let row = PositionObservation::new(0, Vec::new(), None);
+    for (unit, expected) in [
+        (String::new(), ClockError::EmptyUnit),
+        (
+            "u".repeat(129),
+            ClockError::UnitTooLong {
+                actual: 129,
+                limit: 128,
+            },
+        ),
+    ] {
+        assert_eq!(
+            PositionHistoryDocument::new(
+                "history-a",
+                1,
+                0,
+                0,
+                Some(ClockBinding::FixedSample {
+                    epoch: ExactNumber::new(0, 1).unwrap(),
+                    period: ExactNumber::new(1, 1).unwrap(),
+                    unit,
+                }),
+                vec![row.clone()],
+            ),
+            Err(HistoryError::Clock(expected))
+        );
+    }
+
+    let nodes = [Node::new(NodeKind::True)];
+    for identity in [String::new(), "f".repeat(257)] {
+        assert_eq!(
+            analyze_required_history(formula(&nodes), identity),
+            Err(HistoryRequirementError::InvalidFormulaIdentity)
+        );
+    }
+}
+
+// Trace: TC-053, FR-012-AC-4
+#[test]
+fn correction_refuses_foreign_history_and_changed_context() {
+    let nodes = [Node::new(NodeKind::True)];
+    let history = event_history(&[(true, false), (false, false)], 1);
+    let prior = evaluate_past(
+        formula(&nodes),
+        "formula-a",
+        &history,
+        1,
+        "map-a",
+        1,
+        PastEvaluationRelationInput::Original,
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    let corrected = history
+        .corrected(2, 1, history.observations().to_vec())
+        .unwrap();
+    let foreign = PositionHistoryDocument::new(
+        "history-b",
+        2,
+        0,
+        1,
+        Some(ClockBinding::EventPosition),
+        history.observations().to_vec(),
+    )
+    .unwrap();
+    let attempt = |source: &PositionHistoryDocument, formula_id, map_id, anchor| {
+        evaluate_past(
+            formula(&nodes),
+            formula_id,
+            source,
+            anchor,
+            map_id,
+            2,
+            PastEvaluationRelationInput::Superseding(&prior),
+            PastEvaluationLimits::default(),
+        )
+    };
+    assert_eq!(
+        attempt(&foreign, "formula-a", "map-a", 1),
+        Err(PastEvaluationError::CorrectionContextMismatch { field: "historyId" })
+    );
+    assert_eq!(
+        attempt(&history, "formula-a", "map-a", 1),
+        Err(PastEvaluationError::HistoryRevisionNotAdvanced)
+    );
+    for (formula_id, map_id, anchor, field) in [
+        ("formula-b", "map-a", 1, "formulaId"),
+        ("formula-a", "map-b", 1, "propositionMapId"),
+        ("formula-a", "map-a", 0, "anchor"),
+    ] {
+        assert_eq!(
+            attempt(&corrected, formula_id, map_id, anchor),
+            Err(PastEvaluationError::CorrectionContextMismatch { field })
+        );
+    }
 }
 
 // Trace: TC-051, TC-056, FR-012-AC-3, FR-012-AC-4
@@ -614,6 +803,531 @@ fn results_bind_all_dimensions_and_validate_direct_corrections() {
         ),
         Err(PastEvaluationError::ResultRevisionInvalid)
     );
+
+    // Persistence checks must reject a changed relation before the stale
+    // top-level digest check can hide the precise lineage refusal.
+    assert_eq!(
+        original.validate_with_predecessor(Some(&original)),
+        Err(PastResultValidationError::RelationShape)
+    );
+    let mut changed = original.clone();
+    changed.result_revision = 0;
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::ResultRevisionZero)
+    );
+    let mut changed = original.clone();
+    changed.stats.steps = 0;
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::StatisticsOutOfRange)
+    );
+
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .corrected_history
+        .as_mut()
+        .unwrap()
+        .revision += 1;
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::CorrectedHistoryMismatch)
+    );
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .direct_predecessor
+        .as_mut()
+        .unwrap()
+        .result_revision = changed.result_revision;
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::PredecessorNotEarlier)
+    );
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .direct_predecessor
+        .as_mut()
+        .unwrap()
+        .history_id = "foreign-history".to_owned();
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::PredecessorContextMismatch)
+    );
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .direct_predecessor
+        .as_mut()
+        .unwrap()
+        .history_sha256 = "not-a-digest".to_owned();
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::MalformedDigest {
+            field: "predecessorHistorySha256"
+        })
+    );
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .direct_predecessor
+        .as_mut()
+        .unwrap()
+        .result_sha256 = changed.result_sha256.clone();
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::SelfPredecessor)
+    );
+    let mut changed = superseding.clone();
+    changed
+        .relation
+        .direct_predecessor
+        .as_mut()
+        .unwrap()
+        .history_sha256 = changed.history.history_sha256.clone();
+    assert_eq!(
+        changed.validate(),
+        Err(PastResultValidationError::PredecessorNotEarlier)
+    );
+}
+
+// Trace: TC-056, FR-012-AC-4, FR-050-AC-1
+#[test]
+fn persisted_corrections_reject_valid_reports_with_changed_predecessor_context() {
+    let nodes = unary_nodes(|operand| NodeKind::Once {
+        interval: Interval::new(0, 1).unwrap(),
+        operand,
+    });
+    let first_history = event_history(&[(false, false), (true, false)], 1);
+    let predecessor = evaluate_past(
+        formula(&nodes),
+        "formula-a",
+        &first_history,
+        1,
+        "map-a",
+        1,
+        PastEvaluationRelationInput::Original,
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    let corrected_history = first_history
+        .corrected(2, 1, first_history.observations().to_vec())
+        .unwrap();
+    let successor = evaluate_past(
+        formula(&nodes),
+        "formula-a",
+        &corrected_history,
+        1,
+        "map-a",
+        2,
+        PastEvaluationRelationInput::Superseding(&predecessor),
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    successor
+        .validate_with_predecessor(Some(&predecessor))
+        .unwrap();
+
+    let fixed_clock = ClockBinding::FixedSample {
+        epoch: ExactNumber::new(0, 1).unwrap(),
+        period: ExactNumber::new(1, 1).unwrap(),
+        unit: "ticks".to_owned(),
+    };
+    for (pointer, replacement) in [
+        ("/formulaId", json!("formula-b")),
+        ("/formulaSha256", json!("f".repeat(64))),
+        ("/formulaRoot", json!(0)),
+        ("/clock", serde_json::to_value(fixed_clock).unwrap()),
+        ("/propositionMapId", json!("map-b")),
+        ("/evaluatorRevision", json!("other-revision")),
+        ("/limits/maxSteps", json!(999_999)),
+    ] {
+        let mut persisted = serde_json::to_value(&successor).unwrap();
+        *persisted.pointer_mut(pointer).unwrap() = replacement;
+        let mut preimage = persisted.clone();
+        preimage.as_object_mut().unwrap().remove("resultSha256");
+        let mut digest = Sha256::new();
+        digest.update(b"tl-mltl.past-evaluation/v1\0");
+        digest.update(serde_json::to_vec(&preimage).unwrap());
+        persisted["resultSha256"] = json!(format!("{:x}", digest.finalize()));
+
+        let independent: PastEvaluationReport = serde_json::from_value(persisted).unwrap();
+        independent.validate().unwrap();
+        assert_eq!(
+            independent.validate_with_predecessor(Some(&predecessor)),
+            Err(PastResultValidationError::PredecessorContextMismatch),
+            "changed persisted field {pointer}"
+        );
+    }
+}
+
+// Trace: TC-056, FR-012-AC-3
+#[test]
+fn past_evaluation_refuses_invalid_request_identities_and_zero_revision() {
+    let nodes = vec![Node::new(NodeKind::True)];
+    let history = event_history(&[(false, false)], 1);
+    for (formula_id, map_id, revision, expected) in [
+        (
+            String::new(),
+            "map-a".to_owned(),
+            1,
+            PastEvaluationError::InvalidIdentity { field: "formulaId" },
+        ),
+        (
+            "x".repeat(257),
+            "map-a".to_owned(),
+            1,
+            PastEvaluationError::InvalidIdentity { field: "formulaId" },
+        ),
+        (
+            "formula-a".to_owned(),
+            String::new(),
+            1,
+            PastEvaluationError::InvalidIdentity {
+                field: "propositionMapId",
+            },
+        ),
+        (
+            "formula-a".to_owned(),
+            "x".repeat(257),
+            1,
+            PastEvaluationError::InvalidIdentity {
+                field: "propositionMapId",
+            },
+        ),
+        (
+            "formula-a".to_owned(),
+            "map-a".to_owned(),
+            0,
+            PastEvaluationError::ResultRevisionInvalid,
+        ),
+    ] {
+        assert_eq!(
+            evaluate_past(
+                formula(&nodes),
+                formula_id,
+                &history,
+                0,
+                map_id,
+                revision,
+                PastEvaluationRelationInput::Original,
+                PastEvaluationLimits::default(),
+            ),
+            Err(expected)
+        );
+    }
+}
+
+// Trace: FR-012-AC-3, FR-012-AC-4, FR-050-AC-1
+#[test]
+fn persisted_past_result_refuses_typed_identity_work_and_lineage_mutations() {
+    let nodes = unary_nodes(|operand| NodeKind::Once {
+        interval: Interval::new(0, 1).unwrap(),
+        operand,
+    });
+    let first_history = event_history(&[(false, false), (true, false)], 1);
+    let original = evaluate_past(
+        formula(&nodes),
+        "formula-a",
+        &first_history,
+        1,
+        "map-a",
+        1,
+        PastEvaluationRelationInput::Original,
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    let corrected_history = first_history
+        .corrected(2, 1, first_history.observations().to_vec())
+        .unwrap();
+    let successor = evaluate_past(
+        formula(&nodes),
+        "formula-a",
+        &corrected_history,
+        1,
+        "map-a",
+        2,
+        PastEvaluationRelationInput::Superseding(&original),
+        PastEvaluationLimits::default(),
+    )
+    .unwrap();
+    original.validate().unwrap();
+    successor
+        .validate_with_predecessor(Some(&original))
+        .unwrap();
+
+    macro_rules! refuses {
+        ($base:expr, $mutation:expr, $expected:expr) => {{
+            let mut report = $base.clone();
+            $mutation(&mut report);
+            assert_eq!(report.validate(), Err($expected));
+        }};
+    }
+
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.result_revision = 0,
+        PastResultValidationError::ResultRevisionZero
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.formula_id.clear(),
+        PastResultValidationError::IdentityMismatch { field: "formulaId" }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.formula_id = "x".repeat(257),
+        PastResultValidationError::IdentityMismatch { field: "formulaId" }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.history.history_id.clear(),
+        PastResultValidationError::IdentityMismatch { field: "historyId" }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.proposition_map_id.clear(),
+        PastResultValidationError::IdentityMismatch {
+            field: "propositionMapId"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.evaluator_revision.clear(),
+        PastResultValidationError::IdentityMismatch {
+            field: "evaluatorRevision"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.result_sha256 = "bad".into(),
+        PastResultValidationError::MalformedDigest {
+            field: "resultSha256"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.formula_sha256 = "bad".into(),
+        PastResultValidationError::MalformedDigest {
+            field: "formulaSha256"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.history.history_sha256 = "bad".into(),
+        PastResultValidationError::MalformedDigest {
+            field: "historySha256"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.history.revision = 0,
+        PastResultValidationError::IdentityMismatch {
+            field: "historyRevision"
+        }
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.limits.max_steps = u64::MAX,
+        PastResultValidationError::LimitsNotClamped
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.history.through_position = u64::MAX,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.stats.temporal_iterations = u64::MAX,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.stats.steps = 0,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.stats.node_evaluations = 0,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.stats.steps += 1,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.limits.max_steps = r.stats.steps - 1,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.stats.input_positions = 0,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.limits.max_input_positions = r.stats.input_positions - 1,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.limits.max_recursion_depth = 0,
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| {
+            r.stats.max_recursion_depth = u32::try_from(r.stats.node_evaluations).unwrap();
+        },
+        PastResultValidationError::StatisticsOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.history.origin_position = 1,
+        PastResultValidationError::AnchorOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.anchor = 2,
+        PastResultValidationError::AnchorOutOfRange
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.relation.corrected_history = Some(r.history.clone()),
+        PastResultValidationError::RelationShape
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| {
+            r.relation.direct_predecessor = successor.relation.direct_predecessor.clone();
+        },
+        PastResultValidationError::RelationShape
+    );
+    refuses!(
+        original,
+        |r: &mut PastEvaluationReport| r.verdict = !r.verdict,
+        PastResultValidationError::StaleResultDigest
+    );
+
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r.relation.direct_predecessor = None,
+        PastResultValidationError::RelationShape
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r.relation.corrected_history = None,
+        PastResultValidationError::RelationShape
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r.relation.corrected_history.as_mut().unwrap().revision = 1,
+        PastResultValidationError::CorrectedHistoryMismatch
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r
+            .relation
+            .direct_predecessor
+            .as_mut()
+            .unwrap()
+            .result_revision = 2,
+        PastResultValidationError::PredecessorNotEarlier
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| {
+            r.relation
+                .direct_predecessor
+                .as_mut()
+                .unwrap()
+                .result_revision = 0;
+        },
+        PastResultValidationError::PredecessorNotEarlier
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| {
+            r.relation
+                .direct_predecessor
+                .as_mut()
+                .unwrap()
+                .history_revision = 0;
+        },
+        PastResultValidationError::PredecessorNotEarlier
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| {
+            r.relation
+                .direct_predecessor
+                .as_mut()
+                .unwrap()
+                .history_revision = r.history.revision;
+        },
+        PastResultValidationError::PredecessorNotEarlier
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r.relation.direct_predecessor.as_mut().unwrap().history_id =
+            "elsewhere".into(),
+        PastResultValidationError::PredecessorContextMismatch
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| {
+            r.relation.direct_predecessor.as_mut().unwrap().anchor = 0;
+        },
+        PastResultValidationError::PredecessorContextMismatch
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r
+            .relation
+            .direct_predecessor
+            .as_mut()
+            .unwrap()
+            .result_sha256 = "bad".into(),
+        PastResultValidationError::MalformedDigest {
+            field: "predecessorResultSha256"
+        }
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r
+            .relation
+            .direct_predecessor
+            .as_mut()
+            .unwrap()
+            .history_sha256 = "bad".into(),
+        PastResultValidationError::MalformedDigest {
+            field: "predecessorHistorySha256"
+        }
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r
+            .relation
+            .direct_predecessor
+            .as_mut()
+            .unwrap()
+            .result_sha256 = r.result_sha256.clone(),
+        PastResultValidationError::SelfPredecessor
+    );
+    refuses!(
+        successor,
+        |r: &mut PastEvaluationReport| r
+            .relation
+            .direct_predecessor
+            .as_mut()
+            .unwrap()
+            .history_sha256 = r.history.history_sha256.clone(),
+        PastResultValidationError::PredecessorNotEarlier
+    );
 }
 
 // Trace: TC-052, FR-012-AC-2
@@ -648,6 +1362,14 @@ fn required_history_uses_checked_recursive_equations_and_ignores_spans() {
     assert_eq!(report.required_positions, 14);
     assert_eq!(report.unit, "positions");
     report.validate().unwrap();
+    for invalid_id in [String::new(), "x".repeat(257)] {
+        let mut invalid = report.clone();
+        invalid.formula_id = invalid_id;
+        assert_eq!(
+            invalid.validate(),
+            Err(HistoryRequirementValidationError::IdentityMismatch { field: "formulaId" })
+        );
+    }
     let wire = serde_json::to_value(&report).unwrap();
     assert_eq!(
         serde_json::from_value::<tl_mltl::HistoryRequirementReport>(wire.clone()).unwrap(),

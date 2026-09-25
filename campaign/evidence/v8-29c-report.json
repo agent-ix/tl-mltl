@@ -1,0 +1,6790 @@
+{
+  "cargo_lock_sha256": {
+    "mltl": "402173883a14765dcd3c4205e2d75bda43c8f5221b62b6911d822e113836b2e7",
+    "parse": "70b9d0839caaa74fb4f9309bf9d1d14b07f0bcc2c6bd69d82b32ddc188f021f2",
+    "rewrite": "5533341feb8906424ddcdfed43515407217f1adb0461c77b26a543b89ad0aeb3",
+    "syntax": "e095c513a906735da3ff4f3243eb3e8d3c39707ccabb835ef3863260ece1172d"
+  },
+  "host": {
+    "machine": "arm64",
+    "system": "Darwin"
+  },
+  "profile": "test",
+  "reviewed_infeasibility": [],
+  "runs": [
+    {
+      "argv": [
+        "cargo",
+        "llvm-cov",
+        "--branch",
+        "--json",
+        "--output-path",
+        "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-core.json",
+        "--lib",
+        "--tests",
+        "--no-default-features",
+        "--locked",
+        "--offline"
+      ],
+      "coverage": {
+        "files": {
+          "src/context.rs": {
+            "branches": {
+              "count": 4,
+              "covered": 4
+            },
+            "functions": {
+              "count": 10,
+              "covered": 3
+            },
+            "lines": {
+              "count": 74,
+              "covered": 45
+            },
+            "regions": {
+              "count": 86,
+              "covered": 49
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/contracts/limits.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 3,
+              "covered": 0
+            },
+            "lines": {
+              "count": 22,
+              "covered": 0
+            },
+            "regions": {
+              "count": 29,
+              "covered": 0
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": [
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 79,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/formula/graph.rs": {
+            "branches": {
+              "count": 20,
+              "covered": 17
+            },
+            "functions": {
+              "count": 33,
+              "covered": 27
+            },
+            "lines": {
+              "count": 291,
+              "covered": 209
+            },
+            "regions": {
+              "count": 296,
+              "covered": 222
+            },
+            "summary_missing_sides": 3,
+            "uncovered_branch_locations": [
+              {
+                "column": 31,
+                "false_count": 0,
+                "line": 51,
+                "true_count": 1
+              },
+              {
+                "column": 12,
+                "false_count": 1294,
+                "line": 425,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 4810,
+                "line": 455,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/formula/infinite.rs": {
+            "branches": {
+              "count": 14,
+              "covered": 14
+            },
+            "functions": {
+              "count": 24,
+              "covered": 7
+            },
+            "lines": {
+              "count": 157,
+              "covered": 46
+            },
+            "regions": {
+              "count": 134,
+              "covered": 51
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/formula/profile.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 3,
+              "covered": 1
+            },
+            "lines": {
+              "count": 20,
+              "covered": 7
+            },
+            "regions": {
+              "count": 20,
+              "covered": 7
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/future.rs": {
+            "branches": {
+              "count": 22,
+              "covered": 22
+            },
+            "functions": {
+              "count": 56,
+              "covered": 56
+            },
+            "lines": {
+              "count": 671,
+              "covered": 671
+            },
+            "regions": {
+              "count": 562,
+              "covered": 561
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/signal/binding.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 7,
+              "covered": 4
+            },
+            "lines": {
+              "count": 30,
+              "covered": 18
+            },
+            "regions": {
+              "count": 24,
+              "covered": 12
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/signal/catalog.rs": {
+            "branches": {
+              "count": 28,
+              "covered": 14
+            },
+            "functions": {
+              "count": 31,
+              "covered": 18
+            },
+            "lines": {
+              "count": 276,
+              "covered": 164
+            },
+            "regions": {
+              "count": 242,
+              "covered": 131
+            },
+            "summary_missing_sides": 14,
+            "uncovered_branch_locations": [
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 292,
+                "true_count": 1
+              },
+              {
+                "column": 20,
+                "false_count": 1,
+                "line": 293,
+                "true_count": 0
+              },
+              {
+                "column": 15,
+                "false_count": 0,
+                "line": 262,
+                "true_count": 7
+              },
+              {
+                "column": 12,
+                "false_count": 1,
+                "line": 124,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 1,
+                "line": 130,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 1,
+                "line": 136,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 1,
+                "line": 149,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 2,
+                "line": 156,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 2,
+                "line": 159,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 1,
+                "line": 203,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 1,
+                "line": 212,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 217,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 1,
+                "line": 230,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/signal/domain.rs": {
+            "branches": {
+              "count": 6,
+              "covered": 1
+            },
+            "functions": {
+              "count": 8,
+              "covered": 1
+            },
+            "lines": {
+              "count": 48,
+              "covered": 4
+            },
+            "regions": {
+              "count": 42,
+              "covered": 4
+            },
+            "summary_missing_sides": 5,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 16,
+                "true_count": 1
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 50,
+                "true_count": 0
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 55,
+                "true_count": 0
+              }
+            ]
+          }
+        },
+        "totals": {
+          "branches": {
+            "count": 94,
+            "covered": 72
+          },
+          "lines": {
+            "count": 1589,
+            "covered": 1164
+          }
+        }
+      },
+      "critical_branch_census": {
+        "count": 36,
+        "covered": 36,
+        "files": {
+          "src/formula/infinite.rs": {
+            "count": 14,
+            "covered": 14
+          },
+          "src/future.rs": {
+            "count": 22,
+            "covered": 22
+          }
+        },
+        "missing_files": []
+      },
+      "critical_uncovered": [],
+      "exit_code": 0,
+      "feature": "core",
+      "id": "syntax-core",
+      "raw": {
+        "export": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-core.json",
+          "sha256": "4e4c1b600f46368612bb570b371dbe30553b74fe7188831ec1818d2acc779c80"
+        },
+        "stderr": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-core.stderr",
+          "sha256": "2ee928078e9b0bd7ee616171b135e7ad3ea84ed5814d3f1a9e40bbe2697fddac"
+        },
+        "stdout": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-core.stdout",
+          "sha256": "567338594c8c3ab84f014d22fd1359f86856478bb8d621e1316fe9cc367fdc7d"
+        }
+      },
+      "repo": "syntax",
+      "source_revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "cargo",
+        "llvm-cov",
+        "--branch",
+        "--json",
+        "--output-path",
+        "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-alloc.json",
+        "--lib",
+        "--tests",
+        "--no-default-features",
+        "--features",
+        "alloc",
+        "--locked",
+        "--offline"
+      ],
+      "coverage": {
+        "files": {
+          "src/context.rs": {
+            "branches": {
+              "count": 4,
+              "covered": 4
+            },
+            "functions": {
+              "count": 10,
+              "covered": 3
+            },
+            "lines": {
+              "count": 74,
+              "covered": 45
+            },
+            "regions": {
+              "count": 86,
+              "covered": 49
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/context_document.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 6,
+              "covered": 0
+            },
+            "lines": {
+              "count": 62,
+              "covered": 0
+            },
+            "regions": {
+              "count": 38,
+              "covered": 0
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/contracts/limits.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 3,
+              "covered": 0
+            },
+            "lines": {
+              "count": 22,
+              "covered": 0
+            },
+            "regions": {
+              "count": 29,
+              "covered": 0
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": [
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 79,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/formula/document.rs": {
+            "branches": {
+              "count": 20,
+              "covered": 5
+            },
+            "functions": {
+              "count": 34,
+              "covered": 11
+            },
+            "lines": {
+              "count": 275,
+              "covered": 125
+            },
+            "regions": {
+              "count": 236,
+              "covered": 108
+            },
+            "summary_missing_sides": 15,
+            "uncovered_branch_locations": [
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 495,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 3,
+                "line": 455,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 3,
+                "line": 458,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 3,
+                "line": 470,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 3,
+                "line": 373,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 2,
+                "line": 328,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 434,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 149,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 150,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 151,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/formula/graph.rs": {
+            "branches": {
+              "count": 20,
+              "covered": 17
+            },
+            "functions": {
+              "count": 33,
+              "covered": 28
+            },
+            "lines": {
+              "count": 291,
+              "covered": 213
+            },
+            "regions": {
+              "count": 296,
+              "covered": 226
+            },
+            "summary_missing_sides": 3,
+            "uncovered_branch_locations": [
+              {
+                "column": 31,
+                "false_count": 0,
+                "line": 51,
+                "true_count": 1
+              },
+              {
+                "column": 12,
+                "false_count": 1297,
+                "line": 425,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 4892,
+                "line": 455,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/formula/infinite.rs": {
+            "branches": {
+              "count": 24,
+              "covered": 24
+            },
+            "functions": {
+              "count": 33,
+              "covered": 10
+            },
+            "lines": {
+              "count": 227,
+              "covered": 91
+            },
+            "regions": {
+              "count": 190,
+              "covered": 86
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/formula/liveness.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 1,
+              "covered": 0
+            },
+            "lines": {
+              "count": 24,
+              "covered": 0
+            },
+            "regions": {
+              "count": 15,
+              "covered": 0
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": [
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 74,
+                "true_count": 0
+              },
+              {
+                "column": 26,
+                "false_count": 0,
+                "line": 83,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 84,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/formula/profile.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 3,
+              "covered": 1
+            },
+            "lines": {
+              "count": 20,
+              "covered": 7
+            },
+            "regions": {
+              "count": 20,
+              "covered": 7
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/formula/trace.rs": {
+            "branches": {
+              "count": 46,
+              "covered": 0
+            },
+            "functions": {
+              "count": 28,
+              "covered": 0
+            },
+            "lines": {
+              "count": 264,
+              "covered": 0
+            },
+            "regions": {
+              "count": 216,
+              "covered": 0
+            },
+            "summary_missing_sides": 46,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 490,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 414,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 417,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 424,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 429,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 435,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 711,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 714,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 717,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 722,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 727,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 682,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 685,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 699,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 185,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 188,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 193,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 200,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 143,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 147,
+                "true_count": 0
+              },
+              {
+                "column": 32,
+                "false_count": 0,
+                "line": 160,
+                "true_count": 0
+              },
+              {
+                "column": 32,
+                "false_count": 0,
+                "line": 165,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 173,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/future.rs": {
+            "branches": {
+              "count": 22,
+              "covered": 22
+            },
+            "functions": {
+              "count": 56,
+              "covered": 56
+            },
+            "lines": {
+              "count": 671,
+              "covered": 671
+            },
+            "regions": {
+              "count": 562,
+              "covered": 561
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/signal/binding.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 7,
+              "covered": 4
+            },
+            "lines": {
+              "count": 30,
+              "covered": 18
+            },
+            "regions": {
+              "count": 24,
+              "covered": 12
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/signal/catalog.rs": {
+            "branches": {
+              "count": 28,
+              "covered": 14
+            },
+            "functions": {
+              "count": 32,
+              "covered": 18
+            },
+            "lines": {
+              "count": 279,
+              "covered": 158
+            },
+            "regions": {
+              "count": 250,
+              "covered": 132
+            },
+            "summary_missing_sides": 14,
+            "uncovered_branch_locations": [
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 292,
+                "true_count": 1
+              },
+              {
+                "column": 20,
+                "false_count": 1,
+                "line": 293,
+                "true_count": 0
+              },
+              {
+                "column": 15,
+                "false_count": 0,
+                "line": 262,
+                "true_count": 7
+              },
+              {
+                "column": 12,
+                "false_count": 1,
+                "line": 124,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 1,
+                "line": 130,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 1,
+                "line": 136,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 1,
+                "line": 149,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 2,
+                "line": 156,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 2,
+                "line": 159,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 1,
+                "line": 203,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 1,
+                "line": 212,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 217,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 1,
+                "line": 230,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/signal/document.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 11,
+              "covered": 0
+            },
+            "lines": {
+              "count": 52,
+              "covered": 0
+            },
+            "regions": {
+              "count": 51,
+              "covered": 0
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/signal/domain.rs": {
+            "branches": {
+              "count": 6,
+              "covered": 1
+            },
+            "functions": {
+              "count": 8,
+              "covered": 1
+            },
+            "lines": {
+              "count": 48,
+              "covered": 4
+            },
+            "regions": {
+              "count": 42,
+              "covered": 4
+            },
+            "summary_missing_sides": 5,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 16,
+                "true_count": 1
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 50,
+                "true_count": 0
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 55,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/signal/proposition.rs": {
+            "branches": {
+              "count": 8,
+              "covered": 8
+            },
+            "functions": {
+              "count": 7,
+              "covered": 4
+            },
+            "lines": {
+              "count": 53,
+              "covered": 35
+            },
+            "regions": {
+              "count": 48,
+              "covered": 28
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          }
+        },
+        "totals": {
+          "branches": {
+            "count": 178,
+            "covered": 95
+          },
+          "lines": {
+            "count": 2392,
+            "covered": 1367
+          }
+        }
+      },
+      "critical_branch_census": {
+        "count": 46,
+        "covered": 46,
+        "files": {
+          "src/formula/infinite.rs": {
+            "count": 24,
+            "covered": 24
+          },
+          "src/future.rs": {
+            "count": 22,
+            "covered": 22
+          }
+        },
+        "missing_files": []
+      },
+      "critical_uncovered": [],
+      "exit_code": 0,
+      "feature": "alloc",
+      "id": "syntax-alloc",
+      "raw": {
+        "export": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-alloc.json",
+          "sha256": "8fc53fb76fcf06dfdafa644b572f8b5f6551b115e2a1eaae08ec41575a00cabf"
+        },
+        "stderr": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-alloc.stderr",
+          "sha256": "bbaa6487f595370cb9c3afec46e552e466e0e0ef79363604efa69adf0d792a0d"
+        },
+        "stdout": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-alloc.stdout",
+          "sha256": "37b25a33668e658d9fd840a0048e5451ff81e50f60ff837a884196ec36153195"
+        }
+      },
+      "repo": "syntax",
+      "source_revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "cargo",
+        "llvm-cov",
+        "--branch",
+        "--json",
+        "--output-path",
+        "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-serde.json",
+        "--lib",
+        "--tests",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "coverage": {
+        "files": {
+          "src/bounded_string.rs": {
+            "branches": {
+              "count": 2,
+              "covered": 2
+            },
+            "functions": {
+              "count": 6,
+              "covered": 4
+            },
+            "lines": {
+              "count": 42,
+              "covered": 31
+            },
+            "regions": {
+              "count": 33,
+              "covered": 21
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/context.rs": {
+            "branches": {
+              "count": 4,
+              "covered": 4
+            },
+            "functions": {
+              "count": 10,
+              "covered": 8
+            },
+            "lines": {
+              "count": 74,
+              "covered": 60
+            },
+            "regions": {
+              "count": 86,
+              "covered": 67
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/context_document.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 8,
+              "covered": 7
+            },
+            "lines": {
+              "count": 81,
+              "covered": 65
+            },
+            "regions": {
+              "count": 51,
+              "covered": 42
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/contracts/identity.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 2,
+              "covered": 2
+            },
+            "lines": {
+              "count": 12,
+              "covered": 12
+            },
+            "regions": {
+              "count": 13,
+              "covered": 13
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/contracts/limits.rs": {
+            "branches": {
+              "count": 2,
+              "covered": 2
+            },
+            "functions": {
+              "count": 3,
+              "covered": 3
+            },
+            "lines": {
+              "count": 22,
+              "covered": 22
+            },
+            "regions": {
+              "count": 29,
+              "covered": 29
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/contracts/manifest_impl.rs": {
+            "branches": {
+              "count": 34,
+              "covered": 32
+            },
+            "functions": {
+              "count": 12,
+              "covered": 11
+            },
+            "lines": {
+              "count": 183,
+              "covered": 176
+            },
+            "regions": {
+              "count": 154,
+              "covered": 140
+            },
+            "summary_missing_sides": 2,
+            "uncovered_branch_locations": [
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 79,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/contracts/reader.rs": {
+            "branches": {
+              "count": 62,
+              "covered": 62
+            },
+            "functions": {
+              "count": 12,
+              "covered": 11
+            },
+            "lines": {
+              "count": 205,
+              "covered": 186
+            },
+            "regions": {
+              "count": 248,
+              "covered": 214
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/formula/document.rs": {
+            "branches": {
+              "count": 30,
+              "covered": 26
+            },
+            "functions": {
+              "count": 47,
+              "covered": 40
+            },
+            "lines": {
+              "count": 397,
+              "covered": 352
+            },
+            "regions": {
+              "count": 342,
+              "covered": 294
+            },
+            "summary_missing_sides": 4,
+            "uncovered_branch_locations": [
+              {
+                "column": 16,
+                "false_count": 1,
+                "line": 434,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 149,
+                "true_count": 412
+              },
+              {
+                "column": 12,
+                "false_count": 12,
+                "line": 555,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 12,
+                "line": 563,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/formula/graph.rs": {
+            "branches": {
+              "count": 20,
+              "covered": 18
+            },
+            "functions": {
+              "count": 38,
+              "covered": 36
+            },
+            "lines": {
+              "count": 372,
+              "covered": 333
+            },
+            "regions": {
+              "count": 340,
+              "covered": 310
+            },
+            "summary_missing_sides": 2,
+            "uncovered_branch_locations": [
+              {
+                "column": 31,
+                "false_count": 0,
+                "line": 51,
+                "true_count": 1
+              },
+              {
+                "column": 12,
+                "false_count": 4210,
+                "line": 425,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/formula/infinite.rs": {
+            "branches": {
+              "count": 34,
+              "covered": 34
+            },
+            "functions": {
+              "count": 47,
+              "covered": 36
+            },
+            "lines": {
+              "count": 377,
+              "covered": 337
+            },
+            "regions": {
+              "count": 318,
+              "covered": 261
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/formula/liveness.rs": {
+            "branches": {
+              "count": 6,
+              "covered": 5
+            },
+            "functions": {
+              "count": 1,
+              "covered": 1
+            },
+            "lines": {
+              "count": 24,
+              "covered": 24
+            },
+            "regions": {
+              "count": 15,
+              "covered": 15
+            },
+            "summary_missing_sides": 1,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 84,
+                "true_count": 1
+              }
+            ]
+          },
+          "src/formula/profile.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 3,
+              "covered": 3
+            },
+            "lines": {
+              "count": 20,
+              "covered": 20
+            },
+            "regions": {
+              "count": 20,
+              "covered": 20
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/formula/trace.rs": {
+            "branches": {
+              "count": 62,
+              "covered": 42
+            },
+            "functions": {
+              "count": 50,
+              "covered": 39
+            },
+            "lines": {
+              "count": 437,
+              "covered": 346
+            },
+            "regions": {
+              "count": 345,
+              "covered": 269
+            },
+            "summary_missing_sides": 20,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 64,
+                "line": 185,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 64,
+                "line": 188,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 61,
+                "line": 143,
+                "true_count": 0
+              },
+              {
+                "column": 32,
+                "false_count": 154,
+                "line": 160,
+                "true_count": 0
+              },
+              {
+                "column": 32,
+                "false_count": 154,
+                "line": 165,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 58,
+                "line": 173,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 22,
+                "line": 424,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 23,
+                "line": 711,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 23,
+                "line": 714,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 23,
+                "line": 717,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 2,
+                "line": 727,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 21,
+                "line": 682,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 21,
+                "line": 685,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 2,
+                "line": 273,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 2,
+                "line": 260,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 2,
+                "line": 538,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 2,
+                "line": 549,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 2,
+                "line": 525,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 2,
+                "line": 796,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 2,
+                "line": 783,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/future.rs": {
+            "branches": {
+              "count": 22,
+              "covered": 22
+            },
+            "functions": {
+              "count": 56,
+              "covered": 56
+            },
+            "lines": {
+              "count": 671,
+              "covered": 671
+            },
+            "regions": {
+              "count": 562,
+              "covered": 561
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/signal/binding.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 7,
+              "covered": 6
+            },
+            "lines": {
+              "count": 30,
+              "covered": 24
+            },
+            "regions": {
+              "count": 24,
+              "covered": 18
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/signal/catalog.rs": {
+            "branches": {
+              "count": 28,
+              "covered": 28
+            },
+            "functions": {
+              "count": 32,
+              "covered": 29
+            },
+            "lines": {
+              "count": 279,
+              "covered": 245
+            },
+            "regions": {
+              "count": 250,
+              "covered": 198
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/signal/document.rs": {
+            "branches": {
+              "count": 14,
+              "covered": 11
+            },
+            "functions": {
+              "count": 24,
+              "covered": 20
+            },
+            "lines": {
+              "count": 174,
+              "covered": 144
+            },
+            "regions": {
+              "count": 141,
+              "covered": 116
+            },
+            "summary_missing_sides": 3,
+            "uncovered_branch_locations": [
+              {
+                "column": 16,
+                "false_count": 50,
+                "line": 308,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 3,
+                "line": 236,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 3,
+                "line": 243,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/signal/domain.rs": {
+            "branches": {
+              "count": 6,
+              "covered": 6
+            },
+            "functions": {
+              "count": 10,
+              "covered": 10
+            },
+            "lines": {
+              "count": 79,
+              "covered": 79
+            },
+            "regions": {
+              "count": 91,
+              "covered": 80
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/signal/proposition.rs": {
+            "branches": {
+              "count": 18,
+              "covered": 15
+            },
+            "functions": {
+              "count": 17,
+              "covered": 14
+            },
+            "lines": {
+              "count": 137,
+              "covered": 118
+            },
+            "regions": {
+              "count": 105,
+              "covered": 89
+            },
+            "summary_missing_sides": 3,
+            "uncovered_branch_locations": [
+              {
+                "column": 16,
+                "false_count": 13,
+                "line": 101,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 14,
+                "line": 116,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 4,
+                "line": 243,
+                "true_count": 0
+              }
+            ]
+          }
+        },
+        "totals": {
+          "branches": {
+            "count": 344,
+            "covered": 309
+          },
+          "lines": {
+            "count": 3616,
+            "covered": 3245
+          }
+        }
+      },
+      "critical_branch_census": {
+        "count": 118,
+        "covered": 118,
+        "files": {
+          "src/contracts/reader.rs": {
+            "count": 62,
+            "covered": 62
+          },
+          "src/formula/infinite.rs": {
+            "count": 34,
+            "covered": 34
+          },
+          "src/future.rs": {
+            "count": 22,
+            "covered": 22
+          }
+        },
+        "missing_files": []
+      },
+      "critical_uncovered": [],
+      "exit_code": 0,
+      "feature": "serde",
+      "id": "syntax-serde",
+      "raw": {
+        "export": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-serde.json",
+          "sha256": "c8e75de3bb7abb9e0daff0f3a4103b1c49ac4cb3be3941977fb4e9b69902b8b4"
+        },
+        "stderr": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-serde.stderr",
+          "sha256": "ea6c20b2ed0652218e1ed06b8148497549e7ed74e58d208a9912494acde56368"
+        },
+        "stdout": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/syntax-serde.stdout",
+          "sha256": "1b23ce6e576cf6c96d30feaaf7f1bccfdfa8697a0f0eedcbeca8c7b54fcfe197"
+        }
+      },
+      "repo": "syntax",
+      "source_revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "cargo",
+        "llvm-cov",
+        "--branch",
+        "--json",
+        "--output-path",
+        "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/parse-default.json",
+        "--lib",
+        "--tests",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "coverage": {
+        "files": {
+          "src/bin/tl-parse.rs": {
+            "branches": {
+              "count": 44,
+              "covered": 41
+            },
+            "functions": {
+              "count": 24,
+              "covered": 18
+            },
+            "lines": {
+              "count": 173,
+              "covered": 155
+            },
+            "regions": {
+              "count": 215,
+              "covered": 189
+            },
+            "summary_missing_sides": 3,
+            "uncovered_branch_locations": [
+              {
+                "column": 24,
+                "false_count": 0,
+                "line": 75,
+                "true_count": 1
+              },
+              {
+                "column": 42,
+                "false_count": 1,
+                "line": 85,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 109,
+                "true_count": 3
+              }
+            ]
+          },
+          "src/context.rs": {
+            "branches": {
+              "count": 12,
+              "covered": 12
+            },
+            "functions": {
+              "count": 13,
+              "covered": 7
+            },
+            "lines": {
+              "count": 131,
+              "covered": 108
+            },
+            "regions": {
+              "count": 122,
+              "covered": 89
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/diagnostic.rs": {
+            "branches": {
+              "count": 28,
+              "covered": 13
+            },
+            "functions": {
+              "count": 21,
+              "covered": 16
+            },
+            "lines": {
+              "count": 219,
+              "covered": 156
+            },
+            "regions": {
+              "count": 222,
+              "covered": 131
+            },
+            "summary_missing_sides": 15,
+            "uncovered_branch_locations": [
+              {
+                "column": 11,
+                "false_count": 0,
+                "line": 227,
+                "true_count": 33580
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 232,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 235,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 257,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 260,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 261,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 262,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 263,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/dialect/mod.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 14,
+              "covered": 14
+            },
+            "lines": {
+              "count": 81,
+              "covered": 72
+            },
+            "regions": {
+              "count": 91,
+              "covered": 79
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/dialect/v1.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 9,
+              "covered": 9
+            },
+            "lines": {
+              "count": 70,
+              "covered": 68
+            },
+            "regions": {
+              "count": 74,
+              "covered": 72
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/dialect/v2.rs": {
+            "branches": {
+              "count": 14,
+              "covered": 14
+            },
+            "functions": {
+              "count": 15,
+              "covered": 13
+            },
+            "lines": {
+              "count": 96,
+              "covered": 90
+            },
+            "regions": {
+              "count": 89,
+              "covered": 83
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/dialect/v3.rs": {
+            "branches": {
+              "count": 50,
+              "covered": 33
+            },
+            "functions": {
+              "count": 16,
+              "covered": 15
+            },
+            "lines": {
+              "count": 188,
+              "covered": 174
+            },
+            "regions": {
+              "count": 179,
+              "covered": 163
+            },
+            "summary_missing_sides": 17,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 8,
+                "line": 185,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 7,
+                "line": 187,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 7,
+                "line": 188,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 7,
+                "line": 189,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 7,
+                "line": 193,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 201,
+                "true_count": 1
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 202,
+                "true_count": 1
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 206,
+                "true_count": 6
+              },
+              {
+                "column": 16,
+                "false_count": 6,
+                "line": 207,
+                "true_count": 0
+              },
+              {
+                "column": 48,
+                "false_count": 6,
+                "line": 207,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 6,
+                "line": 210,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 6,
+                "line": 211,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 6,
+                "line": 215,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 6,
+                "line": 216,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 6,
+                "line": 220,
+                "true_count": 0
+              },
+              {
+                "column": 62,
+                "false_count": 6,
+                "line": 220,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 6,
+                "line": 229,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/dialect/v4.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 4,
+              "covered": 2
+            },
+            "lines": {
+              "count": 33,
+              "covered": 22
+            },
+            "regions": {
+              "count": 35,
+              "covered": 22
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/formatter.rs": {
+            "branches": {
+              "count": 46,
+              "covered": 40
+            },
+            "functions": {
+              "count": 16,
+              "covered": 15
+            },
+            "lines": {
+              "count": 290,
+              "covered": 237
+            },
+            "regions": {
+              "count": 244,
+              "covered": 205
+            },
+            "summary_missing_sides": 6,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 302,
+                "true_count": 10381
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 73,
+                "true_count": 24904
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 84,
+                "true_count": 24835
+              },
+              {
+                "column": 21,
+                "false_count": 0,
+                "line": 109,
+                "true_count": 36424
+              },
+              {
+                "column": 24,
+                "false_count": 0,
+                "line": 140,
+                "true_count": 36421
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 224,
+                "true_count": 73996
+              }
+            ]
+          },
+          "src/infinite.rs": {
+            "branches": {
+              "count": 186,
+              "covered": 176
+            },
+            "functions": {
+              "count": 55,
+              "covered": 44
+            },
+            "lines": {
+              "count": 979,
+              "covered": 877
+            },
+            "regions": {
+              "count": 965,
+              "covered": 820
+            },
+            "summary_missing_sides": 10,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 72,
+                "line": 1005,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 72,
+                "line": 1006,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 13,
+                "line": 1018,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 490,
+                "true_count": 1160
+              },
+              {
+                "column": 41,
+                "false_count": 0,
+                "line": 1221,
+                "true_count": 10
+              },
+              {
+                "column": 42,
+                "false_count": 0,
+                "line": 1222,
+                "true_count": 12
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 407,
+                "true_count": 91
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 434,
+                "true_count": 91
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 454,
+                "true_count": 20
+              },
+              {
+                "column": 24,
+                "false_count": 6,
+                "line": 157,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/lexer.rs": {
+            "branches": {
+              "count": 84,
+              "covered": 84
+            },
+            "functions": {
+              "count": 18,
+              "covered": 18
+            },
+            "lines": {
+              "count": 350,
+              "covered": 346
+            },
+            "regions": {
+              "count": 345,
+              "covered": 340
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/lib.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 9,
+              "covered": 8
+            },
+            "lines": {
+              "count": 27,
+              "covered": 24
+            },
+            "regions": {
+              "count": 35,
+              "covered": 31
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/parser.rs": {
+            "branches": {
+              "count": 94,
+              "covered": 80
+            },
+            "functions": {
+              "count": 24,
+              "covered": 20
+            },
+            "lines": {
+              "count": 681,
+              "covered": 590
+            },
+            "regions": {
+              "count": 610,
+              "covered": 528
+            },
+            "summary_missing_sides": 14,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 166,
+                "line": 598,
+                "true_count": 0
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 626,
+                "true_count": 164
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 637,
+                "true_count": 164
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 648,
+                "true_count": 164
+              },
+              {
+                "column": 31,
+                "false_count": 1212,
+                "line": 337,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 345,
+                "true_count": 0
+              },
+              {
+                "column": 34,
+                "false_count": 0,
+                "line": 830,
+                "true_count": 112199
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 733,
+                "true_count": 57265
+              },
+              {
+                "column": 29,
+                "false_count": 0,
+                "line": 92,
+                "true_count": 1041
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 93,
+                "true_count": 1041
+              },
+              {
+                "column": 62,
+                "false_count": 1040,
+                "line": 119,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 185,
+                "true_count": 8
+              },
+              {
+                "column": 25,
+                "false_count": 0,
+                "line": 142,
+                "true_count": 1040
+              }
+            ]
+          }
+        },
+        "totals": {
+          "branches": {
+            "count": 558,
+            "covered": 493
+          },
+          "lines": {
+            "count": 3318,
+            "covered": 2919
+          }
+        }
+      },
+      "critical_branch_census": {
+        "count": 410,
+        "covered": 380,
+        "files": {
+          "src/dialect/v4.rs": {
+            "count": 0,
+            "covered": 0
+          },
+          "src/formatter.rs": {
+            "count": 46,
+            "covered": 40
+          },
+          "src/infinite.rs": {
+            "count": 186,
+            "covered": 176
+          },
+          "src/lexer.rs": {
+            "count": 84,
+            "covered": 84
+          },
+          "src/parser.rs": {
+            "count": 94,
+            "covered": 80
+          }
+        },
+        "missing_files": []
+      },
+      "critical_uncovered": [
+        {
+          "column": 12,
+          "false_count": 0,
+          "file": "src/formatter.rs",
+          "line": 302,
+          "true_count": 10381
+        },
+        {
+          "column": 13,
+          "false_count": 0,
+          "file": "src/formatter.rs",
+          "line": 73,
+          "true_count": 24904
+        },
+        {
+          "column": 13,
+          "false_count": 0,
+          "file": "src/formatter.rs",
+          "line": 84,
+          "true_count": 24835
+        },
+        {
+          "column": 21,
+          "false_count": 0,
+          "file": "src/formatter.rs",
+          "line": 109,
+          "true_count": 36424
+        },
+        {
+          "column": 24,
+          "false_count": 0,
+          "file": "src/formatter.rs",
+          "line": 140,
+          "true_count": 36421
+        },
+        {
+          "column": 9,
+          "false_count": 0,
+          "file": "src/formatter.rs",
+          "line": 224,
+          "true_count": 73996
+        },
+        {
+          "column": 12,
+          "false_count": 72,
+          "file": "src/infinite.rs",
+          "line": 1005,
+          "true_count": 0
+        },
+        {
+          "column": 16,
+          "false_count": 72,
+          "file": "src/infinite.rs",
+          "line": 1006,
+          "true_count": 0
+        },
+        {
+          "column": 20,
+          "false_count": 13,
+          "file": "src/infinite.rs",
+          "line": 1018,
+          "true_count": 0
+        },
+        {
+          "column": 12,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 490,
+          "true_count": 1160
+        },
+        {
+          "column": 41,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 1221,
+          "true_count": 10
+        },
+        {
+          "column": 42,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 1222,
+          "true_count": 12
+        },
+        {
+          "column": 20,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 407,
+          "true_count": 91
+        },
+        {
+          "column": 8,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 434,
+          "true_count": 91
+        },
+        {
+          "column": 8,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 454,
+          "true_count": 20
+        },
+        {
+          "column": 24,
+          "false_count": 6,
+          "file": "src/infinite.rs",
+          "line": 157,
+          "true_count": 0
+        },
+        {
+          "column": 12,
+          "false_count": 166,
+          "file": "src/parser.rs",
+          "line": 598,
+          "true_count": 0
+        },
+        {
+          "column": 13,
+          "false_count": 0,
+          "file": "src/parser.rs",
+          "line": 626,
+          "true_count": 164
+        },
+        {
+          "column": 13,
+          "false_count": 0,
+          "file": "src/parser.rs",
+          "line": 637,
+          "true_count": 164
+        },
+        {
+          "column": 13,
+          "false_count": 0,
+          "file": "src/parser.rs",
+          "line": 648,
+          "true_count": 164
+        },
+        {
+          "column": 31,
+          "false_count": 1212,
+          "file": "src/parser.rs",
+          "line": 337,
+          "true_count": 0
+        },
+        {
+          "column": 16,
+          "false_count": 0,
+          "file": "src/parser.rs",
+          "line": 345,
+          "true_count": 0
+        },
+        {
+          "column": 34,
+          "false_count": 0,
+          "file": "src/parser.rs",
+          "line": 830,
+          "true_count": 112199
+        },
+        {
+          "column": 13,
+          "false_count": 0,
+          "file": "src/parser.rs",
+          "line": 733,
+          "true_count": 57265
+        },
+        {
+          "column": 29,
+          "false_count": 0,
+          "file": "src/parser.rs",
+          "line": 92,
+          "true_count": 1041
+        },
+        {
+          "column": 16,
+          "false_count": 0,
+          "file": "src/parser.rs",
+          "line": 93,
+          "true_count": 1041
+        },
+        {
+          "column": 62,
+          "false_count": 1040,
+          "file": "src/parser.rs",
+          "line": 119,
+          "true_count": 0
+        },
+        {
+          "column": 9,
+          "false_count": 0,
+          "file": "src/parser.rs",
+          "line": 185,
+          "true_count": 8
+        },
+        {
+          "column": 25,
+          "false_count": 0,
+          "file": "src/parser.rs",
+          "line": 142,
+          "true_count": 1040
+        }
+      ],
+      "exit_code": 0,
+      "feature": "default",
+      "id": "parse-default",
+      "prep": {
+        "argv": [
+          "cargo",
+          "build",
+          "--example",
+          "fuzz_campaign",
+          "--all-features",
+          "--locked",
+          "--offline"
+        ],
+        "binary": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/parse-default.target/debug/examples/fuzz_campaign",
+          "sha256": "60990577dbc2453d706ec4a3af000fc7ce9453d254c8bf673450477c94ff312d"
+        },
+        "exit_code": 0,
+        "raw": {
+          "stderr": {
+            "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/parse-default.prep.stderr",
+            "sha256": "de928859375996bd393340fc095932c265bb1585d1fe8b9849870fcdf80361ff"
+          },
+          "stdout": {
+            "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/parse-default.prep.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      },
+      "raw": {
+        "export": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/parse-default.json",
+          "sha256": "a9551f3fa5397c17c5a70309d5bda39a6ca1fd44356efffe54e1dd01cf442929"
+        },
+        "stderr": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/parse-default.stderr",
+          "sha256": "e5ae7d7de9708ed94b3ea21bf63d4cd9ad595d0f31866b179736ba09453d38d7"
+        },
+        "stdout": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/parse-default.stdout",
+          "sha256": "22dc272534aff05dc1099b6d59013b89b36fa38a5ab948ff6c2a7703adaba559"
+        }
+      },
+      "reason": "critical_branch_target_open",
+      "repo": "parse",
+      "source_revision": "5ca6f76936c95232a3a8b86ce33f6f16c4aab606",
+      "status": "incomplete"
+    },
+    {
+      "argv": [
+        "cargo",
+        "llvm-cov",
+        "--branch",
+        "--json",
+        "--output-path",
+        "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/mltl-default.json",
+        "--lib",
+        "--tests",
+        "--locked",
+        "--offline"
+      ],
+      "coverage": {
+        "files": {
+          "src/bin/ci_guard.rs": {
+            "branches": {
+              "count": 24,
+              "covered": 15
+            },
+            "functions": {
+              "count": 7,
+              "covered": 7
+            },
+            "lines": {
+              "count": 104,
+              "covered": 78
+            },
+            "regions": {
+              "count": 120,
+              "covered": 81
+            },
+            "summary_missing_sides": 9,
+            "uncovered_branch_locations": [
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 70,
+                "true_count": 5
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 38,
+                "true_count": 19
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 97,
+                "true_count": 1
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 110,
+                "true_count": 6
+              },
+              {
+                "column": 12,
+                "false_count": 6,
+                "line": 119,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 2,
+                "line": 159,
+                "true_count": 0
+              },
+              {
+                "column": 15,
+                "false_count": 0,
+                "line": 59,
+                "true_count": 14
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 60,
+                "true_count": 14
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 61,
+                "true_count": 14
+              }
+            ]
+          },
+          "src/bin/tl_campaign_config.rs": {
+            "branches": {
+              "count": 124,
+              "covered": 20
+            },
+            "functions": {
+              "count": 64,
+              "covered": 13
+            },
+            "lines": {
+              "count": 611,
+              "covered": 209
+            },
+            "regions": {
+              "count": 789,
+              "covered": 285
+            },
+            "summary_missing_sides": 104,
+            "uncovered_branch_locations": [
+              {
+                "column": 21,
+                "false_count": 0,
+                "line": 364,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 159,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 370,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 375,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 378,
+                "true_count": 0
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 337,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 193,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 194,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 195,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 196,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 210,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 215,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 218,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 232,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 243,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 246,
+                "true_count": 0
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 249,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 252,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 255,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 275,
+                "true_count": 0
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 281,
+                "true_count": 0
+              },
+              {
+                "column": 50,
+                "false_count": 0,
+                "line": 281,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 288,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 293,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 303,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 304,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 305,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 311,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 326,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 167,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 170,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 182,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 652,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 653,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 654,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 655,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 687,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 571,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 579,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 580,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 592,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 600,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 643,
+                "true_count": 0
+              },
+              {
+                "column": 45,
+                "false_count": 4,
+                "line": 510,
+                "true_count": 0
+              },
+              {
+                "column": 82,
+                "false_count": 0,
+                "line": 510,
+                "true_count": 0
+              },
+              {
+                "column": 23,
+                "false_count": 0,
+                "line": 516,
+                "true_count": 4
+              },
+              {
+                "column": 23,
+                "false_count": 0,
+                "line": 540,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 541,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 431,
+                "true_count": 0
+              },
+              {
+                "column": 54,
+                "false_count": 1,
+                "line": 431,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 435,
+                "true_count": 0
+              },
+              {
+                "column": 31,
+                "false_count": 1,
+                "line": 435,
+                "true_count": 0
+              },
+              {
+                "column": 68,
+                "false_count": 1,
+                "line": 435,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 441,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 447,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 1,
+                "line": 448,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 1,
+                "line": 449,
+                "true_count": 0
+              },
+              {
+                "column": 26,
+                "false_count": 0,
+                "line": 467,
+                "true_count": 1
+              }
+            ]
+          },
+          "src/bin/tl_v10_generate.rs": {
+            "branches": {
+              "count": 18,
+              "covered": 7
+            },
+            "functions": {
+              "count": 21,
+              "covered": 11
+            },
+            "lines": {
+              "count": 152,
+              "covered": 126
+            },
+            "regions": {
+              "count": 208,
+              "covered": 168
+            },
+            "summary_missing_sides": 11,
+            "uncovered_branch_locations": [
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 174,
+                "true_count": 0
+              },
+              {
+                "column": 27,
+                "false_count": 0,
+                "line": 174,
+                "true_count": 0
+              },
+              {
+                "column": 56,
+                "false_count": 0,
+                "line": 174,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 181,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 120,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 165,
+                "true_count": 0
+              },
+              {
+                "column": 47,
+                "false_count": 1,
+                "line": 165,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/ci_guard.rs": {
+            "branches": {
+              "count": 114,
+              "covered": 99
+            },
+            "functions": {
+              "count": 107,
+              "covered": 106
+            },
+            "lines": {
+              "count": 736,
+              "covered": 718
+            },
+            "regions": {
+              "count": 838,
+              "covered": 819
+            },
+            "summary_missing_sides": 15,
+            "uncovered_branch_locations": [
+              {
+                "column": 48,
+                "false_count": 17,
+                "line": 501,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 21,
+                "line": 541,
+                "true_count": 0
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 544,
+                "true_count": 21
+              },
+              {
+                "column": 40,
+                "false_count": 79,
+                "line": 222,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 80,
+                "line": 228,
+                "true_count": 0
+              },
+              {
+                "column": 29,
+                "false_count": 9,
+                "line": 448,
+                "true_count": 0
+              },
+              {
+                "column": 29,
+                "false_count": 8,
+                "line": 451,
+                "true_count": 0
+              },
+              {
+                "column": 59,
+                "false_count": 6,
+                "line": 454,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 466,
+                "true_count": 5
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 467,
+                "true_count": 5
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 468,
+                "true_count": 5
+              },
+              {
+                "column": 41,
+                "false_count": 1,
+                "line": 469,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 1,
+                "line": 420,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 51,
+                "line": 159,
+                "true_count": 0
+              },
+              {
+                "column": 22,
+                "false_count": 0,
+                "line": 1017,
+                "true_count": 1
+              }
+            ]
+          },
+          "src/context.rs": {
+            "branches": {
+              "count": 2,
+              "covered": 1
+            },
+            "functions": {
+              "count": 25,
+              "covered": 20
+            },
+            "lines": {
+              "count": 200,
+              "covered": 179
+            },
+            "regions": {
+              "count": 177,
+              "covered": 151
+            },
+            "summary_missing_sides": 1,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 183,
+                "true_count": 58
+              }
+            ]
+          },
+          "src/differential.rs": {
+            "branches": {
+              "count": 30,
+              "covered": 23
+            },
+            "functions": {
+              "count": 13,
+              "covered": 11
+            },
+            "lines": {
+              "count": 201,
+              "covered": 187
+            },
+            "regions": {
+              "count": 181,
+              "covered": 169
+            },
+            "summary_missing_sides": 7,
+            "uncovered_branch_locations": [
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 261,
+                "true_count": 20
+              },
+              {
+                "column": 31,
+                "false_count": 20,
+                "line": 267,
+                "true_count": 0
+              },
+              {
+                "column": 64,
+                "false_count": 19,
+                "line": 272,
+                "true_count": 0
+              },
+              {
+                "column": 28,
+                "false_count": 0,
+                "line": 307,
+                "true_count": 9
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 308,
+                "true_count": 9
+              },
+              {
+                "column": 64,
+                "false_count": 7,
+                "line": 321,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 327,
+                "true_count": 6
+              }
+            ]
+          },
+          "src/future/evaluate.rs": {
+            "branches": {
+              "count": 40,
+              "covered": 40
+            },
+            "functions": {
+              "count": 46,
+              "covered": 39
+            },
+            "lines": {
+              "count": 700,
+              "covered": 652
+            },
+            "regions": {
+              "count": 615,
+              "covered": 545
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/future/horizon.rs": {
+            "branches": {
+              "count": 4,
+              "covered": 2
+            },
+            "functions": {
+              "count": 13,
+              "covered": 8
+            },
+            "lines": {
+              "count": 178,
+              "covered": 146
+            },
+            "regions": {
+              "count": 173,
+              "covered": 127
+            },
+            "summary_missing_sides": 2,
+            "uncovered_branch_locations": []
+          },
+          "src/lib.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 1,
+              "covered": 1
+            },
+            "lines": {
+              "count": 9,
+              "covered": 9
+            },
+            "regions": {
+              "count": 5,
+              "covered": 5
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/main.rs": {
+            "branches": {
+              "count": 10,
+              "covered": 6
+            },
+            "functions": {
+              "count": 19,
+              "covered": 7
+            },
+            "lines": {
+              "count": 140,
+              "covered": 83
+            },
+            "regions": {
+              "count": 138,
+              "covered": 81
+            },
+            "summary_missing_sides": 4,
+            "uncovered_branch_locations": [
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 31,
+                "true_count": 4
+              },
+              {
+                "column": 8,
+                "false_count": 4,
+                "line": 44,
+                "true_count": 0
+              },
+              {
+                "column": 24,
+                "false_count": 0,
+                "line": 65,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/mapping/legacy.rs": {
+            "branches": {
+              "count": 26,
+              "covered": 21
+            },
+            "functions": {
+              "count": 30,
+              "covered": 26
+            },
+            "lines": {
+              "count": 461,
+              "covered": 422
+            },
+            "regions": {
+              "count": 391,
+              "covered": 328
+            },
+            "summary_missing_sides": 5,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 855,
+                "line": 264,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 380,
+                "true_count": 125
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 671,
+                "true_count": 1
+              }
+            ]
+          },
+          "src/mapping/past.rs": {
+            "branches": {
+              "count": 60,
+              "covered": 60
+            },
+            "functions": {
+              "count": 21,
+              "covered": 15
+            },
+            "lines": {
+              "count": 277,
+              "covered": 246
+            },
+            "regions": {
+              "count": 278,
+              "covered": 220
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/past/history.rs": {
+            "branches": {
+              "count": 6,
+              "covered": 6
+            },
+            "functions": {
+              "count": 10,
+              "covered": 6
+            },
+            "lines": {
+              "count": 72,
+              "covered": 56
+            },
+            "regions": {
+              "count": 65,
+              "covered": 49
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/past/mod.rs": {
+            "branches": {
+              "count": 210,
+              "covered": 210
+            },
+            "functions": {
+              "count": 90,
+              "covered": 77
+            },
+            "lines": {
+              "count": 1274,
+              "covered": 1162
+            },
+            "regions": {
+              "count": 1132,
+              "covered": 920
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/past/requirement.rs": {
+            "branches": {
+              "count": 2,
+              "covered": 2
+            },
+            "functions": {
+              "count": 8,
+              "covered": 3
+            },
+            "lines": {
+              "count": 56,
+              "covered": 39
+            },
+            "regions": {
+              "count": 44,
+              "covered": 26
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/past/result.rs": {
+            "branches": {
+              "count": 8,
+              "covered": 8
+            },
+            "functions": {
+              "count": 7,
+              "covered": 3
+            },
+            "lines": {
+              "count": 62,
+              "covered": 45
+            },
+            "regions": {
+              "count": 48,
+              "covered": 32
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/wire/command.rs": {
+            "branches": {
+              "count": 8,
+              "covered": 8
+            },
+            "functions": {
+              "count": 9,
+              "covered": 8
+            },
+            "lines": {
+              "count": 96,
+              "covered": 83
+            },
+            "regions": {
+              "count": 79,
+              "covered": 70
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/wire/common.rs": {
+            "branches": {
+              "count": 62,
+              "covered": 62
+            },
+            "functions": {
+              "count": 34,
+              "covered": 27
+            },
+            "lines": {
+              "count": 329,
+              "covered": 293
+            },
+            "regions": {
+              "count": 337,
+              "covered": 282
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/wire/trace.rs": {
+            "branches": {
+              "count": 12,
+              "covered": 12
+            },
+            "functions": {
+              "count": 12,
+              "covered": 10
+            },
+            "lines": {
+              "count": 104,
+              "covered": 93
+            },
+            "regions": {
+              "count": 91,
+              "covered": 81
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          }
+        },
+        "totals": {
+          "branches": {
+            "count": 760,
+            "covered": 602
+          },
+          "lines": {
+            "count": 5762,
+            "covered": 4826
+          }
+        }
+      },
+      "critical_branch_census": {
+        "count": 392,
+        "covered": 392,
+        "files": {
+          "src/future/evaluate.rs": {
+            "count": 40,
+            "covered": 40
+          },
+          "src/mapping/past.rs": {
+            "count": 60,
+            "covered": 60
+          },
+          "src/past/mod.rs": {
+            "count": 210,
+            "covered": 210
+          },
+          "src/wire/command.rs": {
+            "count": 8,
+            "covered": 8
+          },
+          "src/wire/common.rs": {
+            "count": 62,
+            "covered": 62
+          },
+          "src/wire/trace.rs": {
+            "count": 12,
+            "covered": 12
+          }
+        },
+        "missing_files": []
+      },
+      "critical_uncovered": [],
+      "exit_code": 0,
+      "feature": "default",
+      "id": "mltl-default",
+      "raw": {
+        "export": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/mltl-default.json",
+          "sha256": "0fd2d4b3d70aa3c3194f4467d6577e26d79387e9a542809ac5e20023da3f4384"
+        },
+        "stderr": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/mltl-default.stderr",
+          "sha256": "858b44fe3923aecd43fefe0ef01f4b6d516d1020b06870495ca4d6cd5abf80c6"
+        },
+        "stdout": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/mltl-default.stdout",
+          "sha256": "945432135ff6b7211c76f77f3829f972fd0f70361687c1b20374310d337779bc"
+        }
+      },
+      "repo": "mltl",
+      "source_revision": "29cea002008f4a6855f54b73ecd63c234499fa3c",
+      "status": "passed"
+    },
+    {
+      "argv": [
+        "cargo",
+        "llvm-cov",
+        "--branch",
+        "--json",
+        "--output-path",
+        "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/mltl-infinite.json",
+        "--lib",
+        "--tests",
+        "--features",
+        "infinite-trace",
+        "--locked",
+        "--offline"
+      ],
+      "coverage": {
+        "files": {
+          "src/bin/ci_guard.rs": {
+            "branches": {
+              "count": 24,
+              "covered": 15
+            },
+            "functions": {
+              "count": 7,
+              "covered": 7
+            },
+            "lines": {
+              "count": 104,
+              "covered": 78
+            },
+            "regions": {
+              "count": 120,
+              "covered": 81
+            },
+            "summary_missing_sides": 9,
+            "uncovered_branch_locations": [
+              {
+                "column": 15,
+                "false_count": 0,
+                "line": 59,
+                "true_count": 14
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 60,
+                "true_count": 14
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 61,
+                "true_count": 14
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 70,
+                "true_count": 5
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 38,
+                "true_count": 19
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 97,
+                "true_count": 1
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 110,
+                "true_count": 6
+              },
+              {
+                "column": 12,
+                "false_count": 6,
+                "line": 119,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 2,
+                "line": 159,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/bin/tl_campaign_config.rs": {
+            "branches": {
+              "count": 124,
+              "covered": 20
+            },
+            "functions": {
+              "count": 64,
+              "covered": 13
+            },
+            "lines": {
+              "count": 611,
+              "covered": 209
+            },
+            "regions": {
+              "count": 789,
+              "covered": 285
+            },
+            "summary_missing_sides": 104,
+            "uncovered_branch_locations": [
+              {
+                "column": 45,
+                "false_count": 4,
+                "line": 510,
+                "true_count": 0
+              },
+              {
+                "column": 82,
+                "false_count": 0,
+                "line": 510,
+                "true_count": 0
+              },
+              {
+                "column": 23,
+                "false_count": 0,
+                "line": 516,
+                "true_count": 4
+              },
+              {
+                "column": 23,
+                "false_count": 0,
+                "line": 540,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 541,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 431,
+                "true_count": 0
+              },
+              {
+                "column": 54,
+                "false_count": 1,
+                "line": 431,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 435,
+                "true_count": 0
+              },
+              {
+                "column": 31,
+                "false_count": 1,
+                "line": 435,
+                "true_count": 0
+              },
+              {
+                "column": 68,
+                "false_count": 1,
+                "line": 435,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 441,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 447,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 1,
+                "line": 448,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 1,
+                "line": 449,
+                "true_count": 0
+              },
+              {
+                "column": 26,
+                "false_count": 0,
+                "line": 467,
+                "true_count": 1
+              },
+              {
+                "column": 21,
+                "false_count": 0,
+                "line": 364,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 159,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 370,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 375,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 378,
+                "true_count": 0
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 337,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 193,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 194,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 195,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 196,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 210,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 215,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 218,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 232,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 243,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 246,
+                "true_count": 0
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 249,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 252,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 255,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 275,
+                "true_count": 0
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 281,
+                "true_count": 0
+              },
+              {
+                "column": 50,
+                "false_count": 0,
+                "line": 281,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 288,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 293,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 303,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 304,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 305,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 311,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 326,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 167,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 170,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 182,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 652,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 653,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 654,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 655,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 687,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 571,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 579,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 580,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 592,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 600,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 643,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/bin/tl_v10_generate.rs": {
+            "branches": {
+              "count": 18,
+              "covered": 7
+            },
+            "functions": {
+              "count": 21,
+              "covered": 11
+            },
+            "lines": {
+              "count": 152,
+              "covered": 126
+            },
+            "regions": {
+              "count": 208,
+              "covered": 168
+            },
+            "summary_missing_sides": 11,
+            "uncovered_branch_locations": [
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 174,
+                "true_count": 0
+              },
+              {
+                "column": 27,
+                "false_count": 0,
+                "line": 174,
+                "true_count": 0
+              },
+              {
+                "column": 56,
+                "false_count": 0,
+                "line": 174,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 181,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 120,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 165,
+                "true_count": 0
+              },
+              {
+                "column": 47,
+                "false_count": 1,
+                "line": 165,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/ci_guard.rs": {
+            "branches": {
+              "count": 114,
+              "covered": 99
+            },
+            "functions": {
+              "count": 107,
+              "covered": 106
+            },
+            "lines": {
+              "count": 736,
+              "covered": 718
+            },
+            "regions": {
+              "count": 838,
+              "covered": 819
+            },
+            "summary_missing_sides": 15,
+            "uncovered_branch_locations": [
+              {
+                "column": 48,
+                "false_count": 17,
+                "line": 501,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 21,
+                "line": 541,
+                "true_count": 0
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 544,
+                "true_count": 21
+              },
+              {
+                "column": 40,
+                "false_count": 79,
+                "line": 222,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 80,
+                "line": 228,
+                "true_count": 0
+              },
+              {
+                "column": 29,
+                "false_count": 9,
+                "line": 448,
+                "true_count": 0
+              },
+              {
+                "column": 29,
+                "false_count": 8,
+                "line": 451,
+                "true_count": 0
+              },
+              {
+                "column": 59,
+                "false_count": 6,
+                "line": 454,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 466,
+                "true_count": 5
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 467,
+                "true_count": 5
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 468,
+                "true_count": 5
+              },
+              {
+                "column": 41,
+                "false_count": 1,
+                "line": 469,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 1,
+                "line": 420,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 51,
+                "line": 159,
+                "true_count": 0
+              },
+              {
+                "column": 22,
+                "false_count": 0,
+                "line": 1017,
+                "true_count": 1
+              }
+            ]
+          },
+          "src/context.rs": {
+            "branches": {
+              "count": 2,
+              "covered": 1
+            },
+            "functions": {
+              "count": 25,
+              "covered": 20
+            },
+            "lines": {
+              "count": 200,
+              "covered": 179
+            },
+            "regions": {
+              "count": 177,
+              "covered": 151
+            },
+            "summary_missing_sides": 1,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 183,
+                "true_count": 58
+              }
+            ]
+          },
+          "src/differential.rs": {
+            "branches": {
+              "count": 30,
+              "covered": 23
+            },
+            "functions": {
+              "count": 13,
+              "covered": 11
+            },
+            "lines": {
+              "count": 201,
+              "covered": 187
+            },
+            "regions": {
+              "count": 181,
+              "covered": 169
+            },
+            "summary_missing_sides": 7,
+            "uncovered_branch_locations": [
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 261,
+                "true_count": 20
+              },
+              {
+                "column": 31,
+                "false_count": 20,
+                "line": 267,
+                "true_count": 0
+              },
+              {
+                "column": 64,
+                "false_count": 19,
+                "line": 272,
+                "true_count": 0
+              },
+              {
+                "column": 28,
+                "false_count": 0,
+                "line": 307,
+                "true_count": 9
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 308,
+                "true_count": 9
+              },
+              {
+                "column": 64,
+                "false_count": 7,
+                "line": 321,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 327,
+                "true_count": 6
+              }
+            ]
+          },
+          "src/future/evaluate.rs": {
+            "branches": {
+              "count": 40,
+              "covered": 40
+            },
+            "functions": {
+              "count": 46,
+              "covered": 39
+            },
+            "lines": {
+              "count": 700,
+              "covered": 652
+            },
+            "regions": {
+              "count": 615,
+              "covered": 545
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/future/horizon.rs": {
+            "branches": {
+              "count": 4,
+              "covered": 2
+            },
+            "functions": {
+              "count": 13,
+              "covered": 8
+            },
+            "lines": {
+              "count": 178,
+              "covered": 146
+            },
+            "regions": {
+              "count": 173,
+              "covered": 127
+            },
+            "summary_missing_sides": 2,
+            "uncovered_branch_locations": []
+          },
+          "src/infinite/export.rs": {
+            "branches": {
+              "count": 74,
+              "covered": 67
+            },
+            "functions": {
+              "count": 12,
+              "covered": 8
+            },
+            "lines": {
+              "count": 259,
+              "covered": 214
+            },
+            "regions": {
+              "count": 269,
+              "covered": 196
+            },
+            "summary_missing_sides": 7,
+            "uncovered_branch_locations": [
+              {
+                "column": 21,
+                "false_count": 0,
+                "line": 288,
+                "true_count": 2
+              },
+              {
+                "column": 21,
+                "false_count": 0,
+                "line": 314,
+                "true_count": 2
+              },
+              {
+                "column": 21,
+                "false_count": 0,
+                "line": 337,
+                "true_count": 5
+              },
+              {
+                "column": 21,
+                "false_count": 0,
+                "line": 370,
+                "true_count": 2
+              }
+            ]
+          },
+          "src/infinite/mod.rs": {
+            "branches": {
+              "count": 142,
+              "covered": 103
+            },
+            "functions": {
+              "count": 43,
+              "covered": 41
+            },
+            "lines": {
+              "count": 750,
+              "covered": 681
+            },
+            "regions": {
+              "count": 661,
+              "covered": 577
+            },
+            "summary_missing_sides": 39,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 203119,
+                "line": 356,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 203119,
+                "line": 357,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 203119,
+                "line": 358,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 203119,
+                "line": 362,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 203119,
+                "line": 365,
+                "true_count": 0
+              },
+              {
+                "column": 44,
+                "false_count": 203119,
+                "line": 365,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 203119,
+                "line": 368,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 203119,
+                "line": 371,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 391249,
+                "line": 380,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 203119,
+                "line": 384,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 203119,
+                "line": 387,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 132,
+                "line": 835,
+                "true_count": 0
+              },
+              {
+                "column": 41,
+                "false_count": 132,
+                "line": 835,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 131,
+                "line": 840,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 132,
+                "line": 853,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 132,
+                "line": 854,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 132,
+                "line": 855,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 90005,
+                "line": 669,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 203128,
+                "line": 674,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 203128,
+                "line": 675,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 1,
+                "line": 785,
+                "true_count": 0
+              },
+              {
+                "column": 35,
+                "false_count": 1,
+                "line": 785,
+                "true_count": 0
+              },
+              {
+                "column": 58,
+                "false_count": 1,
+                "line": 785,
+                "true_count": 0
+              },
+              {
+                "column": 15,
+                "false_count": 0,
+                "line": 592,
+                "true_count": 4086
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 883,
+                "true_count": 97
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 886,
+                "true_count": 97
+              },
+              {
+                "column": 8,
+                "false_count": 97,
+                "line": 893,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 81,
+                "line": 979,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 80,
+                "line": 996,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 82,
+                "line": 1003,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 82,
+                "line": 1005,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 82,
+                "line": 1006,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 82,
+                "line": 1018,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 80,
+                "line": 1032,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 1175,
+                "true_count": 1
+              },
+              {
+                "column": 50,
+                "false_count": 0,
+                "line": 1175,
+                "true_count": 1
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 1180,
+                "true_count": 2
+              },
+              {
+                "column": 120,
+                "false_count": 389912,
+                "line": 384,
+                "true_count": 0
+              },
+              {
+                "column": 119,
+                "false_count": 80,
+                "line": 1032,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/infinite/periodic.rs": {
+            "branches": {
+              "count": 36,
+              "covered": 36
+            },
+            "functions": {
+              "count": 33,
+              "covered": 33
+            },
+            "lines": {
+              "count": 291,
+              "covered": 289
+            },
+            "regions": {
+              "count": 367,
+              "covered": 317
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/lib.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 1,
+              "covered": 1
+            },
+            "lines": {
+              "count": 9,
+              "covered": 9
+            },
+            "regions": {
+              "count": 5,
+              "covered": 5
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/main.rs": {
+            "branches": {
+              "count": 10,
+              "covered": 6
+            },
+            "functions": {
+              "count": 19,
+              "covered": 7
+            },
+            "lines": {
+              "count": 140,
+              "covered": 83
+            },
+            "regions": {
+              "count": 138,
+              "covered": 81
+            },
+            "summary_missing_sides": 4,
+            "uncovered_branch_locations": [
+              {
+                "column": 8,
+                "false_count": 0,
+                "line": 31,
+                "true_count": 4
+              },
+              {
+                "column": 8,
+                "false_count": 4,
+                "line": 44,
+                "true_count": 0
+              },
+              {
+                "column": 24,
+                "false_count": 0,
+                "line": 65,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/mapping/legacy.rs": {
+            "branches": {
+              "count": 26,
+              "covered": 21
+            },
+            "functions": {
+              "count": 30,
+              "covered": 26
+            },
+            "lines": {
+              "count": 461,
+              "covered": 422
+            },
+            "regions": {
+              "count": 391,
+              "covered": 328
+            },
+            "summary_missing_sides": 5,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 855,
+                "line": 264,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 380,
+                "true_count": 141
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 671,
+                "true_count": 1
+              }
+            ]
+          },
+          "src/mapping/past.rs": {
+            "branches": {
+              "count": 60,
+              "covered": 60
+            },
+            "functions": {
+              "count": 21,
+              "covered": 15
+            },
+            "lines": {
+              "count": 277,
+              "covered": 246
+            },
+            "regions": {
+              "count": 278,
+              "covered": 220
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/past/history.rs": {
+            "branches": {
+              "count": 6,
+              "covered": 6
+            },
+            "functions": {
+              "count": 10,
+              "covered": 6
+            },
+            "lines": {
+              "count": 72,
+              "covered": 56
+            },
+            "regions": {
+              "count": 65,
+              "covered": 49
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/past/mod.rs": {
+            "branches": {
+              "count": 210,
+              "covered": 210
+            },
+            "functions": {
+              "count": 90,
+              "covered": 77
+            },
+            "lines": {
+              "count": 1274,
+              "covered": 1162
+            },
+            "regions": {
+              "count": 1132,
+              "covered": 920
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/past/requirement.rs": {
+            "branches": {
+              "count": 2,
+              "covered": 2
+            },
+            "functions": {
+              "count": 8,
+              "covered": 3
+            },
+            "lines": {
+              "count": 56,
+              "covered": 39
+            },
+            "regions": {
+              "count": 44,
+              "covered": 26
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/past/result.rs": {
+            "branches": {
+              "count": 8,
+              "covered": 8
+            },
+            "functions": {
+              "count": 7,
+              "covered": 3
+            },
+            "lines": {
+              "count": 62,
+              "covered": 45
+            },
+            "regions": {
+              "count": 48,
+              "covered": 32
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/wire/command.rs": {
+            "branches": {
+              "count": 8,
+              "covered": 8
+            },
+            "functions": {
+              "count": 9,
+              "covered": 8
+            },
+            "lines": {
+              "count": 96,
+              "covered": 83
+            },
+            "regions": {
+              "count": 79,
+              "covered": 70
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/wire/common.rs": {
+            "branches": {
+              "count": 62,
+              "covered": 62
+            },
+            "functions": {
+              "count": 34,
+              "covered": 27
+            },
+            "lines": {
+              "count": 329,
+              "covered": 293
+            },
+            "regions": {
+              "count": 337,
+              "covered": 282
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/wire/trace.rs": {
+            "branches": {
+              "count": 12,
+              "covered": 12
+            },
+            "functions": {
+              "count": 12,
+              "covered": 10
+            },
+            "lines": {
+              "count": 104,
+              "covered": 93
+            },
+            "regions": {
+              "count": 91,
+              "covered": 81
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          }
+        },
+        "totals": {
+          "branches": {
+            "count": 1012,
+            "covered": 808
+          },
+          "lines": {
+            "count": 7062,
+            "covered": 6010
+          }
+        }
+      },
+      "critical_branch_census": {
+        "count": 502,
+        "covered": 495,
+        "files": {
+          "src/future/evaluate.rs": {
+            "count": 40,
+            "covered": 40
+          },
+          "src/infinite/export.rs": {
+            "count": 74,
+            "covered": 67
+          },
+          "src/infinite/periodic.rs": {
+            "count": 36,
+            "covered": 36
+          },
+          "src/mapping/past.rs": {
+            "count": 60,
+            "covered": 60
+          },
+          "src/past/mod.rs": {
+            "count": 210,
+            "covered": 210
+          },
+          "src/wire/command.rs": {
+            "count": 8,
+            "covered": 8
+          },
+          "src/wire/common.rs": {
+            "count": 62,
+            "covered": 62
+          },
+          "src/wire/trace.rs": {
+            "count": 12,
+            "covered": 12
+          }
+        },
+        "missing_files": []
+      },
+      "critical_uncovered": [
+        {
+          "column": 21,
+          "false_count": 0,
+          "file": "src/infinite/export.rs",
+          "line": 288,
+          "true_count": 2
+        },
+        {
+          "column": 21,
+          "false_count": 0,
+          "file": "src/infinite/export.rs",
+          "line": 314,
+          "true_count": 2
+        },
+        {
+          "column": 21,
+          "false_count": 0,
+          "file": "src/infinite/export.rs",
+          "line": 337,
+          "true_count": 5
+        },
+        {
+          "column": 21,
+          "false_count": 0,
+          "file": "src/infinite/export.rs",
+          "line": 370,
+          "true_count": 2
+        }
+      ],
+      "exit_code": 0,
+      "feature": "infinite",
+      "id": "mltl-infinite",
+      "raw": {
+        "export": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/mltl-infinite.json",
+          "sha256": "5f824904e865be0c10b49928fa62fac29bcd4b49284aea21a593ae20ae08fc87"
+        },
+        "stderr": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/mltl-infinite.stderr",
+          "sha256": "fff8c20b85ab759ea74d82d70ea94497546739b1d928f95d242e54f444522ff3"
+        },
+        "stdout": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/mltl-infinite.stdout",
+          "sha256": "37c9dd9f31757ff642eb9a6ab70413e62bbd52d8c9f934a16f36421d8ba43bc4"
+        }
+      },
+      "reason": "critical_branch_target_open",
+      "repo": "mltl",
+      "source_revision": "29cea002008f4a6855f54b73ecd63c234499fa3c",
+      "status": "incomplete"
+    },
+    {
+      "argv": [
+        "cargo",
+        "llvm-cov",
+        "--branch",
+        "--json",
+        "--output-path",
+        "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/rewrite-default.json",
+        "--lib",
+        "--tests",
+        "--locked",
+        "--offline"
+      ],
+      "coverage": {
+        "files": {
+          "src/bin/ci_guard.rs": {
+            "branches": {
+              "count": 28,
+              "covered": 17
+            },
+            "functions": {
+              "count": 7,
+              "covered": 7
+            },
+            "lines": {
+              "count": 121,
+              "covered": 90
+            },
+            "regions": {
+              "count": 141,
+              "covered": 98
+            },
+            "summary_missing_sides": 11,
+            "uncovered_branch_locations": [
+              {
+                "column": 15,
+                "false_count": 0,
+                "line": 64,
+                "true_count": 10
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 65,
+                "true_count": 10
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 66,
+                "true_count": 10
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 75,
+                "true_count": 9
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 43,
+                "true_count": 19
+              },
+              {
+                "column": 12,
+                "false_count": 7,
+                "line": 124,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 125,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 138,
+                "true_count": 7
+              },
+              {
+                "column": 12,
+                "false_count": 7,
+                "line": 147,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 7,
+                "line": 163,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/catalog.rs": {
+            "branches": {
+              "count": 4,
+              "covered": 4
+            },
+            "functions": {
+              "count": 18,
+              "covered": 18
+            },
+            "lines": {
+              "count": 342,
+              "covered": 342
+            },
+            "regions": {
+              "count": 347,
+              "covered": 347
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/ci_guard.rs": {
+            "branches": {
+              "count": 118,
+              "covered": 100
+            },
+            "functions": {
+              "count": 110,
+              "covered": 108
+            },
+            "lines": {
+              "count": 833,
+              "covered": 808
+            },
+            "regions": {
+              "count": 936,
+              "covered": 905
+            },
+            "summary_missing_sides": 18,
+            "uncovered_branch_locations": [
+              {
+                "column": 48,
+                "false_count": 32,
+                "line": 517,
+                "true_count": 0
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 560,
+                "true_count": 29
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 636,
+                "true_count": 24
+              },
+              {
+                "column": 40,
+                "false_count": 67,
+                "line": 303,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 68,
+                "line": 309,
+                "true_count": 0
+              },
+              {
+                "column": 29,
+                "false_count": 7,
+                "line": 476,
+                "true_count": 0
+              },
+              {
+                "column": 29,
+                "false_count": 6,
+                "line": 479,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 483,
+                "true_count": 3
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 484,
+                "true_count": 3
+              },
+              {
+                "column": 40,
+                "false_count": 1,
+                "line": 485,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 187,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 1,
+                "line": 452,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 55,
+                "line": 233,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 240,
+                "true_count": 15
+              },
+              {
+                "column": 22,
+                "false_count": 0,
+                "line": 1028,
+                "true_count": 1
+              },
+              {
+                "column": 22,
+                "false_count": 0,
+                "line": 1142,
+                "true_count": 1
+              }
+            ]
+          },
+          "src/disposition.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 4,
+              "covered": 4
+            },
+            "lines": {
+              "count": 33,
+              "covered": 30
+            },
+            "regions": {
+              "count": 30,
+              "covered": 27
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/engine/boolean.rs": {
+            "branches": {
+              "count": 40,
+              "covered": 39
+            },
+            "functions": {
+              "count": 2,
+              "covered": 2
+            },
+            "lines": {
+              "count": 79,
+              "covered": 79
+            },
+            "regions": {
+              "count": 127,
+              "covered": 125
+            },
+            "summary_missing_sides": 1,
+            "uncovered_branch_locations": [
+              {
+                "column": 49,
+                "false_count": 0,
+                "line": 97,
+                "true_count": 3
+              }
+            ]
+          },
+          "src/engine/future.rs": {
+            "branches": {
+              "count": 30,
+              "covered": 30
+            },
+            "functions": {
+              "count": 2,
+              "covered": 2
+            },
+            "lines": {
+              "count": 90,
+              "covered": 90
+            },
+            "regions": {
+              "count": 107,
+              "covered": 96
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/engine/mod.rs": {
+            "branches": {
+              "count": 60,
+              "covered": 50
+            },
+            "functions": {
+              "count": 44,
+              "covered": 36
+            },
+            "lines": {
+              "count": 677,
+              "covered": 610
+            },
+            "regions": {
+              "count": 659,
+              "covered": 553
+            },
+            "summary_missing_sides": 10,
+            "uncovered_branch_locations": [
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 771,
+                "true_count": 1006
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 775,
+                "true_count": 1006
+              },
+              {
+                "column": 12,
+                "false_count": 3209,
+                "line": 710,
+                "true_count": 0
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 343,
+                "true_count": 2872
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 387,
+                "true_count": 17526
+              },
+              {
+                "column": 8,
+                "false_count": 3597,
+                "line": 436,
+                "true_count": 0
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 146,
+                "true_count": 35501
+              },
+              {
+                "column": 12,
+                "false_count": 35501,
+                "line": 149,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 679,
+                "true_count": 3588
+              }
+            ]
+          },
+          "src/engine/past.rs": {
+            "branches": {
+              "count": 6,
+              "covered": 6
+            },
+            "functions": {
+              "count": 2,
+              "covered": 2
+            },
+            "lines": {
+              "count": 35,
+              "covered": 35
+            },
+            "regions": {
+              "count": 29,
+              "covered": 28
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/equivalence.rs": {
+            "branches": {
+              "count": 52,
+              "covered": 35
+            },
+            "functions": {
+              "count": 21,
+              "covered": 20
+            },
+            "lines": {
+              "count": 367,
+              "covered": 341
+            },
+            "regions": {
+              "count": 360,
+              "covered": 315
+            },
+            "summary_missing_sides": 17,
+            "uncovered_branch_locations": [
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 453,
+                "true_count": 748
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 456,
+                "true_count": 748
+              },
+              {
+                "column": 8,
+                "false_count": 748,
+                "line": 459,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 745,
+                "line": 485,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 488,
+                "true_count": 745
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 495,
+                "true_count": 744
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 498,
+                "true_count": 744
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 501,
+                "true_count": 744
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 511,
+                "true_count": 743
+              },
+              {
+                "column": 38,
+                "false_count": 3,
+                "line": 320,
+                "true_count": 0
+              },
+              {
+                "column": 5,
+                "false_count": 0,
+                "line": 558,
+                "true_count": 30
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 704,
+                "true_count": 12
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 707,
+                "true_count": 12
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 720,
+                "true_count": 9
+              },
+              {
+                "column": 8,
+                "false_count": 30,
+                "line": 636,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 30,
+                "line": 637,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/hash.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 3,
+              "covered": 3
+            },
+            "lines": {
+              "count": 9,
+              "covered": 9
+            },
+            "regions": {
+              "count": 9,
+              "covered": 9
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/infinite.rs": {
+            "branches": {
+              "count": 136,
+              "covered": 129
+            },
+            "functions": {
+              "count": 30,
+              "covered": 28
+            },
+            "lines": {
+              "count": 554,
+              "covered": 521
+            },
+            "regions": {
+              "count": 633,
+              "covered": 526
+            },
+            "summary_missing_sides": 7,
+            "uncovered_branch_locations": [
+              {
+                "column": 20,
+                "false_count": 13,
+                "line": 627,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 416,
+                "line": 623,
+                "true_count": 0
+              },
+              {
+                "column": 17,
+                "false_count": 0,
+                "line": 663,
+                "true_count": 4509
+              },
+              {
+                "column": 21,
+                "false_count": 0,
+                "line": 685,
+                "true_count": 502
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 723,
+                "true_count": 813
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 727,
+                "true_count": 813
+              },
+              {
+                "column": 12,
+                "false_count": 405,
+                "line": 806,
+                "true_count": 0
+              }
+            ]
+          },
+          "src/replay.rs": {
+            "branches": {
+              "count": 6,
+              "covered": 6
+            },
+            "functions": {
+              "count": 7,
+              "covered": 6
+            },
+            "lines": {
+              "count": 80,
+              "covered": 78
+            },
+            "regions": {
+              "count": 70,
+              "covered": 65
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/report.rs": {
+            "branches": {
+              "count": 22,
+              "covered": 22
+            },
+            "functions": {
+              "count": 31,
+              "covered": 24
+            },
+            "lines": {
+              "count": 256,
+              "covered": 236
+            },
+            "regions": {
+              "count": 244,
+              "covered": 219
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          }
+        },
+        "totals": {
+          "branches": {
+            "count": 502,
+            "covered": 438
+          },
+          "lines": {
+            "count": 3476,
+            "covered": 3269
+          }
+        }
+      },
+      "critical_branch_census": {
+        "count": 200,
+        "covered": 193,
+        "files": {
+          "src/disposition.rs": {
+            "count": 0,
+            "covered": 0
+          },
+          "src/engine/future.rs": {
+            "count": 30,
+            "covered": 30
+          },
+          "src/engine/past.rs": {
+            "count": 6,
+            "covered": 6
+          },
+          "src/infinite.rs": {
+            "count": 136,
+            "covered": 129
+          },
+          "src/replay.rs": {
+            "count": 6,
+            "covered": 6
+          },
+          "src/report.rs": {
+            "count": 22,
+            "covered": 22
+          }
+        },
+        "missing_files": []
+      },
+      "critical_uncovered": [
+        {
+          "column": 20,
+          "false_count": 13,
+          "file": "src/infinite.rs",
+          "line": 627,
+          "true_count": 0
+        },
+        {
+          "column": 8,
+          "false_count": 416,
+          "file": "src/infinite.rs",
+          "line": 623,
+          "true_count": 0
+        },
+        {
+          "column": 17,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 663,
+          "true_count": 4509
+        },
+        {
+          "column": 21,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 685,
+          "true_count": 502
+        },
+        {
+          "column": 13,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 723,
+          "true_count": 813
+        },
+        {
+          "column": 13,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 727,
+          "true_count": 813
+        },
+        {
+          "column": 12,
+          "false_count": 405,
+          "file": "src/infinite.rs",
+          "line": 806,
+          "true_count": 0
+        }
+      ],
+      "exit_code": 0,
+      "feature": "default",
+      "id": "rewrite-default",
+      "raw": {
+        "export": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/rewrite-default.json",
+          "sha256": "612041166f48fd3ec72df32af911b986dd74eef5dcd74436a374dc56593c0308"
+        },
+        "stderr": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/rewrite-default.stderr",
+          "sha256": "3f12c857033ec1dbf439496b6528141dcfbc81a58a1fdf152a7ac3b15bd40651"
+        },
+        "stdout": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/rewrite-default.stdout",
+          "sha256": "f1019bf077d0920d20165b16b46d25d8d740af0923f6f49576faad353e6d0565"
+        }
+      },
+      "reason": "critical_branch_target_open",
+      "repo": "rewrite",
+      "source_revision": "8bf12ec736c2c4016f5fef8fe52d50c9b2f1a422",
+      "status": "incomplete"
+    },
+    {
+      "argv": [
+        "cargo",
+        "llvm-cov",
+        "--branch",
+        "--json",
+        "--output-path",
+        "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/rewrite-infinite.json",
+        "--lib",
+        "--tests",
+        "--features",
+        "infinite-trace",
+        "--locked",
+        "--offline"
+      ],
+      "coverage": {
+        "files": {
+          "src/bin/ci_guard.rs": {
+            "branches": {
+              "count": 28,
+              "covered": 17
+            },
+            "functions": {
+              "count": 7,
+              "covered": 7
+            },
+            "lines": {
+              "count": 121,
+              "covered": 90
+            },
+            "regions": {
+              "count": 141,
+              "covered": 98
+            },
+            "summary_missing_sides": 11,
+            "uncovered_branch_locations": [
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 75,
+                "true_count": 9
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 43,
+                "true_count": 19
+              },
+              {
+                "column": 12,
+                "false_count": 7,
+                "line": 124,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 125,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 138,
+                "true_count": 7
+              },
+              {
+                "column": 12,
+                "false_count": 7,
+                "line": 147,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 7,
+                "line": 163,
+                "true_count": 0
+              },
+              {
+                "column": 15,
+                "false_count": 0,
+                "line": 64,
+                "true_count": 10
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 65,
+                "true_count": 10
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 66,
+                "true_count": 10
+              }
+            ]
+          },
+          "src/catalog.rs": {
+            "branches": {
+              "count": 4,
+              "covered": 4
+            },
+            "functions": {
+              "count": 18,
+              "covered": 18
+            },
+            "lines": {
+              "count": 342,
+              "covered": 342
+            },
+            "regions": {
+              "count": 347,
+              "covered": 347
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/ci_guard.rs": {
+            "branches": {
+              "count": 118,
+              "covered": 100
+            },
+            "functions": {
+              "count": 110,
+              "covered": 108
+            },
+            "lines": {
+              "count": 833,
+              "covered": 808
+            },
+            "regions": {
+              "count": 936,
+              "covered": 905
+            },
+            "summary_missing_sides": 18,
+            "uncovered_branch_locations": [
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 560,
+                "true_count": 29
+              },
+              {
+                "column": 12,
+                "false_count": 0,
+                "line": 636,
+                "true_count": 24
+              },
+              {
+                "column": 40,
+                "false_count": 67,
+                "line": 303,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 68,
+                "line": 309,
+                "true_count": 0
+              },
+              {
+                "column": 29,
+                "false_count": 7,
+                "line": 476,
+                "true_count": 0
+              },
+              {
+                "column": 29,
+                "false_count": 6,
+                "line": 479,
+                "true_count": 0
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 483,
+                "true_count": 3
+              },
+              {
+                "column": 16,
+                "false_count": 0,
+                "line": 484,
+                "true_count": 3
+              },
+              {
+                "column": 40,
+                "false_count": 1,
+                "line": 485,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 187,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 1,
+                "line": 452,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 55,
+                "line": 233,
+                "true_count": 0
+              },
+              {
+                "column": 20,
+                "false_count": 0,
+                "line": 240,
+                "true_count": 15
+              },
+              {
+                "column": 48,
+                "false_count": 32,
+                "line": 517,
+                "true_count": 0
+              },
+              {
+                "column": 22,
+                "false_count": 0,
+                "line": 1028,
+                "true_count": 1
+              },
+              {
+                "column": 22,
+                "false_count": 0,
+                "line": 1142,
+                "true_count": 1
+              }
+            ]
+          },
+          "src/disposition.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 5,
+              "covered": 5
+            },
+            "lines": {
+              "count": 47,
+              "covered": 44
+            },
+            "regions": {
+              "count": 41,
+              "covered": 38
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/engine/boolean.rs": {
+            "branches": {
+              "count": 40,
+              "covered": 39
+            },
+            "functions": {
+              "count": 2,
+              "covered": 2
+            },
+            "lines": {
+              "count": 79,
+              "covered": 79
+            },
+            "regions": {
+              "count": 127,
+              "covered": 125
+            },
+            "summary_missing_sides": 1,
+            "uncovered_branch_locations": [
+              {
+                "column": 49,
+                "false_count": 0,
+                "line": 97,
+                "true_count": 3
+              }
+            ]
+          },
+          "src/engine/future.rs": {
+            "branches": {
+              "count": 30,
+              "covered": 30
+            },
+            "functions": {
+              "count": 2,
+              "covered": 2
+            },
+            "lines": {
+              "count": 90,
+              "covered": 90
+            },
+            "regions": {
+              "count": 107,
+              "covered": 96
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/engine/mod.rs": {
+            "branches": {
+              "count": 60,
+              "covered": 50
+            },
+            "functions": {
+              "count": 44,
+              "covered": 36
+            },
+            "lines": {
+              "count": 677,
+              "covered": 610
+            },
+            "regions": {
+              "count": 659,
+              "covered": 553
+            },
+            "summary_missing_sides": 10,
+            "uncovered_branch_locations": [
+              {
+                "column": 12,
+                "false_count": 3209,
+                "line": 710,
+                "true_count": 0
+              },
+              {
+                "column": 19,
+                "false_count": 0,
+                "line": 343,
+                "true_count": 2872
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 387,
+                "true_count": 17546
+              },
+              {
+                "column": 8,
+                "false_count": 3597,
+                "line": 436,
+                "true_count": 0
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 146,
+                "true_count": 35536
+              },
+              {
+                "column": 12,
+                "false_count": 35536,
+                "line": 149,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 679,
+                "true_count": 3588
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 771,
+                "true_count": 1006
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 775,
+                "true_count": 1006
+              }
+            ]
+          },
+          "src/engine/past.rs": {
+            "branches": {
+              "count": 6,
+              "covered": 6
+            },
+            "functions": {
+              "count": 2,
+              "covered": 2
+            },
+            "lines": {
+              "count": 35,
+              "covered": 35
+            },
+            "regions": {
+              "count": 29,
+              "covered": 28
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/equivalence.rs": {
+            "branches": {
+              "count": 52,
+              "covered": 35
+            },
+            "functions": {
+              "count": 21,
+              "covered": 20
+            },
+            "lines": {
+              "count": 367,
+              "covered": 341
+            },
+            "regions": {
+              "count": 360,
+              "covered": 315
+            },
+            "summary_missing_sides": 17,
+            "uncovered_branch_locations": [
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 453,
+                "true_count": 748
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 456,
+                "true_count": 748
+              },
+              {
+                "column": 8,
+                "false_count": 748,
+                "line": 459,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 745,
+                "line": 485,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 488,
+                "true_count": 745
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 495,
+                "true_count": 744
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 498,
+                "true_count": 744
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 501,
+                "true_count": 744
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 511,
+                "true_count": 743
+              },
+              {
+                "column": 38,
+                "false_count": 3,
+                "line": 320,
+                "true_count": 0
+              },
+              {
+                "column": 5,
+                "false_count": 0,
+                "line": 558,
+                "true_count": 30
+              },
+              {
+                "column": 8,
+                "false_count": 30,
+                "line": 636,
+                "true_count": 0
+              },
+              {
+                "column": 12,
+                "false_count": 30,
+                "line": 637,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 704,
+                "true_count": 12
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 707,
+                "true_count": 12
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 720,
+                "true_count": 9
+              }
+            ]
+          },
+          "src/hash.rs": {
+            "branches": {
+              "count": 0,
+              "covered": 0
+            },
+            "functions": {
+              "count": 3,
+              "covered": 3
+            },
+            "lines": {
+              "count": 9,
+              "covered": 9
+            },
+            "regions": {
+              "count": 9,
+              "covered": 9
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/infinite.rs": {
+            "branches": {
+              "count": 196,
+              "covered": 184
+            },
+            "functions": {
+              "count": 40,
+              "covered": 37
+            },
+            "lines": {
+              "count": 828,
+              "covered": 780
+            },
+            "regions": {
+              "count": 867,
+              "covered": 747
+            },
+            "summary_missing_sides": 12,
+            "uncovered_branch_locations": [
+              {
+                "column": 20,
+                "false_count": 18,
+                "line": 627,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 451,
+                "line": 623,
+                "true_count": 0
+              },
+              {
+                "column": 17,
+                "false_count": 0,
+                "line": 663,
+                "true_count": 4622
+              },
+              {
+                "column": 21,
+                "false_count": 0,
+                "line": 685,
+                "true_count": 523
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 723,
+                "true_count": 869
+              },
+              {
+                "column": 13,
+                "false_count": 0,
+                "line": 727,
+                "true_count": 869
+              },
+              {
+                "column": 12,
+                "false_count": 426,
+                "line": 806,
+                "true_count": 0
+              },
+              {
+                "column": 8,
+                "false_count": 16,
+                "line": 926,
+                "true_count": 0
+              },
+              {
+                "column": 64,
+                "false_count": 16,
+                "line": 926,
+                "true_count": 0
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 940,
+                "true_count": 13
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 943,
+                "true_count": 13
+              },
+              {
+                "column": 9,
+                "false_count": 0,
+                "line": 946,
+                "true_count": 13
+              }
+            ]
+          },
+          "src/replay.rs": {
+            "branches": {
+              "count": 6,
+              "covered": 6
+            },
+            "functions": {
+              "count": 7,
+              "covered": 6
+            },
+            "lines": {
+              "count": 80,
+              "covered": 78
+            },
+            "regions": {
+              "count": 70,
+              "covered": 65
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          },
+          "src/report.rs": {
+            "branches": {
+              "count": 22,
+              "covered": 22
+            },
+            "functions": {
+              "count": 31,
+              "covered": 24
+            },
+            "lines": {
+              "count": 256,
+              "covered": 236
+            },
+            "regions": {
+              "count": 244,
+              "covered": 219
+            },
+            "summary_missing_sides": 0,
+            "uncovered_branch_locations": []
+          }
+        },
+        "totals": {
+          "branches": {
+            "count": 562,
+            "covered": 493
+          },
+          "lines": {
+            "count": 3764,
+            "covered": 3542
+          }
+        }
+      },
+      "critical_branch_census": {
+        "count": 260,
+        "covered": 248,
+        "files": {
+          "src/disposition.rs": {
+            "count": 0,
+            "covered": 0
+          },
+          "src/engine/future.rs": {
+            "count": 30,
+            "covered": 30
+          },
+          "src/engine/past.rs": {
+            "count": 6,
+            "covered": 6
+          },
+          "src/infinite.rs": {
+            "count": 196,
+            "covered": 184
+          },
+          "src/replay.rs": {
+            "count": 6,
+            "covered": 6
+          },
+          "src/report.rs": {
+            "count": 22,
+            "covered": 22
+          }
+        },
+        "missing_files": []
+      },
+      "critical_uncovered": [
+        {
+          "column": 20,
+          "false_count": 18,
+          "file": "src/infinite.rs",
+          "line": 627,
+          "true_count": 0
+        },
+        {
+          "column": 8,
+          "false_count": 451,
+          "file": "src/infinite.rs",
+          "line": 623,
+          "true_count": 0
+        },
+        {
+          "column": 17,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 663,
+          "true_count": 4622
+        },
+        {
+          "column": 21,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 685,
+          "true_count": 523
+        },
+        {
+          "column": 13,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 723,
+          "true_count": 869
+        },
+        {
+          "column": 13,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 727,
+          "true_count": 869
+        },
+        {
+          "column": 12,
+          "false_count": 426,
+          "file": "src/infinite.rs",
+          "line": 806,
+          "true_count": 0
+        },
+        {
+          "column": 8,
+          "false_count": 16,
+          "file": "src/infinite.rs",
+          "line": 926,
+          "true_count": 0
+        },
+        {
+          "column": 64,
+          "false_count": 16,
+          "file": "src/infinite.rs",
+          "line": 926,
+          "true_count": 0
+        },
+        {
+          "column": 9,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 940,
+          "true_count": 13
+        },
+        {
+          "column": 9,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 943,
+          "true_count": 13
+        },
+        {
+          "column": 9,
+          "false_count": 0,
+          "file": "src/infinite.rs",
+          "line": 946,
+          "true_count": 13
+        }
+      ],
+      "exit_code": 0,
+      "feature": "infinite",
+      "id": "rewrite-infinite",
+      "raw": {
+        "export": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/rewrite-infinite.json",
+          "sha256": "dfdbd7c13b73e2f36e89dcae88b846662c7b31c475a4324267a2ab69250661e7"
+        },
+        "stderr": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/rewrite-infinite.stderr",
+          "sha256": "218b027c7a669b202be756bdc15e7748cbdef14622268725e9dae5699fc612f0"
+        },
+        "stdout": {
+          "path": "/private/tmp/tl-v8-current-5ca-29c-8bf-fresh-raw/rewrite-infinite.stdout",
+          "sha256": "2943c44bbfac5da34ce77ccfab99033356c0804761c25e1cd5ee2ac4a1cd1e5b"
+        }
+      },
+      "reason": "critical_branch_target_open",
+      "repo": "rewrite",
+      "source_revision": "8bf12ec736c2c4016f5fef8fe52d50c9b2f1a422",
+      "status": "incomplete"
+    }
+  ],
+  "schema": "tl-mltl.v8-coverage/v2",
+  "source_revisions": {
+    "mltl": "29cea002008f4a6855f54b73ecd63c234499fa3c",
+    "parse": "5ca6f76936c95232a3a8b86ce33f6f16c4aab606",
+    "rewrite": "8bf12ec736c2c4016f5fef8fe52d50c9b2f1a422",
+    "syntax": "6e2fc17fcfba60c33ab264772bb25550a9c81853"
+  },
+  "status": "incomplete",
+  "test_selection": [
+    "lib",
+    "tests"
+  ],
+  "tools": {
+    "cargo_llvm_cov": "cargo-llvm-cov 0.8.7",
+    "llvm_cov": "LLVM (http://llvm.org/):\n  LLVM version 23.1.1-rust-1.100.0-nightly\n  Optimized build.",
+    "llvm_profdata": "LLVM (http://llvm.org/):\n  LLVM version 23.1.1-rust-1.100.0-nightly\n  Optimized build.",
+    "rustc": "rustc 1.100.0-nightly (1303417c4 2026-09-21)"
+  }
+}

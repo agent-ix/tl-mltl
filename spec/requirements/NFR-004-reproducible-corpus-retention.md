@@ -2,6 +2,7 @@
 id: NFR-004
 title: "Keep corpus coverage reproducible and non-authoritative"
 type: NFR
+status: superseded
 quality_attribute: reliability
 relationships:
   - target: ix://agent-ix/tl-mltl/FR-008
@@ -13,6 +14,9 @@ relationships:
 ---
 
 # NFR-004: Keep corpus coverage reproducible and non-authoritative
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Statement
 

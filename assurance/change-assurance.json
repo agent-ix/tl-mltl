@@ -11,7 +11,7 @@
     "Nothing else is filled in, defaulted, or discovered. A field this file does not state is a validation failure at seal time, which is the behaviour that makes the record a statement rather than a guess."
   ],
   "census_controls": {
-    "denied_paths": ["Cargo.lock", "LICENSE-APACHE", "LICENSE-MIT"],
+    "denied_paths": ["Cargo.lock", "LICENSE"],
     "deleted_reference_needles": [
       "check-failure-propagation",
       "check-tool-identities",
@@ -141,7 +141,7 @@
         },
         {
           "id": "PRESERVE-corpus-basis",
-          "statement": "The shared temporal corpus, the future-operator corpus, and the past-history corpus are all read from the single compiled tl-syntax dependency via tl_syntax::CORPUS_DIR; corpus/tl-syntax-v1, corpus/future-operators, and corpus/past-history are all deleted and there is no separate corpus basis to track for any of them. The compiled dependency moved to 4a561419, the tl-syntax v0.3.0 release, which publishes CORPUS_DIR, and each corpus tracks whatever revision that pin names.",
+          "statement": "The shared temporal corpus, the future-operator corpus, and the past-history corpus are all read from the single compiled tl-syntax dependency via tl_syntax::CORPUS_DIR; corpus/tl-syntax-v1, corpus/future-operators, and corpus/past-history are all deleted and there is no separate corpus basis to track for any of them. The compiled dependency moved to 6e2fc17fcfba60c33ab264772bb25550a9c81853, retaining span-free infinite formula content identity; each corpus tracks whatever revision that pin names.",
           "source_ids": ["NFR-002", "assurance-pins"]
         },
         {

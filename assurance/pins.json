@@ -1,42 +1,38 @@
 {
   "schema_version": "tl-mltl.assurance-pins/v1",
   "purpose": "The Engineering Assurance release this repository adopts, and the artifacts it actually reads from that release. Component version pins are NOT restated here: the packaged compatibility matrix is their authority and a second copy would drift from it.",
-  "matrix_authority": "engineering_assurance/compatibility-matrix.json in the installed distribution. scripts/check_shared_pins.py observes the local toolchain and delegates every verdict to engineering_assurance.compatibility.",
+  "matrix_authority": "compatibility-matrix.json embedded in the pinned engineering-assurance CLI. scripts/check_shared_pins.py observes the local toolchain and delegates every verdict to the native engineering-assurance compatibility command.",
   "registry": "Every npm component resolves from the public npm registry (registry.npmjs.org). The internal npm.ix mirror must not appear in any requirement, pin, lockfile, or .npmrc, and is not an oracle for whether a release landed. Querying an @agent-ix package needs --@agent-ix:registry=https://registry.npmjs.org; a bare --registry does not override the scoped .npmrc entry.",
   "engineering_assurance": {
-    "version": "0.2.1",
-    "requirement": "engineering-assurance @ git+https://github.com/agent-ix/engineering-assurance@v0.2.1",
-    "release_form": "git tag v0.2.1, a source distribution; the tag is the released artifact",
-    "declared_in": "requirements-assurance.txt"
+    "version": "0.4.1",
+    "requirement": "cargo +1.98.1 install --git https://github.com/agent-ix/engineering-assurance --tag v0.4.1 --locked --bin engineering-assurance",
+    "module_install": "quoin module install github:agent-ix/engineering-assurance//engineering_assurance@v0.4.1",
+    "release_form": "immutable git tag v0.4.1 at 2fd04e6bf47727cb91b7d39daaedfd1a1051d238; matrix accepted by Peter Krenesky on 2026-09-23",
+    "declared_in": ".github/workflows/ci.yml"
   },
   "repinned_workflow_component": {
     "component": "quoin",
     "was": "0.22.5",
-    "now": "0.23.1",
-    "why": "The hosted workflow pinned @agent-ix/quoin@0.22.5, which the packaged compatibility matrix names explicitly incompatible: it 'predates the `quoin change-assurance` surface; seal, intake, and receipt commands do not exist'. Every command this migration's chain runs is on that surface, so the old pin could not have worked. ix-flow@0.0.4 was absent from the workflow entirely and is now installed."
+    "now": "0.24.1",
+    "why": "The hosted workflow formerly pinned @agent-ix/quoin@0.22.5, which the packaged compatibility matrix names explicitly incompatible: it predates the quoin change-assurance surface. An earlier migration moved to 0.23.1; the Stage 1 EA 0.4.1 matrix now requires the published 0.24.1. ix-flow@0.0.4 was absent from the old workflow and is now installed at 0.2.3."
   },
   "repinned_ix_flow": {
     "component": "ix-flow",
     "was": "0.0.4",
     "now": "0.2.3",
-    "why": "TL-192: the packaged compatibility matrix authoritative for this repository's pin (matrix_authority above) classified ix-flow strictly at the exact pinned version, so a locally-installed 0.2.3 against a v0.2.0 matrix pinning 0.0.4 classified as unknown, not compatible, and failed the local qualification gate. engineering-assurance v0.2.1 (release: accept ix-flow 0.2.3 matrix, agent-ix/engineering-assurance#47) re-pins the matrix to ix-flow 0.2.3 with human acceptance recorded (accepted_by Peter Krenesky, accepted_at 2026-09-10, after the local TC-107 gate passed against public ix-flow 0.2.3). This repository's engineering_assurance pin above was moved from v0.2.0 to v0.2.1 in the same change so the workflow literal and the matrix authority agree; quire-cli and quoin stay at their already-accepted versions, unchanged by this bump."
+    "why": "TL-192: the packaged compatibility matrix authoritative for this repository's pin (matrix_authority above) classified ix-flow strictly at the exact pinned version, so a locally-installed 0.2.3 against a v0.2.0 matrix pinning 0.0.4 classified as unknown, not compatible, and failed the local qualification gate. engineering-assurance v0.2.1 (release: accept ix-flow 0.2.3 matrix, agent-ix/engineering-assurance#47) re-pins the matrix to ix-flow 0.2.3 with human acceptance recorded (accepted_by Peter Krenesky, accepted_at 2026-09-10, after the local TC-107 gate passed against public ix-flow 0.2.3). At TL-192, this repository's engineering_assurance pin moved from v0.2.0 to v0.2.1 so the workflow literal and the matrix authority agreed; the then-current quire-cli and quoin versions were unchanged by that historical bump."
   },
-  "consumed_artifacts_note": "Every digest-bearing entry here belonged to the compatibility view, which is deleted (issue #16). This repository now reads exactly one file out of the pinned distribution, and that file deliberately carries no local digest, so artifact_digest_mismatches currently has an empty population. Recorded as UNKNOWN-consumed-artifact-digests-now-vacuous in change-assurance.json rather than concealed by keeping digests for files nobody reads.",
-  "consumed_artifacts": [
-    {
-      "path": "compatibility-matrix.json",
-      "why": "The authority on which component versions are pinned. Deliberately carries no digest here: it is expected to advance as the matrix is re-accepted, and pinning its bytes locally would make this repository a second acceptance authority."
-    }
-  ],
+  "stage1_ea_adoption": "The active assurance lane adopts the accepted Engineering Assurance 0.4.1 matrix, Quire CLI 0.33.0 (engine 0.47.1), and Quoin 0.24.1 while retaining ix-flow 0.2.3. The matrix is the only compatibility authority. The V1 campaign AP-002/MP-007 records the source-bound eleven-milestone release measurement; Quoin 0.24.1 has no independent measurement-verdict checker, so AP-002 recommends rather than requires checker promotion, while the executable campaign gate still requires eleven passes. EA matrix acceptance and tagging do not by themselves qualify the separate Stage 1 release campaign.",
+  "consumed_artifacts_note": "The pinned native CLI embeds and classifies the compatibility matrix. This repository consumes its structured result through the CLI protocol and reads no separate file from an EA Python distribution. The tagged CLI and its named matrix acceptance are the authority. Historical digest-consumer reductions remain recorded in change-assurance.json.",
   "upstream_dependency": {
     "component": "tl-syntax",
-    "compiled_revision": "4a5614193d21e5ae99950ae683b04ba0ec931358",
-    "superseded_compiled_revisions": ["d52d89549b0a6c0c429261bab912cd5396c4a19e", "842d82553f045eb69a7f38745756d968254fc25e", "953ee825e5060335b4c79682f5f41a78c5a1bfae", "6ad7499f2ccc179bb33b2590666399c6632a7e3c", "1b3c4026ff9567491e87a19fdf2793d3b2e76160", "26b801d4a68ebfe720062cfdb3c66b070ab60e92", "8dc18eec5af227f484170362c9e8894b8531a27d", "e70f2379a752117c79603bc399a86c26feed7716"],
-    "why": "The compiled pin moved to 4a561419, the tl-syntax v0.3.0 release (tag v0.3.0, required as =0.3.0), which publishes tl_syntax::CORPUS_DIR so a dependent can read the shared corpus straight out of the compiled dependency instead of holding a copy. corpus/tl-syntax-v1 (TL-170) and corpus/past-history and corpus/future-operators (TL-171) are all deleted; every one of them is now read via tl_syntax::CORPUS_DIR and there is no separate corpus basis left to track for any of them."
+    "compiled_revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
+    "superseded_compiled_revisions": ["43dcd3646d14922e20dee1be17b258be00ebf027", "66d012cb37508d9ed9e8a91b5b92ef440cbe81a7", "9de638dc4d14d0ae62a6825473a3a9bb6a9e57ac", "8bcbce984f7ec3d86a92f90d866e842cc98b39fb", "d52d89549b0a6c0c429261bab912cd5396c4a19e", "842d82553f045eb69a7f38745756d968254fc25e", "953ee825e5060335b4c79682f5f41a78c5a1bfae", "6ad7499f2ccc179bb33b2590666399c6632a7e3c", "1b3c4026ff9567491e87a19fdf2793d3b2e76160", "26b801d4a68ebfe720062cfdb3c66b070ab60e92", "8dc18eec5af227f484170362c9e8894b8531a27d", "e70f2379a752117c79682f5f41a78c5a1bfae", "75ebec8ec8d15dcdee3a821119ae3ceb18e61bb3", "5ced12e22917c56bb2ebd161a3e519cddf7a668a", "de37776a565d79bb4369956647026bd849908999", "d71d757bf696fa31878392cd1e6854ab4b95e740", "fed48a2fab3f5277131a7012e1a8d10993330cb1", "6d182fa90e22d0cfbd9aff3728f3de069b8aefd4", "9a4316e75d8fda6d50330d2211832c2607d6d62a", "08c23fa319a0ed2cf4535367b3670aa1f2033acd"],
+    "why": "The compiled pin is the exact Stage 1 tl-syntax 0.4.0 candidate revision. Its MIT-licensed unbounded formula owner and shared corpora supply the evaluator contracts. Cargo.toml, Cargo.lock, fuzz/Cargo.lock, src/lib.rs, and this record agree on the revision; the previous 08c23fa revision is retained in the superseded list."
   },
   "known_drift": [
-    "Resolved by the TL-192 bump to v0.2.1: engineering-assurance v0.2.0 packaged compatibility-matrix.json with accepted.state = pending_human_acceptance and shipped no human_acceptance_recorded predicate (agent-ix/engineering-assurance#20). v0.2.1 (release: accept ix-flow 0.2.3 matrix, #47) carries accepted.state = accepted with accepted_by and accepted_at populated, so the record this repository now reads is a real release carrying the acceptance rather than a branch head.",
-    "Historical: the human acceptance itself was never in doubt: Peter Krenesky accepted the FR-012 matrix on 2026-09-01, attributed on engineering-assurance main as ae50e13, and the pinned release now carries it (see above).",
-    "Quire resolves the spec-artifacts-process module from the machine's installed Filament modules, and nothing in this repository pins that module's revision. The installed default currently counts the 8 suite-registry rows and reports 118 counted, 116 backed: 65 requirement criteria, 45 test-matrix rows, and six of eight suite rows. SUITE-001 and SUITE-002 are deliberately non-runnable and their absence is asserted independently. Recorded under agent-ix/tl-mltl#47 rather than pinned, because the packaged compatibility matrix carries no module-revision entry to classify against."
+    "Resolved by the TL-192 bump to v0.2.1: engineering-assurance v0.2.0 packaged compatibility-matrix.json with accepted.state = pending_human_acceptance and shipped no human_acceptance_recorded predicate (agent-ix/engineering-assurance#20). v0.2.1 (release: accept ix-flow 0.2.3 matrix, #47) carries accepted.state = accepted with accepted_by and accepted_at populated, so the historical v0.2.1 record carried that acceptance rather than a branch head.",
+    "Historical: the human acceptance itself was never in doubt: Peter Krenesky accepted the FR-012 matrix on 2026-09-01, attributed on engineering-assurance main as ae50e13, and the historical v0.2.1 release carried it (see above).",
+    "Quire resolves the spec-artifacts-process module from the machine's installed Filament modules, and nothing in this repository pins that module's revision. At that historical review, the installed default counted the 8 suite-registry rows and reported 118 counted, 116 backed: 65 requirement criteria, 45 test-matrix rows, and six of eight suite rows. SUITE-001 and SUITE-002 are deliberately non-runnable and their absence is asserted independently. Recorded under agent-ix/tl-mltl#47 rather than pinned, because the packaged compatibility matrix carries no module-revision entry to classify against."
   ]
 }

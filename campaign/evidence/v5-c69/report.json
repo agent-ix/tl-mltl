@@ -1,0 +1,171 @@
+{
+  "runs": {
+    "tl-mltl": {
+      "archive_sha256": "3a3a752b921b8a4cef1ab37f41ec1c09bbfdaee779be414d396975cd2aeb91ea",
+      "cargo_mutants_version": "27.0.0",
+      "caught": 39,
+      "critical_scope": "infinite trace/lasso evaluator",
+      "discovered": 134,
+      "discovery_sha256": "5be1660476535477f5a26f7ca75e50461ecf32621c3d91b114de108dba8b5cc3",
+      "kill_rate": {
+        "caught": 39,
+        "viable": 41
+      },
+      "missed": 2,
+      "not_run": 91,
+      "selected": 43,
+      "selection_regex": "evaluate_trace|evaluate_lasso",
+      "source_file": "src/infinite/mod.rs",
+      "source_revision": "c69a2d003f891edba1908dfe327cae03488dcd5f",
+      "status": "passed",
+      "survivor_reviews": [
+        {
+          "detail": "Both admitted V1 formula and lasso constructors force InfiniteTraceV1; InfiniteClock has only EventPosition, so neither side of the clock/profile mismatch is reachable.",
+          "disposition": "proof_candidate",
+          "name": "src/infinite/mod.rs:675:9: replace || with && in evaluate_lasso"
+        },
+        {
+          "detail": "The later RawTraceRequest::validate rechecks node and observation-position ceilings before evaluation and returns the same typed ResourceIncomplete result.",
+          "disposition": "proof_candidate",
+          "name": "src/infinite/mod.rs:687:9: replace || with && in evaluate_lasso"
+        }
+      ],
+      "test_argv": [
+        "/Users/peter/.rustup/toolchains/1.98.1-aarch64-apple-darwin/bin/cargo",
+        "test",
+        "--verbose",
+        "--package=tl-mltl@0.3.0",
+        "--all-features",
+        "--lib",
+        "--test",
+        "infinite_trace",
+        "--test",
+        "infinite_oracle"
+      ],
+      "threshold_percent": 90,
+      "timed_out": 0,
+      "unviable": 2,
+      "viable": 41
+    },
+    "tl-parse": {
+      "archive_sha256": "9f7479a10fd0d26bf63480527c12e4f741cd3ce05d7c8a3a74bfda9126d5e989",
+      "cargo_mutants_version": "27.0.0",
+      "caught": 20,
+      "critical_scope": "V5 selected critical semantics",
+      "discovered": 249,
+      "discovery_sha256": "675c5729cb01e58c5f2154471262a8812e7af78c05a08fac7542d976dbf5cecd",
+      "kill_rate": {
+        "caught": 20,
+        "viable": 20
+      },
+      "missed": 0,
+      "not_run": 226,
+      "selected": 23,
+      "selection_regex": "parse_clean_ascii_v4|Parser.*::interval|Parser.*::lower_derived",
+      "source_file": "src/infinite.rs",
+      "source_revision": "89c2c1249c741bb94dc07da1eff46605af25e401",
+      "status": "passed",
+      "survivor_reviews": [],
+      "test_argv": [
+        "/Users/peter/.rustup/toolchains/1.98.1-aarch64-apple-darwin/bin/cargo",
+        "test",
+        "--verbose",
+        "--package=tl-parse@0.3.0",
+        "--all-features",
+        "--test",
+        "infinite_v4",
+        "--test",
+        "infinite_trace_corpus",
+        "--test",
+        "owner_infinite_corpus"
+      ],
+      "threshold_percent": 90,
+      "timed_out": 0,
+      "unviable": 3,
+      "viable": 20
+    },
+    "tl-rewrite": {
+      "archive_sha256": "006805612ae48b26d01e67fb46c46d7d6a5ec2f56737f835f4932e589d2df228",
+      "cargo_mutants_version": "27.0.0",
+      "caught": 35,
+      "critical_scope": "V5 selected critical semantics",
+      "discovered": 189,
+      "discovery_sha256": "a65d6306c71e09882d52bb783ff602916cc6d8c6a11107da9085ccf7732300cf",
+      "kill_rate": {
+        "caught": 35,
+        "viable": 36
+      },
+      "missed": 1,
+      "not_run": 150,
+      "selected": 39,
+      "selection_regex": "check_infinite_rewrite|classify_infinite_results",
+      "source_file": "src/infinite.rs",
+      "source_revision": "e7ed9004e24803ac2611307cfe36b38480ec1a42",
+      "status": "passed",
+      "survivor_reviews": [
+        {
+          "detail": "Both admitted V1 formula and lasso documents force InfiniteTraceV1 and the sole EventPosition clock, so the profile/clock mismatch branch is unreachable.",
+          "disposition": "proof_candidate",
+          "name": "src/infinite.rs:917:61: replace || with && in check_infinite_rewrite"
+        }
+      ],
+      "test_argv": [
+        "/Users/peter/.rustup/toolchains/1.98.1-aarch64-apple-darwin/bin/cargo",
+        "test",
+        "--verbose",
+        "--package=tl-rewrite@0.3.0",
+        "--all-features",
+        "--lib",
+        "--test",
+        "infinite_conformance",
+        "--test",
+        "infinite_rules",
+        "--test",
+        "infinite_owner_corpus"
+      ],
+      "threshold_percent": 90,
+      "timed_out": 0,
+      "unviable": 3,
+      "viable": 36
+    },
+    "tl-syntax": {
+      "archive_sha256": "3d16b3e3d5564f1229eac5911c5fb0d625d35c0a243e6d5181c00e57208710fc",
+      "cargo_mutants_version": "27.0.0",
+      "caught": 17,
+      "critical_scope": "V5 selected critical semantics",
+      "discovered": 67,
+      "discovery_sha256": "0b09039c2df743e3d434a23d10f518332809a874af162c89125e36a14e8815a0",
+      "kill_rate": {
+        "caught": 17,
+        "viable": 17
+      },
+      "missed": 0,
+      "not_run": 49,
+      "selected": 18,
+      "selection_regex": "TemporalInterval::start|select_infinite_profile|validate_resource_limits|preflight_resource_limits|InfiniteFormulaDocument::content_identity",
+      "source_file": "src/formula/infinite.rs",
+      "source_revision": "9de638dc4d14d0ae62a6825473a3a9bb6a9e57ac",
+      "status": "passed",
+      "survivor_reviews": [],
+      "test_argv": [
+        "/Users/peter/.rustup/toolchains/1.98.1-aarch64-apple-darwin/bin/cargo",
+        "test",
+        "--verbose",
+        "--package=tl-syntax@0.3.0",
+        "--all-features",
+        "--test",
+        "infinite_formula",
+        "--test",
+        "infinite_trace",
+        "--test",
+        "infinite_trace_corpus"
+      ],
+      "threshold_percent": 90,
+      "timed_out": 0,
+      "unviable": 1,
+      "viable": 17
+    }
+  },
+  "schema": "tl-mltl.v5-mutation-report/v1",
+  "status": "passed"
+}

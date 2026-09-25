@@ -2,6 +2,7 @@
 id: FR-022
 title: "Measure a deterministic Rust mutation campaign"
 type: FR
+status: superseded
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-003
     type: implements
@@ -12,6 +13,9 @@ relationships:
 ---
 
 # FR-022: Measure a deterministic Rust mutation campaign
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Description
 

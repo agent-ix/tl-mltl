@@ -2,6 +2,7 @@
 id: FR-008
 title: "Define a closed MLTL corpus coverage model"
 type: FR
+status: superseded
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-002
     type: implements
@@ -14,6 +15,9 @@ relationships:
 ---
 
 # FR-008: Define a closed MLTL corpus coverage model
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Description
 

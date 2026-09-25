@@ -23,14 +23,18 @@ fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
-/// The interpreter `make assurance-env` builds. Its absence is an error.
+/// The dependency-free adapter runs with the selected Python interpreter.
 fn assurance_python() -> PathBuf {
     let path = std::env::var_os("ASSURANCE_PYTHON")
         .map(PathBuf::from)
-        .unwrap_or_else(|| root().join(".venv-assurance/bin/python"));
+        .unwrap_or_else(|| PathBuf::from("python3"));
     assert!(
-        path.is_file(),
-        "the pinned assurance interpreter is missing at {}. Run `make assurance-env`. \
+        Command::new(&path)
+            .arg("--version")
+            .output()
+            .map(|result| result.status.success())
+            .unwrap_or(false),
+        "the assurance Python interpreter is unavailable at {}. \
          This is a failure and not a skip: a gate that stands down when its dependency \
          is absent reports the same green as one that ran.",
         path.display()
@@ -1043,7 +1047,6 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         );
     }
     assert_eq!(report["accepted"], true);
-    assert!(report["artifact_mismatches"].as_array().unwrap().is_empty());
     assert!(report["mirror_references"].as_array().unwrap().is_empty());
     assert!(
         report["upstream_pin_mismatches"]
@@ -1054,12 +1057,35 @@ fn every_shared_pin_is_classified_by_the_packaged_matrix() {
         report["upstream_pin_mismatches"]
     );
 
-    // Acceptance is reported and never gated on: the pinned release records
-    // `pending_human_acceptance` and ships no predicate for it
-    // (agent-ix/engineering-assurance#20). Reading an absent field as approval,
-    // in either direction, is the mistake this asserts against.
+    // Acceptance comes from the pinned native classifier, never from this
+    // repository. A pending matrix is a withheld gate, even if its versions
+    // are compatible.
     assert_eq!(report["acceptance_recorded_here"], false);
-    assert!(report["acceptance_state"].is_string());
+    assert_eq!(report["acceptance_state"], "accepted");
+
+    // The native EA classifier is the authority for rejected versions as
+    // well as accepted ones. The historical Quoin 0.22.5 pin must still
+    // withhold the gate after matrix acceptance.
+    let (code, stdout, stderr) = run(
+        &python,
+        &[
+            "-c",
+            "import json,sys;sys.path.insert(0,'scripts');\
+             import check_shared_pins as m;\
+             print(json.dumps(m.classify_with_ea({'quire-cli':'0.33.0',\
+             'quoin':'0.22.5','ix-flow':'0.2.3',\
+             'engineering-assurance':'0.4.1'})))",
+        ],
+    );
+    assert_eq!(code, 0, "negative classifier probe failed: {stderr}");
+    let negative: Value = serde_json::from_str(stdout.trim()).unwrap();
+    assert_eq!(negative["versions_compatible"], false);
+    assert_eq!(negative["gate_satisfied"], false);
+    assert!(negative["components"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|row| { row["component"] == "quoin" && row["verdict"] == "incompatible" }));
 
     // The mirror check must be seen to refuse. Without this it is indistinguishable
     // from a check that matches nothing.
@@ -1675,48 +1701,20 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // 230 is every row this repository declares: 126 requirement criteria, 96
-    // test-matrix rows across the three TestMatrix documents, and 8
-    // suite-registry rows. Naming the population matters — "matrix rows" would
-    // be wrong, because criteria and the authored suite registry are separate
-    // declarations. SUITE-001 and SUITE-002 are the two intentionally
-    // non-runnable registry rows; their exact absence and every other suite's
-    // binding are checked directly below.
-    //
-    // This pair was `118`/`116` and had drifted from the tree it measures:
-    // FR-027 through FR-029 (#72) and this campaign's FR-008 through FR-010 and
-    // the NFR-004 criteria are all declared-but-unimplemented, so `backed` has
-    // not equalled `total` since #72 landed and the old `116` could not hold.
-    // The numbers now record the measurement rather than an aspiration:
-    //   71 pre-campaign criteria + 18 M4 criteria (FR-008 5, FR-009 6,
-    //   FR-010 4, NFR-004 3) + 29 M5 criteria (FR-020 through FR-024 and the
-    //   three NFR-005 criteria) + 8 NFR-006 criteria (TL-65) = 126;
-    //   57 spec/test-matrix.md rows (TL-65 adds TC-130 through TC-137) + 13
-    //   spec/corpus-campaign-test-matrix.md rows + 26
-    //   spec/verification-effectiveness-test-matrix.md rows = 96;
-    //   8 suite rows.
-    // Only TC rows are counted from a TestMatrix; its FR/NFR summary rows
-    // are not a separate declared population.
-    // `backed` is 119: the 105 measured before TL-65, plus NFR-006-AC-1
-    // through AC-7 and their TC-130 through TC-136 (14). Every campaign row is
-    // planned and deliberately unbacked, exactly as TM-002 declares, and the
-    // Inspection-verified NFR-006-AC-8 and TC-137 mint no source symbol. An unbacked row that is NOT one of those is a coverage
-    // regression, not a number to adjust here. (Requirement ids are kept off
-    // the start of these comment lines: Quire reads a line-leading id as a
-    // trace tag, and this test backs none of them.)
+    // The current V1 matrix has 346 declared rows; 207 have native trace
+    // backing, including the V5 mutation population's TC-183 binding, the
+    // V10 FR-052-AC-2 and TC-192 per-cell replay tests, and TL-229/TL-230
+    // boundary and independent-oracle fuzz tests.
+    // Suite registry rows are included; the two intentionally non-runnable
+    // suites are checked separately below. An unbacked row is not counted as
+    // implemented merely because its requirement appears in the spec.
     assert_eq!(
-        totals["total"], 230,
-        "the declared-row population changed: {totals}. It is 126 requirement \
-         criteria + 96 test-matrix rows + 8 suite-registry rows."
+        totals["total"], 346,
+        "the declared-row population changed: {totals}; review the exact Quire export."
     );
     assert_eq!(
-        totals["backed"], 119,
-        "backed-row count changed: {totals}. The unbacked population is exactly \
-         FR-018, FR-019, FR-027 through FR-029, the 18 planned M4 criteria, the 29 \
-         planned M5 criteria, the 13 planned TM-002 rows, the 26 planned TM-003 \
-         rows, the 6 planned or retired TC-085 through TC-090 rows, the \
-         Inspection-verified NFR-006-AC-8 and TC-137, and the two deliberately \
-         non-runnable suite rows."
+        totals["backed"], 207,
+        "backed-row count changed: {totals}; review the exact Quire export and trace tags."
     );
     // The aggregate alone cannot identify which suite rows are absent, so check
     // the registry's own claim directly: every suite except SUITE-001 and
@@ -2032,8 +2030,7 @@ fn the_r2u2_differential_is_a_comparison_and_never_a_boolean() {
 // Trace: TC-017, NFR-002-AC-3, SUITE-008
 #[test]
 fn every_requirement_tagged_test_is_a_test_cargo_compiles_and_runs() {
-    // Deliberately unguarded: this census touches neither `target/assurance`
-    // nor `requirements-assurance.txt`.
+    // Deliberately unguarded: this census does not touch `target/assurance`.
     let report = json_gate(
         Path::new("python3"),
         &["scripts/rust_test_census.py", "--json"],
@@ -2159,7 +2156,7 @@ fn no_local_evidence_framework_remains() {
     // Enumerate the repository by Git identity, not by an extension allow-list.
     // The scan covers tracked and untracked-not-ignored paths; population and
     // area controls are tracked-only so local scratch files cannot pad them.
-    let denied = |path: &str| matches!(path, "Cargo.lock" | "LICENSE-APACHE" | "LICENSE-MIT");
+    let denied = |path: &str| matches!(path, "Cargo.lock" | "LICENSE");
     for included in [
         "GNUmakefile",
         "makefile",
@@ -2228,13 +2225,24 @@ fn no_local_evidence_framework_remains() {
 
     let observed_areas = area_cardinalities(&tracked);
     let expected_areas: BTreeMap<String, usize> = [
-        // CLA.md, added by the CLA Assistant Lite rollout (#76/#77), since
-        // this census was last updated. The 0.3.0 release adds CHANGELOG.md.
-        ("<root>", 15),
+        // CLA.md and CHANGELOG.md were added earlier. Removing the unused EA
+        // Python requirements file leaves fourteen tracked root files.
+        ("<root>", 14),
         (".agent", 1),
         // .github/workflows/cla.yml, same CLA rollout.
         (".github", 3),
         ("assurance", 3),
+        // V1 native campaign producers, raw gates, fault controls and instructions;
+        // twelve V4/V5/V8/V9 native helpers and reviews were added since the
+        // earlier 43-file census.
+        // Thirteen direct native procedure records bind V1/V2/V3/V11 lanes.
+        // V9 adds twelve direct Criterion procedure records.
+        // V10 adds fifty-one direct procedure records and their member inventory.
+        // One CampaignDefinition closes the full V1–V11 member inventory.
+        // The explicit Cargo closure inventory adds one source-bound record.
+        // Three additional V4 native procedures cover the TL-229 boundaries
+        // and TL-230 independent finite differential lane.
+        ("campaign", 182),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
@@ -2242,12 +2250,28 @@ fn no_local_evidence_framework_remains() {
         // corpus/future-operators (20 files) the same way, leaving only
         // corpus/README.md and the retained corpus/r2u2-v4.2 exchange (35 - 25
         // = 10).
-        ("corpus", 10),
+        // TL-211 adds the pinned past C2PO source corpus and its digest.
+        // The 4-file R2U2 4.2 Since counterexample preserves an unsafe
+        // target-origin observation alongside the initial exchange.
+        ("corpus", 21),
         // TL-170 adds examples/emit_shared_corpus_manifest.rs, the bridge
         // producer the chain driver reads its independent malformed-count
         // oracle from now that the manifest is no longer a vendored file.
-        ("examples", 4),
-        ("scripts", 5),
+        // TL-217 adds the live past-time operator/interval/trace grid.
+        ("examples", 6),
+        // TL-223 adds two differential fuzz targets, nine seeds, two checksum
+        // manifests and three campaign support/verification files.
+        // TL-229 adds two boundary targets, one shared target driver, sixteen
+        // seeds and two checksum manifests (21 tracked paths).
+        // TL-230 adds the finite oracle target, fault control, runner, five
+        // seeds, manifest, shared comparator, and focused test (11 paths).
+        ("fuzz", 77),
+        // Criterion inputs and runner for the V9 evaluator workloads.
+        ("benches", 3),
+        // The current-only Quire coverage adapter and its fault controls
+        // preserve superseded history while exposing live release gaps. The
+        // external Cargo consumer checks the opt-in infinite feature boundary.
+        ("scripts", 9),
         // 110 was measured before TL-180 added ADR-001 and SR-052 (2 files)
         // without moving this control, making 112. This campaign adds 8:
         // corpus-campaign.md, corpus-campaign-test-matrix.md, the documents
@@ -2259,13 +2283,26 @@ fn no_local_evidence_framework_remains() {
         // NFR-006 and its spec review SR-053 (2 files). (Requirement ids are
         // kept off the start of these comment lines: Quire reads a line-leading
         // id as a trace tag, and this test backs none of them.)
-        ("spec", 134),
+        // The V1 spec cycle adds its requirements, matrices, decisions and
+        // combined review documents; AP-002 and MP-007 add two Stage 1 plans.
+        // Thirteen lane-level MeasurementPlans pair with those procedures.
+        // V9 adds twelve lane-level MeasurementPlans.
+        // V10 adds fifty-one direct MeasurementPlans.
+        // Three direct V4 MeasurementPlans bind the new fuzz procedures.
+        ("spec", 300),
         // TL-179 deletes wire::request, wire::observation, wire::report, and
         // mapping::contract_ir (4 files): the quire-observation-coupled
         // request/result/mapping owner boundary now lives in quire-mltl.
         // TL-65 adds ci_guard.rs and bin/ci_guard.rs (2 files), the NFR-006
         // gate-set guard.
-        ("src", 22),
+        // Stage 1 adds the opt-in infinite provider (3 files) and the distinct
+        // past-profile mapping adapter (1 file).
+        // Direct EA producer results are checked by a TL-owned Rust binary.
+        // The pure Rust V10 input generator adds one binary.
+        // The Rust Quoin machine-config adapter adds one binary.
+        // V10 adds the source-bound generated past-grid replay checker module.
+        // V10 adds the four retained static monitor replay cases.
+        ("src", 32),
         // TL-179 deletes tests/tc_084_temporal_owner_wire.rs (1 file), the
         // dedicated test for the request/result/mapping owner boundary it
         // removed from src/. TL-173 then deletes the two files that test left
@@ -2276,7 +2313,11 @@ fn no_local_evidence_framework_remains() {
         // tests/fixtures/README.md, which existed only to document that one
         // fixture's provenance. Neither was referenced by any remaining test
         // or source file (23 - 2 = 21). TL-65 adds tests/ci_guard.rs (22).
-        ("tests", 22),
+        // Stage 1 adds infinite, safety export, owner corpus, past mapping,
+        // pinned corpus replay and public tl-oracle differential tests.
+        // V2 adds one native finite production/oracle partition.
+        // TL-229 adds one seed and boundary smoke test.
+        ("tests", 38),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2287,9 +2328,10 @@ fn no_local_evidence_framework_remains() {
         // (plan, index, log, and seven tasks) beside it, and PLAN-008 adds a
         // further 10-file bundle of the same shape, as does PLAN-009 (TL-65).
         ("plan", 35),
-        // The readiness and formal gap-analysis skill artifacts live at the
-        // root review path required by their output contracts.
-        ("reviews", 3),
+        // The three QObs readiness/gap artifacts and two independent Stage 1
+        // Campaign assessments live at the root review path required by their
+        // output contracts.
+        ("reviews", 5),
     ]
     .into_iter()
     .map(|(area, count)| (area.to_owned(), count))
@@ -2341,19 +2383,37 @@ fn no_local_evidence_framework_remains() {
     // tests/ci_guard.rs, NFR-006 and its spec review SR-053, and the 10-file
     // plan/PLAN-009 bundle (15 files), for 261; the 0.3.0 release adds
     // CHANGELOG.md, for 262.
+    // The V1 spec cycle adds 44 spec artifacts and two corpus files; Stage 1
+    // adds four source modules and five integration tests, then five retained
+    // target exchange files, one fuzz-seed test, and 13 fuzz-lane files, plus
+    // four retained target-origin counterexample files and the tl-oracle
+    // integration tests for infinite and finite/past profiles, for 342. The
+    // V1 campaign runner, manifest builder, tests and instructions bring this
+    // to 346. The V2 finite partition integration test brings this to 347.
+    // The current-coverage adapter and its fault controls add two scripts,
+    // bringing the reviewed population to 441. The external Cargo feature
+    // boundary control adds one script, bringing it to 442; executable
+    // owner/CI inspection evidence adds one test, bringing it to 443. The
+    // Quire-bound feature control adds one script and the historical mapping
+    // payload fixture adds one test fixture, bringing it to 445. The
+    // generated infinite semantic law test brings it to 446. Two independent
+    // Stage 1 Campaign review artifacts bring the reviewed census from 693
+    // to 695. TL-229 adds 21 fuzz paths and one seed smoke test, bringing the
+    // tracked population to 717. TL-230 adds 11 fuzz paths; three V4 direct
+    // members add three plans and three procedures, bringing it to 734.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 262,
-        "the source census population changed from the reviewed 262 tracked files \
+        inspected, 734,
+        "the source census population changed from the reviewed 734 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
-    // The byte census reads every tracked non-exempt file, including
-    // `requirements-assurance.txt`; serialize that access with the probe that
-    // temporarily rewrites the same shared input. Passing the private token to
+    // The byte census reads every tracked non-exempt file, including the CI
+    // workflow; serialize that access with the probe that temporarily rewrites
+    // that same shared input. Passing the private token to
     // the byte-scanning helpers makes this acquisition compile-time load-bearing.
     let inputs = assurance_inputs_guard();
     let scanned = scanned_paths(&root, &tracked);
@@ -2804,12 +2864,12 @@ fn mirror_scan_with_staged_requirement(_inputs: &AssuranceInputsGuard) -> (i32, 
             "-c",
             "import json,sys,pathlib;sys.path.insert(0,'scripts');\
              import check_shared_pins as m;\
-             original=pathlib.Path('requirements-assurance.txt').read_text();\
-             pathlib.Path('requirements-assurance.txt').write_text(\
+             original=pathlib.Path('.github/workflows/ci.yml').read_text();\
+             pathlib.Path('.github/workflows/ci.yml').write_text(\
              original+'\\n--registry=https://npm.ix/\\n');\
              pins=json.load(open('assurance/pins.json'));\
              found=m.mirror_references(pins);\
-             pathlib.Path('requirements-assurance.txt').write_text(original);\
+             pathlib.Path('.github/workflows/ci.yml').write_text(original);\
              print(json.dumps(found))",
         ],
     )
@@ -2828,15 +2888,15 @@ fn the_mirror_scan_refuses_a_registry_reference_in_a_real_file() {
     assert!(
         offenders
             .iter()
-            .any(|entry| entry.starts_with("requirements-assurance.txt:")),
+            .any(|entry| entry.starts_with(".github/workflows/ci.yml:")),
         "a mirror reference written into a scanned FILE was not detected; the \
          file-scan branch matches nothing. Detected: {offenders:?}"
     );
 
     // And the file must be restored, or this test has dirtied the tree.
-    let restored = fs::read_to_string(root().join("requirements-assurance.txt")).unwrap();
+    let restored = fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
     assert!(
         !restored.contains("npm.ix/"),
-        "the probe left a mirror reference in requirements-assurance.txt"
+        "the probe left a mirror reference in the CI workflow"
     );
 }

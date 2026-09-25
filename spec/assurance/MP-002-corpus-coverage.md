@@ -2,7 +2,7 @@
 id: MP-002
 title: "MLTL corpus coverage census"
 type: MeasurementPlan
-status: proposed
+status: retired
 owner: tl-mltl-corpus-owner
 metric: tl-mltl.corpus-coverage
 definition_version: tl-mltl.corpus-coverage/v2
@@ -27,6 +27,9 @@ relationships:
 ---
 
 # MLTL corpus coverage census
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Decision Use
 

@@ -1,29 +1,52 @@
 [package]
 name = "tl-mltl"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 rust-version = "1.98.1"
 description = "Finite-trace MLTL evaluation, horizon analysis, and runtime-monitor interoperability."
 authors = ["Peter Krenesky <kreneskyp@gmail.com>"]
-license = "MIT OR Apache-2.0"
+license = "MIT"
 publish = false
 repository = "https://github.com/agent-ix/tl-mltl"
 build = "build.rs"
+
+[features]
+default = []
+infinite-trace = []
+campaign-check = ["dep:tl-oracle"]
 
 [lib]
 name = "tl_mltl"
 path = "src/lib.rs"
 
+[[bin]]
+name = "tl_campaign_check"
+path = "src/bin/tl_campaign_check.rs"
+required-features = ["campaign-check"]
+
+[[example]]
+name = "v1_live_r2u2"
+required-features = ["infinite-trace"]
+
 [dependencies]
 serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.151"
+serde_json_canonicalizer = "=0.3.2"
+regex = "=1.12.3"
 sha2 = "=0.10.9"
-tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "4a5614193d21e5ae99950ae683b04ba0ec931358", default-features = false, features = ["alloc", "serde"] }
+tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "6e2fc17fcfba60c33ab264772bb25550a9c81853", default-features = false, features = ["alloc", "serde"] }
+tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "9bf3994d4c67ee0a9a53dc31316404b9edf14df9", optional = true }
 
 [dev-dependencies]
+criterion = { version = "=0.5.1", default-features = false }
 serde_yaml_ng = "0.10"
 proptest = "=1.5.0"
 tempfile = "=3.10.1"
+
+[[bench]]
+name = "v9_workloads"
+harness = false
+required-features = ["infinite-trace"]
 
 [profile.release]
 lto = "thin"
