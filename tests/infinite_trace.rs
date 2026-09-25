@@ -1,5 +1,8 @@
 #![cfg(feature = "infinite-trace")]
 
+use std::alloc::{GlobalAlloc, Layout, System};
+use std::cell::Cell;
+
 use tl_mltl::infinite::{
     evaluate_lasso, evaluate_model, evaluate_prefix_safety, Disposition, EvaluationLimit,
     EvidenceBasis, EvidenceClosure, InfiniteError, InfiniteProvider, LassoRequest,
@@ -13,6 +16,36 @@ use tl_syntax::{
     LivenessSubjectKind, Node, NodeId, NodeKind, PartialValuation, PropositionId, SemanticProfile,
     TemporalInterval, TraceObservation, UnboundedInterval, ValuationEntry,
 };
+
+thread_local! {
+    static TRACKED_ROW_ALLOCATIONS: Cell<Option<usize>> = const { Cell::new(None) };
+}
+
+struct TrackingAllocator;
+
+// This test binary counts one-cell observation rows only while its preflight
+// test opts in on the current thread. Other tests use the system allocator.
+#[global_allocator]
+static ALLOCATOR: TrackingAllocator = TrackingAllocator;
+
+unsafe impl GlobalAlloc for TrackingAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        if layout.size() == size_of::<ObservationValue>() {
+            let _ = TRACKED_ROW_ALLOCATIONS.try_with(|count| {
+                if let Some(current) = count.get() {
+                    count.set(Some(current + 1));
+                }
+            });
+        }
+        // SAFETY: Forward the original layout unchanged to the system allocator.
+        unsafe { System.alloc(layout) }
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        // SAFETY: `ptr` and `layout` come from the matching allocation call.
+        unsafe { System.dealloc(ptr, layout) }
+    }
+}
 
 fn node(kind: K) -> InfiniteNode {
     InfiniteNode::new(kind)
@@ -698,6 +731,80 @@ fn every_lasso_resource_dimension_refuses_one_over_without_panic() {
             assert_eq!(outcome.disposition, Disposition::Failed);
             assert_eq!(outcome.reason, Some(ResultReason::ResourceIncomplete));
         }
+    }
+}
+
+// Trace: TL-247; TC-159; FR-034-AC-2
+#[test]
+fn lasso_size_limits_refuse_before_materializing_observation_rows() {
+    let graph = formula(
+        0,
+        vec![node(K::Proposition {
+            proposition: PropositionId(7),
+        })],
+    );
+    let lasso = trace(&[], &[ObservationValue::True; 64]);
+    let graph_id = graph.content_identity().unwrap();
+    let trace_id = lasso.content_identity().unwrap();
+    let evaluate_counted = |limit| {
+        let request = LassoRequest {
+            formula: &graph,
+            trace: &lasso,
+            fairness: None,
+            evidence_closure: EvidenceClosure::Closed,
+            graph_id: &graph_id,
+            trace_id: &trace_id,
+            selected_position: 0,
+            limit,
+        };
+        TRACKED_ROW_ALLOCATIONS.with(|count| count.set(Some(0)));
+        let outcome = evaluate_lasso(&request).unwrap();
+        let row_allocations = TRACKED_ROW_ALLOCATIONS.with(|count| count.replace(None).unwrap());
+        (outcome, row_allocations)
+    };
+
+    let (admitted, admitted_allocations) = evaluate_counted(EvaluationLimit::default());
+    assert_eq!(admitted.disposition, Disposition::Proved);
+    assert!(
+        admitted_allocations >= 64,
+        "allocator did not observe the admitted observation rows"
+    );
+
+    let limits = [
+        (
+            "nodes",
+            EvaluationLimit {
+                max_nodes: 0,
+                ..EvaluationLimit::default()
+            },
+        ),
+        (
+            "positions",
+            EvaluationLimit {
+                max_positions: 0,
+                ..EvaluationLimit::default()
+            },
+        ),
+        (
+            "valuation cells",
+            EvaluationLimit {
+                max_valuation_cells: 0,
+                ..EvaluationLimit::default()
+            },
+        ),
+    ];
+    for (dimension, limit) in limits {
+        let (outcome, row_allocations) = evaluate_counted(limit);
+        assert_eq!(outcome.disposition, Disposition::Failed, "{dimension}");
+        assert_eq!(
+            outcome.reason,
+            Some(ResultReason::ResourceIncomplete),
+            "{dimension}"
+        );
+        assert_eq!(
+            row_allocations, 0,
+            "{dimension} allocated rows before refusal"
+        );
     }
 }
 
