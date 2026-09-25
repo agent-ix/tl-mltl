@@ -11,8 +11,11 @@ the exact local run.
 
 To reproduce, use clean checkouts at those commits and run the command in
 `campaign/TL217.md` from the measured `tl-mltl` checkout, with Rust 1.98.1,
-Python 3.13 and the pinned R2U2 compiler and built monitor. Choose new report
-and raw directory paths. Compare the new report's `TL217_PAST_GRID` marker
+Python 3.13 and the pinned R2U2 compiler. In the R2U2 checkout, run
+`make -C monitors/c` to produce `monitors/c/build/r2u2`; verify its SHA-256
+equals `5743987dddb47cc01829a633e15623095c9c2aff2f8bb24e30d7f0e0f488f85f`
+before running the gate. Choose new report and raw directory paths. Compare
+the new report's `TL217_PAST_GRID` marker
 with `report.json`: source, lock, target, compiler, monitor, counts, and every
 `artifacts` digest must match. The fresh gate itself independently verifies
 the raw bytes and per-step verdicts.
