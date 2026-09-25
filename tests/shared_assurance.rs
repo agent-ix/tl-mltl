@@ -1701,10 +1701,11 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
     // asserted too: an export reporting different totals has to move a number in
     // this file rather than only a threshold the driver applies.
     let totals = &parsed["totals"];
-    // The current V1 matrix has 346 declared rows; 207 have native trace
-    // backing, including the V5 mutation population's TC-183 binding, the
-    // V10 FR-052-AC-2 and TC-192 per-cell replay tests, and TL-229/TL-230
-    // boundary and independent-oracle fuzz tests.
+    // The current V1 matrix has 346 declared rows; 212 have runnable trace
+    // backing. The five rows newly backed since the previous pin are FR-048,
+    // FR-048-AC-1, FR-048-AC-2, FR-050, and TC-186 through the V6/V8 gate
+    // tests. These bindings do not claim Kani or llvm-cov execution. The V5
+    // mutation, V10 replay, and TL-229/TL-230 fuzz bindings remain included.
     // Suite registry rows are included; the two intentionally non-runnable
     // suites are checked separately below. An unbacked row is not counted as
     // implemented merely because its requirement appears in the spec.
@@ -1713,7 +1714,7 @@ fn the_sealed_records_impact_snapshot_is_the_quire_export() {
         "the declared-row population changed: {totals}; review the exact Quire export."
     );
     assert_eq!(
-        totals["backed"], 207,
+        totals["backed"], 212,
         "backed-row count changed: {totals}; review the exact Quire export and trace tags."
     );
     // The aggregate alone cannot identify which suite rows are absent, so check
