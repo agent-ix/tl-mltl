@@ -67,4 +67,4 @@ under `spec/stubs/` do not count as executed coverage.
 | TC-197 | Map V1–V11 milestones to named gates and pass/failure/incomplete states | Inspection | P0 | FR-055-AC-1 | ✅ implemented |
 | TC-198 | Force one missing, failed and stale lane each and keep siblings independently visible | Integration | P0 | FR-055-AC-2 | ✅ implemented |
 | TC-199 | Reject automated acceptance, release, parity or certification claims and exhausted success | Integration | P0 | FR-055-AC-3, NFR-009-AC-1 | ✅ implemented |
-| TC-200 | Refuse mismatched Rust/Cargo identity, stable or mismatched LLVM branch coverage tools, and duplicate environment keys; accept exact member stable/nightly bindings | Integration | P0 | FR-055-AC-4 | ✅ implemented |
+| TC-200 | Refuse mismatched Rust/Cargo identity, stable branch coverage toolchains, and duplicate environment keys; accept exact member stable/nightly bindings and rustup-style LLVM tool version strings | Integration | P0 | FR-055-AC-4 | ✅ implemented |
