@@ -1250,7 +1250,7 @@ mod tests {
     // Trace: FR-055-AC-4, TC-200
     #[cfg(unix)]
     #[test]
-    fn branch_coverage_requires_matching_nightly_and_llvm_tools() {
+    fn branch_coverage_requires_nightly_and_llvm_tool_paths() {
         use std::os::unix::fs::PermissionsExt;
 
         let directory = tempfile::tempdir().unwrap();
