@@ -34,7 +34,10 @@ SCOPE = {
         "critical_scope": "V5 selected critical semantics",
         "test_tail": ["--lib", "--test", "infinite_conformance", "--test",
                       "infinite_rules", "--test", "infinite_owner_corpus"],
-        "minimum_selected": 39,
+        # The current rewrite graph removes a redundant execution equality
+        # check after non-completed results have already been classified. That
+        # one removed conjunct generated two mutants in the earlier census.
+        "minimum_selected": 37,
     },
     "tl-mltl": {
         "source_file": "src/infinite/mod.rs",
