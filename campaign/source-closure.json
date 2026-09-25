@@ -48,15 +48,15 @@
     },
     {
       "repository": "tl-rewrite",
-      "revision": "42bac74120e2bced978b406ca2b87248925e1be5",
-      "treeDigest": "0c7055272c994020ff350ddd2011b54ac7d8e3ee5afa94a9f1910656297d626b",
-      "cargoLockDigest": "cea25d8c96b15d7d006be5bd282cbabb345a25e239da62e6f4df9ecdd33823a0",
+      "revision": "3b77c70c361b09cb383bacfd369cc6267fc9cedd",
+      "treeDigest": "39cda97b22cd267998de0ac409ad39d89afce768e8c1046b3dd7d2fb7142fc01",
+      "cargoLockDigest": "208453e74ad5141e2a07c8d1ede03c1870a6a3a2fc9e9a67ada9a40c11ab86d3",
       "tlGitDependencies": [
         {
           "package": "tl-mltl",
           "version": "0.4.0",
-          "revision": "814806705d84eff102f6ef97094dfa7fada49105",
-          "source": "git+https://github.com/agent-ix/tl-mltl.git?rev=814806705d84eff102f6ef97094dfa7fada49105#814806705d84eff102f6ef97094dfa7fada49105"
+          "revision": "788c53e5bba68ad3e4bafc3f9518a34e20b19c30",
+          "source": "git+https://github.com/agent-ix/tl-mltl.git?rev=788c53e5bba68ad3e4bafc3f9518a34e20b19c30#788c53e5bba68ad3e4bafc3f9518a34e20b19c30"
         },
         {
           "package": "tl-oracle",
@@ -67,8 +67,8 @@
         {
           "package": "tl-parse",
           "version": "0.4.0",
-          "revision": "6ce728472474a2a3835d93745331ec70f3d9197f",
-          "source": "git+https://github.com/agent-ix/tl-parse.git?rev=6ce728472474a2a3835d93745331ec70f3d9197f#6ce728472474a2a3835d93745331ec70f3d9197f"
+          "revision": "5ca6f76936c95232a3a8b86ce33f6f16c4aab606",
+          "source": "git+https://github.com/agent-ix/tl-parse.git?rev=5ca6f76936c95232a3a8b86ce33f6f16c4aab606#5ca6f76936c95232a3a8b86ce33f6f16c4aab606"
         },
         {
           "package": "tl-syntax",
@@ -77,7 +77,7 @@
           "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
         }
       ],
-      "cargoManifestDigest": "11216e47ea68437f617202b7c0da7a476d3115a6cd2261d2da8ea73cd23fe986"
+      "cargoManifestDigest": "e90c8374522dd40dea34014dd85dbf26426796def370792ec087b8ade24f8f2a"
     },
     {
       "repository": "tl-oracle",
@@ -222,7 +222,7 @@
     {
       "repository": "tl-rewrite",
       "baselineRevision": "9056b8b31f3f7f3772d2bd811c4f6edd2d89b509",
-      "candidateRevision": "42bac74120e2bced978b406ca2b87248925e1be5",
+      "candidateRevision": "3b77c70c361b09cb383bacfd369cc6267fc9cedd",
       "identicalFiles": [
         {
           "path": "benches/input-digests.json",

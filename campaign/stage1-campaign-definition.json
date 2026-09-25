@@ -21,8 +21,8 @@
     },
     {
       "repository": "tl-rewrite",
-      "revision": "42bac74120e2bced978b406ca2b87248925e1be5",
-      "digest": "0c7055272c994020ff350ddd2011b54ac7d8e3ee5afa94a9f1910656297d626b"
+      "revision": "3b77c70c361b09cb383bacfd369cc6267fc9cedd",
+      "digest": "39cda97b22cd267998de0ac409ad39d89afce768e8c1046b3dd7d2fb7142fc01"
     },
     {
       "repository": "tl-oracle",
