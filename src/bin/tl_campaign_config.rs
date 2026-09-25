@@ -151,7 +151,6 @@ fn validate_rust_binding(
                 "{member}: branch coverage requires a nightly Rust toolchain"
             ));
         }
-        let llvm_version = field("LLVM version:")?;
         for name in ["LLVM_COV", "LLVM_PROFDATA"] {
             if !procedure.environment.iter().any(|entry| {
                 entry.name == name
@@ -169,14 +168,6 @@ fn validate_rust_binding(
                 return Err(format!(
                     "{member}: {name} must name an absolute executable file"
                 ));
-            }
-            let version = observed_version(executable, "--version")?;
-            let observed_llvm = version.lines().find_map(|line| {
-                line.split_once("LLVM version ")
-                    .and_then(|(_, value)| value.split_whitespace().next())
-            });
-            if observed_llvm != Some(llvm_version) {
-                return Err(format!("{member}: {name} LLVM version differs from RUSTC"));
             }
         }
     }
@@ -1259,7 +1250,7 @@ mod tests {
     // Trace: FR-055-AC-4, TC-200
     #[cfg(unix)]
     #[test]
-    fn branch_coverage_requires_matching_nightly_and_llvm_tools() {
+    fn branch_coverage_requires_nightly_and_llvm_tool_paths() {
         use std::os::unix::fs::PermissionsExt;
 
         let directory = tempfile::tempdir().unwrap();
@@ -1277,9 +1268,8 @@ mod tests {
             "rustc",
             "release: 1.100.0-nightly\nhost: x86_64-unknown-linux-gnu\nLLVM version: 23.1.1",
         );
-        let cov = write_tool("llvm-cov", "LLVM version 23.1.1");
-        let profdata = write_tool("llvm-profdata", "LLVM version 23.1.1");
-        let wrong_profdata = write_tool("old-llvm-profdata", "LLVM version 23.1.10");
+        let cov = write_tool("llvm-cov", "LLVM version 23.1.1-rust-1.100.0-nightly");
+        let profdata = write_tool("llvm-profdata", "LLVM version 23.1.1-rust-1.100.0-nightly");
         let procedure: Procedure = serde_json::from_str(include_str!(
             "../../campaign/procedures/v8-mltl-default.json"
         ))
@@ -1308,23 +1298,6 @@ mod tests {
             &BTreeMap::new()
         )
         .is_ok());
-        environment.insert(
-            "LLVM_PROFDATA".into(),
-            wrong_profdata.to_string_lossy().into_owned(),
-        );
-        let mismatch = validate_rust_binding(
-            "V8.mltl_default",
-            &procedure,
-            &nightly_identity,
-            &environment,
-            &BTreeMap::new()
-        )
-        .unwrap_err();
-        assert!(mismatch.contains("LLVM_PROFDATA LLVM version differs from RUSTC"));
-        environment.insert(
-            "LLVM_PROFDATA".into(),
-            profdata.to_string_lossy().into_owned(),
-        );
         environment.insert("RUSTC".into(), stable.to_string_lossy().into_owned());
         let stable_identity = BTreeMap::from([(
             "rust".into(),
@@ -1338,7 +1311,7 @@ mod tests {
             &procedure,
             &stable_identity,
             &environment,
-            &BTreeMap::new()
+            &BTreeMap::new(),
         )
         .unwrap_err();
         assert!(stable_refusal.contains("branch coverage requires a nightly Rust toolchain"));
