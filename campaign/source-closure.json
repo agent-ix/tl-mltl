@@ -27,8 +27,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "788c53e5bba68ad3e4bafc3f9518a34e20b19c30",
-      "treeDigest": "40b931571c05559a4340e101043b87225b718c18515822f0800eff49bd74e71b",
+      "revision": "7006386d18d1a52700007b1174adc530511b33f1",
+      "treeDigest": "bebe7fcf149c3ea939b5e03b6121c08b0b52807cb60b85181b04e8eedd59e511",
       "cargoLockDigest": "402173883a14765dcd3c4205e2d75bda43c8f5221b62b6911d822e113836b2e7",
       "tlGitDependencies": [
         {
@@ -48,15 +48,15 @@
     },
     {
       "repository": "tl-rewrite",
-      "revision": "3b77c70c361b09cb383bacfd369cc6267fc9cedd",
-      "treeDigest": "39cda97b22cd267998de0ac409ad39d89afce768e8c1046b3dd7d2fb7142fc01",
-      "cargoLockDigest": "208453e74ad5141e2a07c8d1ede03c1870a6a3a2fc9e9a67ada9a40c11ab86d3",
+      "revision": "0f31d87ab759fa21b7cfea7cacbf2d4c991eb07b",
+      "treeDigest": "f8d9cdc5ef317c10209e0dc064fff21ee8629ae3950dde4d4e43b7bf68495bf2",
+      "cargoLockDigest": "5225cca2dfe0d01dcb90e1e3c31ecc727a940ec4097cbd8d1da411688a993723",
       "tlGitDependencies": [
         {
           "package": "tl-mltl",
           "version": "0.4.0",
-          "revision": "788c53e5bba68ad3e4bafc3f9518a34e20b19c30",
-          "source": "git+https://github.com/agent-ix/tl-mltl.git?rev=788c53e5bba68ad3e4bafc3f9518a34e20b19c30#788c53e5bba68ad3e4bafc3f9518a34e20b19c30"
+          "revision": "7006386d18d1a52700007b1174adc530511b33f1",
+          "source": "git+https://github.com/agent-ix/tl-mltl.git?rev=7006386d18d1a52700007b1174adc530511b33f1#7006386d18d1a52700007b1174adc530511b33f1"
         },
         {
           "package": "tl-oracle",
@@ -77,7 +77,7 @@
           "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
         }
       ],
-      "cargoManifestDigest": "e90c8374522dd40dea34014dd85dbf26426796def370792ec087b8ade24f8f2a"
+      "cargoManifestDigest": "97fe64f76b33cd8ca5d94ba9290c8d63db3abfecd4bba86c57bc9a94d7010d72"
     },
     {
       "repository": "tl-oracle",
@@ -222,7 +222,7 @@
     {
       "repository": "tl-rewrite",
       "baselineRevision": "9056b8b31f3f7f3772d2bd811c4f6edd2d89b509",
-      "candidateRevision": "3b77c70c361b09cb383bacfd369cc6267fc9cedd",
+      "candidateRevision": "0f31d87ab759fa21b7cfea7cacbf2d4c991eb07b",
       "identicalFiles": [
         {
           "path": "benches/input-digests.json",
@@ -239,7 +239,7 @@
     {
       "repository": "tl-mltl",
       "baselineRevision": "0e4a41083d420ccc85134f4f7e224698ab7859e0",
-      "candidateRevision": "788c53e5bba68ad3e4bafc3f9518a34e20b19c30",
+      "candidateRevision": "7006386d18d1a52700007b1174adc530511b33f1",
       "identicalFiles": [
         {
           "path": "benches/input-digests.json",
