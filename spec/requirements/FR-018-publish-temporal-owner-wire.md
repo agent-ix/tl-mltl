@@ -102,11 +102,14 @@ schema/digest/strict-reading discipline shared across all five.
 
 ## Status
 
-The five retained contracts remain fully implemented and are exercised by
-existing tests (`tests/cli.rs`, `tests/past_history.rs`,
-`tests/past_history_corpus.rs`, and others) that predate this requirement and
-are not yet tagged with dedicated FR-018 trace comments; TC-090 is recorded
-as planned pending that tagging. TL-179 removed the QObs-coupled request/
-result/mapping layer and its dedicated test (`tests/tc_084_temporal_owner_wire.rs`,
-formerly TC-084) outright rather than porting it, since that behavior now
-lives in `quire-mltl`.
+The five retained contracts remain implemented. `tests/inspection_evidence.rs`
+pins their published schema digests, exercises all five canonical readers,
+malformed-input refusals, common and owner-specific `OwnerLimits` ceilings,
+and one-over output limits under TC-090. The same test compares the exact
+pre/post TL-179 source revisions and confirms that the retained evaluator,
+CLI, owner-reader, schema, and legacy-mapping source paths did not change in
+that removal. Current behavior is exercised by `tests/reference.rs`,
+`tests/past_history.rs`, `tests/cli.rs`, and `tests/interop.rs`. TL-179 removed
+the QObs-coupled request/result/mapping layer and its dedicated test
+(`tests/tc_084_temporal_owner_wire.rs`, formerly TC-084) rather than porting it,
+since that behavior now lives in `quire-mltl`.

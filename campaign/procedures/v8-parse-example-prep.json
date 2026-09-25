@@ -1,0 +1,86 @@
+{
+  "arguments": [
+    {
+      "kind": "literal",
+      "value": "build"
+    },
+    {
+      "kind": "literal",
+      "value": "--example"
+    },
+    {
+      "kind": "literal",
+      "value": "fuzz_campaign"
+    },
+    {
+      "kind": "literal",
+      "value": "--all-features"
+    },
+    {
+      "kind": "literal",
+      "value": "--locked"
+    },
+    {
+      "kind": "literal",
+      "value": "--offline"
+    }
+  ],
+  "environment": [
+    {
+      "kind": "runtime",
+      "name": "PATH",
+      "value": "host:PATH"
+    },
+    {
+      "kind": "runtime",
+      "name": "HOME",
+      "value": "host:HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "CARGO_HOME",
+      "value": "host:CARGO_HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "RUSTUP_HOME",
+      "value": "host:RUSTUP_HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "TMPDIR",
+      "value": "host:TMPDIR"
+    },
+    {
+      "kind": "runtime",
+      "name": "RUSTC",
+      "value": "host:RUSTC"
+    },
+    {
+      "kind": "literal",
+      "name": "CARGO_TARGET_DIR",
+      "value": ".quoin-target"
+    },
+    {
+      "kind": "literal",
+      "name": "CARGO_NET_OFFLINE",
+      "value": "true"
+    }
+  ],
+  "inputs": [],
+  "outputs": [
+    {
+      "required": true,
+      "role": "example"
+    }
+  ],
+  "producerName": "cargo",
+  "producerVersion": "1.100.0-nightly",
+  "repetitions": 1,
+  "responseAdapter": "quoin.process-evidence-adapter",
+  "responseAdapterVersion": "1",
+  "responseProtocol": "quoin.process-evidence/v1",
+  "schemaVersion": "engineering-assurance.measurement-procedure/v1",
+  "sourceRepository": "tl-parse",
+  "timeoutMillis": 1800000
+}

@@ -2,6 +2,7 @@
 id: FR-009
 title: "Version and retain owned corpus fixture families"
 type: FR
+status: superseded
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-002
     type: implements
@@ -12,6 +13,9 @@ relationships:
 ---
 
 # FR-009: Version and retain owned corpus fixture families
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Description
 

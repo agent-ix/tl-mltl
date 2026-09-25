@@ -1,0 +1,16 @@
+[package]
+name = "tl-kani-negative"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.98.1"
+license = "MIT"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)"] }
+
+[dependencies]
+tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "6e2fc17fcfba60c33ab264772bb25550a9c81853", default-features = false, features = ["alloc"] }

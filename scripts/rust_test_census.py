@@ -57,14 +57,26 @@ def listed_test_names(output: str) -> tuple[set[str], list[str]]:
 
 
 def cargo_list(ignored: bool = False) -> str:
-    arguments = ["cargo", "test", "--all-targets", "--all-features", "--"]
-    if ignored:
-        arguments.append("--ignored")
-    arguments.append("--list")
-    result = subprocess.run(arguments, cwd=ROOT, check=False, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise RuntimeError((result.stdout + result.stderr).strip())
-    return result.stdout
+    # Fuzz is a separate Cargo workspace. Its requirement-tagged smoke tests
+    # must be compiled and listed too, or Quire could count a test that the
+    # source-root Cargo invocation never discovers.
+    listings = []
+    for manifest in (None, ROOT / "fuzz" / "Cargo.toml"):
+        # Cargo's --all-targets would execute libFuzzer binaries that have
+        # test=false; the fuzz workspace contributes only its test targets.
+        target_scope = "--all-targets" if manifest is None else "--tests"
+        arguments = ["cargo", "test", "--locked", target_scope, "--all-features"]
+        if manifest is not None:
+            arguments += ["--manifest-path", str(manifest)]
+        arguments.append("--")
+        if ignored:
+            arguments.append("--ignored")
+        arguments.append("--list")
+        result = subprocess.run(arguments, cwd=ROOT, check=False, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError((result.stdout + result.stderr).strip())
+        listings.append(result.stdout)
+    return "\n".join(listings)
 
 
 def main() -> int:

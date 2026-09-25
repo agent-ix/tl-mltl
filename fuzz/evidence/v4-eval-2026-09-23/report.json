@@ -1,0 +1,65 @@
+{
+  "budget": {
+    "max_len": 4096,
+    "runs": 1000,
+    "seconds": 30,
+    "seed": 181
+  },
+  "command": [
+    "cargo",
+    "fuzz",
+    "run",
+    "--sanitizer",
+    "address",
+    "closed_eval",
+    "/private/tmp/tl-v4-fuzz-jkasdc2r/corpus",
+    "--",
+    "-runs=1000",
+    "-seed=181",
+    "-max_total_time=30",
+    "-max_len=4096",
+    "-artifact_prefix=/private/tmp/tl-mltl-v4-ea041-b3a-eval/artifacts/"
+  ],
+  "crash_artifacts_sha256": {},
+  "crate": "tl-mltl",
+  "engine": "libFuzzer",
+  "fuzz_lock_sha256": "0843d73e9c84917176a1ba8345db978dee16eaf0404b0bf48da0eb329d6d4e6f",
+  "observed": {
+    "elapsed_seconds": 0.818,
+    "executions": 1000,
+    "exit_code": 0,
+    "stop_reason": "run_budget"
+  },
+  "raw_output_sha256": {
+    "stderr.log.gz": "3c80747342d583c9ec59c5947cbf4ad9791d01d23346f633d6b3475fdc2c362b",
+    "stdout.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "raw_stream_sha256": {
+    "stderr": "c4af9102ee2036685312d9586e9dce00faede1e28a9372032137ecb2198efae9",
+    "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "replay": {
+    "confirmed": false,
+    "minimized_artifact_sha256": null,
+    "required": false
+  },
+  "root_lock_sha256": "212684a6e7d2265531d1220b98b12d650a9822a6a2528e4b612a38967aa8fa91",
+  "sanitizer": "address",
+  "schema": "tl-v4.libfuzzer-campaign/v1",
+  "scope": "bounded observation; no four-crate V4 or correctness claim",
+  "seed_files_sha256": {
+    "atom": "11c953350ff34d2211b7ea5ea5917f603692ace2c0104f01f6c6296474f67525",
+    "future-endpoints": "13411f2439de02123325fbea3ef502abc7d7001e89f92234e9445089d2b39142",
+    "malformed": "842fbc236383d8e62b60e6da88ed0fa3d8e7116c700162b05dfb6d1e1b078ed6",
+    "until-lower-bound": "2479f5171261480903b24ca68113f209abd2f674228ccf8afe73b16fecb7058e"
+  },
+  "source_revision": "b3a9a545efffd6241b272f8a885be460727f6ec8",
+  "starting_corpus_sha256": "8adb923a29a2d010e625634f2eff5323a904048f283a78edc3742602dcd33a8f",
+  "status": "bounded_no_crash",
+  "target": "closed_eval",
+  "tool_versions": {
+    "cargo": "cargo 1.100.0-nightly (495c385d0 2026-09-16)",
+    "cargo_fuzz": "cargo-fuzz 0.13.1",
+    "rustc": "rustc 1.100.0-nightly (1303417c4 2026-09-21)\nbinary: rustc\ncommit-hash: 1303417c416e1595173d9689e7394c31e136ae95\ncommit-date: 2026-09-21\nhost: aarch64-apple-darwin\nrelease: 1.100.0-nightly\nLLVM version: 23.1.1"
+  }
+}

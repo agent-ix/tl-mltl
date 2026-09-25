@@ -1,0 +1,99 @@
+{
+  "arguments": [
+    {
+      "kind": "literal",
+      "value": "--lib"
+    },
+    {
+      "kind": "literal",
+      "value": "--harness"
+    },
+    {
+      "kind": "literal",
+      "value": "future::horizon::kani_proofs::horizon_bound_addition_matches_checked_add"
+    },
+    {
+      "kind": "literal",
+      "value": "--exact"
+    },
+    {
+      "kind": "literal",
+      "value": "--unwind"
+    },
+    {
+      "kind": "literal",
+      "value": "2"
+    },
+    {
+      "kind": "literal",
+      "value": "--solver"
+    },
+    {
+      "kind": "literal",
+      "value": "cadical"
+    }
+  ],
+  "environment": [
+    {
+      "kind": "runtime",
+      "name": "PATH",
+      "value": "host:PATH"
+    },
+    {
+      "kind": "runtime",
+      "name": "HOME",
+      "value": "host:HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "CARGO_HOME",
+      "value": "host:CARGO_HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "RUSTUP_HOME",
+      "value": "host:RUSTUP_HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "CARGO_TARGET_DIR",
+      "value": "host:CARGO_TARGET_DIR"
+    },
+    {
+      "kind": "runtime",
+      "name": "TMPDIR",
+      "value": "host:TMPDIR"
+    },
+    {
+      "kind": "runtime",
+      "name": "RUSTC",
+      "value": "host:RUSTC"
+    },
+    {
+      "kind": "literal",
+      "name": "CARGO_NET_OFFLINE",
+      "value": "true"
+    },
+    {
+      "kind": "runtime",
+      "name": "TL_MLTL_SOURCE_REVISION",
+      "value": "source:tl-mltl.revision"
+    },
+    {
+      "kind": "literal",
+      "name": "TL_MLTL_SOURCE_STATE",
+      "value": "clean"
+    }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "producerName": "cargo-kani",
+  "producerVersion": "0.68.0",
+  "repetitions": 1,
+  "responseAdapter": "quoin.process-evidence-adapter",
+  "responseAdapterVersion": "1",
+  "responseProtocol": "quoin.process-evidence/v1",
+  "schemaVersion": "engineering-assurance.measurement-procedure/v1",
+  "sourceRepository": "tl-mltl",
+  "timeoutMillis": 900000
+}

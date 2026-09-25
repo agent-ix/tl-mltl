@@ -2,6 +2,7 @@
 id: FR-024
 title: "Route effectiveness records through shared assurance"
 type: FR
+status: superseded
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-003
     type: implements
@@ -20,6 +21,9 @@ relationships:
 ---
 
 # FR-024: Route effectiveness records through shared assurance
+
+> Historical campaign artifact, superseded for V1 by MRS-004 and TM-006.
+> Existing implemented tests and retained evidence remain available.
 
 ## Description
 
