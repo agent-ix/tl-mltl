@@ -499,6 +499,10 @@ fn history_hard_cap_refuses_excess_rows_at_wire_and_constructor_boundaries() {
     let row_json = serde_json::to_string(&row).unwrap();
     let valid = event_history(&[(false, false)], 1);
     let valid_json = serde_json::to_string(&valid).unwrap();
+    assert_eq!(
+        serde_json::from_str::<PositionHistoryDocument>(&valid_json).unwrap(),
+        valid
+    );
     let singleton = format!("[{row_json}]");
     let (prefix, suffix) = valid_json.split_once(&singleton).unwrap();
 
@@ -1409,6 +1413,10 @@ fn required_history_uses_checked_recursive_equations_and_ignores_spans() {
         analyze_required_history(future, "formula-a"),
         Err(HistoryRequirementError::UnsupportedProfile { .. })
     ));
+    assert!(matches!(
+        analyze_required_history(future, String::from("formula-a")),
+        Err(HistoryRequirementError::UnsupportedProfile { .. })
+    ));
 }
 
 // Trace: TC-053, FR-011-AC-4, FR-013-AC-1
@@ -1777,5 +1785,18 @@ fn anchors_are_explicit_final_originals_and_silence_advances_nothing() {
             anchor: 2,
             through: 1
         })
+    );
+    assert_eq!(
+        evaluate_past(
+            formula(&nodes),
+            "formula-a",
+            &history,
+            1,
+            "map-a",
+            0,
+            PastEvaluationRelationInput::Original,
+            PastEvaluationLimits::default(),
+        ),
+        Err(PastEvaluationError::ResultRevisionInvalid)
     );
 }
