@@ -28,7 +28,8 @@ pub struct TargetOriginContract {
     pub monitor_executable_sha256: String,
     /// Lowercase SHA-256 of the reviewed target-origin evidence artifact.
     pub evidence_sha256: String,
-    /// Past operators whose origin behavior was reviewed for this target.
+    /// Past operators with a retained target observation or a zero-interval
+    /// Boolean lowering that removes target-origin behavior.
     pub admitted_operators: BTreeSet<PastOperatorKind>,
 }
 
@@ -223,21 +224,16 @@ impl Renderer<'_, '_> {
             NodeKind::Equivalent { left, right } => self.binary("<->", left, right)?,
             NodeKind::Once { interval, operand } => {
                 self.require_interval(PastOperatorKind::Once, interval)?;
-                format!(
-                    "O[{},{}]({})",
-                    interval.start(),
-                    interval.end(),
-                    self.render(operand)?
-                )
+                let child = self.render(operand)?;
+                if interval.start() == 0 && interval.end() == 0 {
+                    child
+                } else {
+                    format!("O[{},{}]({child})", interval.start(), interval.end())
+                }
             }
             NodeKind::Historically { interval, operand } => {
                 self.require_interval(PastOperatorKind::Historically, interval)?;
-                format!(
-                    "H[{},{}]({})",
-                    interval.start(),
-                    interval.end(),
-                    self.render(operand)?
-                )
+                self.render(operand)?
             }
             NodeKind::StrongPrevious { operand } => {
                 self.require(PastOperatorKind::StrongPrevious)?;
@@ -249,13 +245,11 @@ impl Renderer<'_, '_> {
                 right,
             } => {
                 self.require_interval(PastOperatorKind::Since, interval)?;
-                format!(
-                    "({} S[{},{}] {})",
-                    self.render(left)?,
-                    interval.start(),
-                    interval.end(),
-                    self.render(right)?
-                )
+                // S[0,0] is exactly its right operand at every position.
+                // The left operand is still rendered so unsupported names or
+                // nested temporal shapes cannot be hidden by lowering.
+                self.render(left)?;
+                self.render(right)?
             }
             NodeKind::Triggered {
                 interval,
@@ -264,13 +258,11 @@ impl Renderer<'_, '_> {
             } => {
                 self.require_interval(PastOperatorKind::Triggered, interval)?;
                 self.require_interval(PastOperatorKind::Since, interval)?;
-                format!(
-                    "(!((!{}) S[{},{}] (!{})))",
-                    self.render(left)?,
-                    interval.start(),
-                    interval.end(),
-                    self.render(right)?
-                )
+                // T[0,0] = !( (!left) S[0,0] (!right) ) = !!right.
+                // This preserves the explicit dual without emitting a target
+                // S operator whose origin behavior lacks retained evidence.
+                self.render(left)?;
+                format!("(!(!{}))", self.render(right)?)
             }
             NodeKind::Future { .. }
             | NodeKind::Globally { .. }
@@ -317,16 +309,14 @@ impl Renderer<'_, '_> {
     }
 }
 
-/// Conservative C2PO 4.2 interval partition from the observed origin grid.
-/// The larger grid found H[0,1] semantic mismatches and incomplete target
-/// rows for wider O windows. Unreviewed cells are refused rather than
-/// inferred from parser acceptance or a shorter retained trace.
+/// The only nontrivial target past forms backed by retained per-step
+/// observations are O[0,1] and Y as O[1,1]. Zero-interval forms lower to
+/// Boolean expressions and need no target past-origin behavior. Every other
+/// interval is refused rather than inferred from parser acceptance.
 pub(crate) fn target_equivalent_interval(operator: PastOperatorKind, interval: Interval) -> bool {
     match operator {
-        PastOperatorKind::Once | PastOperatorKind::Since => {
-            interval.start() == 0 && interval.end() <= 1
-        }
-        PastOperatorKind::Historically | PastOperatorKind::Triggered => {
+        PastOperatorKind::Once => interval.start() == 0 && interval.end() <= 1,
+        PastOperatorKind::Historically | PastOperatorKind::Since | PastOperatorKind::Triggered => {
             interval.start() == 0 && interval.end() == 0
         }
         PastOperatorKind::StrongPrevious => false,
@@ -340,10 +330,10 @@ struct OriginShape {
     depth: usize,
 }
 
-/// The reviewed target grid covers homogeneous past chains only: up to three
-/// temporal nodes, or two for strong previous. One formula may not combine
-/// different temporal operators or intervals, including under a Boolean
-/// node. This is a conservative evidence boundary.
+/// Keep the admitted shape within a conservative homogeneous partition: up
+/// to three temporal nodes, or two for strong previous. One formula may not
+/// combine different temporal operators or intervals, including under a
+/// Boolean node. This is a refusal boundary, not a broader target claim.
 fn validate_origin_shape(formula: Formula<'_>) -> Result<(), PastMappingError> {
     let mut states: Vec<OriginShape> = Vec::with_capacity(formula.nodes().len());
     for (index, node) in formula.nodes().iter().enumerate() {

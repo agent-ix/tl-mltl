@@ -37,7 +37,7 @@ fn source() -> MappingSourceIdentity {
     }
 }
 
-// Trace: TC-011, FR-004-AC-1, StR-002-VC-2
+// Trace: TC-011, TC-163, FR-004-AC-1, FR-038-AC-2, StR-002-VC-2
 #[test]
 fn supported_mapping_is_stable_and_identity_preserving() {
     let nodes = future_nodes();
@@ -54,6 +54,13 @@ fn supported_mapping_is_stable_and_identity_preserving() {
         .unwrap()
     };
     let first = run();
+    assert_eq!(
+        serde_json::to_vec(&first).unwrap(),
+        include_bytes!("fixtures/tl-216/legacy-v1.json")
+            .strip_suffix(b"\n")
+            .unwrap(),
+        "legacy v1 manifest bytes changed from the pre-feature main baseline"
+    );
     assert_eq!(first, run());
     assert_eq!(first.expression, "F[0,2](p7)");
     assert_eq!(first.proposition_ids, [7]);

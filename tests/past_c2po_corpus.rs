@@ -140,7 +140,7 @@ fn formula(case: &Case) -> Vec<Node> {
     }
 }
 
-// Trace: TC-160, TC-161, TC-164, TC-165, TC-174; FR-038-AC-1, FR-038-AC-3, FR-039-AC-1, FR-042-AC-1
+// Trace: TC-160, TC-161, TC-164, TC-165, TC-174; FR-038-AC-1, FR-038-AC-2, FR-038-AC-3, FR-039-AC-1
 #[test]
 fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
     let digest = Sha256::digest(MANIFEST)
@@ -346,9 +346,9 @@ fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
             "triggered-zero-two" => {
                 Some((PastOperatorKind::Triggered, Interval::new(0, 2).unwrap()))
             }
-            // The retained three-step trace agrees, but the broader live
-            // origin grid found H[0,1] mismatches. Retain the observation
-            // without turning it into an export-admission claim.
+            // The retained three-step trace does not establish H[0,1]
+            // across other valuations. Retain the observation without
+            // turning it into an export-admission claim.
             "historically-zero-one" => {
                 Some((PastOperatorKind::Historically, Interval::new(0, 1).unwrap()))
             }

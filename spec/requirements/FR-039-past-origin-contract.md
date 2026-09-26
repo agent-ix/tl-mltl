@@ -22,7 +22,8 @@ refuse the export before producing executable output.
 The source profile interprets out-of-origin past atoms as false. The exporter
 cannot infer that R2U2/C2PO shares this rule from syntax acceptance alone.
 It records the exact target version and reviewed origin behavior for each
-admitted operator and interval. If no equivalent target behavior or explicit
+admitted target past operator and interval, or a Boolean lowering law that
+removes target past-origin behavior. If no equivalent target behavior or explicit
 safe guard is established, the mapping is unsupported. The pinned origin
 corpus includes position zero, one, and the first position where each lower
 bound becomes reachable. Any target difference is retained as a classified

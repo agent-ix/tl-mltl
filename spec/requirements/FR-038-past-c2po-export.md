@@ -29,6 +29,12 @@ selected target's negation and S behavior support that equivalence under the
 same origin contract. Unsupported target syntax, profile or origin semantics
 produces a typed refusal and no expression or manifest.
 
+For the reviewed target, retained per-step observations admit `O[0,1]` and
+Y as `O[1,1]`. At `[0,0]`, O/H reduce to their operand, S reduces to its
+right operand, and T reduces by its explicit S dual to double negation of its
+right operand. These Boolean reductions do not use target past-origin
+semantics. Nonzero S/T intervals and other unobserved cells are refused.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |

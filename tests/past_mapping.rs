@@ -109,7 +109,7 @@ fn admitted_once_historically_and_previous_render_exact_past_forms() {
         &origin,
     )
     .unwrap();
-    assert_eq!(historically.expression, "H[0,0](p)");
+    assert_eq!(historically.expression, "p");
     let previous = render(
         &[
             p(),
@@ -123,14 +123,14 @@ fn admitted_once_historically_and_previous_render_exact_past_forms() {
 
 // Trace: TC-160, TC-161, TC-166; FR-038-AC-1, FR-039-AC-1
 #[test]
-fn since_and_triggered_use_explicit_target_forms() {
+fn since_and_triggered_zero_windows_lower_without_target_past_operators() {
     let origin = contract(&[PastOperatorKind::Since, PastOperatorKind::Triggered]);
     let since = render(
         &[
             p(),
             q(),
             Node::new(NodeKind::Since {
-                interval: interval(0, 1),
+                interval: interval(0, 0),
                 left: NodeId(0),
                 right: NodeId(1),
             }),
@@ -138,7 +138,7 @@ fn since_and_triggered_use_explicit_target_forms() {
         &origin,
     )
     .unwrap();
-    assert_eq!(since.expression, "(p S[0,1] q)");
+    assert_eq!(since.expression, "q");
     let trigger = render(
         &[
             p(),
@@ -152,13 +152,29 @@ fn since_and_triggered_use_explicit_target_forms() {
         &origin,
     )
     .unwrap();
-    assert_eq!(trigger.expression, "(!((!p) S[0,0] (!q)))");
+    assert_eq!(trigger.expression, "(!(!q))");
 }
 
 // Trace: TC-161; FR-038-AC-1
 #[test]
-fn admitted_triggered_lowering_preserves_source_verdicts_at_origin() {
+fn zero_window_lowerings_preserve_source_verdicts_at_origin() {
     let interval = interval(0, 0);
+    let historically_nodes = [
+        p(),
+        Node::new(NodeKind::Historically {
+            interval,
+            operand: NodeId(0),
+        }),
+    ];
+    let since_nodes = [
+        p(),
+        q(),
+        Node::new(NodeKind::Since {
+            interval,
+            left: NodeId(0),
+            right: NodeId(1),
+        }),
+    ];
     let triggered_nodes = [
         p(),
         q(),
@@ -184,6 +200,18 @@ fn admitted_triggered_lowering_preserves_source_verdicts_at_origin() {
         SemanticProfile::OriginCompleteHistoryV1,
         NodeId(2),
         &triggered_nodes,
+    )
+    .unwrap();
+    let historically = Formula::new(
+        SemanticProfile::OriginCompleteHistoryV1,
+        NodeId(1),
+        &historically_nodes,
+    )
+    .unwrap();
+    let since = Formula::new(
+        SemanticProfile::OriginCompleteHistoryV1,
+        NodeId(2),
+        &since_nodes,
     )
     .unwrap();
     let dual = Formula::new(
@@ -234,6 +262,11 @@ fn admitted_triggered_lowering_preserves_source_verdicts_at_origin() {
                 verdict(dual, "dual"),
                 "pattern {pattern}, position {position}"
             );
+            let p_at_position = u64::from(pattern) & (1 << (position * 2)) != 0;
+            let q_at_position = u64::from(pattern) & (1 << (position * 2 + 1)) != 0;
+            assert_eq!(verdict(historically, "historically"), p_at_position);
+            assert_eq!(verdict(since, "since"), q_at_position);
+            assert_eq!(verdict(triggered, "triggered"), q_at_position);
         }
     }
 }
@@ -294,7 +327,7 @@ fn target_4_2_origin_mismatch_intervals_refuse_without_artifact() {
     }
 }
 
-// Trace: TC-162, TC-167, TC-173; FR-038-AC-2, FR-039-AC-2, FR-041-AC-2
+// Trace: TC-162, TC-167; FR-038-AC-2, FR-039-AC-2
 #[test]
 fn absent_or_operator_incomplete_origin_evidence_refuses_without_artifact() {
     let nodes = [
@@ -386,7 +419,7 @@ fn reviewed_target_admits_only_measured_origin_interval_cells() {
         (1, interval(0, 0), true),
         (1, interval(0, 1), false),
         (1, interval(2, 2), false),
-        (2, interval(0, 1), true),
+        (2, interval(0, 1), false),
         (2, interval(0, 2), false),
         (3, interval(0, 0), true),
         (3, interval(0, 1), false),

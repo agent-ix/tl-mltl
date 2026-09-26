@@ -11,14 +11,23 @@ relationships:
 
 # Past C2PO mapping feature test matrix
 
-| Test ID | Feature behavior | Status |
-|---|---|---|
-| TC-160 | H/O/S/Y render with graph, clock, source, and target identities | Implemented in `tests/past_mapping.rs` and `tests/past_c2po_corpus.rs` |
-| TC-161 | Guarded T renders through the target's admitted S dual | Implemented in `tests/past_mapping.rs` and `tests/past_c2po_corpus.rs` |
-| TC-162 | Unsupported nodes and intervals return typed refusal without artifact | Implemented in `tests/past_mapping.rs` |
-| TC-163 | Existing bounded future mapping bytes remain stable | Existing `tests/interop.rs` and `tests/contextual.rs` fixtures, plus `make guarded-ci` |
-| TC-164 | Retained per-step target observations compare with source evaluation | Implemented in `tests/past_c2po_corpus.rs` |
-| TC-165 | Past operators at positions zero and adjacent positions | Implemented in `tests/past_c2po_corpus.rs` |
-| TC-166 | Each admitted origin behavior or guard is pinned to reviewed target evidence | Implemented in `tests/past_mapping.rs` |
-| TC-167 | Missing or mismatched origin contract refuses before output | Implemented in `tests/past_mapping.rs` |
-| TC-174 | Strict-reader and real mapper fuzz target plus checked seeds | `fuzz/fuzz_targets/c2po_map.rs`; exercised by `tests/c2po_map_fuzz.rs` |
+## Functional Requirement Coverage
+
+| Functional Req | Acceptance Criteria | Test Cases | Status |
+|---|---|---|---|
+| FR-038 | FR-038-AC-1 through FR-038-AC-3 | TC-160 through TC-164, TC-174 | ✅ covered |
+| FR-039 | FR-039-AC-1 through FR-039-AC-2 | TC-165 through TC-167 | ✅ covered |
+
+## Test Case Summary
+
+| Test ID | Title | Type | Priority | Traces To | Status |
+|---|---|---|---|---|---|
+| TC-160 | Export O[0,1] and Y from pinned target observations; lower zero-width H/S to equivalent Boolean expressions with preserved identities | Integration | P0 | FR-038-AC-1 | ✅ implemented |
+| TC-161 | Lower T[0,0] through its explicit Boolean dual and check the source lowering law | Property | P0 | FR-038-AC-1 | ✅ implemented |
+| TC-162 | Refuse unsupported nodes, intervals, target identity, and temporal mixes without an artifact | Integration | P0 | FR-038-AC-2 | ✅ implemented |
+| TC-163 | Preserve the exact pre-feature bounded future mapping manifest bytes | Snapshot | P0 | FR-038-AC-2 | ✅ implemented |
+| TC-164 | Compare retained per-step target observations with independent past source evaluation | Integration | P0 | FR-038-AC-3 | ✅ implemented |
+| TC-165 | Check O/Y origin behavior and zero-width H/S/T source laws at positions zero and adjacent positions | Property | P0 | FR-039-AC-1 | ✅ implemented |
+| TC-166 | Bind every admitted nontrivial past target form to reviewed target-origin observations and zero-width forms to Boolean lowering laws | Integration | P0 | FR-039-AC-1 | ✅ implemented |
+| TC-167 | Refuse missing or mismatched target origin identity before output | Integration | P0 | FR-039-AC-2 | ✅ implemented |
+| TC-174 | Compile the real `c2po_map` fuzz target and exercise digest-pinned strict-reader/mapper seeds | Fuzz | P1 | FR-038-AC-2 | ✅ implemented |

@@ -53,7 +53,7 @@
       }
     ]
   },
-  "targetLimitation": "One retained six-formula C2PO and R2U2 4.2 execution agrees at three observed positions, but does not qualify S/T[0,2]. A separately retained minimal S[0,2] counterexample shows a target true verdict where origin-complete source semantics are false at position two. Other interval cells were partitioned in a finite five-position exhaustive Boolean trace campaign; admission is limited to cells that matched in that campaign.",
+  "targetLimitation": "One retained six-formula C2PO and R2U2 4.2 execution supplies per-step target observations for O[0,1] and Y as O[1,1]. Zero-width H/S/T forms lower to Boolean expressions under source-semantic laws and use no target past operator. This run does not establish other target-origin interval cells. A separately retained minimal S[0,2] counterexample shows a target true verdict where origin-complete source semantics are false at position two.",
   "trace": [
     {
       "position": 0,
