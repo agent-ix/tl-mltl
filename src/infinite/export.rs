@@ -522,3 +522,193 @@ pub fn export_safety_monitor(
         refutation_only: true,
     })
 }
+
+#[cfg(all(test, feature = "infinite-trace"))]
+mod renderer_tests {
+    use super::*;
+    use tl_syntax::{
+        InfiniteFormulaDocument, InfiniteNode, OwnedSignalDeclaration, PropositionBinding,
+        PropositionId, SemanticProfile, SignalDomain, SignalId, UnboundedInterval,
+    };
+
+    fn render(kind: K) -> Result<String, SafetyExportError> {
+        let atom = InfiniteNode::new(K::Proposition {
+            proposition: PropositionId(0),
+        });
+        let mut nodes = vec![atom];
+        let root = match kind {
+            K::Until { .. } | K::Release { .. } | K::Since { .. } | K::Triggered { .. } => {
+                nodes.push(InfiniteNode::new(K::True));
+                nodes.push(InfiniteNode::new(kind));
+                NodeId(2)
+            }
+            _ => {
+                nodes.push(InfiniteNode::new(kind));
+                NodeId(1)
+            }
+        };
+        let graph = InfiniteFormulaDocument::new(
+            SemanticProfile::InfiniteTraceV1,
+            tl_syntax::InfiniteClock::EventPosition,
+            root,
+            nodes,
+        )
+        .unwrap();
+        let catalog_document = SignalCatalogDocument::new(
+            vec![OwnedSignalDeclaration::new(
+                SignalId(1),
+                "p".to_owned(),
+                SignalDomain::Boolean,
+            )],
+            vec![PropositionBinding::new(PropositionId(0), SignalId(1))],
+        )
+        .unwrap();
+        let catalog = catalog_document.validate().unwrap();
+        let origin = TargetOriginContract::reviewed_r2u2_4_2();
+        let mut renderer = Renderer {
+            formula: graph.formula(),
+            catalog,
+            origin: &origin,
+            visits: 0,
+            limit: 10,
+            past: false,
+            future: false,
+        };
+        renderer.render(root)
+    }
+
+    // Trace: TC-172, TC-173; FR-041-AC-1 and FR-041-AC-2
+    #[test]
+    fn renderer_covers_bounded_and_unbounded_temporal_interval_sides() {
+        let unbounded = TemporalInterval::Unbounded(UnboundedInterval::new(0));
+        for (kind, expected) in [
+            (
+                K::Future {
+                    interval: unbounded,
+                    operand: NodeId(0),
+                },
+                SafetyExportError::UnsupportedShape,
+            ),
+            (
+                K::Globally {
+                    interval: unbounded,
+                    operand: NodeId(0),
+                },
+                SafetyExportError::UnsupportedShape,
+            ),
+            (
+                K::Until {
+                    interval: unbounded,
+                    left: NodeId(0),
+                    right: NodeId(0),
+                },
+                SafetyExportError::UnsupportedShape,
+            ),
+            (
+                K::Release {
+                    interval: unbounded,
+                    left: NodeId(0),
+                    right: NodeId(0),
+                },
+                SafetyExportError::UnsupportedShape,
+            ),
+            (
+                K::Once {
+                    interval: unbounded,
+                    operand: NodeId(0),
+                },
+                SafetyExportError::UnboundedPast,
+            ),
+            (
+                K::Historically {
+                    interval: unbounded,
+                    operand: NodeId(0),
+                },
+                SafetyExportError::UnboundedPast,
+            ),
+            (
+                K::Since {
+                    interval: unbounded,
+                    left: NodeId(0),
+                    right: NodeId(0),
+                },
+                SafetyExportError::UnboundedPast,
+            ),
+            (
+                K::Triggered {
+                    interval: unbounded,
+                    left: NodeId(0),
+                    right: NodeId(0),
+                },
+                SafetyExportError::UnboundedPast,
+            ),
+        ] {
+            assert_eq!(render(kind), Err(expected));
+        }
+        let closed = TemporalInterval::Closed(Interval::new(0, 0).unwrap());
+        for (kind, expected) in [
+            (
+                K::Future {
+                    interval: closed,
+                    operand: NodeId(0),
+                },
+                "F[0,0](p)",
+            ),
+            (
+                K::Globally {
+                    interval: closed,
+                    operand: NodeId(0),
+                },
+                "G[0,0](p)",
+            ),
+            (
+                K::Until {
+                    interval: closed,
+                    left: NodeId(0),
+                    right: NodeId(0),
+                },
+                "(p U[0,0] p)",
+            ),
+            (
+                K::Release {
+                    interval: closed,
+                    left: NodeId(0),
+                    right: NodeId(0),
+                },
+                "(p R[0,0] p)",
+            ),
+            (
+                K::Once {
+                    interval: closed,
+                    operand: NodeId(0),
+                },
+                "O[0,0](p)",
+            ),
+            (
+                K::Historically {
+                    interval: closed,
+                    operand: NodeId(0),
+                },
+                "H[0,0](p)",
+            ),
+            (
+                K::Since {
+                    interval: closed,
+                    left: NodeId(0),
+                    right: NodeId(0),
+                },
+                "(p S[0,0] p)",
+            ),
+            (
+                K::Triggered {
+                    interval: closed,
+                    left: NodeId(0),
+                    right: NodeId(0),
+                },
+                "(!((!p) S[0,0] (!p)))",
+            ),
+        ] {
+            assert_eq!(render(kind).unwrap(), expected);
+        }
+    }
+}
