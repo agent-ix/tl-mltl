@@ -26,3 +26,9 @@ Rust lane and language-independent code review of PR #98 at the frozen head. No 
 ## Rust checks
 
 Reviewed public API, typed refusals, graph validation, bounded renderer, exhaustive node matches, identifier binding, and source-level T duality test. No new unsafe, production panic, CI weakening, or test seam bypass observed. The feature corpus is generated target observation rather than copied upstream source. The high finding concerns the oracle's coverage of admitted behavior.
+
+## Dispositions
+
+| FND | Outcome | SHA/reason |
+|---|---|---|
+| FND-001 | fixed | fixed 6707744abb0d59e6b16115f30b61238db6a83fe5: Target-origin admissions reduced to observed O[0,1]/Y; H/S/T [0,0] emit Boolean equivalents. |

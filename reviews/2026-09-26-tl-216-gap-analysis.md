@@ -27,3 +27,10 @@ Compared FR-038/039 acceptance criteria, TM-005, production admissions, tagged t
 ## Coverage
 
 TM-005 lists TC-160 through TC-167 and TC-174. TC-163 has no matching source test tag. `quire coverage --scope . --json` ran; its broad 119/235 rollup includes many unrelated historical matrices, so it is not used as the TL-216 denominator. FR-042 tags in new tests have no local FR-042 document and should be removed from this feature or given a real owning requirement before claiming them.
+
+## Dispositions
+
+| FND | Outcome | SHA/reason |
+|---|---|---|
+| FND-001 | fixed | fixed 6707744abb0d59e6b16115f30b61238db6a83fe5: Zero-width H/S/T lowering removes unevidenced target past operators and S[0,1] refuses. |
+| FND-002 | fixed | fixed 6707744abb0d59e6b16115f30b61238db6a83fe5: TC-163 now tags byte-exact v1/v2 manifest fixture assertions. |
