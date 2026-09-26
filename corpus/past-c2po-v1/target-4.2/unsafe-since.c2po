@@ -1,0 +1,4 @@
+INPUT
+ p,q: bool;
+PTSPEC
+ (p S[0,2] q);

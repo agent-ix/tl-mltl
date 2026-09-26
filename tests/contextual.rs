@@ -150,7 +150,7 @@ fn legacy_records_round_trip_as_exact_v1_wires_and_refuse_v2_labels() {
     assert_stable_v1_wire::<DifferentialReport>(differential, "tl-mltl.differential/v2");
 }
 
-// Trace: TC-028, FR-007-AC-4, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4
+// Trace: TC-028, TC-163, FR-007-AC-4, FR-038-AC-2, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4
 #[test]
 fn contextual_identities_change_for_independent_operation_inputs() {
     let nodes = overlay_nodes();
@@ -246,6 +246,13 @@ fn contextual_identities_change_for_independent_operation_inputs() {
         Some(&context),
     )
     .unwrap();
+    assert_eq!(
+        serde_json::to_vec(&mapping).unwrap(),
+        include_bytes!("fixtures/tl-216/legacy-v2.json")
+            .strip_suffix(b"\n")
+            .unwrap(),
+        "legacy v2 manifest bytes changed from the pre-feature main baseline"
+    );
     let mapping_changed = map_to_c2po_with_context(
         formula,
         "overlay-response",

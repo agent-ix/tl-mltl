@@ -375,7 +375,7 @@ impl Renderer<'_, '_> {
     }
 }
 
-fn is_c2po_identifier(value: &str) -> bool {
+pub(crate) fn is_c2po_identifier(value: &str) -> bool {
     let mut bytes = value.bytes();
     let Some(first) = bytes.next() else {
         return false;
@@ -437,7 +437,7 @@ pub(crate) fn render_contextual_expression(
     renderer.render(formula.root(), 0)
 }
 
-fn sha256_hex(bytes: &[u8]) -> String {
+pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
     Sha256::digest(bytes)
         .iter()
         .map(|byte| format!("{byte:02x}"))
