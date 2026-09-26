@@ -1,0 +1,1 @@
+{"schema_version":"tl-syntax.formula/v2","semantic_profile":"mltl.origin-complete-history/v1","root":5,"nodes":[{"kind":"proposition","proposition":0},{"kind":"once","interval":{"start":0,"end":1},"operand":0},{"kind":"proposition","proposition":1},{"kind":"historically","interval":{"start":0,"end":2},"operand":2},{"kind":"and","left":1,"right":3},{"kind":"not","operand":4}]}
