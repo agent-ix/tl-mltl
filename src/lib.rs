@@ -59,9 +59,9 @@ pub use future::{
     EvaluationLimits, EvaluationReport, EvaluationStats, TruthValue,
 };
 pub use mapping::{
-    map_to_c2po, map_to_c2po_with_context, ContextualMappingManifest,
+    map_past_to_c2po, map_to_c2po, map_to_c2po_with_context, ContextualMappingManifest,
     ContextualMappingSchemaVersion, MappingError, MappingManifest, MappingSourceIdentity,
-    MappingSourceState,
+    MappingSourceState, PastMappingError, PastMappingManifest, TargetOriginContract,
 };
 pub use past::{
     analyze_required_history, evaluate_past, evaluate_past_with_stats, fixed_sample_instant,

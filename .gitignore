@@ -10,4 +10,6 @@ Cargo.lock.bak
 target/
 *-target/
 target-*/
+!corpus/past-c2po-v1/target-4.2/
+!corpus/past-c2po-v1/target-4.2/**
 .worktrees/

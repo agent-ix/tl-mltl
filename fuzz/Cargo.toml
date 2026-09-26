@@ -1,0 +1,25 @@
+[package]
+name = "tl-mltl-fuzz"
+version = "0.0.0"
+publish = false
+license = "MIT"
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+sha2 = "=0.10.9"
+tl-mltl = { path = ".." }
+tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "4a5614193d21e5ae99950ae683b04ba0ec931358", default-features = false, features = ["alloc", "serde"] }
+
+[[bin]]
+name = "c2po_map"
+path = "fuzz_targets/c2po_map.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]
