@@ -10,7 +10,7 @@ use tl_syntax::{
     SignalCatalogDocument, SignalDomain, SignalId, SyntaxArtifactLimits,
 };
 
-// Trace: TC-174; FR-042-AC-2
+// Trace: TC-174; FR-038-AC-2
 #[test]
 fn every_fuzz_seed_reaches_the_strict_reader_and_real_c2po_mapper() {
     let root = "fuzz/corpus/c2po_map";
