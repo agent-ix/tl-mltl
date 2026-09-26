@@ -1,8 +1,9 @@
 use std::collections::BTreeSet;
 
 use tl_mltl::{
-    map_past_to_c2po, MappingSourceIdentity, MappingSourceState, PastMappingError,
-    TargetOriginContract,
+    evaluate_past, map_past_to_c2po, ClockBinding, MappingSourceIdentity, MappingSourceState,
+    PastEvaluationLimits, PastEvaluationRelationInput, PastMappingError, PositionHistoryDocument,
+    PositionObservation, TargetOriginContract,
 };
 use tl_syntax::{
     Formula, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration, PastOperatorKind,
@@ -152,6 +153,89 @@ fn since_and_triggered_use_explicit_target_forms() {
     )
     .unwrap();
     assert_eq!(trigger.expression, "(!((!p) S[0,0] (!q)))");
+}
+
+// Trace: TC-161; FR-038-AC-1
+#[test]
+fn admitted_triggered_lowering_preserves_source_verdicts_at_origin() {
+    let interval = interval(0, 0);
+    let triggered_nodes = [
+        p(),
+        q(),
+        Node::new(NodeKind::Triggered {
+            interval,
+            left: NodeId(0),
+            right: NodeId(1),
+        }),
+    ];
+    let dual_nodes = [
+        p(),
+        q(),
+        Node::new(NodeKind::Not { operand: NodeId(0) }),
+        Node::new(NodeKind::Not { operand: NodeId(1) }),
+        Node::new(NodeKind::Since {
+            interval,
+            left: NodeId(2),
+            right: NodeId(3),
+        }),
+        Node::new(NodeKind::Not { operand: NodeId(4) }),
+    ];
+    let triggered = Formula::new(
+        SemanticProfile::OriginCompleteHistoryV1,
+        NodeId(2),
+        &triggered_nodes,
+    )
+    .unwrap();
+    let dual = Formula::new(
+        SemanticProfile::OriginCompleteHistoryV1,
+        NodeId(5),
+        &dual_nodes,
+    )
+    .unwrap();
+    for pattern in 0..64_u8 {
+        let observations = (0..3_u64)
+            .map(|position| {
+                let propositions = [PropositionId(0), PropositionId(1)]
+                    .into_iter()
+                    .filter(|proposition| {
+                        let bit = position * 2 + u64::from(proposition.0);
+                        u64::from(pattern) & (1 << bit) != 0
+                    })
+                    .collect();
+                PositionObservation::new(position, propositions, None)
+            })
+            .collect();
+        let history = PositionHistoryDocument::new(
+            "triggered-dual",
+            1,
+            0,
+            2,
+            Some(ClockBinding::EventPosition),
+            observations,
+        )
+        .unwrap();
+        for position in 0..3 {
+            let verdict = |formula, id| {
+                evaluate_past(
+                    formula,
+                    id,
+                    &history,
+                    position,
+                    "triggered-dual",
+                    1,
+                    PastEvaluationRelationInput::Original,
+                    PastEvaluationLimits::default(),
+                )
+                .unwrap()
+                .verdict
+            };
+            assert_eq!(
+                verdict(triggered, "triggered"),
+                verdict(dual, "dual"),
+                "pattern {pattern}, position {position}"
+            );
+        }
+    }
 }
 
 // Trace: TC-166, TC-167; FR-039-AC-1, FR-039-AC-2
