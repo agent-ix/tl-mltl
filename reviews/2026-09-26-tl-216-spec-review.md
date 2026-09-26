@@ -22,3 +22,9 @@ Reviewed both new requirements and TM-005 for IDs, criteria, verification links,
 | ID | Severity | Summary | Refs |
 |---|---|---|---|
 | FND-001 | high | TM-005 uses an unrecognized three-column table and omits the required Functional Requirement Coverage and Test Case Summary sections. `quire validate --scope .` reports both fields missing; the claimed TC-160–167/174 rows cannot serve as a validated test matrix. | spec/r2u2-v1-test-matrix.md:14; TM-005 |
+
+## Dispositions
+
+| FND | Outcome | SHA/reason |
+|---|---|---|
+| FND-001 | fixed | fixed 6707744abb0d59e6b16115f30b61238db6a83fe5: TM-005 now has Functional Requirement Coverage and Test Case Summary; Quire validates. |
