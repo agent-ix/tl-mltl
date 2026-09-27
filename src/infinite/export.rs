@@ -8,7 +8,7 @@ use tl_syntax::{
 
 use crate::{
     mapping::legacy::{is_c2po_identifier, sha256_hex},
-    mapping::target_equivalent_interval,
+    mapping::{target_equivalent_interval, OriginShapeGuard},
     PastMappingError, TargetOriginContract, ToolIdentity,
 };
 
@@ -169,34 +169,12 @@ fn classify_safety_shape(formula: InfiniteFormula<'_>) -> Result<(), SafetyExpor
     }
 }
 
-#[derive(Clone, Copy, Default)]
-struct OriginShape {
-    signature: Option<(PastOperatorKind, Option<Interval>)>,
-    depth: usize,
-}
-
-/// Apply TL-216's reviewed homogeneous/depth partition to the safety body.
-/// The outer G is a refutation guard, not a target-origin past operator.
+/// Adapt syntax-owned infinite nodes to TL-216's single reviewed
+/// homogeneous/depth admission rule before any target bytes are rendered.
 fn validate_target_origin_shape(formula: InfiniteFormula<'_>) -> Result<(), SafetyExportError> {
-    let mut states: Vec<OriginShape> = Vec::with_capacity(formula.nodes().len());
+    let mut guard = OriginShapeGuard::new(formula.nodes().len());
     for (index, node) in formula.nodes().iter().enumerate() {
         let id = NodeId(u32::try_from(index).map_err(|_| SafetyExportError::ResourceIncomplete)?);
-        let mut state = OriginShape::default();
-        for child in node.kind.operands().into_iter().flatten() {
-            let child_state = usize::try_from(child.0)
-                .ok()
-                .and_then(|at| states.get(at))
-                .ok_or(SafetyExportError::UnsupportedShape)?;
-            state.depth = state.depth.max(child_state.depth);
-            if let Some(signature) = child_state.signature {
-                if state.signature.is_some_and(|prior| prior != signature) {
-                    return Err(SafetyExportError::TargetOrigin(
-                        PastMappingError::TargetOriginShapeUnverified(id),
-                    ));
-                }
-                state.signature = Some(signature);
-            }
-        }
         let temporal = match node.kind {
             K::Once { interval, .. } => Some((PastOperatorKind::Once, Some(interval))),
             K::Historically { interval, .. } => {
@@ -218,36 +196,23 @@ fn validate_target_origin_shape(formula: InfiniteFormula<'_>) -> Result<(), Safe
             | K::Until { .. }
             | K::Release { .. } => None,
         };
-        if let Some((operator, interval)) = temporal {
-            let signature = match interval {
-                Some(TemporalInterval::Closed(bounds)) => (operator, Some(bounds)),
-                Some(TemporalInterval::Unbounded(_)) => {
-                    return Err(SafetyExportError::UnboundedPast)
-                }
-                None => (operator, None),
-            };
-            if state.signature.is_some_and(|child| child != signature) {
-                return Err(SafetyExportError::TargetOrigin(
-                    PastMappingError::TargetOriginShapeUnverified(id),
-                ));
+        let temporal = match temporal {
+            Some((operator, Some(TemporalInterval::Closed(bounds)))) => {
+                Some((operator, Some(bounds)))
             }
-            state.depth = state
-                .depth
-                .checked_add(1)
-                .ok_or(SafetyExportError::ResourceIncomplete)?;
-            let limit = if operator == PastOperatorKind::StrongPrevious {
-                2
-            } else {
-                3
-            };
-            if state.depth > limit {
-                return Err(SafetyExportError::TargetOrigin(
-                    PastMappingError::TargetOriginShapeUnverified(id),
-                ));
+            Some((_, Some(TemporalInterval::Unbounded(_)))) => {
+                return Err(SafetyExportError::UnboundedPast)
             }
-            state.signature = Some(signature);
-        }
-        states.push(state);
+            Some((operator, None)) => Some((operator, None)),
+            None => None,
+        };
+        guard
+            .push(id, node.kind.operands(), temporal)
+            .map_err(|error| match error {
+                PastMappingError::ResourceIncomplete => SafetyExportError::ResourceIncomplete,
+                PastMappingError::InvalidNode(_) => SafetyExportError::UnsupportedShape,
+                other => SafetyExportError::TargetOrigin(other),
+            })?;
     }
     Ok(())
 }

@@ -25,3 +25,13 @@ EARS review of the two new functional requirement statements; targeted Quire gra
 ## Coverage
 
 Examined: spec/requirements/FR-040-infinite-safety-export.md, spec/requirements/FR-041-c2po-refusal-partition.md. Targeted Quire validation was 3/3 grammar-clean; no aggregate gate was run.
+
+## Dispositions
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 4643c76d4d46730a5de9f50f47ebfc178b8f9e0d — FR-040 now says that, when export is requested, the provider shall export an admitted graph or return a typed pre-output refusal. |
+
+## Disposition verdict
+
+**PASS** — normative trigger and response are explicit on this head.

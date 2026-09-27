@@ -26,3 +26,22 @@ Rust/code review of the TL-218 export and its TL-216 target-origin seam. Ticket:
 ## Coverage
 
 Examined: src/infinite/export.rs, src/infinite/mod.rs, src/mapping/mod.rs, tests/infinite_export.rs, tests/tc138_feature_boundary.rs, src/mapping/past.rs. Focused cargo test 14/14, cargo fmt and focused Clippy passed; no aggregate gate was run.
+
+## New findings (disposition pass 1)
+
+Reviewed at `4643c76d4d46730a5de9f50f47ebfc178b8f9e0d` against provisional base `4bcea84bbe3fa7360076ea51edaf7f23a094500f`.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-002 | medium | The fix reimplements TL-216's homogeneous operator/interval and depth admission algorithm in `validate_target_origin_shape` while `mapping::past::validate_origin_shape` remains a separate authority; changing the reviewed partition in one exporter can silently leave the other admitting a different target shape. Share the policy transition or one typed authority across both syntax graph adapters. | src/infinite/export.rs:180; src/mapping/past.rs:337 |
+
+## Dispositions
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 4643c76d4d46730a5de9f50f47ebfc178b8f9e0d — `validate_target_origin_shape` now rejects mixed O/Y and depth-four O before rendering; focused tests cover both. |
+| FND-002 | still-open | Round 1 new finding: the same target-origin admission rule is implemented twice in the same crate; no shared authority yet. |
+
+## Disposition verdict
+
+**FAIL** — FND-002 remains open. Focused infinite-export tests 18/18, formatting, Clippy, and diff check passed; no aggregate gate was run.

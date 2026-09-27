@@ -27,3 +27,14 @@ Focused acceptance-criteria-to-test audit for TC-168 through TC-173; unrelated r
 ## Coverage
 
 Examined: spec/requirements/FR-040-infinite-safety-export.md, spec/requirements/FR-041-c2po-refusal-partition.md, spec/r2u2-v1-test-matrix.md, tests/infinite_export.rs, tests/tc138_feature_boundary.rs, src/infinite/export.rs. Focused cargo test 14/14, cargo fmt and focused Clippy passed; no aggregate gate was run.
+
+## Dispositions
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 4643c76d4d46730a5de9f50f47ebfc178b8f9e0d — TC-172 adds 171 node/interval/placement and 114 temporal-nesting cells with exact mapped/refused assertions. |
+| FND-002 | fixed | 4643c76d4d46730a5de9f50f47ebfc178b8f9e0d — TC-170 binds the exported O[0,1](p) body to SHA-checked retained C2PO source and R2U2 output, replaying three recorded steps. |
+
+## Disposition verdict
+
+**PASS** — no open gap finding on this head. No aggregate gate was run.

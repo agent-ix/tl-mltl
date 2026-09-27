@@ -330,12 +330,80 @@ struct OriginShape {
     depth: usize,
 }
 
+/// One reviewed target-origin admission rule shared by finite past mapping
+/// and infinite safety export. Callers adapt their syntax-owned node kinds
+/// into child ids and an optional past operator/interval signature.
+pub(crate) struct OriginShapeGuard {
+    states: Vec<OriginShape>,
+}
+
+impl OriginShapeGuard {
+    /// Allocate one state per validated topological formula node.
+    pub(crate) fn new(capacity: usize) -> Self {
+        Self {
+            states: Vec::with_capacity(capacity),
+        }
+    }
+
+    /// Classify the next node using the reviewed homogeneous operator,
+    /// interval, and depth limit; return no target artifact on refusal.
+    pub(crate) fn push(
+        &mut self,
+        id: NodeId,
+        children: [Option<NodeId>; 2],
+        temporal: Option<(PastOperatorKind, Option<Interval>)>,
+    ) -> Result<(), PastMappingError> {
+        let mut state = OriginShape {
+            signature: None,
+            mixed: false,
+            depth: 0,
+        };
+        for child in children.into_iter().flatten() {
+            let child = usize::try_from(child.0)
+                .ok()
+                .and_then(|at| self.states.get(at))
+                .ok_or(PastMappingError::InvalidNode(child))?;
+            state.depth = state.depth.max(child.depth);
+            state.mixed |= child.mixed;
+            if let Some(signature) = child.signature {
+                if state.signature.is_some_and(|prior| prior != signature) {
+                    state.mixed = true;
+                }
+                state.signature = Some(signature);
+            }
+        }
+        if state.mixed {
+            return Err(PastMappingError::TargetOriginShapeUnverified(id));
+        }
+        if let Some(signature) = temporal {
+            if state.signature.is_some_and(|child| child != signature) {
+                return Err(PastMappingError::TargetOriginShapeUnverified(id));
+            }
+            state.depth = state
+                .depth
+                .checked_add(1)
+                .ok_or(PastMappingError::ResourceIncomplete)?;
+            let limit = if signature.0 == PastOperatorKind::StrongPrevious {
+                2
+            } else {
+                3
+            };
+            if state.depth > limit {
+                return Err(PastMappingError::TargetOriginShapeUnverified(id));
+            }
+            state.signature = Some(signature);
+        }
+        self.states.push(state);
+        Ok(())
+    }
+}
+
 /// Keep the admitted shape within a conservative homogeneous partition: up
 /// to three temporal nodes, or two for strong previous. One formula may not
 /// combine different temporal operators or intervals, including under a
 /// Boolean node. This is a refusal boundary, not a broader target claim.
 fn validate_origin_shape(formula: Formula<'_>) -> Result<(), PastMappingError> {
-    let mut states: Vec<OriginShape> = Vec::with_capacity(formula.nodes().len());
+    let mut guard = OriginShapeGuard::new(formula.nodes().len());
     for (index, node) in formula.nodes().iter().enumerate() {
         let id = NodeId(u32::try_from(index).map_err(|_| PastMappingError::ResourceIncomplete)?);
         let (children, temporal) = match node.kind {
@@ -378,47 +446,7 @@ fn validate_origin_shape(formula: Formula<'_>) -> Result<(), PastMappingError> {
             | NodeKind::Until { .. }
             | NodeKind::Release { .. } => return Err(PastMappingError::UnsupportedNode(id)),
         };
-        let mut state = OriginShape {
-            signature: None,
-            mixed: false,
-            depth: 0,
-        };
-        for child in children.into_iter().flatten() {
-            let child = usize::try_from(child.0)
-                .ok()
-                .and_then(|at| states.get(at))
-                .ok_or(PastMappingError::InvalidNode(child))?;
-            state.depth = state.depth.max(child.depth);
-            state.mixed |= child.mixed;
-            if let Some(signature) = child.signature {
-                if state.signature.is_some_and(|prior| prior != signature) {
-                    state.mixed = true;
-                }
-                state.signature = Some(signature);
-            }
-        }
-        if state.mixed {
-            return Err(PastMappingError::TargetOriginShapeUnverified(id));
-        }
-        if let Some(signature) = temporal {
-            if state.signature.is_some_and(|child| child != signature) {
-                return Err(PastMappingError::TargetOriginShapeUnverified(id));
-            }
-            state.depth = state
-                .depth
-                .checked_add(1)
-                .ok_or(PastMappingError::ResourceIncomplete)?;
-            let limit = if signature.0 == PastOperatorKind::StrongPrevious {
-                2
-            } else {
-                3
-            };
-            if state.depth > limit {
-                return Err(PastMappingError::TargetOriginShapeUnverified(id));
-            }
-            state.signature = Some(signature);
-        }
-        states.push(state);
+        guard.push(id, children, temporal)?;
     }
     Ok(())
 }
