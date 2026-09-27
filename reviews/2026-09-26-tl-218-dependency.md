@@ -26,3 +26,7 @@ The prerequisite DAG is acyclic: FR-031 and FR-038 precede FR-040, which precede
 ## Coverage
 
 Examined: spec/requirements/FR-040-infinite-safety-export.md, spec/requirements/FR-041-c2po-refusal-partition.md, spec/requirements/FR-031-infinite-temporal-semantics.md, spec/requirements/FR-038-past-c2po-export.md, spec/r2u2-v1-test-matrix.md. Targeted Quire validation was 3/3 grammar-clean; no aggregate gate was run.
+
+## Retargeted-head recheck
+
+**PASS at `a0b3a42ec721217457d9be2a325d5df78d47080b` against landed main `6d8e1ad4c1a86a09d3ed52a4a6df6a98ed0f2596`.** The FR-040/041 relationships are byte-identical to the prior PASS patch and now target landed TL-13/TL-216 implementations. No new finding.

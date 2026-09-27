@@ -35,3 +35,7 @@ Examined: spec/requirements/FR-040-infinite-safety-export.md, spec/requirements/
 ## Disposition verdict
 
 **PASS** — normative trigger and response are explicit on this head.
+
+## Retargeted-head recheck
+
+**PASS at `a0b3a42ec721217457d9be2a325d5df78d47080b` against landed main `6d8e1ad4c1a86a09d3ed52a4a6df6a98ed0f2596`.** FR-040/041 requirement statements are byte-identical to the previously disposed patch. The normative trigger and response remain explicit; FND-001 remains fixed.

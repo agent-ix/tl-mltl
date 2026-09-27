@@ -52,3 +52,7 @@ Reviewed at `4643c76d4d46730a5de9f50f47ebfc178b8f9e0d` against provisional base 
 Reviewed at `28255988abeebb660058e0b58c6426184f33b727` against provisional base `4bcea84bbe3fa7360076ea51edaf7f23a094500f`. The previously fixed findings remain fixed; this round checked the sole still-open finding and both callers of the extracted guard.
 
 **PASS** — zero open TL-218 review findings at this head. Focused `infinite_export` 18/18 and `past_mapping` 11/11, formatting, focused Clippy and diff check passed; no aggregate gate was run.
+
+## Retargeted-head recheck
+
+**PASS at `a0b3a42ec721217457d9be2a325d5df78d47080b` against landed main `6d8e1ad4c1a86a09d3ed52a4a6df6a98ed0f2596`.** Code review with the Rust lane rechecked the 16-file feature diff, four-commit range-diff, `OriginShapeGuard::push` shared by finite mapping and infinite export, fail-closed shape/refusal paths, and the one changed external-consumer syntax pin. The replayed feature patch is equivalent to the prior reviewed head; the only changed feature line pins the consumer to landed syntax `6aa9b11`. Focused infinite export 18/18, infinite trace 16/16, past mapping 11/11 with feature on/off, interop 4/4, contextual 5/5, and external consumer 1/1 with feature on/off passed. Formatting, all-target/all-feature Clippy and diff check passed. Prior FND-001/002 remain fixed; no new finding.

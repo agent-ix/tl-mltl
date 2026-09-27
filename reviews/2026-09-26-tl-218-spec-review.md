@@ -25,3 +25,7 @@ Base FR/AC/TC structure and cross-reference review. The scope contradiction and 
 ## Coverage
 
 Examined: spec/requirements/FR-040-infinite-safety-export.md, spec/requirements/FR-041-c2po-refusal-partition.md, spec/r2u2-v1-test-matrix.md. Targeted Quire validation was 3/3 grammar-clean; no aggregate gate was run.
+
+## Retargeted-head recheck
+
+**PASS at `a0b3a42ec721217457d9be2a325d5df78d47080b` against landed main `6d8e1ad4c1a86a09d3ed52a4a6df6a98ed0f2596`.** FR-040/041 and TM-005 are byte-identical to the previously reviewed PASS patch; Quire validation passes. No new finding.

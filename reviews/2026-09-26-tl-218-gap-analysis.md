@@ -38,3 +38,7 @@ Examined: spec/requirements/FR-040-infinite-safety-export.md, spec/requirements/
 ## Disposition verdict
 
 **PASS** — no open gap finding on this head. No aggregate gate was run.
+
+## Retargeted-head recheck
+
+**PASS at `a0b3a42ec721217457d9be2a325d5df78d47080b` against landed main `6d8e1ad4c1a86a09d3ed52a4a6df6a98ed0f2596`.** Rechecked FR-040/041 against TM-005 and TC-168–173 tags at the rebased head. The previously missing census and retained target-step evidence remain present, and the focused tests pass. TC-138/171 external-consumer test now pins landed syntax and passes feature on/off. Prior FND-001/002 remain fixed; no new evidence gap.
