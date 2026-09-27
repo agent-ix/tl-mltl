@@ -32,3 +32,16 @@ Reviewed public API, typed refusals, graph validation, bounded renderer, exhaust
 | FND | Outcome | SHA/reason |
 |---|---|---|
 | FND-001 | fixed | fixed 6707744abb0d59e6b16115f30b61238db6a83fe5: Target-origin admissions reduced to observed O[0,1]/Y; H/S/T [0,0] emit Boolean equivalents. |
+| FND-002 | still-open | Changed-head regression at 1bf6257: both byte-exact legacy future manifest tests fail because expected snapshots contain the former syntax revision. |
+
+## New findings (disposition pass 2)
+
+Reviewed head `1bf6257e710654293d0c3370bca668ef7f670e6b` after the TL-13 rebase and landed TL-15 repin. The earlier origin finding remains fixed. Past mapping, corpus, and fuzz seed tests pass 13/13; `cargo fmt --all -- --check` and all-target/all-feature Clippy pass. The changed head fails both legacy future manifest checks below.
+
+| ID | Severity | Summary | Refs |
+|---|---|---|---|
+| FND-002 | high | Repinning the compiled syntax revision to `6aa9b11` changes the `syntaxRevision` field of existing future mapping manifests, but the new byte-exact v1/v2 fixtures still assert `4a561419`. `cargo test --test interop` fails `supported_mapping_is_stable_and_identity_preserving`, and `cargo test --test contextual` fails `contextual_identities_change_for_independent_operation_inputs`. This leaves FR-038-AC-2's compatibility claim unverified at the reviewed head. Rebase the snapshots against the new compiled dependency baseline and preserve a meaningful byte-level check of the legacy mapping fields. | tests/fixtures/tl-216/legacy-v1.json:1; tests/fixtures/tl-216/legacy-v2.json:1; tests/interop.rs:57; tests/contextual.rs:249; FR-038-AC-2 |
+
+## Changed-head verdict
+
+**FAIL at `1bf6257`** with FND-002 open. No source edits were made in this review.
