@@ -169,6 +169,89 @@ fn classify_safety_shape(formula: InfiniteFormula<'_>) -> Result<(), SafetyExpor
     }
 }
 
+#[derive(Clone, Copy, Default)]
+struct OriginShape {
+    signature: Option<(PastOperatorKind, Option<Interval>)>,
+    depth: usize,
+}
+
+/// Apply TL-216's reviewed homogeneous/depth partition to the safety body.
+/// The outer G is a refutation guard, not a target-origin past operator.
+fn validate_target_origin_shape(formula: InfiniteFormula<'_>) -> Result<(), SafetyExportError> {
+    let mut states: Vec<OriginShape> = Vec::with_capacity(formula.nodes().len());
+    for (index, node) in formula.nodes().iter().enumerate() {
+        let id = NodeId(u32::try_from(index).map_err(|_| SafetyExportError::ResourceIncomplete)?);
+        let mut state = OriginShape::default();
+        for child in node.kind.operands().into_iter().flatten() {
+            let child_state = usize::try_from(child.0)
+                .ok()
+                .and_then(|at| states.get(at))
+                .ok_or(SafetyExportError::UnsupportedShape)?;
+            state.depth = state.depth.max(child_state.depth);
+            if let Some(signature) = child_state.signature {
+                if state.signature.is_some_and(|prior| prior != signature) {
+                    return Err(SafetyExportError::TargetOrigin(
+                        PastMappingError::TargetOriginShapeUnverified(id),
+                    ));
+                }
+                state.signature = Some(signature);
+            }
+        }
+        let temporal = match node.kind {
+            K::Once { interval, .. } => Some((PastOperatorKind::Once, Some(interval))),
+            K::Historically { interval, .. } => {
+                Some((PastOperatorKind::Historically, Some(interval)))
+            }
+            K::Since { interval, .. } => Some((PastOperatorKind::Since, Some(interval))),
+            K::Triggered { interval, .. } => Some((PastOperatorKind::Triggered, Some(interval))),
+            K::StrongPrevious { .. } => Some((PastOperatorKind::StrongPrevious, None)),
+            K::False
+            | K::True
+            | K::Proposition { .. }
+            | K::Not { .. }
+            | K::And { .. }
+            | K::Or { .. }
+            | K::Implies { .. }
+            | K::Equivalent { .. }
+            | K::Future { .. }
+            | K::Globally { .. }
+            | K::Until { .. }
+            | K::Release { .. } => None,
+        };
+        if let Some((operator, interval)) = temporal {
+            let signature = match interval {
+                Some(TemporalInterval::Closed(bounds)) => (operator, Some(bounds)),
+                Some(TemporalInterval::Unbounded(_)) => {
+                    return Err(SafetyExportError::UnboundedPast)
+                }
+                None => (operator, None),
+            };
+            if state.signature.is_some_and(|child| child != signature) {
+                return Err(SafetyExportError::TargetOrigin(
+                    PastMappingError::TargetOriginShapeUnverified(id),
+                ));
+            }
+            state.depth = state
+                .depth
+                .checked_add(1)
+                .ok_or(SafetyExportError::ResourceIncomplete)?;
+            let limit = if operator == PastOperatorKind::StrongPrevious {
+                2
+            } else {
+                3
+            };
+            if state.depth > limit {
+                return Err(SafetyExportError::TargetOrigin(
+                    PastMappingError::TargetOriginShapeUnverified(id),
+                ));
+            }
+            state.signature = Some(signature);
+        }
+        states.push(state);
+    }
+    Ok(())
+}
+
 /// A C2PO monitor expression that can supply refutation evidence only.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -503,6 +586,7 @@ pub fn export_safety_monitor(
     }
     origin.validate().map_err(SafetyExportError::TargetOrigin)?;
     classify_safety_shape(request.formula.formula())?;
+    validate_target_origin_shape(request.formula.formula())?;
     let (inner, decision_horizon) =
         finite_horizons(request.formula.formula()).map_err(|error| match error {
             InfiniteError::ResourceIncomplete => SafetyExportError::ResourceIncomplete,

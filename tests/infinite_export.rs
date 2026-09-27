@@ -794,3 +794,525 @@ fn bounded_future_violation_requires_the_whole_decision_horizon() {
         );
     }
 }
+
+// Trace: TC-172, TC-173; FR-041-AC-1 and FR-041-AC-2
+#[test]
+fn tl216_origin_shape_partition_refuses_mixed_and_overdeep_past() {
+    let mixed = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Once {
+            interval: closed(),
+            operand: NodeId(0),
+        }),
+        node(K::StrongPrevious { operand: NodeId(1) }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(2),
+        }),
+    ]);
+    assert_eq!(
+        export(&mixed, &rows(PartialValue::True)),
+        Err(SafetyExportError::TargetOrigin(
+            PastMappingError::TargetOriginShapeUnverified(NodeId(2)),
+        )),
+    );
+    let mut nodes = vec![node(K::Proposition {
+        proposition: PropositionId(0),
+    })];
+    for index in 0..4 {
+        nodes.push(node(K::Once {
+            interval: closed(),
+            operand: NodeId(index),
+        }));
+    }
+    nodes.push(node(K::Globally {
+        interval: open(),
+        operand: NodeId(4),
+    }));
+    let deep = graph(nodes);
+    assert_eq!(
+        export(&deep, &rows(PartialValue::True)),
+        Err(SafetyExportError::TargetOrigin(
+            PastMappingError::TargetOriginShapeUnverified(NodeId(4)),
+        )),
+    );
+}
+
+// Trace: TC-170; FR-040-AC-2
+#[test]
+fn retained_c2po_steps_agree_with_the_exact_new_safety_body() {
+    use sha2::{Digest, Sha256};
+    let retained: serde_json::Value =
+        serde_json::from_slice(include_bytes!("../corpus/past-c2po-v1/manifest.json")).unwrap();
+    let target = &retained["targetObservation"];
+    let origin = contract();
+    assert_eq!(origin.source_revision, target["sourceRevision"]);
+    assert_eq!(origin.target.version, target["compilerVersion"]);
+    assert_eq!(
+        origin.target.executable_sha256,
+        target["compilerEntrySha256"]
+    );
+    let files = target["files"].as_array().unwrap();
+    let file_digest = |path: &str, bytes: &[u8]| {
+        let entry = files.iter().find(|entry| entry["path"] == path).unwrap();
+        let digest = format!("{:x}", Sha256::digest(bytes));
+        assert_eq!(digest, entry["sha256"]);
+        digest
+    };
+    let source = include_bytes!("../corpus/past-c2po-v1/target-4.2/past.c2po");
+    let output = include_bytes!("../corpus/past-c2po-v1/target-4.2/r2u2.stdout");
+    assert_eq!(
+        origin.target.configuration_sha256,
+        file_digest("target-4.2/past.c2po", source)
+    );
+    assert_eq!(
+        origin.evidence_sha256,
+        file_digest("target-4.2/r2u2.stdout", output)
+    );
+    let recorded_body = std::str::from_utf8(source)
+        .unwrap()
+        .split("PTSPEC")
+        .nth(1)
+        .unwrap()
+        .split(';')
+        .next()
+        .unwrap()
+        .trim();
+    let safety = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Once {
+            interval: closed(),
+            operand: NodeId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(1),
+        }),
+    ]);
+    let observations: Vec<_> = retained["trace"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| {
+            let mut observation = rows(if row["p"] == true {
+                PartialValue::True
+            } else {
+                PartialValue::False
+            })
+            .remove(0);
+            observation.position = u32::try_from(row["position"].as_u64().unwrap()).unwrap();
+            observation
+        })
+        .collect();
+    let graph_id = safety.content_identity().unwrap();
+    let request = PrefixRequest {
+        formula: &safety,
+        graph_id: &graph_id,
+        proposition_map_id: "map",
+        propositions: &[PropositionId(0)],
+        observations: &observations,
+        limit: EvaluationLimit::default(),
+    };
+    let manifest = export_safety_monitor(&request, None, &catalog(), &origin, 100).unwrap();
+    assert_eq!(manifest.expression, recorded_body);
+    assert_eq!(manifest.section, "PTSPEC");
+    let mut checked = 0;
+    for line in std::str::from_utf8(output).unwrap().lines() {
+        let Some((identity, verdict)) = line.split_once(',') else {
+            panic!("invalid retained target line: {line}");
+        };
+        let Some(position) = identity.strip_prefix("0:") else {
+            continue;
+        };
+        let position: u64 = position.parse().unwrap();
+        if position >= u64::try_from(observations.len()).unwrap() {
+            continue; // The retained monitor also emits its terminal flush step.
+        }
+        let verdict = match verdict {
+            "T" => true,
+            "F" => false,
+            _ => panic!("invalid retained verdict: {verdict}"),
+        };
+        let step = TargetStepObservation {
+            target: &manifest.target,
+            expression_sha256: &manifest.output_sha256,
+            position,
+            verdict,
+        };
+        let expected = if position == 0 {
+            SafetyReplayDisposition::Refuted
+        } else {
+            SafetyReplayDisposition::Inconclusive
+        };
+        assert_eq!(
+            replay_target_step(&manifest, &request, step).unwrap(),
+            expected
+        );
+        checked += 1;
+    }
+    assert_eq!(checked, 3);
+}
+
+// Trace: TC-172; FR-041-AC-1
+#[test]
+fn node_interval_and_placement_census_has_exact_mapped_or_refused_cells() {
+    #[derive(Clone, Copy)]
+    enum Placement {
+        Inner,
+        BooleanNested,
+        Outer,
+    }
+    let placements = [Placement::Inner, Placement::BooleanNested, Placement::Outer];
+    let atom = node(K::Proposition {
+        proposition: PropositionId(0),
+    });
+    let bool_kinds = [
+        K::False,
+        K::True,
+        K::Proposition {
+            proposition: PropositionId(0),
+        },
+        K::Not { operand: NodeId(0) },
+        K::And {
+            left: NodeId(0),
+            right: NodeId(1),
+        },
+        K::Or {
+            left: NodeId(0),
+            right: NodeId(1),
+        },
+        K::Implies {
+            left: NodeId(0),
+            right: NodeId(1),
+        },
+        K::Equivalent {
+            left: NodeId(0),
+            right: NodeId(1),
+        },
+        K::StrongPrevious { operand: NodeId(0) },
+    ];
+    let build = |kind: K, placement: Placement| {
+        let mut nodes = vec![atom, node(K::True), node(kind)];
+        let inner = if matches!(placement, Placement::BooleanNested) {
+            nodes.push(node(K::Not { operand: NodeId(2) }));
+            NodeId(3)
+        } else {
+            NodeId(2)
+        };
+        if !matches!(placement, Placement::Outer) {
+            nodes.push(node(K::Globally {
+                interval: open(),
+                operand: inner,
+            }));
+        }
+        graph(nodes)
+    };
+    let mut checked = 0;
+    for kind in bool_kinds {
+        for placement in placements {
+            let formula = build(kind, placement);
+            let result = export(&formula, &rows(PartialValue::True));
+            if matches!(placement, Placement::Outer) {
+                assert_eq!(result, Err(SafetyExportError::UnsupportedShape), "{kind:?}");
+            } else {
+                assert!(result.is_ok(), "{kind:?}: {result:?}");
+            }
+            checked += 1;
+        }
+    }
+    let intervals = [
+        TemporalInterval::Closed(Interval::new(0, 0).unwrap()),
+        TemporalInterval::Closed(Interval::new(0, 1).unwrap()),
+        TemporalInterval::Closed(Interval::new(1, 1).unwrap()),
+        TemporalInterval::Closed(Interval::new(1, 2).unwrap()),
+        open(),
+        TemporalInterval::Unbounded(UnboundedInterval::new(1)),
+    ];
+    for interval in intervals {
+        let kinds = [
+            K::Future {
+                interval,
+                operand: NodeId(0),
+            },
+            K::Globally {
+                interval,
+                operand: NodeId(0),
+            },
+            K::Until {
+                interval,
+                left: NodeId(0),
+                right: NodeId(1),
+            },
+            K::Release {
+                interval,
+                left: NodeId(0),
+                right: NodeId(1),
+            },
+            K::Once {
+                interval,
+                operand: NodeId(0),
+            },
+            K::Historically {
+                interval,
+                operand: NodeId(0),
+            },
+            K::Since {
+                interval,
+                left: NodeId(0),
+                right: NodeId(1),
+            },
+            K::Triggered {
+                interval,
+                left: NodeId(0),
+                right: NodeId(1),
+            },
+        ];
+        for (index, kind) in kinds.into_iter().enumerate() {
+            for placement in placements {
+                let formula = build(kind, placement);
+                let result = export(&formula, &rows(PartialValue::True));
+                let expected = match (interval, index, placement) {
+                    (TemporalInterval::Closed(_), _, Placement::Outer) => {
+                        Some(SafetyExportError::UnsupportedShape)
+                    }
+                    (TemporalInterval::Closed(bounds), 4..=7, _)
+                        if bounds.start() != 0
+                            || (bounds.end() != 0 && index != 4)
+                            || bounds.end() > 1 =>
+                    {
+                        let operator = [
+                            PastOperatorKind::Once,
+                            PastOperatorKind::Historically,
+                            PastOperatorKind::Since,
+                            PastOperatorKind::Triggered,
+                        ][index - 4];
+                        Some(SafetyExportError::TargetOriginIntervalMismatch {
+                            operator,
+                            interval: bounds,
+                        })
+                    }
+                    (TemporalInterval::Closed(_), _, _) => None,
+                    (TemporalInterval::Unbounded(bounds), 1, Placement::Outer)
+                        if bounds.start() == 0 =>
+                    {
+                        None
+                    }
+                    (TemporalInterval::Unbounded(_), 0 | 1, _) => {
+                        Some(SafetyExportError::UnboundedLiveness)
+                    }
+                    (TemporalInterval::Unbounded(_), 2 | 3, _) => {
+                        Some(SafetyExportError::UnboundedUntilRelease)
+                    }
+                    (TemporalInterval::Unbounded(_), 4..=7, _) => {
+                        Some(SafetyExportError::UnboundedPast)
+                    }
+                    _ => unreachable!(),
+                };
+                match expected {
+                    Some(error) => assert_eq!(result, Err(error), "{kind:?}"),
+                    None => assert!(result.is_ok(), "{kind:?}: {result:?}"),
+                }
+                checked += 1;
+            }
+        }
+    }
+    assert_eq!(checked, 171); // Nine noninterval nodes and eight interval nodes across placements.
+}
+
+// Trace: TC-172; FR-041-AC-1
+#[test]
+fn temporal_nesting_cross_product_classifies_target_context() {
+    let atom = node(K::Proposition {
+        proposition: PropositionId(0),
+    });
+    let intervals = [
+        TemporalInterval::Closed(Interval::new(0, 0).unwrap()),
+        TemporalInterval::Closed(Interval::new(0, 1).unwrap()),
+        TemporalInterval::Closed(Interval::new(1, 1).unwrap()),
+        TemporalInterval::Closed(Interval::new(1, 2).unwrap()),
+        open(),
+        TemporalInterval::Unbounded(UnboundedInterval::new(1)),
+    ];
+    let mut checked = 0;
+    for future_context in [true, false] {
+        for interval in intervals {
+            let kinds = [
+                K::Future {
+                    interval,
+                    operand: NodeId(0),
+                },
+                K::Globally {
+                    interval,
+                    operand: NodeId(0),
+                },
+                K::Until {
+                    interval,
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+                K::Release {
+                    interval,
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+                K::Once {
+                    interval,
+                    operand: NodeId(0),
+                },
+                K::Historically {
+                    interval,
+                    operand: NodeId(0),
+                },
+                K::Since {
+                    interval,
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+                K::Triggered {
+                    interval,
+                    left: NodeId(0),
+                    right: NodeId(1),
+                },
+            ];
+            for (index, kind) in kinds.into_iter().enumerate() {
+                let parent = if future_context {
+                    K::Future {
+                        interval: TemporalInterval::Closed(Interval::new(0, 1).unwrap()),
+                        operand: NodeId(2),
+                    }
+                } else {
+                    K::Once {
+                        interval: closed(),
+                        operand: NodeId(2),
+                    }
+                };
+                let formula = graph(vec![
+                    atom,
+                    node(K::True),
+                    node(kind),
+                    node(parent),
+                    node(K::Globally {
+                        interval: open(),
+                        operand: NodeId(3),
+                    }),
+                ]);
+                let result = export(&formula, &rows(PartialValue::True));
+                let expected = match interval {
+                    TemporalInterval::Unbounded(_) if index <= 1 => {
+                        Some(SafetyExportError::UnboundedLiveness)
+                    }
+                    TemporalInterval::Unbounded(_) if index <= 3 => {
+                        Some(SafetyExportError::UnboundedUntilRelease)
+                    }
+                    TemporalInterval::Unbounded(_) => Some(SafetyExportError::UnboundedPast),
+                    TemporalInterval::Closed(bounds) if !future_context && index >= 4 => {
+                        if index == 4 && bounds.start() == 0 && bounds.end() == 1 {
+                            None
+                        } else {
+                            Some(SafetyExportError::TargetOrigin(
+                                PastMappingError::TargetOriginShapeUnverified(NodeId(3)),
+                            ))
+                        }
+                    }
+                    TemporalInterval::Closed(bounds) if !future_context => {
+                        (bounds.end() != 0).then_some(SafetyExportError::MixedTargetContext)
+                    }
+                    TemporalInterval::Closed(_) if index <= 3 => None,
+                    TemporalInterval::Closed(bounds)
+                        if bounds.start() != 0
+                            || (bounds.end() != 0 && index != 4)
+                            || bounds.end() > 1 =>
+                    {
+                        let operator = [
+                            PastOperatorKind::Once,
+                            PastOperatorKind::Historically,
+                            PastOperatorKind::Since,
+                            PastOperatorKind::Triggered,
+                        ][index - 4];
+                        Some(SafetyExportError::TargetOriginIntervalMismatch {
+                            operator,
+                            interval: bounds,
+                        })
+                    }
+                    TemporalInterval::Closed(bounds) => {
+                        (bounds.end() != 0).then_some(SafetyExportError::MixedTargetContext)
+                    }
+                };
+                match expected {
+                    Some(error) => assert_eq!(result, Err(error), "{future_context} {kind:?}"),
+                    None => assert!(result.is_ok(), "{future_context} {kind:?}: {result:?}"),
+                }
+                checked += 1;
+            }
+        }
+        for kind in [
+            K::False,
+            K::True,
+            K::Proposition {
+                proposition: PropositionId(0),
+            },
+            K::Not { operand: NodeId(0) },
+            K::And {
+                left: NodeId(0),
+                right: NodeId(1),
+            },
+            K::Or {
+                left: NodeId(0),
+                right: NodeId(1),
+            },
+            K::Implies {
+                left: NodeId(0),
+                right: NodeId(1),
+            },
+            K::Equivalent {
+                left: NodeId(0),
+                right: NodeId(1),
+            },
+            K::StrongPrevious { operand: NodeId(0) },
+        ] {
+            let parent = if future_context {
+                K::Future {
+                    interval: closed(),
+                    operand: NodeId(2),
+                }
+            } else {
+                K::Once {
+                    interval: closed(),
+                    operand: NodeId(2),
+                }
+            };
+            let formula = graph(vec![
+                atom,
+                node(K::True),
+                node(kind),
+                node(parent),
+                node(K::Globally {
+                    interval: open(),
+                    operand: NodeId(3),
+                }),
+            ]);
+            let result = export(&formula, &rows(PartialValue::True));
+            let expected = if matches!(kind, K::StrongPrevious { .. }) {
+                if future_context {
+                    Some(SafetyExportError::MixedTargetContext)
+                } else {
+                    Some(SafetyExportError::TargetOrigin(
+                        PastMappingError::TargetOriginShapeUnverified(NodeId(3)),
+                    ))
+                }
+            } else {
+                None
+            };
+            match expected {
+                Some(error) => assert_eq!(result, Err(error), "{future_context} {kind:?}"),
+                None => assert!(result.is_ok(), "{future_context} {kind:?}: {result:?}"),
+            }
+            checked += 1;
+        }
+    }
+    assert_eq!(checked, 114);
+}

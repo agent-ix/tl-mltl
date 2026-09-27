@@ -13,9 +13,11 @@ relationships:
 
 ## Description
 
-When an infinite-trace formula has the exact shape `G[0,)ψ` and ψ contains
-only admitted past or bounded-future operations in any nesting, the opt-in
-provider may export a C2PO monitor expression as refutation-only evidence.
+When a caller requests infinite safety export, the opt-in provider shall
+either export a C2PO monitor expression as refutation-only evidence for an
+admitted exact `G[0,)ψ` graph or return a typed refusal before output. It shall
+admit only a body ψ whose operators, intervals, nesting shape, clock and
+target-origin behavior have reviewed target equivalents.
 
 ## Behavior
 
@@ -23,13 +25,12 @@ The export resides behind `tl_mltl::infinite` and consumes only validated
 formula-unbounded/v1 under `mltl.infinite-trace/v1`. A per-node, per-interval
 classification admits the outer `G[0,)` and only inner operators whose
 finite-horizon verdict is sound under the selected target's clock and origin
-contract. Any mixed nesting must have a finite decision horizon at each
-position; otherwise it refuses before output. A finite horizon alone does not
-make a mixed past/future subtree renderable in one reviewed C2PO section:
-the adapter lowers zero-width operators to Boolean expressions and refuses
-the remaining unrepresentable mixes before output. A violating observation may
-establish a replayable finite bad
-prefix; absence of violation, a target pass, or an incomplete observation
+contract. Past operators within ψ must satisfy TL-216's homogeneous
+operator/interval and depth partition. The adapter lowers zero-width temporal
+operators to Boolean expressions. It refuses mixed nonzero past/future target
+sections even when their source decision horizon is finite. A violating
+observation can establish a replayable finite bad prefix; absence of violation,
+a target pass, or an incomplete observation
 never yields `proved`. The adapter does not register as a second liveness
 backend. Its manifest names its refutation-only scope, source and target
 identities and exact input and output digests.

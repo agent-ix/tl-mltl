@@ -38,7 +38,7 @@ classification table and has a positive or negative test.
 | False, True, Proposition, Not, And, Or, Implies, Equivalent | Map under validated catalog and profile | No interval form | Unsupported signal or profile |
 | F, G, U, R inside `ψ` | Map only with a finite target-equivalent horizon | Refuse; only the exact outer `G[0,)` is special | Unbounded liveness or until/release |
 | Exact outer `G[0,)ψ` | Not this fragment | Map as refutation-only if every child maps | Unsupported safety shape |
-| O, H, S, T inside `ψ` or in past profile | Map only with target-equivalent origin | Map only when target supports the same finite-origin meaning | Target-origin mismatch |
+| O, H, S, T inside `ψ` or in past profile | Map only with target-equivalent origin and TL-216 homogeneous/depth shape | Map only when target supports the same finite-origin meaning and shape | Target-origin mismatch or unverified shape |
 | Y | Map only as strong previous under the origin contract | No interval form | Target-origin mismatch |
 | Fairness premise, missing/conflicting valuation | Refuse | Refuse | Fairness or partial valuation |
 | Foreign clock, profile, graph or target version | Refuse | Refuse | Identity mismatch |
