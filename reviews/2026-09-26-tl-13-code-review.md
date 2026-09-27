@@ -75,3 +75,9 @@ Reviewed `4ca956212063c718d26015d8a03c63d118175ed7` (fix commit `4ca956212063c71
 Reviewed frozen `67d567105e857d4cf6dfbe014151bfd77a184ad3` against trailing review head `051187a` and base `ca9fab04ea5f3b64686e697a3870561329e03fd2`. The only new diff updates `tests/cli.rs:96`'s expected tl-syntax revision from `4a5614193d21e5ae99950ae683b04ba0ec931358` to `cfc2761cbdf9aa6e30f1b04db5c2a0c00023e4a0`, matching `Cargo.toml:25` and `src/lib.rs:92`. This repairs the fixture without changing production behavior, test intent, or prior finding outcomes. No new findings or open findings.
 
 Focused feature-off and feature-on CLI tests each passed 1/1. `cargo fmt --check`, `git diff --check 051187a..67d5671`, and the scratchpad-to-PR review-file comparison passed. No aggregate gate was run.
+
+### Round 4: landed TL-15 dependency repin
+
+Reviewed frozen `84aaf8a1bfd9bf6968ae71060899d14e9ec375a2` against `67d567105e857d4cf6dfbe014151bfd77a184ad3`. The changed files are `Cargo.toml`, `Cargo.lock`, `src/lib.rs`, `tests/cli.rs`, `tests/tc138_feature_boundary.rs`, and the committed copy of this review. All dependency, identity, and fixture references consistently name landed TL-15 `6aa9b11e29040d64b437da87c9944e3dedd34a86`. The old candidate `cfc2761cbdf9aa6e30f1b04db5c2a0c00023e4a0` and landed commit have the same Git tree `5d908b0f3804c3bd5ccf2b49f8f0df244ae685ec`; no syntax code or spec content changed under the repin. No new or open findings. Earlier dispositions remain in force.
+
+Focused feature-off CLI and TC-138 passed 2/2; feature-on CLI, infinite corpus, independent oracle, infinite trace, and TC-138 passed 21/21. `cargo fmt --check`, feature-on Clippy for library/tests, and `git diff --check` passed. No aggregate gate was run.
