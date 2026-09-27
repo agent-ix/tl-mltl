@@ -74,7 +74,42 @@ fn main() {
 }
 "#;
 
-// Trace: TC-138; FR-027-AC-1 through FR-027-AC-3, FR-028-AC-3, FR-034-AC-3
+const BOUNDED_MAPPING_CONSUMER: &str = r##"
+use tl_mltl::{map_to_c2po, MappingSourceIdentity, MappingSourceState, ToolIdentity};
+use tl_syntax::{Formula, Interval, Node, NodeId, NodeKind, PropositionId, SemanticProfile};
+
+fn main() {
+    let nodes = [
+        Node::new(NodeKind::Proposition { proposition: PropositionId(7) }),
+        Node::new(NodeKind::Future {
+            interval: Interval::new(0, 2).unwrap(),
+            operand: NodeId(0),
+        }),
+    ];
+    let formula = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(1), &nodes).unwrap();
+    let manifest = map_to_c2po(
+        formula,
+        "future-seven",
+        br#"{"formula":"fixture"}"#,
+        MappingSourceIdentity {
+            revision: "source-revision".to_owned(),
+            state: MappingSourceState::Clean,
+        },
+        Some(ToolIdentity {
+            name: "r2u2".to_owned(),
+            version: "vX.Y.Z-test-fixture".to_owned(),
+            executable_sha256: "1".repeat(64),
+            configuration_sha256: "2".repeat(64),
+        }),
+        100,
+    ).unwrap();
+    #[cfg(feature = "infinite-trace")]
+    let _ = tl_mltl::infinite::FEATURE;
+    print!("{}", serde_json::to_string(&manifest).unwrap());
+}
+"##;
+
+// Trace: TC-138, TC-171; FR-027-AC-1 through FR-027-AC-3, FR-028-AC-3, FR-034-AC-3
 #[test]
 fn external_consumer_feature_tree_and_complete_bounded_bytes() {
     let scratch = Path::new(env!("CARGO_MANIFEST_DIR")).join("target");
@@ -165,4 +200,36 @@ serde_json = "=1.0.151"
         "infinite module unexpectedly visible without feature"
     );
     assert!(String::from_utf8_lossy(&absent.stderr).contains("could not find `infinite`"));
+
+    // TC-171: the opt-in safety exporter must leave the complete bounded
+    // mapping manifest byte-for-byte unchanged in an external consumer.
+    fs::write(root.join("src/main.rs"), BOUNDED_MAPPING_CONSUMER).unwrap();
+    let off_mapping = cargo(&manifest, &["run", "--quiet", "--no-default-features"]);
+    assert!(
+        off_mapping.status.success(),
+        "{}",
+        String::from_utf8_lossy(&off_mapping.stderr)
+    );
+    let on_mapping = cargo(
+        &manifest,
+        &[
+            "run",
+            "--quiet",
+            "--no-default-features",
+            "--features",
+            "infinite-trace",
+        ],
+    );
+    assert!(
+        on_mapping.status.success(),
+        "{}",
+        String::from_utf8_lossy(&on_mapping.stderr)
+    );
+    assert_eq!(off_mapping.stdout, on_mapping.stdout);
+    assert_eq!(
+        off_mapping.stdout,
+        include_bytes!("fixtures/tl-216/legacy-v1.json")
+            .strip_suffix(b"\n")
+            .unwrap(),
+    );
 }

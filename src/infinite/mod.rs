@@ -3,7 +3,13 @@
 //! This module owns lasso semantics and never calls the finite closed or
 //! prefix evaluators. A lasso result is evidence about that trace only.
 
+mod export;
 mod periodic;
+
+pub use export::{
+    export_safety_monitor, replay_target_step, SafetyExportError, SafetyMappingManifest,
+    SafetyReplayDisposition, TargetStepObservation,
+};
 
 use std::{collections::BTreeMap, time::Instant};
 
