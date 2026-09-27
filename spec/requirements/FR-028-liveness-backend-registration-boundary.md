@@ -48,7 +48,8 @@ prefix. It has no model-wide procedure; a transition/model request is
 `unsupported` with a typed missing-model-capability detail. Another
 registrant for the same deployment is a
 configuration conflict, never a precedence choice. A finite prefix cannot
-yield `proved` liveness; timeout or resource exhaustion yields `failed`
+yield `proved` liveness; a caller's expired monotonic deadline or resource
+exhaustion yields `failed`
 with a resource-incomplete execution disposition. Syntax/profile/clock refusals remain
 `unsupported`, and internal failure remains `failed`. Existing bounded
 verdicts, reports and CLI schemas keep their bytes and meanings.

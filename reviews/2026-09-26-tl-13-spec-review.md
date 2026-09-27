@@ -28,3 +28,11 @@ FAIL.
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | high | FR-028 promises typed detail and provider identity on registered settlement, while the referenced tl-syntax FR-290 LivenessSettlement contract carries only a coarse disposition and optional absence warning; define the rich-result route or narrow the promise before this PR is accepted. | spec/requirements/FR-028-liveness-backend-registration-boundary.md:29-32 |
+
+## Dispositions
+
+Round 1 reviewed `1b29960d3612e88c61fbc1871642aee63ac8cf1f` (fix commit `1b29960d3612e88c61fbc1871642aee63ac8cf1f`). Original finding text above is unchanged.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 1b29960d3612e88c61fbc1871642aee63ac8cf1f: FR-028 now explicitly separates the coarse tl-syntax `LivenessSettlement` from `ProviderRegistry::settle_detailed`, whose typed result retains FR-341 reason, evidence and provider identity under the same subject binding. |

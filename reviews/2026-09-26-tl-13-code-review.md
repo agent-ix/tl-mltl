@@ -38,3 +38,24 @@ AP-001 (spec/assurance/AP-001.md) was considered against exact candidate fd116ec
 ## Rust review
 
 Checked public docs, exhaustive enum mappings, input bounds, checked arithmetic, panic surface, wire typing, feature gating, test seams, and the independent oracle bridge. No CI workflow file changed. Focused checks reported by the coder were fmt, default check, feature Clippy, 25 selected feature-on and seven feature-off tests; aggregate gates were expressly withheld.
+
+## New findings (disposition pass 1)
+
+The fix round was reviewed at `1b29960d3612e88c61fbc1871642aee63ac8cf1f`. These defects were absent from the original findings table.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-002 | high | The accepted FR-028/FR-033 contract requires timeout to settle as `failed` with `resource-incomplete`, but `EvaluationLimit` has only count ceilings and no deadline, elapsed-time budget, or cancellation-to-result path. A caller whose evaluation times out cannot receive the required typed result. | src/infinite/mod.rs:27-42; FR-028:51; FR-033:37 |
+| FND-003 | medium | The new TC-138 external consumer runs nested Cargo without `--offline` or a retained lockfile. In a network-restricted ordinary test run it updates crates.io/git and fails before checking the feature boundary, even though the parent crate is already built; the same focused test passes with `CARGO_NET_OFFLINE=true`. | tests/tc138_feature_boundary.rs:8-26 |
+| FND-004 | medium | TC-159 unconditionally expects `u64::MAX` event position to prove. On a 32-bit target `usize::try_from(u64::MAX)` fails and the provider correctly returns resource-incomplete, so this new test panics at `unwrap()` instead of checking the target-dependent result. | tests/infinite_trace.rs:793-799; src/infinite/mod.rs:509-510 |
+
+## Dispositions
+
+Round 1 reviewed `1b29960d3612e88c61fbc1871642aee63ac8cf1f` (fix commit `1b29960d3612e88c61fbc1871642aee63ac8cf1f`). Original finding text above is unchanged.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 1b29960d3612e88c61fbc1871642aee63ac8cf1f: `ProviderRegistry::settle_detailed` returns `InfiniteResult`; `evaluate_selected` shares exact subject binding with the coarse FR-290 route, and the new test checks reason, evidence and identity. |
+| FND-002 | still-open | No deadline, elapsed-time limit or timeout mapping exists in `EvaluationLimit` or the provider path; FR-028/FR-033 timeout settlement remains unavailable. |
+| FND-003 | still-open | TC-138's nested Cargo invocation requires index/git network access by default and has no lockfile; the network-restricted focused run failed before its assertions. |
+| FND-004 | still-open | The test's `u64::MAX` success assertion is unconditional despite the checked `u64` to `usize` conversion on 32-bit targets. |

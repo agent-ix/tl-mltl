@@ -5,7 +5,7 @@
 
 mod periodic;
 
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, time::Instant};
 
 use serde::Serialize;
 use tl_syntax::{
@@ -39,6 +39,8 @@ pub struct EvaluationLimit {
     pub max_completions: u64,
     /// Maximum evaluation steps, including temporal iteration.
     pub max_steps: u64,
+    /// Optional monotonic deadline. Expiry settles as resource-incomplete.
+    pub deadline: Option<Instant>,
 }
 
 impl Default for EvaluationLimit {
@@ -50,7 +52,15 @@ impl Default for EvaluationLimit {
             max_states: 2_000_000,
             max_completions: 65_536,
             max_steps: 10_000_000,
+            deadline: None,
         }
+    }
+}
+
+impl EvaluationLimit {
+    fn expired(self) -> bool {
+        self.deadline
+            .is_some_and(|deadline| Instant::now() >= deadline)
     }
 }
 
@@ -515,6 +525,15 @@ fn evaluate_trace(
     let mut satisfying = None;
     let mut falsifying = None;
     for completion in 0..combinations {
+        if request.limit.expired() {
+            return Ok(result(
+                request.identity(),
+                Disposition::Failed,
+                Some(ResultReason::ResourceIncomplete),
+                admitted,
+                steps,
+            ));
+        }
         for (bit, (row, cell)) in unknown.iter().enumerate() {
             rows[*row][*cell] = completion & (1_u64 << bit) != 0;
         }
@@ -563,6 +582,15 @@ fn evaluate_trace(
                 )?);
             }
         }
+    }
+    if request.limit.expired() {
+        return Ok(result(
+            request.identity(),
+            Disposition::Failed,
+            Some(ResultReason::ResourceIncomplete),
+            admitted,
+            steps,
+        ));
     }
     let (disposition, reason) = if admitted == 0 {
         (
@@ -677,7 +705,8 @@ pub fn evaluate_lasso(request: &LassoRequest<'_>) -> Result<InfiniteResult, Infi
         .checked_add(request.trace.loop_observations().len());
     let valuation_cells = lasso_positions
         .and_then(|positions| positions.checked_mul(request.trace.propositions().len()));
-    if request.formula.nodes().len() > request.limit.max_nodes
+    if request.limit.expired()
+        || request.formula.nodes().len() > request.limit.max_nodes
         || lasso_positions.is_none_or(|positions| positions > request.limit.max_positions)
         || valuation_cells.is_none_or(|cells| cells > request.limit.max_valuation_cells)
     {
@@ -969,7 +998,8 @@ fn evaluate_prefix_safety_at(
         fairness: Vec::new(),
         evidence_closure: None,
     };
-    if request.formula.nodes().len() > request.limit.max_nodes
+    if request.limit.expired()
+        || request.formula.nodes().len() > request.limit.max_nodes
         || request.observations.len() > request.limit.max_positions
         || request
             .observations
@@ -1064,6 +1094,15 @@ fn evaluate_prefix_safety_at(
     rows.push(vec![false; request.propositions.len()]);
     let mut steps = 0_u64;
     for position in 0..prefix_len {
+        if request.limit.expired() {
+            return Ok(result(
+                identity,
+                Disposition::Failed,
+                Some(ResultReason::ResourceIncomplete),
+                0,
+                steps,
+            ));
+        }
         if selected.is_some_and(|selected| u64::try_from(position).ok() != Some(selected)) {
             continue;
         }
@@ -1076,6 +1115,15 @@ fn evaluate_prefix_safety_at(
         }
         let mut all_false = true;
         for completion in 0..combinations {
+            if request.limit.expired() {
+                return Ok(result(
+                    identity,
+                    Disposition::Failed,
+                    Some(ResultReason::ResourceIncomplete),
+                    0,
+                    steps,
+                ));
+            }
             for (bit, (row, cell)) in unknown.iter().enumerate() {
                 rows[*row][*cell] = completion & (1_u64 << bit) != 0;
             }
@@ -1119,6 +1167,15 @@ fn evaluate_prefix_safety_at(
             }
         }
         if all_false {
+            if request.limit.expired() {
+                return Ok(result(
+                    identity,
+                    Disposition::Failed,
+                    Some(ResultReason::ResourceIncomplete),
+                    0,
+                    steps,
+                ));
+            }
             let mut report = result(identity, Disposition::Refuted, None, combinations, steps);
             report.basis = EvidenceBasis::BadPrefix;
             report.identity.selected_position =
@@ -1134,6 +1191,15 @@ fn evaluate_prefix_safety_at(
             }));
             return Ok(report);
         }
+    }
+    if request.limit.expired() {
+        return Ok(result(
+            identity,
+            Disposition::Failed,
+            Some(ResultReason::ResourceIncomplete),
+            0,
+            steps,
+        ));
     }
     Ok(result(
         identity,

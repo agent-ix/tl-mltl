@@ -35,6 +35,9 @@ struct Budget {
 
 impl Budget {
     fn step(&mut self) -> Result<(), InfiniteError> {
+        if self.limit.expired() {
+            return Err(InfiniteError::ResourceIncomplete);
+        }
         self.steps = self
             .steps
             .checked_add(1)
@@ -52,6 +55,9 @@ impl Budget {
         period: usize,
         mut value: impl FnMut(usize, &mut Self) -> Result<bool, InfiniteError>,
     ) -> Result<Word, InfiniteError> {
+        if self.limit.expired() {
+            return Err(InfiniteError::ResourceIncomplete);
+        }
         let length = entry
             .checked_add(period)
             .ok_or(InfiniteError::ResourceIncomplete)?;
@@ -243,6 +249,9 @@ pub(super) fn evaluate(
     fairness: &[NodeId],
     limit: EvaluationLimit,
 ) -> Result<(bool, Vec<bool>, u64), InfiniteError> {
+    if limit.expired() {
+        return Err(InfiniteError::ResourceIncomplete);
+    }
     let period = valuations
         .len()
         .checked_sub(loop_entry)

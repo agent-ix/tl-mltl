@@ -1,5 +1,7 @@
 #![cfg(feature = "infinite-trace")]
 
+use std::time::Instant;
+
 use tl_mltl::infinite::{
     evaluate_lasso, evaluate_model, evaluate_prefix_safety, DetailedSettlementError, Disposition,
     EvaluationLimit, EvidenceBasis, EvidenceClosure, InfiniteError, InfiniteProvider, LassoRequest,
@@ -722,6 +724,7 @@ fn every_work_limit_is_inclusive_and_results_are_byte_stable() {
         max_states: 2,
         max_completions: 1,
         max_steps: baseline.evaluation_steps,
+        deadline: None,
     };
     assert_eq!(
         evaluate_lasso(&request(at_limit)).unwrap().disposition,
@@ -795,8 +798,88 @@ fn every_work_limit_is_inclusive_and_results_are_byte_stable() {
         ..request(at_limit)
     };
     let extreme = evaluate_lasso(&huge_position).unwrap();
-    assert_eq!(extreme.disposition, Disposition::Proved);
+    if usize::try_from(u64::MAX).is_ok() {
+        assert_eq!(extreme.disposition, Disposition::Proved);
+    } else {
+        assert_eq!(extreme.disposition, Disposition::Failed);
+        assert_eq!(extreme.reason, Some(ResultReason::ResourceIncomplete));
+        assert!(extreme.evidence.is_none());
+    }
     assert_eq!(extreme.identity.selected_position, u64::MAX);
+}
+
+// Trace: TC-139, TC-158, TC-159; FR-028-AC-2, FR-033-AC-3, FR-034-AC-2
+#[test]
+fn expired_monotonic_deadline_settles_as_typed_resource_incomplete() {
+    let graph = formula(0, vec![node(K::True)]);
+    let lasso = trace(&[], &[ObservationValue::True]);
+    let graph_id = graph.content_identity().unwrap();
+    let trace_id = lasso.content_identity().unwrap();
+    let request = LassoRequest {
+        formula: &graph,
+        trace: &lasso,
+        fairness: None,
+        evidence_closure: EvidenceClosure::Closed,
+        graph_id: &graph_id,
+        trace_id: &trace_id,
+        selected_position: 0,
+        limit: EvaluationLimit {
+            deadline: Some(Instant::now()),
+            ..EvaluationLimit::default()
+        },
+    };
+    let direct = evaluate_lasso(&request).unwrap();
+    assert_eq!(direct.disposition, Disposition::Failed);
+    assert_eq!(
+        direct.execution,
+        tl_mltl::infinite::ExecutionDisposition::ResourceIncomplete
+    );
+    assert_eq!(direct.reason, Some(ResultReason::ResourceIncomplete));
+    assert!(direct.evidence.is_none());
+    let provider = InfiniteProvider {
+        request: ProviderRequest::Lasso(request),
+    };
+    let mut registry = ProviderRegistry::default();
+    registry.register(&provider).unwrap();
+    let subject = LivenessSubject {
+        kind: LivenessSubjectKind::LassoTrace,
+        identity: &trace_id,
+    };
+    assert_eq!(registry.settle_detailed(&graph, subject).unwrap(), direct);
+    assert_eq!(
+        registry.settle(&graph, subject).disposition,
+        LivenessDisposition::ResourceIncomplete
+    );
+
+    let prefix = trace(&[ObservationValue::True], &[ObservationValue::True]);
+    let safety = formula(
+        1,
+        vec![
+            node(K::True),
+            node(K::Globally {
+                interval: open(0),
+                operand: NodeId(0),
+            }),
+        ],
+    );
+    let prefix_result = evaluate_prefix_safety(&PrefixRequest {
+        formula: &safety,
+        graph_id: &safety.content_identity().unwrap(),
+        proposition_map_id: prefix.proposition_map_identity(),
+        propositions: prefix.propositions(),
+        observations: prefix.prefix(),
+        limit: EvaluationLimit {
+            deadline: Some(Instant::now()),
+            ..EvaluationLimit::default()
+        },
+    })
+    .unwrap();
+    assert_eq!(prefix_result.disposition, Disposition::Failed);
+    assert_eq!(
+        prefix_result.execution,
+        tl_mltl::infinite::ExecutionDisposition::ResourceIncomplete
+    );
+    assert!(prefix_result.evidence.is_none());
 }
 
 // Trace: TC-089, TC-140, TC-156, TC-157; FR-029-AC-2, FR-033-AC-1, FR-033-AC-2

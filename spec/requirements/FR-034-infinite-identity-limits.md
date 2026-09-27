@@ -24,7 +24,8 @@ Identity validation precedes semantic work. Every accepted result names the
 TL profile, feature-enabled provider revision, graph, subject and trace identities,
 selected event position, clock and ordered fairness premises. Checked
 arithmetic and explicit node, lasso, valuation, state, iteration and work
-limits prevent wrapping, uncontrolled allocation and partial success. Work
+limits and an optional monotonic deadline prevent wrapping, uncontrolled
+allocation and partial success. Work
 exhaustion returns FR-033's `failed` resource-incomplete result with no
 proof or counterexample claim. The default bounded build adds no
 provider-only dependency; the feature build retains bounded golden bytes.

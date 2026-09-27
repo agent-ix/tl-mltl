@@ -7,6 +7,7 @@ use sha2::{Digest, Sha256};
 
 fn cargo(manifest: &Path, args: &[&str]) -> std::process::Output {
     let output = Command::new("cargo")
+        .env("CARGO_NET_OFFLINE", "true")
         .arg(args[0])
         .args(&args[1..])
         .arg("--manifest-path")
@@ -76,7 +77,9 @@ fn main() {
 // Trace: TC-138; FR-027-AC-1 through FR-027-AC-3, FR-028-AC-3, FR-034-AC-3
 #[test]
 fn external_consumer_feature_tree_and_complete_bounded_bytes() {
-    let temp = tempfile::tempdir().unwrap();
+    let scratch = Path::new(env!("CARGO_MANIFEST_DIR")).join("target");
+    fs::create_dir_all(&scratch).unwrap();
+    let temp = tempfile::tempdir_in(scratch).unwrap();
     let root = temp.path();
     fs::create_dir(root.join("src")).unwrap();
     let manifest = root.join("Cargo.toml");

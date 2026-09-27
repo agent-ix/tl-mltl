@@ -35,3 +35,12 @@ FAIL.
 ## Coverage
 
 Quire targeted coverage bound all changed TM-004 rows by tags, but tags do not prove the entire named test intent. TM-004 itself still marks TC-138 and TC-159 planned. No TL-13-specific plan bundle exists; unrelated PLAN-006–009 were not treated as this feature plan. Optional semantic review was not invoked, but concrete tagged-test-to-criterion mismatches were inspected in the required code review.
+
+## Dispositions
+
+Round 1 reviewed `1b29960d3612e88c61fbc1871642aee63ac8cf1f` (fix commit `1b29960d3612e88c61fbc1871642aee63ac8cf1f`). Original finding text above is unchanged.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 1b29960d3612e88c61fbc1871642aee63ac8cf1f: `tests/tc138_feature_boundary.rs` now compiles an external consumer feature-off/on, inspects the resolved feature/dependency graph, compares complete bounded report bytes and a fixed digest, and asserts provider absence when disabled. The focused test passed with `CARGO_NET_OFFLINE=true TMPDIR=/private/tmp`; its default network dependency is separately FND-003 in SR-061. |
+| FND-002 | fixed | 1b29960d3612e88c61fbc1871642aee63ac8cf1f: `every_work_limit_is_inclusive_and_results_are_byte_stable` checks all six configured ceilings at the inclusive boundary and one lower, absence of partial evidence, repeated JSON bytes, and an extreme position. Its 32-bit assertion is separately FND-004 in SR-061. |

@@ -34,7 +34,8 @@ property whose violation is decisive under all infinite continuations; it
 cannot prove liveness. A finite prefix with no decisive counterexample is
 `inconclusive`, not `proved`. Unsupported syntax/profile/clock/capability
 requests are `unsupported`; an internal provider fault is `failed` with
-execution disposition `failed`; an exhausted configured resource or timeout
+execution disposition `failed`; an exhausted configured resource or expired
+caller-supplied monotonic deadline
 is `failed` with execution disposition `resource-incomplete`. These two
 causes remain distinct. No outcome silently falls back to bounded
 closure-as-false semantics.
