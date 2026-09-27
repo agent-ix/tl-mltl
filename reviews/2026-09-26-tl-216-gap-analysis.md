@@ -35,6 +35,7 @@ TM-005 lists TC-160 through TC-167 and TC-174. TC-163 has no matching source tes
 | FND-001 | fixed | fixed 6707744abb0d59e6b16115f30b61238db6a83fe5: Zero-width H/S/T lowering removes unevidenced target past operators and S[0,1] refuses. |
 | FND-002 | fixed | fixed 6707744abb0d59e6b16115f30b61238db6a83fe5: TC-163 now tags byte-exact v1/v2 manifest fixture assertions. |
 | FND-003 | still-open | Changed-head TC-163 v1/v2 assertions fail at 1bf6257 after the landed syntax repin. |
+| FND-003 | fixed | fixed 9578631af128a6d336b95680bb43fd710b032926: TC-163 v1/v2 byte assertions pass at the landed compiled syntax identity; their tagged test code is unchanged. |
 
 ## New findings (disposition pass 2)
 
@@ -47,3 +48,7 @@ At changed head `1bf6257e710654293d0c3370bca668ef7f670e6b`, TC-163 remains tagge
 ## Changed-head verdict
 
 **FAIL at `1bf6257`** with FND-003 open. The earlier FND-001/002 dispositions remain fixed.
+
+## Disposition pass 3
+
+**PASS at `9578631af128a6d336b95680bb43fd710b032926`.** FND-003 is fixed. TC-163 remains backed by unchanged byte-exact assertions in `tests/interop.rs` and `tests/contextual.rs`, both now passing against correctly repinned expected manifests. All other TL-216 targeted tests remain green; no new evidence gap found.

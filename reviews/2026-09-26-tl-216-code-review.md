@@ -33,6 +33,7 @@ Reviewed public API, typed refusals, graph validation, bounded renderer, exhaust
 |---|---|---|
 | FND-001 | fixed | fixed 6707744abb0d59e6b16115f30b61238db6a83fe5: Target-origin admissions reduced to observed O[0,1]/Y; H/S/T [0,0] emit Boolean equivalents. |
 | FND-002 | still-open | Changed-head regression at 1bf6257: both byte-exact legacy future manifest tests fail because expected snapshots contain the former syntax revision. |
+| FND-002 | fixed | fixed 9578631af128a6d336b95680bb43fd710b032926: v1/v2 snapshots now carry landed syntax revision; v2 request/result digests were recomputed for that identity and all other fields remain byte-identical. |
 
 ## New findings (disposition pass 2)
 
@@ -45,3 +46,7 @@ Reviewed head `1bf6257e710654293d0c3370bca668ef7f670e6b` after the TL-13 rebase 
 ## Changed-head verdict
 
 **FAIL at `1bf6257`** with FND-002 open. No source edits were made in this review.
+
+## Disposition pass 3
+
+**PASS at `9578631af128a6d336b95680bb43fd710b032926`.** FND-002 is fixed. Compared both fixture JSON objects to `1bf6257`: v1 changes only `syntaxRevision`; v2 changes only `syntaxRevision`, `requestSha256`, and `resultSha256`, as required by the changed compiled dependency identity. Exact byte assertions remain in `tests/interop.rs` and `tests/contextual.rs` without weakening. The focused `interop` 4/4, `contextual` 5/5, past feature 13/13, and future parity 7/7 tests pass. Formatting, all-target/all-feature Clippy, and diff check pass. No new source defect found.
