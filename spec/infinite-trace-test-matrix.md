@@ -9,8 +9,8 @@ relationships:
 
 # MLTL V1 infinite-trace provider test matrix
 
-Implementation statuses below reflect only traced tests. Independent
-`tl-oracle` comparison rows remain planned until a persistent test lane lands.
+Implementation statuses below reflect traced focused tests. Rows requiring
+later dependency repins or broader acceptance checks remain planned.
 
 ## Functional Requirement Coverage
 
@@ -29,7 +29,7 @@ Implementation statuses below reflect only traced tests. Independent
 
 | Test ID | Title | Type | Priority | Traces To | Status |
 |---|---|---|---|---|---|
-| TC-138 | Compare default and opt-in module visibility, bounded golden bytes, dependency and feature trees, and absence of bounded imports of `infinite` | Integration | P0 | FR-027-AC-1, FR-027-AC-2, FR-027-AC-3, FR-028-AC-3, FR-034-AC-3 | 🚧 planned |
+| TC-138 | Compare default and opt-in module visibility, bounded golden bytes, dependency and feature trees, and absence of bounded imports of `infinite` | Integration | P0 | FR-027-AC-1, FR-027-AC-2, FR-027-AC-3, FR-028-AC-3, FR-034-AC-3 | ✅ implemented |
 | TC-139 | Register one liveness backend, refuse a duplicate, identity mismatch or model request without model capability, and preserve feature-off absence | Integration | P0 | FR-028-AC-1, FR-028-AC-2 | 🚧 planned |
 | TC-140 | Retain provider revision, feature, profile, graph and clock attribution without reattributing bounded results | Integration | P0 | FR-029-AC-2 | ✅ implemented |
 | TC-141 | Compare complete Boolean valuations with the independent oracle on each lasso position | Property | P0 | FR-030-AC-1 | ✅ implemented |
@@ -50,4 +50,4 @@ Implementation statuses below reflect only traced tests. Independent
 | TC-156 | Validate witness and counterexample details against the admitted completion and full loop | Integration | P0 | FR-033-AC-1 | 🚧 planned |
 | TC-157 | Refute only continuation-invariant finite-prefix safety violations and never prove liveness from a prefix | Property | P0 | FR-033-AC-2 | ✅ implemented |
 | TC-158 | Map unsupported and both failed execution dispositions to the exact FR-341 axes without a Boolean fallback | Integration | P0 | FR-033-AC-3 | 🚧 planned |
-| TC-159 | Mutate each identity and limit axis at and one over bound; verify deterministic results and checked arithmetic | Property | P0 | FR-034-AC-1, FR-034-AC-2, FR-034-AC-3 | 🚧 planned |
+| TC-159 | Mutate each identity and limit axis at and one over bound; verify deterministic results and checked arithmetic | Property | P0 | FR-034-AC-1, FR-034-AC-2, FR-034-AC-3 | ✅ implemented |

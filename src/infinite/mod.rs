@@ -1158,13 +1158,16 @@ pub struct InfiniteProvider<'a> {
     pub request: ProviderRequest<'a>,
 }
 
-impl LivenessBackend for InfiniteProvider<'_> {
-    fn settle(
+impl InfiniteProvider<'_> {
+    /// Evaluates the exact subject bound to this registration and retains the
+    /// provider's typed result. The syntax capability router has only a coarse
+    /// disposition; callers needing reason, evidence, or identity use this path.
+    fn evaluate_selected(
         &self,
         formula: &InfiniteFormulaDocument,
         subject: LivenessSubject<'_>,
-    ) -> LivenessDisposition {
-        let evaluated = match (&self.request, subject.kind) {
+    ) -> Result<InfiniteResult, InfiniteError> {
+        match (&self.request, subject.kind) {
             (ProviderRequest::Lasso(request), LivenessSubjectKind::LassoTrace)
                 if formula == request.formula && subject.identity == request.trace_id =>
             {
@@ -1178,15 +1181,38 @@ impl LivenessBackend for InfiniteProvider<'_> {
             {
                 evaluate_prefix_safety(request)
             }
-            (ProviderRequest::Lasso(_), LivenessSubjectKind::FinitePrefix)
-            | (ProviderRequest::Lasso(_), LivenessSubjectKind::Model)
-            | (ProviderRequest::FinitePrefix(_), LivenessSubjectKind::Model)
-            | (ProviderRequest::FinitePrefix(_), LivenessSubjectKind::LassoTrace)
-            | (ProviderRequest::Lasso(_), LivenessSubjectKind::LassoTrace)
-            | (ProviderRequest::FinitePrefix(_), LivenessSubjectKind::FinitePrefix) => {
-                return LivenessDisposition::Unsupported;
+            (ProviderRequest::Lasso(request), LivenessSubjectKind::Model)
+                if formula == request.formula =>
+            {
+                evaluate_model(
+                    formula,
+                    request.graph_id,
+                    subject.identity,
+                    request.trace.proposition_map_identity(),
+                )
             }
-        };
+            (ProviderRequest::FinitePrefix(request), LivenessSubjectKind::Model)
+                if formula == request.formula =>
+            {
+                evaluate_model(
+                    formula,
+                    request.graph_id,
+                    subject.identity,
+                    request.proposition_map_id,
+                )
+            }
+            _ => Err(InfiniteError::IdentityMismatch),
+        }
+    }
+}
+
+impl LivenessBackend for InfiniteProvider<'_> {
+    fn settle(
+        &self,
+        formula: &InfiniteFormulaDocument,
+        subject: LivenessSubject<'_>,
+    ) -> LivenessDisposition {
+        let evaluated = self.evaluate_selected(formula, subject);
         match evaluated {
             Ok(report) => match report.disposition {
                 Disposition::Proved => LivenessDisposition::Proved,
@@ -1226,6 +1252,15 @@ pub enum RegistrationError {
     DuplicateProvider,
 }
 
+/// Refusal from the typed registered-provider route, with no partial result.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DetailedSettlementError {
+    /// No provider is registered for this deployment.
+    BackendAbsent,
+    /// The registered provider refused the selected request before a result.
+    InvalidRequest(InfiniteError),
+}
+
 impl<'a> ProviderRegistry<'a> {
     /// Registers this module's provider exactly once.
     pub fn register(
@@ -1251,6 +1286,21 @@ impl<'a> ProviderRegistry<'a> {
             self.provider
                 .map(|provider| provider as &dyn LivenessBackend),
         )
+    }
+
+    /// Returns the selected provider's full typed result. The syntax-owned
+    /// `settle` route remains available for its coarse compatibility verdict.
+    pub fn settle_detailed(
+        &self,
+        formula: &InfiniteFormulaDocument,
+        subject: LivenessSubject<'_>,
+    ) -> Result<InfiniteResult, DetailedSettlementError> {
+        let provider = self
+            .provider
+            .ok_or(DetailedSettlementError::BackendAbsent)?;
+        provider
+            .evaluate_selected(formula, subject)
+            .map_err(DetailedSettlementError::InvalidRequest)
     }
 }
 

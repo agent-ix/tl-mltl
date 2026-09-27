@@ -1,8 +1,8 @@
 #![cfg(feature = "infinite-trace")]
 
 use tl_mltl::infinite::{
-    evaluate_lasso, evaluate_model, evaluate_prefix_safety, Disposition, EvaluationLimit,
-    EvidenceBasis, EvidenceClosure, InfiniteError, InfiniteProvider, LassoRequest,
+    evaluate_lasso, evaluate_model, evaluate_prefix_safety, DetailedSettlementError, Disposition,
+    EvaluationLimit, EvidenceBasis, EvidenceClosure, InfiniteError, InfiniteProvider, LassoRequest,
     ObservationValue, PrefixRequest, ProviderRegistry, ProviderRequest, RegistrationError,
     ResultReason, SettlementEvidence, SubjectKind, UncertaintyStatus, FEATURE, PROFILE,
 };
@@ -477,7 +477,7 @@ fn model_and_identity_refusals_keep_their_scope() {
     assert!(matches!(bad, Err(InfiniteError::IdentityMismatch)));
 }
 
-// Trace: TC-139; FR-028-AC-1, FR-028-AC-2
+// Trace: TC-139, TC-159; FR-028-AC-1, FR-028-AC-2, FR-034-AC-1
 #[test]
 fn lasso_refuses_each_identity_axis_independently() {
     let graph = formula(0, vec![node(K::True)]);
@@ -504,7 +504,7 @@ fn lasso_refuses_each_identity_axis_independently() {
     }
 }
 
-// Trace: TC-152; FR-032-AC-1
+// Trace: TC-152, TC-159; FR-032-AC-1, FR-034-AC-1
 #[test]
 fn lasso_refuses_fairness_from_a_different_graph() {
     let graph = formula(0, vec![node(K::True)]);
@@ -580,9 +580,109 @@ fn deployment_registry_routes_one_provider_and_refuses_duplicate() {
     );
 }
 
+// Trace: TC-139, TC-140, TC-158; FR-028-AC-2, FR-029-AC-2, FR-033-AC-3
+#[test]
+fn registered_detailed_route_preserves_reason_evidence_and_identity() {
+    let graph = formula(
+        0,
+        vec![node(K::Proposition {
+            proposition: PropositionId(7),
+        })],
+    );
+    let lasso = trace(&[], &[ObservationValue::Conflicting]);
+    let graph_id = graph.content_identity().unwrap();
+    let trace_id = lasso.content_identity().unwrap();
+    let subject = LivenessSubject {
+        kind: LivenessSubjectKind::LassoTrace,
+        identity: &trace_id,
+    };
+    let mut registry = ProviderRegistry::default();
+    assert_eq!(
+        registry.settle_detailed(&graph, subject),
+        Err(DetailedSettlementError::BackendAbsent)
+    );
+    let request = LassoRequest {
+        formula: &graph,
+        trace: &lasso,
+        fairness: None,
+        evidence_closure: EvidenceClosure::Closed,
+        graph_id: &graph_id,
+        trace_id: &trace_id,
+        selected_position: 0,
+        limit: EvaluationLimit::default(),
+    };
+    let direct = evaluate_lasso(&request).unwrap();
+    let provider = InfiniteProvider {
+        request: ProviderRequest::Lasso(request),
+    };
+    registry.register(&provider).unwrap();
+    let detailed = registry.settle_detailed(&graph, subject).unwrap();
+    assert_eq!(detailed, direct);
+    assert_eq!(detailed.reason, Some(ResultReason::ConflictingObservation));
+    assert!(matches!(
+        detailed.evidence,
+        Some(SettlementEvidence::ExhaustiveTrace(_))
+    ));
+    assert_eq!(detailed.identity.provider_revision, TL_MLTL_SOURCE_REVISION);
+    assert_eq!(
+        detailed.identity.trace_id.as_deref(),
+        Some(trace_id.as_str())
+    );
+    assert_eq!(
+        registry.settle(&graph, subject).disposition,
+        LivenessDisposition::Inconclusive
+    );
+    let model = LivenessSubject {
+        kind: LivenessSubjectKind::Model,
+        identity: "model",
+    };
+    let model_detail = registry.settle_detailed(&graph, model).unwrap();
+    assert_eq!(
+        model_detail.reason,
+        Some(ResultReason::ModelProcedureUnavailable)
+    );
+    assert_eq!(model_detail.disposition, Disposition::Unsupported);
+    let wrong = LivenessSubject {
+        kind: LivenessSubjectKind::LassoTrace,
+        identity: "foreign",
+    };
+    assert_eq!(
+        registry.settle_detailed(&graph, wrong),
+        Err(DetailedSettlementError::InvalidRequest(
+            InfiniteError::IdentityMismatch
+        ))
+    );
+
+    let limited = LassoRequest {
+        formula: &graph,
+        trace: &lasso,
+        fairness: None,
+        evidence_closure: EvidenceClosure::Closed,
+        graph_id: &graph_id,
+        trace_id: &trace_id,
+        selected_position: 0,
+        limit: EvaluationLimit {
+            max_steps: 0,
+            ..EvaluationLimit::default()
+        },
+    };
+    let limited_provider = InfiniteProvider {
+        request: ProviderRequest::Lasso(limited),
+    };
+    let mut limited_registry = ProviderRegistry::default();
+    limited_registry.register(&limited_provider).unwrap();
+    let exhausted = limited_registry.settle_detailed(&graph, subject).unwrap();
+    assert_eq!(exhausted.reason, Some(ResultReason::ResourceIncomplete));
+    assert_eq!(
+        exhausted.execution,
+        tl_mltl::infinite::ExecutionDisposition::ResourceIncomplete
+    );
+    assert!(exhausted.evidence.is_none());
+}
+
 // Trace: TC-159; FR-034-AC-2 and FR-034-AC-3
 #[test]
-fn exact_work_limit_succeeds_and_one_less_is_resource_incomplete() {
+fn every_work_limit_is_inclusive_and_results_are_byte_stable() {
     let graph = formula(
         1,
         vec![
@@ -598,7 +698,7 @@ fn exact_work_limit_succeeds_and_one_less_is_resource_incomplete() {
     let lasso = trace(&[], &[ObservationValue::True]);
     let graph_id = graph.content_identity().unwrap();
     let trace_id = lasso.content_identity().unwrap();
-    let request = |max_steps| LassoRequest {
+    let request = |limit| LassoRequest {
         formula: &graph,
         trace: &lasso,
         fairness: None,
@@ -606,27 +706,97 @@ fn exact_work_limit_succeeds_and_one_less_is_resource_incomplete() {
         graph_id: &graph_id,
         trace_id: &trace_id,
         selected_position: 0,
-        limit: EvaluationLimit {
-            max_steps,
-            ..EvaluationLimit::default()
-        },
+        limit,
     };
-    let baseline = evaluate_lasso(&request(u64::MAX)).unwrap();
+    let baseline = evaluate_lasso(&request(EvaluationLimit::default())).unwrap();
     assert_eq!(baseline.disposition, Disposition::Proved);
+    let baseline_bytes = serde_json::to_vec(&baseline).unwrap();
     assert_eq!(
-        evaluate_lasso(&request(baseline.evaluation_steps))
-            .unwrap()
-            .disposition,
+        serde_json::to_vec(&evaluate_lasso(&request(EvaluationLimit::default())).unwrap()).unwrap(),
+        baseline_bytes
+    );
+    let at_limit = EvaluationLimit {
+        max_nodes: 2,
+        max_positions: 1,
+        max_valuation_cells: 1,
+        max_states: 2,
+        max_completions: 1,
+        max_steps: baseline.evaluation_steps,
+    };
+    assert_eq!(
+        evaluate_lasso(&request(at_limit)).unwrap().disposition,
         Disposition::Proved
     );
-    let incomplete = evaluate_lasso(&request(baseline.evaluation_steps - 1)).unwrap();
-    assert_eq!(incomplete.disposition, Disposition::Failed);
-    assert_eq!(incomplete.reason, Some(ResultReason::ResourceIncomplete));
-    assert!(incomplete.evidence.is_none());
-    assert_eq!(
-        incomplete.execution,
-        tl_mltl::infinite::ExecutionDisposition::ResourceIncomplete
-    );
+    for (axis, lowered) in [
+        (
+            "nodes",
+            EvaluationLimit {
+                max_nodes: 1,
+                ..at_limit
+            },
+        ),
+        (
+            "positions",
+            EvaluationLimit {
+                max_positions: 0,
+                ..at_limit
+            },
+        ),
+        (
+            "valuation_cells",
+            EvaluationLimit {
+                max_valuation_cells: 0,
+                ..at_limit
+            },
+        ),
+        (
+            "states",
+            EvaluationLimit {
+                max_states: 1,
+                ..at_limit
+            },
+        ),
+        (
+            "completions",
+            EvaluationLimit {
+                max_completions: 0,
+                ..at_limit
+            },
+        ),
+        (
+            "steps",
+            EvaluationLimit {
+                max_steps: baseline.evaluation_steps - 1,
+                ..at_limit
+            },
+        ),
+    ] {
+        let incomplete = evaluate_lasso(&request(lowered)).unwrap();
+        assert_eq!(incomplete.disposition, Disposition::Failed, "{axis}");
+        assert_eq!(
+            incomplete.reason,
+            Some(ResultReason::ResourceIncomplete),
+            "{axis}"
+        );
+        assert!(incomplete.evidence.is_none(), "{axis}");
+        assert_eq!(
+            incomplete.execution,
+            tl_mltl::infinite::ExecutionDisposition::ResourceIncomplete,
+            "{axis}"
+        );
+        assert_eq!(
+            serde_json::to_vec(&incomplete).unwrap(),
+            serde_json::to_vec(&evaluate_lasso(&request(lowered)).unwrap()).unwrap(),
+            "{axis}"
+        );
+    }
+    let huge_position = LassoRequest {
+        selected_position: u64::MAX,
+        ..request(at_limit)
+    };
+    let extreme = evaluate_lasso(&huge_position).unwrap();
+    assert_eq!(extreme.disposition, Disposition::Proved);
+    assert_eq!(extreme.identity.selected_position, u64::MAX);
 }
 
 // Trace: TC-089, TC-140, TC-156, TC-157; FR-029-AC-2, FR-033-AC-1, FR-033-AC-2

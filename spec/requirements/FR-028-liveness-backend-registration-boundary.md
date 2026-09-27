@@ -28,15 +28,21 @@ settle admitted formula-unbounded requests using the FR-341 result vocabulary.
 
 ## Outputs
 
-- A `proved`, `refuted`, `inconclusive`, `unsupported` or `failed`
-  disposition with typed detail and attributable provider identity.
+- The tl-syntax FR-290 registration route returns its coarse
+  `LivenessSettlement` disposition and optional absence warning.
+- The registered `tl_mltl::infinite::ProviderRegistry::settle_detailed` route
+  returns the FR-341 result with typed reason, evidence and provider identity,
+  or a typed pre-evaluation refusal without a partial result.
 
 ## Behavior
 
 Without a registered provider, every formula-unbounded request follows
 tl-syntax FR-290's `unsupported` absence path and names
 `tl-syntax.liveness/v1`. With this provider selected, each request reaches
-only the opt-in module. The V1 provider can decide an admitted complete lasso
+only the opt-in module. FR-290's `LivenessSettlement` cannot carry the richer
+FR-341 fields; callers requiring them use this module's registered
+`settle_detailed` route with the same exact subject binding. The V1 provider
+can decide an admitted complete lasso
 as a claim about that exact trace, and may refute a decisive finite bad
 prefix. It has no model-wide procedure; a transition/model request is
 `unsupported` with a typed missing-model-capability detail. Another
@@ -52,7 +58,7 @@ verdicts, reports and CLI schemas keep their bytes and meanings.
 | ID | Criteria | Verification |
 |---|---|---|
 | FR-028-AC-1 | The feature-off absence path yields `unsupported` with the required capability warning, and the feature-on provider registers exactly once. | Test (TC-087, TC-139) |
-| FR-028-AC-2 | Two registrants, subject/identity mismatch, or a model request without model-wide capability refuse without routing to a bounded evaluator or returning a partial result. | Test (TC-139) |
+| FR-028-AC-2 | Two registrants, subject/identity mismatch, or a model request without model-wide capability refuse without routing to a bounded evaluator or returning a partial result; the selected registered provider's detailed route preserves FR-341 reason, evidence and provider identity. | Test (TC-139) |
 | FR-028-AC-3 | Every existing bounded verdict, report and CLI schema is byte-identical with the feature enabled or disabled. | Test (TC-087, TC-138) |
 
 ## Dependencies
