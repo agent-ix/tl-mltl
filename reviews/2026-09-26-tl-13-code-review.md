@@ -59,3 +59,13 @@ Round 1 reviewed `1b29960d3612e88c61fbc1871642aee63ac8cf1f` (fix commit `1b29960
 | FND-002 | still-open | No deadline, elapsed-time limit or timeout mapping exists in `EvaluationLimit` or the provider path; FR-028/FR-033 timeout settlement remains unavailable. |
 | FND-003 | still-open | TC-138's nested Cargo invocation requires index/git network access by default and has no lockfile; the network-restricted focused run failed before its assertions. |
 | FND-004 | still-open | The test's `u64::MAX` success assertion is unconditional despite the checked `u64` to `usize` conversion on 32-bit targets. |
+
+### Round 2
+
+Reviewed `4ca956212063c718d26015d8a03c63d118175ed7` (fix commit `4ca956212063c718d26015d8a03c63d118175ed7`). No new findings arose from the changed source, tests, or requirement text.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-002 | fixed | 4ca956212063c718d26015d8a03c63d118175ed7: `EvaluationLimit` accepts an optional monotonic `Instant` deadline, preflight and periodic work poll it, and expired lasso/prefix requests settle as typed `Failed`/`ResourceIncomplete` without evidence. The registered detailed and coarse routes preserve the matching dispositions. |
+| FND-003 | fixed | 4ca956212063c718d26015d8a03c63d118175ed7: TC-138 sets `CARGO_NET_OFFLINE=true` for nested Cargo and uses a writable in-repo target scratch directory; the ordinary focused test now passes without a network environment override. |
+| FND-004 | fixed | 4ca956212063c718d26015d8a03c63d118175ed7: TC-159 branches on checked `usize::try_from(u64::MAX)`, expecting proof only when representable and typed resource-incomplete otherwise, retaining the exact selected-position identity. |
