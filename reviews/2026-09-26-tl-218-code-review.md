@@ -41,7 +41,14 @@ Reviewed at `4643c76d4d46730a5de9f50f47ebfc178b8f9e0d` against provisional base 
 | --- | --- | --- |
 | FND-001 | fixed | 4643c76d4d46730a5de9f50f47ebfc178b8f9e0d — `validate_target_origin_shape` now rejects mixed O/Y and depth-four O before rendering; focused tests cover both. |
 | FND-002 | still-open | Round 1 new finding: the same target-origin admission rule is implemented twice in the same crate; no shared authority yet. |
+| FND-002 | fixed | 28255988abeebb660058e0b58c6426184f33b727 — both finite past mapping and infinite safety export now call one `OriginShapeGuard::push` policy in `src/mapping/past.rs`; focused past and infinite export suites preserve behavior. |
 
 ## Disposition verdict
 
 **FAIL** — FND-002 remains open. Focused infinite-export tests 18/18, formatting, Clippy, and diff check passed; no aggregate gate was run.
+
+## Disposition verdict — round 2
+
+Reviewed at `28255988abeebb660058e0b58c6426184f33b727` against provisional base `4bcea84bbe3fa7360076ea51edaf7f23a094500f`. The previously fixed findings remain fixed; this round checked the sole still-open finding and both callers of the extracted guard.
+
+**PASS** — zero open TL-218 review findings at this head. Focused `infinite_export` 18/18 and `past_mapping` 11/11, formatting, focused Clippy and diff check passed; no aggregate gate was run.
