@@ -69,3 +69,9 @@ Reviewed `4ca956212063c718d26015d8a03c63d118175ed7` (fix commit `4ca956212063c71
 | FND-002 | fixed | 4ca956212063c718d26015d8a03c63d118175ed7: `EvaluationLimit` accepts an optional monotonic `Instant` deadline, preflight and periodic work poll it, and expired lasso/prefix requests settle as typed `Failed`/`ResourceIncomplete` without evidence. The registered detailed and coarse routes preserve the matching dispositions. |
 | FND-003 | fixed | 4ca956212063c718d26015d8a03c63d118175ed7: TC-138 sets `CARGO_NET_OFFLINE=true` for nested Cargo and uses a writable in-repo target scratch directory; the ordinary focused test now passes without a network environment override. |
 | FND-004 | fixed | 4ca956212063c718d26015d8a03c63d118175ed7: TC-159 branches on checked `usize::try_from(u64::MAX)`, expecting proof only when representable and typed resource-incomplete otherwise, retaining the exact selected-position identity. |
+
+### Post-PASS CLI fixture review
+
+Reviewed frozen `67d567105e857d4cf6dfbe014151bfd77a184ad3` against trailing review head `051187a` and base `ca9fab04ea5f3b64686e697a3870561329e03fd2`. The only new diff updates `tests/cli.rs:96`'s expected tl-syntax revision from `4a5614193d21e5ae99950ae683b04ba0ec931358` to `cfc2761cbdf9aa6e30f1b04db5c2a0c00023e4a0`, matching `Cargo.toml:25` and `src/lib.rs:92`. This repairs the fixture without changing production behavior, test intent, or prior finding outcomes. No new findings or open findings.
+
+Focused feature-off and feature-on CLI tests each passed 1/1. `cargo fmt --check`, `git diff --check 051187a..67d5671`, and the scratchpad-to-PR review-file comparison passed. No aggregate gate was run.
