@@ -32,6 +32,8 @@ pub mod clock;
 mod context;
 mod differential;
 pub mod future;
+#[cfg(feature = "infinite-trace")]
+pub mod infinite;
 pub mod mapping;
 pub mod past;
 pub mod wire;
@@ -87,7 +89,7 @@ pub use wire::{
 /// dependency via `tl_syntax::CORPUS_DIR`, so there is no separate basis
 /// revision to track for either: reading through the dependency means each
 /// tracks whatever this revision names.
-pub const TL_SYNTAX_REVISION: &str = "4a5614193d21e5ae99950ae683b04ba0ec931358";
+pub const TL_SYNTAX_REVISION: &str = "cfc2761cbdf9aa6e30f1b04db5c2a0c00023e4a0";
 
 /// Shared temporal corpus identity consumed by this crate.
 pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";

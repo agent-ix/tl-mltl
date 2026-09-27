@@ -40,24 +40,21 @@ future-operator corpus, and the past-history corpus alike.
   retained tl-syntax future-operator corpus.
 
 tl-mltl evaluates closed (`mltl.closed-trace/v1`) and open-prefix
-(`mltl.online-prefix/v1`) bounded finite traces. Lasso-word acceptance,
-fairness-restricted admission, and the inductive infinite-trace semantics for
-always/eventually/until/release and their past duals belong to a separate
-provider under the `quire.temporal.infinite-trace/v1` facet, which consumes
-tl-syntax's `tl-syntax.formula-unbounded/v1` documents (tl-syntax
-[#75](https://github.com/agent-ix/tl-syntax/issues/75)) independently of this
-crate and registers against tl-syntax's `tl-syntax.liveness/v1` capability
-(tl-syntax FR-290, tl-syntax
-[#73](https://github.com/agent-ix/tl-syntax/issues/73)) on its own. Which
-crate carries that provider is an owner decision, recorded as an open question
-in AD-002. See FR-027 through FR-029 and AD-002.
+(`mltl.online-prefix/v1`) bounded finite traces. Its non-default
+`infinite-trace` feature exposes `tl_mltl::infinite`, the provider for the
+TL-native `mltl.infinite-trace/v1` profile. That module consumes
+`tl-syntax.formula-unbounded/v1`, lasso, fairness and partial-valuation
+documents and registers the one `tl-syntax.liveness/v1` backend. QSL's
+`quire.temporal.infinite-trace/v1` member is a correspondence for result
+comparison. See FR-027 through FR-034, AD-002 and ADR-003.
 
 ### Out of Scope
 
 - Parsing source text or rewriting formulas.
 - Signal-schema ownership, scalar predicate lowering, or contract-IR/FRETish
   translation.
-- Continuous time, unbounded LTL, or probabilistic semantics.
+- Continuous time, unbounded temporal semantics outside the opt-in
+  `mltl.infinite-trace/v1` profile, or probabilistic semantics.
 - Reimplementing or qualifying R2U2 as a production monitor.
 - Treating a local or differential pass as a release decision.
 
@@ -80,7 +77,7 @@ controls and adds no derived evaluator semantics. FR-017 owns W/M
 canonical-graph interoperability and target loss evidence. FR-027 owns the
 infinite-trace crate boundary, FR-028 owns liveness-backend registration
 routing, and FR-029 owns infinite-trace downstream evidence and dependency
-order; together they add no evaluator semantics of their own. NFR-001
+order. FR-030 through FR-034 specify the opt-in evaluator semantics. NFR-001
 constrains determinism and resource failure; NFR-002 constrains identity,
 provenance, and qualification claims.
 
@@ -108,9 +105,9 @@ governed `tl-mltl`'s own boundary, and TL-179 has since removed the
 `wire::observation` implementation it describes.
 
 FR-027 through FR-029 settle where infinite-trace (lasso, fairness) semantics
-live, allocating tl-mltl#68's scope to a separate provider under the
-`quire.temporal.infinite-trace/v1` facet per tl-mltl#72. They change no
-existing FR-001 through FR-019 behavior.
+live: the non-default `tl_mltl::infinite` provider selected by ADR-003 under
+`mltl.infinite-trace/v1`. They change no existing FR-001 through FR-019
+behavior in the bounded core.
 
 - [Post-v0.1 corpus and interoperability campaign](./corpus-campaign.md)
   (MRS-002), scoped to the TL-owned corpus families only per
