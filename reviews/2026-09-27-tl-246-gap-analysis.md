@@ -24,3 +24,22 @@ FAIL for campaign acceptance. The implementation remains a draft until the sourc
 ## Coverage
 
 The definition declares 120 members across V1–V11, including 51 V10 members; the nine source aliases include five live TL/R2U2 identities and baseline aliases. Manual acceptance-to-tests reconciliation inspected TC-175 and TC-195 through TC-200 tags, focused checker/config tests, the V10 306 admitted/1,044 refused partition, and the retained Campaign claims. No full guarded CI or complete Campaign was run. Optional per-criterion semantic review was not invoked.
+
+## New findings (disposition pass 1)
+
+Reviewed at `58ff72e181521e2a3600359bcc9f613b5b57f5fd`.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-002 | medium | PR #101's updated description says the current source graph cannot run because parse/rewrite main lacks three targets. Those assets exist at the exact parse and rewrite PR #52 heads pinned by the historical closure; the actual current-candidate blocker is incompatible Cargo source locks (parse/rewrite 0.4 and syntax 6e2/oracle 9bf versus mlTL 0.3 and syntax 6aa/oracle 239), stale control/measurement pins, and absent full Campaign evidence. Correct the PR description so the next source-graph decision uses the real dependency constraint. | PR #101 body; campaign/source-closure.json:5; Cargo.toml:31 |
+
+## Dispositions
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | still-open | The definition and closure still pin historical mlTL 29cea00/syntax 6e2/oracle 9bf, and no 120-member receipt exists for candidate 58ff72e. Parse/rewrite PR #52 heads contain the named targets, but their locked dependencies are incompatible with this candidate. |
+| FND-002 | still-open | PR #101 description still presents missing-on-main assets as the reason the graph cannot be rebound; it omits the actual lock incompatibility and the pinned PR-head assets. |
+
+## Disposition verdict — round 1
+
+**FAIL** — FND-001 and FND-002 remain open. The MLTL-only imported targets and migrated plans improve readiness, but they do not satisfy TL-246 full Campaign acceptance.

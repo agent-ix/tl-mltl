@@ -24,3 +24,7 @@ PASS for the inspected code paths. The known source pin and execution gaps are r
 ## Coverage
 
 Inspected Cargo.toml, the checker and V10 replay modules, the config generator, one generated procedure, source closure, and the CampaignDefinition. Checked wrong-source and duplicate-alias tests and V10's current mapper partition. Focused checker/config Rust tests were run separately.
+
+## Disposition pass 1 recheck
+
+Reviewed `58ff72e181521e2a3600359bcc9f613b5b57f5fd`. The prior placeholder records no actual finding. Added oracle, finite-partition, lasso and benchmark targets use production APIs and independently selected oracle expectations; the previously reviewed checker and config paths are unchanged. `cargo bench --locked --offline --features infinite-trace --bench v9_workloads -- --test` passed all 21 named smoke cases with digest checks. No new code finding from the inspected additions. Full Campaign execution remains in SR-078.

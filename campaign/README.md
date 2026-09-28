@@ -40,12 +40,13 @@ TL-217 report cannot be reused as a Campaign result for this revision.
 
 The checked-in CampaignDefinition and source closure remain the historical
 source graph. The current mlTL checkout has the V1/V2/V11 test targets and V9
-benchmark harness, but the current `tl-parse` main lacks
-`benches/parser_roundtrip.rs`, and the current `tl-rewrite` main lacks
-`benches/rewrite_rules.rs` and `tests/infinite_owner_corpus.rs`. Until those
-source-owned targets are present at reviewed revisions, a new exact source
-closure and a complete 120-member execution are unavailable. The retained
-definition is not a current-main Campaign result.
+benchmark harness. The parse and rewrite draft PR #52 heads named by the
+historical closure also contain their required targets, but their Cargo locks
+select the 0.4 graph (`tl-syntax` `6e2fc17`, `tl-oracle` `9bf3994`, and for
+rewrite, `tl-mltl` `29cea002`). This checkout selects the 0.3 graph
+(`tl-syntax` `6aa9b11`, `tl-oracle` `2391e5b`). A coherent source closure for
+this candidate has not been established or measured. The retained definition
+is not a current-candidate Campaign result.
 
 V4 has a fixed native gate that reconciles five checked-in libFuzzer reports
 across the four production crates, including both mlTL mapping and evaluation.
