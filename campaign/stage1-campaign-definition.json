@@ -6,8 +6,8 @@
   "sourceGraph": [
     {
       "repository": "tl-syntax",
-      "revision": "18850985fe124e4b3254bd9b9f7ef4c1fb4e1cf1",
-      "digest": "4ff4498df0b1b97e74addace1bb5ee0cbc77391809077f83129a68ad99216f90"
+      "revision": "ef5766ead1e70abff0cfa28eecf8b838331df19c",
+      "digest": "edafbea6d13ec2f60697cde8c00945fbcbcb6f58a8598031b4f7be62ca3ae4ca"
     },
     {
       "repository": "tl-parse",
@@ -16,8 +16,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "97c8137faa376d5ae9eb509d8fd27a9f67934eb1",
-      "digest": "20d4a5fce19eac30f50fe9340f09ba319669420fc5978c4aa1ec7c5a7d1d4efb"
+      "revision": "661594b05567bf7395c8843c324ad411ac3b347d",
+      "digest": "e9b99dc2a1b761c400d6ef0777c62f2d621791f9ceff9027cd89a7e1ecff8649"
     },
     {
       "repository": "tl-rewrite",

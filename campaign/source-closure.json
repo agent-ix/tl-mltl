@@ -4,8 +4,8 @@
   "sources": [
     {
       "repository": "tl-syntax",
-      "revision": "18850985fe124e4b3254bd9b9f7ef4c1fb4e1cf1",
-      "treeDigest": "4ff4498df0b1b97e74addace1bb5ee0cbc77391809077f83129a68ad99216f90",
+      "revision": "ef5766ead1e70abff0cfa28eecf8b838331df19c",
+      "treeDigest": "edafbea6d13ec2f60697cde8c00945fbcbcb6f58a8598031b4f7be62ca3ae4ca",
       "cargoLockDigest": "777851cdbb11d0c3a6b03a537d16b12edba5201823ce3350b5d41e754aef9ffb",
       "tlGitDependencies": [],
       "cargoManifestDigest": "ae75ae8cb920a384bf845e6ae2566f726db0fc007dffedae7f9637afe3c24aa8"
@@ -27,8 +27,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "97c8137faa376d5ae9eb509d8fd27a9f67934eb1",
-      "treeDigest": "20d4a5fce19eac30f50fe9340f09ba319669420fc5978c4aa1ec7c5a7d1d4efb",
+      "revision": "661594b05567bf7395c8843c324ad411ac3b347d",
+      "treeDigest": "e9b99dc2a1b761c400d6ef0777c62f2d621791f9ceff9027cd89a7e1ecff8649",
       "cargoLockDigest": "6aa9e3c5dc26bfe312dc33ca5bde174d94159e45e70fdbd06446d59ff4253514",
       "tlGitDependencies": [
         {
@@ -239,7 +239,7 @@
     {
       "repository": "tl-mltl",
       "baselineRevision": "0e4a41083d420ccc85134f4f7e224698ab7859e0",
-      "candidateRevision": "97c8137faa376d5ae9eb509d8fd27a9f67934eb1",
+      "candidateRevision": "661594b05567bf7395c8843c324ad411ac3b347d",
       "identicalFiles": [
         {
           "path": "benches/input-digests.json",
