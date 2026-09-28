@@ -257,12 +257,15 @@ machine table. A generated config is only an execution selection, never a
 measurement result. A member passes only after Quoin retains the bounded EA
 producer and checker results and independently reconciles their identities.
 
-For the eight V8 coverage members, the producer is pinned nightly Cargo with
-the `llvm-cov` subcommand. The machine table also names
-`cargo-llvm-cov@0.8.7`: config generation checks the stable plugin selected by
-`PATH` against that executable, digest, and version before Quoin runs. This
-keeps Cargo's compiler-wrapper re-execution on a stable executable path.
-Changed procedure bytes require a new measured source graph and definition.
+For the eight V8 coverage members, the sealed producer is pinned Python
+3.13.11. Its literal bridge verifies pinned nightly Cargo's digest immediately
+before executing its stable path with the `llvm-cov` subcommand. The machine
+table also names `cargo-llvm-cov@0.8.7`: config generation checks the plugin
+selected by `PATH` against its exact path, digest, and version, probes the
+plugin selected by pinned Cargo, and refuses a distinct `CARGO_HOME/bin`
+plugin even when its reported version matches. Cargo and the plugin are
+indirect tools; Quoin snapshots Python as producer. Changed procedure bytes
+require a new measured source graph and definition.
 
 The machine file's `toolchains` map gives default language identities for
 members. `memberToolchains` may override it by exact Campaign member name when
