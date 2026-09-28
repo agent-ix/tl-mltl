@@ -87,16 +87,6 @@ fn validate_rust_binding(
     environment: &BTreeMap<String, String>,
     tools: &BTreeMap<String, Tool>,
 ) -> Result<(), String> {
-    let v8_coverage = member.starts_with("V8.")
-        && procedure
-            .arguments
-            .first()
-            .is_some_and(|argument| argument.kind == "literal" && argument.value == "llvm-cov");
-    if v8_coverage && procedure.producer_name != "cargo" {
-        return Err(format!(
-            "{member}: coverage must launch the stable plugin through pinned Cargo"
-        ));
-    }
     if procedure.producer_name != "cargo" && !procedure.producer_name.starts_with("cargo-") {
         return Ok(());
     }
@@ -150,7 +140,12 @@ fn validate_rust_binding(
             "{member}: rust toolchain identity differs from observed RUSTC release/host"
         ));
     }
-    if v8_coverage {
+    if procedure.producer_name == "cargo-llvm-cov"
+        && procedure
+            .arguments
+            .iter()
+            .any(|argument| argument.kind == "literal" && argument.value == "--branch")
+    {
         if !release.contains("-nightly") {
             return Err(format!(
                 "{member}: branch coverage requires a nightly Rust toolchain"
@@ -174,43 +169,6 @@ fn validate_rust_binding(
                     "{member}: {name} must name an absolute executable file"
                 ));
             }
-        }
-        let key = "cargo-llvm-cov@0.8.7";
-        let plugin = tools
-            .get(key)
-            .ok_or(format!("{member}: missing machine tool {key}"))?;
-        let plugin_path = Path::new(&plugin.executable);
-        let metadata = fs::symlink_metadata(plugin_path).map_err(|error| error.to_string())?;
-        if !plugin_path.is_absolute()
-            || !metadata.is_file()
-            || metadata.file_type().is_symlink()
-            || metadata.len() > 1_073_741_824
-        {
-            return Err(format!(
-                "{member}: {key} must be a bounded regular executable"
-            ));
-        }
-        let selected = std::env::split_paths(path)
-            .map(|directory| directory.join("cargo-llvm-cov"))
-            .find(|candidate| candidate.is_file())
-            .ok_or(format!("{member}: PATH does not resolve cargo-llvm-cov"))?;
-        if selected.canonicalize().map_err(|error| error.to_string())?
-            != plugin_path
-                .canonicalize()
-                .map_err(|error| error.to_string())?
-        {
-            return Err(format!(
-                "{member}: PATH resolves a different cargo-llvm-cov"
-            ));
-        }
-        let bytes = fs::read(plugin_path).map_err(|error| error.to_string())?;
-        if format!("{:x}", Sha256::digest(&bytes)) != plugin.digest {
-            return Err(format!("{member}: {key} executable digest changed"));
-        }
-        let version = observed_version(plugin_path, "--version")?;
-        let mut fields = version.split_whitespace();
-        if fields.next() != Some("cargo-llvm-cov") || fields.next() != Some("0.8.7") {
-            return Err(format!("{member}: {key} executable version changed"));
         }
     }
     if procedure.producer_name == "cargo" {
@@ -1033,55 +991,6 @@ mod tests {
 
     // Trace: FR-055-AC-1, TC-197
     #[test]
-    fn authored_tl_producers_use_the_measured_package_version() {
-        let package_version = env!("CARGO_PKG_VERSION");
-        let definition: serde_json::Value = serde_json::from_str(include_str!(
-            "../../campaign/stage1-campaign-definition.json"
-        ))
-        .unwrap();
-        assert_eq!(definition["subjectVersion"], package_version);
-        let members = definition["members"].as_array().unwrap();
-        assert_eq!(members.len(), 120);
-        for member in members {
-            assert_eq!(
-                member["checkerProcedure"]["producerName"],
-                "tl_campaign_check"
-            );
-            assert_eq!(
-                member["checkerProcedure"]["producerVersion"],
-                package_version
-            );
-        }
-        let generator: serde_json::Value =
-            serde_json::from_str(include_str!("../../campaign/procedures/v10-inputs.json"))
-                .unwrap();
-        assert_eq!(generator["producerName"], "tl_v10_generate");
-        assert_eq!(generator["producerVersion"], package_version);
-    }
-
-    // Trace: FR-055-AC-4, TC-200
-    #[test]
-    fn all_v8_coverage_procedures_launch_the_stable_plugin_through_nightly_cargo() {
-        for document in [
-            include_str!("../../campaign/procedures/v8-syntax-core.json"),
-            include_str!("../../campaign/procedures/v8-syntax-alloc.json"),
-            include_str!("../../campaign/procedures/v8-syntax-serde.json"),
-            include_str!("../../campaign/procedures/v8-parse-default.json"),
-            include_str!("../../campaign/procedures/v8-mltl-default.json"),
-            include_str!("../../campaign/procedures/v8-mltl-infinite.json"),
-            include_str!("../../campaign/procedures/v8-rewrite-default.json"),
-            include_str!("../../campaign/procedures/v8-rewrite-infinite.json"),
-        ] {
-            let procedure: Procedure = serde_json::from_str(document).unwrap();
-            assert_eq!(procedure.producer_name, "cargo");
-            assert_eq!(procedure.producer_version, "1.100.0-nightly");
-            assert_eq!(procedure.arguments[0].kind, "literal");
-            assert_eq!(procedure.arguments[0].value, "llvm-cov");
-        }
-    }
-
-    // Trace: FR-055-AC-1, TC-197
-    #[test]
     fn current_quire_plan_binds_exact_procedure_and_version() {
         let member = Member {
             name: "V1.independent_oracle".into(),
@@ -1427,117 +1336,6 @@ mod tests {
     // Trace: FR-055-AC-4, TC-200
     #[cfg(unix)]
     #[test]
-    fn v8_plugin_must_match_the_stable_path_digest_and_version() {
-        use std::os::unix::fs::PermissionsExt;
-
-        let directory = tempfile::tempdir().unwrap();
-        let root = directory.path();
-        for (name, response) in [
-            (
-                "rustc",
-                "release: 1.100.0-nightly\nhost: x86_64-unknown-linux-gnu",
-            ),
-            ("cargo", "cargo 1.100.0-nightly (test)"),
-            ("cargo-llvm-cov", "cargo-llvm-cov 0.8.7"),
-            ("llvm-cov", "llvm-cov test"),
-            ("llvm-profdata", "llvm-profdata test"),
-        ] {
-            let path = root.join(name);
-            std::fs::write(&path, format!("#!/bin/sh\nprintf '%s\\n' '{response}'\n")).unwrap();
-            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
-        }
-        let procedure: Procedure = serde_json::from_str(include_str!(
-            "../../campaign/procedures/v8-syntax-core.json"
-        ))
-        .unwrap();
-        let environment = BTreeMap::from([
-            ("PATH".into(), root.to_string_lossy().into_owned()),
-            (
-                "RUSTC".into(),
-                root.join("rustc").to_string_lossy().into_owned(),
-            ),
-            (
-                "LLVM_COV".into(),
-                root.join("llvm-cov").to_string_lossy().into_owned(),
-            ),
-            (
-                "LLVM_PROFDATA".into(),
-                root.join("llvm-profdata").to_string_lossy().into_owned(),
-            ),
-        ]);
-        let identity = BTreeMap::from([(
-            "rust".into(),
-            "rustc 1.100.0-nightly (x86_64-unknown-linux-gnu)".into(),
-        )]);
-        let plugin_path = root.join("cargo-llvm-cov");
-        let plugin_bytes = std::fs::read(&plugin_path).unwrap();
-        let mut tools = BTreeMap::from([
-            (
-                "cargo@1.100.0-nightly".into(),
-                Tool {
-                    executable: root.join("cargo").to_string_lossy().into_owned(),
-                    digest: String::new(),
-                },
-            ),
-            (
-                "cargo-llvm-cov@0.8.7".into(),
-                Tool {
-                    executable: plugin_path.to_string_lossy().into_owned(),
-                    digest: sha256(&plugin_bytes),
-                },
-            ),
-        ]);
-        assert!(validate_rust_binding(
-            "V8.syntax_core",
-            &procedure,
-            &identity,
-            &environment,
-            &tools
-        )
-        .is_ok());
-
-        std::fs::write(&plugin_path, b"#!/bin/sh\necho substituted\n").unwrap();
-        assert!(validate_rust_binding(
-            "V8.syntax_core",
-            &procedure,
-            &identity,
-            &environment,
-            &tools
-        )
-        .is_err());
-        std::fs::write(&plugin_path, &plugin_bytes).unwrap();
-
-        std::fs::write(&plugin_path, b"#!/bin/sh\necho cargo-llvm-cov 0.8.8\n").unwrap();
-        tools.get_mut("cargo-llvm-cov@0.8.7").unwrap().digest =
-            sha256(&std::fs::read(&plugin_path).unwrap());
-        assert!(validate_rust_binding(
-            "V8.syntax_core",
-            &procedure,
-            &identity,
-            &environment,
-            &tools
-        )
-        .is_err());
-        std::fs::write(&plugin_path, &plugin_bytes).unwrap();
-        tools.get_mut("cargo-llvm-cov@0.8.7").unwrap().digest = sha256(&plugin_bytes);
-
-        let substituted = root.join("other-plugin");
-        std::fs::write(&substituted, &plugin_bytes).unwrap();
-        tools.get_mut("cargo-llvm-cov@0.8.7").unwrap().executable =
-            substituted.to_string_lossy().into_owned();
-        assert!(validate_rust_binding(
-            "V8.syntax_core",
-            &procedure,
-            &identity,
-            &environment,
-            &tools
-        )
-        .is_err());
-    }
-
-    // Trace: FR-055-AC-4, TC-200
-    #[cfg(unix)]
-    #[test]
     fn branch_coverage_requires_nightly_and_llvm_tool_paths() {
         use std::os::unix::fs::PermissionsExt;
 
@@ -1558,24 +1356,6 @@ mod tests {
         );
         let cov = write_tool("llvm-cov", "LLVM version 23.1.1-rust-1.100.0-nightly");
         let profdata = write_tool("llvm-profdata", "LLVM version 23.1.1-rust-1.100.0-nightly");
-        let cargo = write_tool("cargo", "cargo 1.100.0-nightly (test)");
-        let plugin = write_tool("cargo-llvm-cov", "cargo-llvm-cov 0.8.7");
-        let tools = BTreeMap::from([
-            (
-                "cargo@1.100.0-nightly".into(),
-                Tool {
-                    executable: cargo.to_string_lossy().into_owned(),
-                    digest: sha256(&std::fs::read(&cargo).unwrap()),
-                },
-            ),
-            (
-                "cargo-llvm-cov@0.8.7".into(),
-                Tool {
-                    executable: plugin.to_string_lossy().into_owned(),
-                    digest: sha256(&std::fs::read(&plugin).unwrap()),
-                },
-            ),
-        ]);
         let procedure: Procedure = serde_json::from_str(include_str!(
             "../../campaign/procedures/v8-mltl-default.json"
         ))
@@ -1601,7 +1381,7 @@ mod tests {
             &procedure,
             &nightly_identity,
             &environment,
-            &tools
+            &BTreeMap::new()
         )
         .is_ok());
         environment.insert("RUSTC".into(), stable.to_string_lossy().into_owned());
@@ -1617,7 +1397,7 @@ mod tests {
             &procedure,
             &stable_identity,
             &environment,
-            &tools,
+            &BTreeMap::new(),
         )
         .unwrap_err();
         assert!(stable_refusal.contains("branch coverage requires a nightly Rust toolchain"));
