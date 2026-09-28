@@ -6,36 +6,20 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v10.compile_nonzero_singleton_one_all_false.verified
 definition_version: tl.v10.compile-nonzero-singleton-one-all-false/v1
-execution_procedure: campaign/procedures/v10-compile-nonzero-singleton-one-all-false.json
 stage: gate
-ground_truth_kind: mechanical
-objective:
-  direction: higher
-  bound: 1
 statistical_design:
   population: one exact direct native invocation for V10.compile.nonzero-singleton-one-all-false in the source-bound Stage 1 campaign
-  minimum_population: 1
   sampling: retained process streams and all declared output artifacts
   repetitions: 1
   estimator: count
   error_model: source drift, tool substitution, input drift, missing target positions, or semantic mismatch
   uncertainty: one pinned foreign invocation with independent TL domain checking
-  decision_rule:
-    comparator: ge
-    threshold: 1
-protected_apparatus:
-  - campaign/procedures/v10-compile-nonzero-singleton-one-all-false.json
-  - src/bin/tl_campaign_check.rs
-negative_controls:
-  - kind: stale-evidence
-    description: source and raw bytes must agree with the exact campaign graph
-  - kind: suppressed-observation
-    description: a missing native command or checker result cannot pass
+  decision_rule: The measured count must be at least 1.
 relationships:
-  - target: ix://agent-ix/tl-mltl/AP-002
-    type: measures
-  - target: ix://agent-ix/tl-mltl/FR-055
-    type: references
+- target: ix://agent-ix/tl-mltl/AP-002
+  type: measures
+- target: ix://agent-ix/tl-mltl/FR-055
+  type: references
 ---
 
 # TL Stage 1 V10.compile.nonzero-singleton-one-all-false direct foreign result
@@ -55,3 +39,14 @@ EA executes the typed procedure in the fresh source projection and retains stdou
 ## Interpretation
 
 The TL checker recomputes decisive facts from retained bytes. Missing, malformed, stale, or semantically mismatched evidence cannot pass.
+
+## Measurement Controls
+
+- Execution procedure: `campaign/procedures/v10-compile-nonzero-singleton-one-all-false.json`.
+- Ground truth kind: `mechanical`.
+- Minimum population: 1.
+- Objective: higher, bound 1.
+- Protected apparatus: `campaign/procedures/v10-compile-nonzero-singleton-one-all-false.json`, `src/bin/tl_campaign_check.rs`.
+- Negative controls:
+  - `stale-evidence`: source and raw bytes must agree with the exact campaign graph.
+  - `suppressed-observation`: a missing native command or checker result cannot pass.

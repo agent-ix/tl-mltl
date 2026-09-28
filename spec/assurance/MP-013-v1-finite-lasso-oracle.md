@@ -6,36 +6,20 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v1_finite_lasso_oracle.passed
 definition_version: tl.v1.v1-finite-lasso-oracle/v1
-execution_procedure: campaign/procedures/v1-finite-lasso-oracle.json
 stage: gate
-ground_truth_kind: mechanical
-objective:
-  direction: higher
-  bound: 1
 statistical_design:
   population: one exact direct native invocation for V1.finite_lasso_oracle in the five-source Stage 1 campaign
-  minimum_population: 1
   sampling: complete retained stdout stderr and execution result for the declared command
   repetitions: 1
   estimator: count
   error_model: stale source graph, missing raw capture, wrong native marker, or command failure
   uncertainty: one bounded native result; later source revisions require new evidence
-  decision_rule:
-    comparator: ge
-    threshold: 1
-protected_apparatus:
-  - campaign/procedures/v1-finite-lasso-oracle.json
-  - src/bin/tl_campaign_check.rs
-negative_controls:
-  - kind: stale-evidence
-    description: the campaign binds this result to exact source tree revisions and retained bytes
-  - kind: suppressed-observation
-    description: an absent or unverified direct invocation leaves the required member incomplete
+  decision_rule: The measured count must be at least 1.
 relationships:
-  - target: ix://agent-ix/tl-mltl/AP-002
-    type: measures
-  - target: ix://agent-ix/tl-mltl/FR-055
-    type: references
+- target: ix://agent-ix/tl-mltl/AP-002
+  type: measures
+- target: ix://agent-ix/tl-mltl/FR-055
+  type: references
 ---
 
 # TL Stage 1 V1 finite lasso oracle native result
@@ -55,3 +39,14 @@ The exact command and bound response are in `campaign/procedures/v1-finite-lasso
 ## Interpretation
 
 A missing invocation, changed source or raw bytes, failed native fact, or missing checker receipt cannot pass this member. The campaign combines member verdicts with `all-required`; this plan never substitutes a count for the other required members.
+
+## Measurement Controls
+
+- Execution procedure: `campaign/procedures/v1-finite-lasso-oracle.json`.
+- Ground truth kind: `mechanical`.
+- Minimum population: 1.
+- Objective: higher, bound 1.
+- Protected apparatus: `campaign/procedures/v1-finite-lasso-oracle.json`, `src/bin/tl_campaign_check.rs`.
+- Negative controls:
+  - `stale-evidence`: the campaign binds this result to exact source tree revisions and retained bytes.
+  - `suppressed-observation`: an absent or unverified direct invocation leaves the required member incomplete.

@@ -19,12 +19,11 @@ Each result is a reproducible measurement with explicit scope and limits.
 
 ## Boundaries
 
-`tl-oracle` is a separate, unpublished dev-only repository and crate. It
-consumes tl-syntax's public contracts but imports no production evaluator,
-parser or rewriter code. tl-mltl and tl-rewrite take it only as a
-dev-dependency. The provisional test-only lasso scaffold under
-`spec/reference/` moves there when TL-35/TL-221 begin after TL-215
-acceptance; it is not production or qualified evidence today.
+`tl-oracle` is a separate, unpublished reference crate. It consumes
+tl-syntax's public contracts but imports no production evaluator, parser or
+rewriter code. The Campaign checker selects it through the `campaign-check`
+feature, which is absent from the ordinary library and CLI build. A separate
+oracle repository does not by itself qualify any Campaign result.
 
 The embedded `no_std` check applies to tl-syntax, which declares `#![no_std]`.
 tl-parse, tl-rewrite and tl-mltl currently depend on `std`; this campaign
@@ -49,7 +48,7 @@ as a new run.
 | V11 | Infinite lasso, fairness and partial-valuation cross-checks |
 
 FR-043 through FR-055 and NFR-007 through NFR-009 own these measurements;
-TM-006 assigns TC-175 through TC-199. Existing MRS-002/MRS-003 campaign
+TM-006 assigns TC-175 through TC-200. Existing MRS-002/MRS-003 campaign
 paperwork is superseded for V1 by the disposition table in this document; its
 real tests and historical evidence remain readable. No automated run grants
 human TL-215 acceptance, release, native parity or certification.

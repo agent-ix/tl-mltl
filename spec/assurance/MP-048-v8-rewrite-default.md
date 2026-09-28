@@ -6,36 +6,20 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v8.rewrite_default.verified
 definition_version: tl.v8.rewrite-default/v1
-execution_procedure: campaign/procedures/v8-rewrite-default.json
 stage: gate
-ground_truth_kind: mechanical
-objective:
-  direction: higher
-  bound: 1
 statistical_design:
   population: one exact direct native invocation for V8.rewrite_default in the five-source Stage 1 campaign
-  minimum_population: 1
   sampling: complete retained stdout stderr and required output artifact
   repetitions: 1
   estimator: count
   error_model: stale source graph, missing output, unmeasured critical file, or uncovered branch side
   uncertainty: one pinned native coverage export; uncovered sides require named reviews
-  decision_rule:
-    comparator: ge
-    threshold: 1
-protected_apparatus:
-  - campaign/procedures/v8-rewrite-default.json
-  - src/bin/tl_campaign_check.rs
-negative_controls:
-  - kind: stale-evidence
-    description: the campaign binds this result to exact source tree revisions and retained bytes
-  - kind: suppressed-observation
-    description: an absent or unverified direct invocation leaves the required member incomplete
+  decision_rule: The measured count must be at least 1.
 relationships:
-  - target: ix://agent-ix/tl-mltl/AP-002
-    type: measures
-  - target: ix://agent-ix/tl-mltl/FR-055
-    type: references
+- target: ix://agent-ix/tl-mltl/AP-002
+  type: measures
+- target: ix://agent-ix/tl-mltl/FR-055
+  type: references
 ---
 
 # TL Stage 1 V8.rewrite_default native coverage result
@@ -55,3 +39,14 @@ The direct command and bounded response are in `campaign/procedures/v8-rewrite-d
 ## Interpretation
 
 A missing invocation, changed source or raw bytes, missing output, failed native fact, or missing checker receipt cannot pass this member. Parse coverage depends on its exact prep artifact. The campaign combines members with `all-required`.
+
+## Measurement Controls
+
+- Execution procedure: `campaign/procedures/v8-rewrite-default.json`.
+- Ground truth kind: `mechanical`.
+- Minimum population: 1.
+- Objective: higher, bound 1.
+- Protected apparatus: `campaign/procedures/v8-rewrite-default.json`, `src/bin/tl_campaign_check.rs`.
+- Negative controls:
+  - `stale-evidence`: the campaign binds this result to exact source tree revisions and retained bytes.
+  - `suppressed-observation`: an absent or unverified direct invocation leaves the required member incomplete.

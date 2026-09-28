@@ -6,38 +6,22 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v4.mltl_trace_history_intake.bounded_no_crash
 definition_version: tl.v4.mltl-trace-history-intake/v1
-execution_procedure: campaign/procedures/v4-mltl-trace-history-intake.json
 stage: gate
-ground_truth_kind: mechanical
-objective:
-  direction: higher
-  bound: 1
 statistical_design:
   population: one exact direct native libFuzzer invocation for V4.mltl_trace_history_intake in the five-repository Stage 1 campaign
-  minimum_population: 1
   sampling: complete retained stdout stderr and optional fixed crash artifact
   repetitions: 1
   estimator: count
   error_model: stale source graph, missing raw capture, wrong native budget marker, or crash artifact
   uncertainty: one bounded native result; later source revisions require new evidence
-  decision_rule:
-    comparator: ge
-    threshold: 1
-protected_apparatus:
-  - campaign/procedures/v4-mltl-trace-history-intake.json
-  - src/bin/tl_campaign_check.rs
-negative_controls:
-  - kind: stale-evidence
-    description: the campaign binds this result to exact source tree revisions and retained bytes
-  - kind: suppressed-observation
-    description: an absent or unverified direct invocation leaves the required member incomplete
+  decision_rule: The measured count must be at least 1.
 relationships:
-  - target: ix://agent-ix/tl-mltl/AP-002
-    type: measures
-  - target: ix://agent-ix/tl-mltl/FR-055
-    type: references
-  - target: ix://agent-ix/tl-mltl/FR-046
-    type: references
+- target: ix://agent-ix/tl-mltl/AP-002
+  type: measures
+- target: ix://agent-ix/tl-mltl/FR-055
+  type: references
+- target: ix://agent-ix/tl-mltl/FR-046
+  type: references
 ---
 
 # TL Stage 1 V4.mltl_trace_history_intake native libFuzzer result
@@ -57,3 +41,14 @@ This TL-229 target exercises the strict trace and history intake boundary. The d
 ## Interpretation
 
 A missing invocation, changed source or raw bytes, incomplete budget, failed native process, or crash artifact cannot pass this member. The campaign combines member verdicts with `all-required`.
+
+## Measurement Controls
+
+- Execution procedure: `campaign/procedures/v4-mltl-trace-history-intake.json`.
+- Ground truth kind: `mechanical`.
+- Minimum population: 1.
+- Objective: higher, bound 1.
+- Protected apparatus: `campaign/procedures/v4-mltl-trace-history-intake.json`, `src/bin/tl_campaign_check.rs`.
+- Negative controls:
+  - `stale-evidence`: the campaign binds this result to exact source tree revisions and retained bytes.
+  - `suppressed-observation`: an absent or unverified direct invocation leaves the required member incomplete.

@@ -38,6 +38,15 @@ current main revision, the finite past mapper admits 306 cells and refuses
 1,044. The checker tests bind that partition to current code; the retained
 TL-217 report cannot be reused as a Campaign result for this revision.
 
+The checked-in CampaignDefinition and source closure remain the historical
+source graph. The current mlTL checkout has the V1/V2/V11 test targets and V9
+benchmark harness, but the current `tl-parse` main lacks
+`benches/parser_roundtrip.rs`, and the current `tl-rewrite` main lacks
+`benches/rewrite_rules.rs` and `tests/infinite_owner_corpus.rs`. Until those
+source-owned targets are present at reviewed revisions, a new exact source
+closure and a complete 120-member execution are unavailable. The retained
+definition is not a current-main Campaign result.
+
 V4 has a fixed native gate that reconciles five checked-in libFuzzer reports
 across the four production crates, including both mlTL mapping and evaluation.
 It checks their measured source ancestors, unchanged targets and lock

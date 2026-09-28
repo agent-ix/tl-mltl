@@ -1,14 +1,12 @@
 ---
 id: MP-005
-title: "TL Rust mutation-pilot effectiveness"
+title: TL Rust mutation-pilot effectiveness
 type: MeasurementPlan
 status: proposed
 owner: tl-verification-campaign-owner
 metric: tl.mutation-effectiveness
 definition_version: tl-mltl.mutation-effectiveness/v2
 stage: baseline
-objective:
-  direction: zero
 statistical_design:
   population: every mutant discovered at an exact green tl-mltl source revision and mutation configuration, partitioned into excluded, selected, and cap-unselected identities before execution
   sampling: complete selected population in deterministic reviewed-matrix-priority, operator-stratum, and identity order; a declared cap leaves the full unselected population visible
@@ -16,14 +14,12 @@ statistical_design:
   estimator: count
   error_model: nondeterministic baseline or tests, population drift, invalid exclusion, concurrent mutation, timeout ambiguity, unviable mutants, dirty restoration, tool failure, equivalent-mutant misclassification, and denominator suppression
   uncertainty: the pilot measures only the exact selected population; cap-unselected, excluded, unviable, cancelled, tool-error, and not-run rows remain explicit limitations, while timeout is a separately reported conservative non-kill
-  decision_rule:
-    comparator: eq
-    threshold: 0
+  decision_rule: The measured count must equal 0.
 relationships:
-  - target: ix://agent-ix/tl-mltl/FR-022
-    type: measures
-  - target: ix://agent-ix/tl-mltl/NFR-005
-    type: measures
+- target: ix://agent-ix/tl-mltl/FR-022
+  type: measures
+- target: ix://agent-ix/tl-mltl/NFR-005
+  type: measures
 ---
 
 # TL Rust mutation-pilot effectiveness
@@ -68,3 +64,7 @@ fraction describes only a complete selected viable population, with timeout
 conservatively counted as a non-kill and still reported separately.
 A missed mutant is actionable evidence, not proof that the requirement or test
 is wrong until its reviewed disposition establishes the cause.
+
+## Measurement Controls
+
+- Objective: zero.

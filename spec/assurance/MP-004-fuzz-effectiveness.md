@@ -1,14 +1,12 @@
 ---
 id: MP-004
-title: "TL retained fuzz-campaign effectiveness"
+title: TL retained fuzz-campaign effectiveness
 type: MeasurementPlan
 status: proposed
 owner: tl-verification-campaign-owner
 metric: tl.fuzz-effectiveness
 definition_version: tl-mltl.fuzz-effectiveness/v2
 stage: baseline
-objective:
-  direction: zero
 statistical_design:
   population: every reviewed Fuzz-kind target selected from applicable FR-020 obligations at exact source and instrumentation identities
   sampling: three distinct seeds per target under tl-mltl.fuzz-baseline/v1, each capped at 900 target-execution seconds and 1000000 executed inputs with the first stopping condition controlling
@@ -16,14 +14,12 @@ statistical_design:
   estimator: count
   error_model: stochastic seed sensitivity, generator/harness bias, unstable instrumentation, counter reset, build or replay contamination, timeout/resource failure, corpus corruption, and irreproducible crashes
   uncertainty: report all repetitions and their exact environments; feature identities compare only within one instrumentation identity and no no-crash probability or confidence interval is inferred
-  decision_rule:
-    comparator: eq
-    threshold: 0
+  decision_rule: The measured count must equal 0.
 relationships:
-  - target: ix://agent-ix/tl-mltl/FR-021
-    type: measures
-  - target: ix://agent-ix/tl-mltl/NFR-005
-    type: measures
+- target: ix://agent-ix/tl-mltl/FR-021
+  type: measures
+- target: ix://agent-ix/tl-mltl/NFR-005
+  type: measures
 ---
 
 # TL retained fuzz-campaign effectiveness
@@ -68,3 +64,7 @@ only the FR-021 final-window observation and can justify review of a different
 seed strategy or bounded method; no-crash and plateau states remain
 non-authoritative and reproducible crashes are retained as remediation work
 regardless of the decision rule's outcome.
+
+## Measurement Controls
+
+- Objective: zero.

@@ -6,36 +6,20 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v6.mltl_horizon_proof.proved
 definition_version: tl.v6.mltl-horizon-proof/v1
-execution_procedure: campaign/procedures/v6-mltl-horizon-proof.json
 stage: gate
-ground_truth_kind: mechanical
-objective:
-  direction: higher
-  bound: 1
 statistical_design:
   population: one exact direct native Kani proof for V6.mltl_horizon_proof in the five-source Stage 1 campaign
-  minimum_population: 1
   sampling: complete retained stdout stderr and execution result for the declared command
   repetitions: 1
   estimator: count
   error_model: stale source graph, incomplete checks, or proof status mismatch
   uncertainty: bounded unwind 2 proof under one pinned Kani and solver version
-  decision_rule:
-    comparator: ge
-    threshold: 1
-protected_apparatus:
-  - campaign/procedures/v6-mltl-horizon-proof.json
-  - src/bin/tl_campaign_check.rs
-negative_controls:
-  - kind: stale-evidence
-    description: the campaign binds this result to exact source tree revisions and retained bytes
-  - kind: suppressed-observation
-    description: an absent or unverified direct invocation leaves the required member incomplete
+  decision_rule: The measured count must be at least 1.
 relationships:
-  - target: ix://agent-ix/tl-mltl/AP-002
-    type: measures
-  - target: ix://agent-ix/tl-mltl/FR-055
-    type: references
+- target: ix://agent-ix/tl-mltl/AP-002
+  type: measures
+- target: ix://agent-ix/tl-mltl/FR-055
+  type: references
 ---
 
 # TL Stage 1 V6.mltl_horizon_proof native Kani proof
@@ -55,3 +39,14 @@ The direct command and bounded response are in `campaign/procedures/v6-mltl-hori
 ## Interpretation
 
 A missing invocation, changed source or raw bytes, failed property, or missing checker receipt cannot pass this member. The separate seeded-false control and ordinary replay remain required V6 members before the group can pass.
+
+## Measurement Controls
+
+- Execution procedure: `campaign/procedures/v6-mltl-horizon-proof.json`.
+- Ground truth kind: `mechanical`.
+- Minimum population: 1.
+- Objective: higher, bound 1.
+- Protected apparatus: `campaign/procedures/v6-mltl-horizon-proof.json`, `src/bin/tl_campaign_check.rs`.
+- Negative controls:
+  - `stale-evidence`: the campaign binds this result to exact source tree revisions and retained bytes.
+  - `suppressed-observation`: an absent or unverified direct invocation leaves the required member incomplete.

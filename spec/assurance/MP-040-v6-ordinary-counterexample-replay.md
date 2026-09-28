@@ -6,39 +6,20 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v6.ordinary_counterexample_replay.verified
 definition_version: tl.v6.ordinary-counterexample-replay/v1
-execution_procedure: campaign/procedures/v6-ordinary-counterexample-replay.json
 stage: gate
-ground_truth_kind: mechanical
-objective:
-  direction: higher
-  bound: 1
 statistical_design:
   population: one exact direct native invocation for V6.ordinary_counterexample_replay in the five-source Stage 1 campaign
-  minimum_population: 1
   sampling: complete retained stdout stderr and execution result for the declared command
   repetitions: 1
   estimator: count
   error_model: stale source graph, missing Kani counterexample, or failed ordinary replay
   uncertainty: one bounded control at the pinned solver and source graph
-  decision_rule:
-    comparator: ge
-    threshold: 1
-protected_apparatus:
-  - campaign/procedures/v6-ordinary-counterexample-replay.json
-  - campaign/kani_negative/Cargo.toml
-  - campaign/kani_negative/src/lib.rs
-  - campaign/kani_negative/tests/replay.rs
-  - src/bin/tl_campaign_check.rs
-negative_controls:
-  - kind: apparatus-edit
-    description: the verifier-only claim must fail with a concrete counterexample that ordinary Rust replays
-  - kind: stale-evidence
-    description: the campaign binds the control to exact source tree revisions and retained bytes
+  decision_rule: The measured count must be at least 1.
 relationships:
-  - target: ix://agent-ix/tl-mltl/AP-002
-    type: measures
-  - target: ix://agent-ix/tl-mltl/FR-055
-    type: references
+- target: ix://agent-ix/tl-mltl/AP-002
+  type: measures
+- target: ix://agent-ix/tl-mltl/FR-055
+  type: references
 ---
 
 # TL Stage 1 V6.ordinary_counterexample_replay native Kani control
@@ -58,3 +39,14 @@ The direct command and bounded response are in `campaign/procedures/v6-ordinary-
 ## Interpretation
 
 A missing invocation, changed source or raw bytes, Kani pass, mismatched counterexample, failed replay, or missing checker receipt cannot pass this member. The replay depends on the seeded-false member; the V6 group uses `all-required`.
+
+## Measurement Controls
+
+- Execution procedure: `campaign/procedures/v6-ordinary-counterexample-replay.json`.
+- Ground truth kind: `mechanical`.
+- Minimum population: 1.
+- Objective: higher, bound 1.
+- Protected apparatus: `campaign/procedures/v6-ordinary-counterexample-replay.json`, `campaign/kani_negative/Cargo.toml`, `campaign/kani_negative/src/lib.rs`, `campaign/kani_negative/tests/replay.rs`, `src/bin/tl_campaign_check.rs`.
+- Negative controls:
+  - `apparatus-edit`: the verifier-only claim must fail with a concrete counterexample that ordinary Rust replays.
+  - `stale-evidence`: the campaign binds the control to exact source tree revisions and retained bytes.

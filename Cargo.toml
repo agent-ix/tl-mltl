@@ -34,9 +34,16 @@ tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.g
 tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "2391e5b7402ae02e8d138f3901b43a1f07acd1b6", optional = true }
 
 [dev-dependencies]
+criterion = { version = "=0.5.1", default-features = false }
 serde_yaml_ng = "0.10"
 proptest = "=1.5.0"
 tempfile = "=3.10.1"
+tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "2391e5b7402ae02e8d138f3901b43a1f07acd1b6" }
+
+[[bench]]
+name = "v9_workloads"
+harness = false
+required-features = ["infinite-trace"]
 
 [profile.release]
 lto = "thin"

@@ -1,14 +1,12 @@
 ---
 id: MP-006
-title: "TL bounded Kani claim results"
+title: TL bounded Kani claim results
 type: MeasurementPlan
 status: proposed
 owner: tl-verification-campaign-owner
 metric: tl.bounded-proof-result
 definition_version: tl-mltl.bounded-proof-result/v2
 stage: baseline
-objective:
-  direction: zero
 statistical_design:
   population: every exact proof-candidate-ledger row classified as applicable, excluded, or blocked, including rationale, harness, proposition, assumptions, finite domains, bounds, checks, and explicit non-claims when applicable
   sampling: complete classification of the candidate ledger and complete execution of every applicable harness under exact verifier, solver, toolchain, configuration, timeout, and memory identities
@@ -16,14 +14,12 @@ statistical_design:
   estimator: count
   error_model: stale harness or candidate, hidden assumptions, uncovered partitions, disabled unwind checks, insufficient bounds, unsupported constructs, solver/tool drift, timeout, semantic forks, and claim widening
   uncertainty: a conclusive result applies only to the explicitly finite domain and assumptions; no inference is made to larger formulas, traces, histories, arithmetic domains, callers, or unbounded MLTL
-  decision_rule:
-    comparator: eq
-    threshold: 0
+  decision_rule: The measured count must equal 0.
 relationships:
-  - target: ix://agent-ix/tl-mltl/FR-023
-    type: measures
-  - target: ix://agent-ix/tl-mltl/NFR-005
-    type: measures
+- target: ix://agent-ix/tl-mltl/FR-023
+  type: measures
+- target: ix://agent-ix/tl-mltl/NFR-005
+  type: measures
 ---
 
 # TL bounded Kani claim results
@@ -67,3 +63,7 @@ the rule. Report every candidate and state without a proof-coverage fraction.
 `proved_within_bounds` means exactly the proposition written for exactly the admitted finite domain.
 Timeout, unknown, vacuity, partial execution, unsupported paths, or unchecked
 unwinding remain visible and confer no proof credit.
+
+## Measurement Controls
+
+- Objective: zero.
