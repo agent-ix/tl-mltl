@@ -5,8 +5,17 @@ type: MeasurementPlan
 status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v1_oracle_dependency_boundary.passed
-definition_version: tl.v1.v1-oracle-dependency-boundary/v2
+definition_version: tl.v1.v1-oracle-dependency-boundary/v3
 stage: gate
+ground_truth_kind: mechanical
+protected_apparatus:
+- "campaign/procedures/v1-oracle-dependency-boundary.json"
+- "src/bin/tl_campaign_check.rs"
+negative_controls:
+- kind: stale-evidence
+  description: "the campaign binds this result to exact source tree revisions and retained bytes."
+- kind: suppressed-observation
+  description: "an absent or unverified direct invocation leaves the required member incomplete."
 statistical_design:
   population: one exact direct Cargo normal-dependency tree invocation for V1.oracle_dependency_boundary in the five-source Stage 1 campaign
   sampling: complete retained stdout stderr and execution result for the declared command
@@ -14,7 +23,9 @@ statistical_design:
   estimator: count
   error_model: stale source graph, missing raw capture, missing tl-syntax, forbidden production dependency, or command failure
   uncertainty: one bounded native result; later source revisions require new evidence
-  decision_rule: The measured count must be at least 1.
+  decision_rule:
+    comparator: ge
+    threshold: 1
 relationships:
 - target: ix://agent-ix/tl-mltl/AP-002
   type: measures

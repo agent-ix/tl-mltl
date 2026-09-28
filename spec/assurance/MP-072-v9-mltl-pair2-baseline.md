@@ -5,8 +5,17 @@ type: MeasurementPlan
 status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v9.mltl_pair2_baseline.verified
-definition_version: tl.v9.mltl-pair2-baseline/v1
+definition_version: tl.v9.mltl-pair2-baseline/v2
 stage: gate
+ground_truth_kind: mechanical
+protected_apparatus:
+- "campaign/procedures/v9-mltl-pair2-baseline.json"
+- "src/bin/tl_campaign_check.rs"
+negative_controls:
+- kind: gain-within-noise
+  description: "a threshold overlap is inconclusive and cannot earn a pass."
+- kind: stale-evidence
+  description: "the campaign binds each result to exact source revisions and retained bytes."
 statistical_design:
   population: one exact direct Criterion invocation for V9.mltl_pair2_baseline in the source-bound Stage 1 campaign
   sampling: retained process streams, Criterion sample and estimate output tree, and observed host fingerprint
@@ -14,7 +23,9 @@ statistical_design:
   estimator: count
   error_model: source drift, benchmark harness mismatch, missing samples, or host noise
   uncertainty: two same-host baseline/candidate pairs of 20 Criterion samples per case with 2000 bootstrap draws
-  decision_rule: The measured count must be at least 1.
+  decision_rule:
+    comparator: ge
+    threshold: 1
 relationships:
 - target: ix://agent-ix/tl-mltl/AP-002
   type: measures

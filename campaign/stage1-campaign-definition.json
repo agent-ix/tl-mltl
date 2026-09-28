@@ -16,8 +16,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "dfa3522d597bc1882128cefe1fe52b76b4610d4d",
-      "digest": "87d064052e7c7ef98467d6551227bf85fe4729ec9b922b800ebcebf483c3d279"
+      "revision": "7e88f104e6d0e1fedcfe5b91c92c1e66a866d284",
+      "digest": "8227a7d34e258dfab62b8de073d34a5843793b1e271e2e879ac1485462be402d"
     },
     {
       "repository": "tl-rewrite",
@@ -55,7 +55,7 @@
       "name": "V1.independent_oracle",
       "group": "V1",
       "planId": "MP-008",
-      "definitionVersion": "tl.v1.v1-independent-oracle/v1",
+      "definitionVersion": "tl.v1.v1-independent-oracle/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -135,7 +135,7 @@
       "name": "V1.oracle_fault_injection",
       "group": "V1",
       "planId": "MP-009",
-      "definitionVersion": "tl.v1.v1-oracle-fault-injection/v1",
+      "definitionVersion": "tl.v1.v1-oracle-fault-injection/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -215,7 +215,7 @@
       "name": "V1.oracle_dependency_boundary",
       "group": "V1",
       "planId": "MP-010",
-      "definitionVersion": "tl.v1.v1-oracle-dependency-boundary/v2",
+      "definitionVersion": "tl.v1.v1-oracle-dependency-boundary/v3",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -295,7 +295,7 @@
       "name": "V1.production_finite_faults",
       "group": "V1",
       "planId": "MP-011",
-      "definitionVersion": "tl.v1.v1-production-finite-faults/v1",
+      "definitionVersion": "tl.v1.v1-production-finite-faults/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -375,7 +375,7 @@
       "name": "V1.production_infinite_faults",
       "group": "V1",
       "planId": "MP-012",
-      "definitionVersion": "tl.v1.v1-production-infinite-faults/v1",
+      "definitionVersion": "tl.v1.v1-production-infinite-faults/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -455,7 +455,7 @@
       "name": "V1.finite_lasso_oracle",
       "group": "V1",
       "planId": "MP-013",
-      "definitionVersion": "tl.v1.v1-finite-lasso-oracle/v1",
+      "definitionVersion": "tl.v1.v1-finite-lasso-oracle/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -535,7 +535,7 @@
       "name": "V2.finite_small_partition",
       "group": "V2",
       "planId": "MP-014",
-      "definitionVersion": "tl.v1.v2-finite-small-partition/v1",
+      "definitionVersion": "tl.v1.v2-finite-small-partition/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -615,7 +615,7 @@
       "name": "V2.full_domain_census",
       "group": "V2",
       "planId": "MP-015",
-      "definitionVersion": "tl.v1.v2-full-domain-census/v1",
+      "definitionVersion": "tl.v1.v2-full-domain-census/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -695,7 +695,7 @@
       "name": "V3.semantic_properties",
       "group": "V3",
       "planId": "MP-016",
-      "definitionVersion": "tl.v1.v3-semantic-properties/v1",
+      "definitionVersion": "tl.v1.v3-semantic-properties/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -775,7 +775,7 @@
       "name": "V11.infinite_oracle",
       "group": "V11",
       "planId": "MP-017",
-      "definitionVersion": "tl.v1.v11-infinite-oracle/v1",
+      "definitionVersion": "tl.v1.v11-infinite-oracle/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -855,7 +855,7 @@
       "name": "V11.infinite_trace_behavior",
       "group": "V11",
       "planId": "MP-018",
-      "definitionVersion": "tl.v1.v11-infinite-trace-behavior/v1",
+      "definitionVersion": "tl.v1.v11-infinite-trace-behavior/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -935,7 +935,7 @@
       "name": "V11.oracle_semantic_laws",
       "group": "V11",
       "planId": "MP-019",
-      "definitionVersion": "tl.v1.v11-oracle-semantic-laws/v1",
+      "definitionVersion": "tl.v1.v11-oracle-semantic-laws/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1015,7 +1015,7 @@
       "name": "V11.lasso_population_census",
       "group": "V11",
       "planId": "MP-020",
-      "definitionVersion": "tl.v1.v11-lasso-population-census/v1",
+      "definitionVersion": "tl.v1.v11-lasso-population-census/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1095,7 +1095,7 @@
       "name": "V4.syntax_infinite_wire_decode",
       "group": "V4",
       "planId": "MP-021",
-      "definitionVersion": "tl.v4.syntax-infinite-wire-decode/v1",
+      "definitionVersion": "tl.v4.syntax-infinite-wire-decode/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1175,7 +1175,7 @@
       "name": "V4.parse_unbounded_roundtrip",
       "group": "V4",
       "planId": "MP-022",
-      "definitionVersion": "tl.v4.parse-unbounded-roundtrip/v1",
+      "definitionVersion": "tl.v4.parse-unbounded-roundtrip/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1255,7 +1255,7 @@
       "name": "V4.rewrite_infinite_rewrite",
       "group": "V4",
       "planId": "MP-023",
-      "definitionVersion": "tl.v4.rewrite-infinite-rewrite/v1",
+      "definitionVersion": "tl.v4.rewrite-infinite-rewrite/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1335,7 +1335,7 @@
       "name": "V4.mltl_c2po_map",
       "group": "V4",
       "planId": "MP-024",
-      "definitionVersion": "tl.v4.mltl-c2po-map/v1",
+      "definitionVersion": "tl.v4.mltl-c2po-map/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1415,7 +1415,7 @@
       "name": "V4.mltl_closed_eval",
       "group": "V4",
       "planId": "MP-025",
-      "definitionVersion": "tl.v4.mltl-closed-eval/v1",
+      "definitionVersion": "tl.v4.mltl-closed-eval/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1495,7 +1495,7 @@
       "name": "V4.mltl_wire_cli_decode",
       "group": "V4",
       "planId": "MP-125",
-      "definitionVersion": "tl.v4.mltl-wire-cli-decode/v1",
+      "definitionVersion": "tl.v4.mltl-wire-cli-decode/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1575,7 +1575,7 @@
       "name": "V4.mltl_trace_history_intake",
       "group": "V4",
       "planId": "MP-126",
-      "definitionVersion": "tl.v4.mltl-trace-history-intake/v1",
+      "definitionVersion": "tl.v4.mltl-trace-history-intake/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1655,7 +1655,7 @@
       "name": "V4.mltl_finite_oracle_differential",
       "group": "V4",
       "planId": "MP-127",
-      "definitionVersion": "tl.v4.mltl-finite-oracle-differential/v1",
+      "definitionVersion": "tl.v4.mltl-finite-oracle-differential/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1735,7 +1735,7 @@
       "name": "V7.embedded_core",
       "group": "V7",
       "planId": "MP-026",
-      "definitionVersion": "tl.v7.embedded-core/v1",
+      "definitionVersion": "tl.v7.embedded-core/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1815,7 +1815,7 @@
       "name": "V7.embedded_alloc",
       "group": "V7",
       "planId": "MP-027",
-      "definitionVersion": "tl.v7.embedded-alloc/v1",
+      "definitionVersion": "tl.v7.embedded-alloc/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1895,7 +1895,7 @@
       "name": "V7.embedded_serde",
       "group": "V7",
       "planId": "MP-028",
-      "definitionVersion": "tl.v7.embedded-serde/v1",
+      "definitionVersion": "tl.v7.embedded-serde/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -1975,7 +1975,7 @@
       "name": "V7.syntax_formula_limits",
       "group": "V7",
       "planId": "MP-029",
-      "definitionVersion": "tl.v7.syntax-formula-limits/v1",
+      "definitionVersion": "tl.v7.syntax-formula-limits/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -2055,7 +2055,7 @@
       "name": "V7.syntax_borrowed_ownership",
       "group": "V7",
       "planId": "MP-030",
-      "definitionVersion": "tl.v7.syntax-borrowed-ownership/v1",
+      "definitionVersion": "tl.v7.syntax-borrowed-ownership/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -2135,7 +2135,7 @@
       "name": "V7.parse_limits_utf8",
       "group": "V7",
       "planId": "MP-031",
-      "definitionVersion": "tl.v7.parse-limits-utf8/v1",
+      "definitionVersion": "tl.v7.parse-limits-utf8/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -2215,7 +2215,7 @@
       "name": "V7.mltl_lasso_limits",
       "group": "V7",
       "planId": "MP-032",
-      "definitionVersion": "tl.v7.mltl-lasso-limits/v1",
+      "definitionVersion": "tl.v7.mltl-lasso-limits/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -2295,7 +2295,7 @@
       "name": "V7.mltl_prefix_limits",
       "group": "V7",
       "planId": "MP-033",
-      "definitionVersion": "tl.v7.mltl-prefix-limits/v1",
+      "definitionVersion": "tl.v7.mltl-prefix-limits/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -2375,7 +2375,7 @@
       "name": "V7.rewrite_budgets",
       "group": "V7",
       "planId": "MP-034",
-      "definitionVersion": "tl.v7.rewrite-budgets/v1",
+      "definitionVersion": "tl.v7.rewrite-budgets/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -2455,7 +2455,7 @@
       "name": "V7.rewrite_record_limits",
       "group": "V7",
       "planId": "MP-035",
-      "definitionVersion": "tl.v7.rewrite-record-limits/v1",
+      "definitionVersion": "tl.v7.rewrite-record-limits/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -2535,7 +2535,7 @@
       "name": "V7.oracle_limits",
       "group": "V7",
       "planId": "MP-036",
-      "definitionVersion": "tl.v7.oracle-limits/v1",
+      "definitionVersion": "tl.v7.oracle-limits/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -2615,7 +2615,7 @@
       "name": "V6.syntax_interval_proof",
       "group": "V6",
       "planId": "MP-037",
-      "definitionVersion": "tl.v6.syntax-interval-proof/v1",
+      "definitionVersion": "tl.v6.syntax-interval-proof/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -2695,7 +2695,7 @@
       "name": "V6.mltl_horizon_proof",
       "group": "V6",
       "planId": "MP-038",
-      "definitionVersion": "tl.v6.mltl-horizon-proof/v1",
+      "definitionVersion": "tl.v6.mltl-horizon-proof/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -2775,7 +2775,7 @@
       "name": "V6.seeded_false_claim",
       "group": "V6",
       "planId": "MP-039",
-      "definitionVersion": "tl.v6.seeded-false-claim/v1",
+      "definitionVersion": "tl.v6.seeded-false-claim/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -2855,7 +2855,7 @@
       "name": "V6.ordinary_counterexample_replay",
       "group": "V6",
       "planId": "MP-040",
-      "definitionVersion": "tl.v6.ordinary-counterexample-replay/v1",
+      "definitionVersion": "tl.v6.ordinary-counterexample-replay/v2",
       "dependsOn": [
         "V6.seeded_false_claim"
       ],
@@ -2937,7 +2937,7 @@
       "name": "V8.syntax_core",
       "group": "V8",
       "planId": "MP-041",
-      "definitionVersion": "tl.v8.syntax-core/v1",
+      "definitionVersion": "tl.v8.syntax-core/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -3017,7 +3017,7 @@
       "name": "V8.syntax_alloc",
       "group": "V8",
       "planId": "MP-042",
-      "definitionVersion": "tl.v8.syntax-alloc/v1",
+      "definitionVersion": "tl.v8.syntax-alloc/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -3097,7 +3097,7 @@
       "name": "V8.syntax_serde",
       "group": "V8",
       "planId": "MP-043",
-      "definitionVersion": "tl.v8.syntax-serde/v1",
+      "definitionVersion": "tl.v8.syntax-serde/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -3177,7 +3177,7 @@
       "name": "V8.parse_example_prep",
       "group": "V8",
       "planId": "MP-044",
-      "definitionVersion": "tl.v8.parse-example-prep/v1",
+      "definitionVersion": "tl.v8.parse-example-prep/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -3257,7 +3257,7 @@
       "name": "V8.parse_default",
       "group": "V8",
       "planId": "MP-045",
-      "definitionVersion": "tl.v8.parse-default/v1",
+      "definitionVersion": "tl.v8.parse-default/v2",
       "dependsOn": [
         "V8.parse_example_prep"
       ],
@@ -3339,7 +3339,7 @@
       "name": "V8.mltl_default",
       "group": "V8",
       "planId": "MP-046",
-      "definitionVersion": "tl.v8.mltl-default/v1",
+      "definitionVersion": "tl.v8.mltl-default/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -3419,7 +3419,7 @@
       "name": "V8.mltl_infinite",
       "group": "V8",
       "planId": "MP-047",
-      "definitionVersion": "tl.v8.mltl-infinite/v1",
+      "definitionVersion": "tl.v8.mltl-infinite/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -3499,7 +3499,7 @@
       "name": "V8.rewrite_default",
       "group": "V8",
       "planId": "MP-048",
-      "definitionVersion": "tl.v8.rewrite-default/v1",
+      "definitionVersion": "tl.v8.rewrite-default/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -3579,7 +3579,7 @@
       "name": "V8.rewrite_infinite",
       "group": "V8",
       "planId": "MP-049",
-      "definitionVersion": "tl.v8.rewrite-infinite/v1",
+      "definitionVersion": "tl.v8.rewrite-infinite/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -3659,7 +3659,7 @@
       "name": "V5.parse_discovery",
       "group": "V5",
       "planId": "MP-050",
-      "definitionVersion": "tl.v5.parse-discovery/v1",
+      "definitionVersion": "tl.v5.parse-discovery/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -3739,7 +3739,7 @@
       "name": "V5.parse_mutation",
       "group": "V5",
       "planId": "MP-051",
-      "definitionVersion": "tl.v5.parse-mutation/v1",
+      "definitionVersion": "tl.v5.parse-mutation/v2",
       "dependsOn": [
         "V5.parse_discovery"
       ],
@@ -3821,7 +3821,7 @@
       "name": "V5.parse_restored_control",
       "group": "V5",
       "planId": "MP-052",
-      "definitionVersion": "tl.v5.parse-restored-control/v1",
+      "definitionVersion": "tl.v5.parse-restored-control/v2",
       "dependsOn": [
         "V5.parse_mutation"
       ],
@@ -3903,7 +3903,7 @@
       "name": "V5.syntax_discovery",
       "group": "V5",
       "planId": "MP-053",
-      "definitionVersion": "tl.v5.syntax-discovery/v1",
+      "definitionVersion": "tl.v5.syntax-discovery/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -3983,7 +3983,7 @@
       "name": "V5.syntax_mutation",
       "group": "V5",
       "planId": "MP-054",
-      "definitionVersion": "tl.v5.syntax-mutation/v1",
+      "definitionVersion": "tl.v5.syntax-mutation/v2",
       "dependsOn": [
         "V5.syntax_discovery"
       ],
@@ -4065,7 +4065,7 @@
       "name": "V5.syntax_restored_control",
       "group": "V5",
       "planId": "MP-055",
-      "definitionVersion": "tl.v5.syntax-restored-control/v1",
+      "definitionVersion": "tl.v5.syntax-restored-control/v2",
       "dependsOn": [
         "V5.syntax_mutation"
       ],
@@ -4147,7 +4147,7 @@
       "name": "V5.mltl_discovery",
       "group": "V5",
       "planId": "MP-056",
-      "definitionVersion": "tl.v5.mltl-discovery/v1",
+      "definitionVersion": "tl.v5.mltl-discovery/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -4227,7 +4227,7 @@
       "name": "V5.mltl_mutation",
       "group": "V5",
       "planId": "MP-057",
-      "definitionVersion": "tl.v5.mltl-mutation/v1",
+      "definitionVersion": "tl.v5.mltl-mutation/v2",
       "dependsOn": [
         "V5.mltl_discovery"
       ],
@@ -4309,7 +4309,7 @@
       "name": "V5.mltl_restored_control",
       "group": "V5",
       "planId": "MP-058",
-      "definitionVersion": "tl.v5.mltl-restored-control/v1",
+      "definitionVersion": "tl.v5.mltl-restored-control/v2",
       "dependsOn": [
         "V5.mltl_mutation"
       ],
@@ -4391,7 +4391,7 @@
       "name": "V5.rewrite_discovery",
       "group": "V5",
       "planId": "MP-059",
-      "definitionVersion": "tl.v5.rewrite-discovery/v1",
+      "definitionVersion": "tl.v5.rewrite-discovery/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -4471,7 +4471,7 @@
       "name": "V5.rewrite_mutation",
       "group": "V5",
       "planId": "MP-060",
-      "definitionVersion": "tl.v5.rewrite-mutation/v1",
+      "definitionVersion": "tl.v5.rewrite-mutation/v2",
       "dependsOn": [
         "V5.rewrite_discovery"
       ],
@@ -4553,7 +4553,7 @@
       "name": "V5.rewrite_restored_control",
       "group": "V5",
       "planId": "MP-061",
-      "definitionVersion": "tl.v5.rewrite-restored-control/v1",
+      "definitionVersion": "tl.v5.rewrite-restored-control/v2",
       "dependsOn": [
         "V5.rewrite_mutation"
       ],
@@ -4635,7 +4635,7 @@
       "name": "V9.parse_pair1_baseline",
       "group": "V9",
       "planId": "MP-062",
-      "definitionVersion": "tl.v9.parse-pair1-baseline/v1",
+      "definitionVersion": "tl.v9.parse-pair1-baseline/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -4715,7 +4715,7 @@
       "name": "V9.parse_pair1_candidate",
       "group": "V9",
       "planId": "MP-063",
-      "definitionVersion": "tl.v9.parse-pair1-candidate/v1",
+      "definitionVersion": "tl.v9.parse-pair1-candidate/v2",
       "dependsOn": [
         "V9.parse_pair1_baseline"
       ],
@@ -4797,7 +4797,7 @@
       "name": "V9.parse_pair2_baseline",
       "group": "V9",
       "planId": "MP-064",
-      "definitionVersion": "tl.v9.parse-pair2-baseline/v1",
+      "definitionVersion": "tl.v9.parse-pair2-baseline/v2",
       "dependsOn": [
         "V9.parse_pair1_candidate"
       ],
@@ -4879,7 +4879,7 @@
       "name": "V9.parse_pair2_candidate",
       "group": "V9",
       "planId": "MP-065",
-      "definitionVersion": "tl.v9.parse-pair2-candidate/v1",
+      "definitionVersion": "tl.v9.parse-pair2-candidate/v2",
       "dependsOn": [
         "V9.parse_pair1_baseline",
         "V9.parse_pair1_candidate",
@@ -4963,7 +4963,7 @@
       "name": "V9.rewrite_pair1_baseline",
       "group": "V9",
       "planId": "MP-066",
-      "definitionVersion": "tl.v9.rewrite-pair1-baseline/v1",
+      "definitionVersion": "tl.v9.rewrite-pair1-baseline/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -5043,7 +5043,7 @@
       "name": "V9.rewrite_pair1_candidate",
       "group": "V9",
       "planId": "MP-067",
-      "definitionVersion": "tl.v9.rewrite-pair1-candidate/v1",
+      "definitionVersion": "tl.v9.rewrite-pair1-candidate/v2",
       "dependsOn": [
         "V9.rewrite_pair1_baseline"
       ],
@@ -5125,7 +5125,7 @@
       "name": "V9.rewrite_pair2_baseline",
       "group": "V9",
       "planId": "MP-068",
-      "definitionVersion": "tl.v9.rewrite-pair2-baseline/v1",
+      "definitionVersion": "tl.v9.rewrite-pair2-baseline/v2",
       "dependsOn": [
         "V9.rewrite_pair1_candidate"
       ],
@@ -5207,7 +5207,7 @@
       "name": "V9.rewrite_pair2_candidate",
       "group": "V9",
       "planId": "MP-069",
-      "definitionVersion": "tl.v9.rewrite-pair2-candidate/v1",
+      "definitionVersion": "tl.v9.rewrite-pair2-candidate/v2",
       "dependsOn": [
         "V9.rewrite_pair1_baseline",
         "V9.rewrite_pair1_candidate",
@@ -5291,7 +5291,7 @@
       "name": "V9.mltl_pair1_baseline",
       "group": "V9",
       "planId": "MP-070",
-      "definitionVersion": "tl.v9.mltl-pair1-baseline/v1",
+      "definitionVersion": "tl.v9.mltl-pair1-baseline/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -5371,7 +5371,7 @@
       "name": "V9.mltl_pair1_candidate",
       "group": "V9",
       "planId": "MP-071",
-      "definitionVersion": "tl.v9.mltl-pair1-candidate/v1",
+      "definitionVersion": "tl.v9.mltl-pair1-candidate/v2",
       "dependsOn": [
         "V9.mltl_pair1_baseline"
       ],
@@ -5453,7 +5453,7 @@
       "name": "V9.mltl_pair2_baseline",
       "group": "V9",
       "planId": "MP-072",
-      "definitionVersion": "tl.v9.mltl-pair2-baseline/v1",
+      "definitionVersion": "tl.v9.mltl-pair2-baseline/v2",
       "dependsOn": [
         "V9.mltl_pair1_candidate"
       ],
@@ -5535,7 +5535,7 @@
       "name": "V9.mltl_pair2_candidate",
       "group": "V9",
       "planId": "MP-073",
-      "definitionVersion": "tl.v9.mltl-pair2-candidate/v1",
+      "definitionVersion": "tl.v9.mltl-pair2-candidate/v2",
       "dependsOn": [
         "V9.mltl_pair1_baseline",
         "V9.mltl_pair1_candidate",
@@ -5619,7 +5619,7 @@
       "name": "V10.inputs",
       "group": "V10",
       "planId": "MP-074",
-      "definitionVersion": "tl.v10.inputs/v1",
+      "definitionVersion": "tl.v10.inputs/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -5699,7 +5699,7 @@
       "name": "V10.compile.zero-singleton-all-true",
       "group": "V10",
       "planId": "MP-075",
-      "definitionVersion": "tl.v10.compile-zero-singleton-all-true/v1",
+      "definitionVersion": "tl.v10.compile-zero-singleton-all-true/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -5781,7 +5781,7 @@
       "name": "V10.monitor.zero-singleton-all-true",
       "group": "V10",
       "planId": "MP-076",
-      "definitionVersion": "tl.v10.monitor-zero-singleton-all-true/v1",
+      "definitionVersion": "tl.v10.monitor-zero-singleton-all-true/v2",
       "dependsOn": [
         "V10.compile.zero-singleton-all-true",
         "V10.inputs"
@@ -5864,7 +5864,7 @@
       "name": "V10.compile.zero-singleton-all-false",
       "group": "V10",
       "planId": "MP-077",
-      "definitionVersion": "tl.v10.compile-zero-singleton-all-false/v1",
+      "definitionVersion": "tl.v10.compile-zero-singleton-all-false/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -5946,7 +5946,7 @@
       "name": "V10.monitor.zero-singleton-all-false",
       "group": "V10",
       "planId": "MP-078",
-      "definitionVersion": "tl.v10.monitor-zero-singleton-all-false/v1",
+      "definitionVersion": "tl.v10.monitor-zero-singleton-all-false/v2",
       "dependsOn": [
         "V10.compile.zero-singleton-all-false",
         "V10.inputs"
@@ -6029,7 +6029,7 @@
       "name": "V10.compile.zero-singleton-boundary-toggle",
       "group": "V10",
       "planId": "MP-079",
-      "definitionVersion": "tl.v10.compile-zero-singleton-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.compile-zero-singleton-boundary-toggle/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -6111,7 +6111,7 @@
       "name": "V10.monitor.zero-singleton-boundary-toggle",
       "group": "V10",
       "planId": "MP-080",
-      "definitionVersion": "tl.v10.monitor-zero-singleton-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.monitor-zero-singleton-boundary-toggle/v2",
       "dependsOn": [
         "V10.compile.zero-singleton-boundary-toggle",
         "V10.inputs"
@@ -6194,7 +6194,7 @@
       "name": "V10.compile.zero-unit-all-true",
       "group": "V10",
       "planId": "MP-081",
-      "definitionVersion": "tl.v10.compile-zero-unit-all-true/v1",
+      "definitionVersion": "tl.v10.compile-zero-unit-all-true/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -6276,7 +6276,7 @@
       "name": "V10.monitor.zero-unit-all-true",
       "group": "V10",
       "planId": "MP-082",
-      "definitionVersion": "tl.v10.monitor-zero-unit-all-true/v1",
+      "definitionVersion": "tl.v10.monitor-zero-unit-all-true/v2",
       "dependsOn": [
         "V10.compile.zero-unit-all-true",
         "V10.inputs"
@@ -6359,7 +6359,7 @@
       "name": "V10.compile.zero-unit-all-false",
       "group": "V10",
       "planId": "MP-083",
-      "definitionVersion": "tl.v10.compile-zero-unit-all-false/v1",
+      "definitionVersion": "tl.v10.compile-zero-unit-all-false/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -6441,7 +6441,7 @@
       "name": "V10.monitor.zero-unit-all-false",
       "group": "V10",
       "planId": "MP-084",
-      "definitionVersion": "tl.v10.monitor-zero-unit-all-false/v1",
+      "definitionVersion": "tl.v10.monitor-zero-unit-all-false/v2",
       "dependsOn": [
         "V10.compile.zero-unit-all-false",
         "V10.inputs"
@@ -6524,7 +6524,7 @@
       "name": "V10.compile.zero-unit-boundary-toggle",
       "group": "V10",
       "planId": "MP-085",
-      "definitionVersion": "tl.v10.compile-zero-unit-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.compile-zero-unit-boundary-toggle/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -6606,7 +6606,7 @@
       "name": "V10.monitor.zero-unit-boundary-toggle",
       "group": "V10",
       "planId": "MP-086",
-      "definitionVersion": "tl.v10.monitor-zero-unit-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.monitor-zero-unit-boundary-toggle/v2",
       "dependsOn": [
         "V10.compile.zero-unit-boundary-toggle",
         "V10.inputs"
@@ -6689,7 +6689,7 @@
       "name": "V10.compile.zero-upper-all-true",
       "group": "V10",
       "planId": "MP-087",
-      "definitionVersion": "tl.v10.compile-zero-upper-all-true/v1",
+      "definitionVersion": "tl.v10.compile-zero-upper-all-true/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -6771,7 +6771,7 @@
       "name": "V10.monitor.zero-upper-all-true",
       "group": "V10",
       "planId": "MP-088",
-      "definitionVersion": "tl.v10.monitor-zero-upper-all-true/v1",
+      "definitionVersion": "tl.v10.monitor-zero-upper-all-true/v2",
       "dependsOn": [
         "V10.compile.zero-upper-all-true",
         "V10.inputs"
@@ -6854,7 +6854,7 @@
       "name": "V10.compile.zero-upper-all-false",
       "group": "V10",
       "planId": "MP-089",
-      "definitionVersion": "tl.v10.compile-zero-upper-all-false/v1",
+      "definitionVersion": "tl.v10.compile-zero-upper-all-false/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -6936,7 +6936,7 @@
       "name": "V10.monitor.zero-upper-all-false",
       "group": "V10",
       "planId": "MP-090",
-      "definitionVersion": "tl.v10.monitor-zero-upper-all-false/v1",
+      "definitionVersion": "tl.v10.monitor-zero-upper-all-false/v2",
       "dependsOn": [
         "V10.compile.zero-upper-all-false",
         "V10.inputs"
@@ -7019,7 +7019,7 @@
       "name": "V10.compile.zero-upper-boundary-toggle",
       "group": "V10",
       "planId": "MP-091",
-      "definitionVersion": "tl.v10.compile-zero-upper-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.compile-zero-upper-boundary-toggle/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -7101,7 +7101,7 @@
       "name": "V10.monitor.zero-upper-boundary-toggle",
       "group": "V10",
       "planId": "MP-092",
-      "definitionVersion": "tl.v10.monitor-zero-upper-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.monitor-zero-upper-boundary-toggle/v2",
       "dependsOn": [
         "V10.compile.zero-upper-boundary-toggle",
         "V10.inputs"
@@ -7184,7 +7184,7 @@
       "name": "V10.compile.nonzero-singleton-one-all-true",
       "group": "V10",
       "planId": "MP-093",
-      "definitionVersion": "tl.v10.compile-nonzero-singleton-one-all-true/v1",
+      "definitionVersion": "tl.v10.compile-nonzero-singleton-one-all-true/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -7266,7 +7266,7 @@
       "name": "V10.monitor.nonzero-singleton-one-all-true",
       "group": "V10",
       "planId": "MP-094",
-      "definitionVersion": "tl.v10.monitor-nonzero-singleton-one-all-true/v1",
+      "definitionVersion": "tl.v10.monitor-nonzero-singleton-one-all-true/v2",
       "dependsOn": [
         "V10.compile.nonzero-singleton-one-all-true",
         "V10.inputs"
@@ -7349,7 +7349,7 @@
       "name": "V10.compile.nonzero-singleton-one-all-false",
       "group": "V10",
       "planId": "MP-095",
-      "definitionVersion": "tl.v10.compile-nonzero-singleton-one-all-false/v1",
+      "definitionVersion": "tl.v10.compile-nonzero-singleton-one-all-false/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -7431,7 +7431,7 @@
       "name": "V10.monitor.nonzero-singleton-one-all-false",
       "group": "V10",
       "planId": "MP-096",
-      "definitionVersion": "tl.v10.monitor-nonzero-singleton-one-all-false/v1",
+      "definitionVersion": "tl.v10.monitor-nonzero-singleton-one-all-false/v2",
       "dependsOn": [
         "V10.compile.nonzero-singleton-one-all-false",
         "V10.inputs"
@@ -7514,7 +7514,7 @@
       "name": "V10.compile.nonzero-singleton-one-boundary-toggle",
       "group": "V10",
       "planId": "MP-097",
-      "definitionVersion": "tl.v10.compile-nonzero-singleton-one-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.compile-nonzero-singleton-one-boundary-toggle/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -7596,7 +7596,7 @@
       "name": "V10.monitor.nonzero-singleton-one-boundary-toggle",
       "group": "V10",
       "planId": "MP-098",
-      "definitionVersion": "tl.v10.monitor-nonzero-singleton-one-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.monitor-nonzero-singleton-one-boundary-toggle/v2",
       "dependsOn": [
         "V10.compile.nonzero-singleton-one-boundary-toggle",
         "V10.inputs"
@@ -7679,7 +7679,7 @@
       "name": "V10.compile.nonzero-range-all-true",
       "group": "V10",
       "planId": "MP-099",
-      "definitionVersion": "tl.v10.compile-nonzero-range-all-true/v1",
+      "definitionVersion": "tl.v10.compile-nonzero-range-all-true/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -7761,7 +7761,7 @@
       "name": "V10.monitor.nonzero-range-all-true",
       "group": "V10",
       "planId": "MP-100",
-      "definitionVersion": "tl.v10.monitor-nonzero-range-all-true/v1",
+      "definitionVersion": "tl.v10.monitor-nonzero-range-all-true/v2",
       "dependsOn": [
         "V10.compile.nonzero-range-all-true",
         "V10.inputs"
@@ -7844,7 +7844,7 @@
       "name": "V10.compile.nonzero-range-all-false",
       "group": "V10",
       "planId": "MP-101",
-      "definitionVersion": "tl.v10.compile-nonzero-range-all-false/v1",
+      "definitionVersion": "tl.v10.compile-nonzero-range-all-false/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -7926,7 +7926,7 @@
       "name": "V10.monitor.nonzero-range-all-false",
       "group": "V10",
       "planId": "MP-102",
-      "definitionVersion": "tl.v10.monitor-nonzero-range-all-false/v1",
+      "definitionVersion": "tl.v10.monitor-nonzero-range-all-false/v2",
       "dependsOn": [
         "V10.compile.nonzero-range-all-false",
         "V10.inputs"
@@ -8009,7 +8009,7 @@
       "name": "V10.compile.nonzero-range-boundary-toggle",
       "group": "V10",
       "planId": "MP-103",
-      "definitionVersion": "tl.v10.compile-nonzero-range-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.compile-nonzero-range-boundary-toggle/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -8091,7 +8091,7 @@
       "name": "V10.monitor.nonzero-range-boundary-toggle",
       "group": "V10",
       "planId": "MP-104",
-      "definitionVersion": "tl.v10.monitor-nonzero-range-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.monitor-nonzero-range-boundary-toggle/v2",
       "dependsOn": [
         "V10.compile.nonzero-range-boundary-toggle",
         "V10.inputs"
@@ -8174,7 +8174,7 @@
       "name": "V10.compile.nonzero-singleton-all-true",
       "group": "V10",
       "planId": "MP-105",
-      "definitionVersion": "tl.v10.compile-nonzero-singleton-all-true/v1",
+      "definitionVersion": "tl.v10.compile-nonzero-singleton-all-true/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -8256,7 +8256,7 @@
       "name": "V10.monitor.nonzero-singleton-all-true",
       "group": "V10",
       "planId": "MP-106",
-      "definitionVersion": "tl.v10.monitor-nonzero-singleton-all-true/v1",
+      "definitionVersion": "tl.v10.monitor-nonzero-singleton-all-true/v2",
       "dependsOn": [
         "V10.compile.nonzero-singleton-all-true",
         "V10.inputs"
@@ -8339,7 +8339,7 @@
       "name": "V10.compile.nonzero-singleton-all-false",
       "group": "V10",
       "planId": "MP-107",
-      "definitionVersion": "tl.v10.compile-nonzero-singleton-all-false/v1",
+      "definitionVersion": "tl.v10.compile-nonzero-singleton-all-false/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -8421,7 +8421,7 @@
       "name": "V10.monitor.nonzero-singleton-all-false",
       "group": "V10",
       "planId": "MP-108",
-      "definitionVersion": "tl.v10.monitor-nonzero-singleton-all-false/v1",
+      "definitionVersion": "tl.v10.monitor-nonzero-singleton-all-false/v2",
       "dependsOn": [
         "V10.compile.nonzero-singleton-all-false",
         "V10.inputs"
@@ -8504,7 +8504,7 @@
       "name": "V10.compile.nonzero-singleton-boundary-toggle",
       "group": "V10",
       "planId": "MP-109",
-      "definitionVersion": "tl.v10.compile-nonzero-singleton-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.compile-nonzero-singleton-boundary-toggle/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -8586,7 +8586,7 @@
       "name": "V10.monitor.nonzero-singleton-boundary-toggle",
       "group": "V10",
       "planId": "MP-110",
-      "definitionVersion": "tl.v10.monitor-nonzero-singleton-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.monitor-nonzero-singleton-boundary-toggle/v2",
       "dependsOn": [
         "V10.compile.nonzero-singleton-boundary-toggle",
         "V10.inputs"
@@ -8669,7 +8669,7 @@
       "name": "V10.compile.previous-all-true",
       "group": "V10",
       "planId": "MP-111",
-      "definitionVersion": "tl.v10.compile-previous-all-true/v1",
+      "definitionVersion": "tl.v10.compile-previous-all-true/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -8751,7 +8751,7 @@
       "name": "V10.monitor.previous-all-true",
       "group": "V10",
       "planId": "MP-112",
-      "definitionVersion": "tl.v10.monitor-previous-all-true/v1",
+      "definitionVersion": "tl.v10.monitor-previous-all-true/v2",
       "dependsOn": [
         "V10.compile.previous-all-true",
         "V10.inputs"
@@ -8834,7 +8834,7 @@
       "name": "V10.compile.previous-all-false",
       "group": "V10",
       "planId": "MP-113",
-      "definitionVersion": "tl.v10.compile-previous-all-false/v1",
+      "definitionVersion": "tl.v10.compile-previous-all-false/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -8916,7 +8916,7 @@
       "name": "V10.monitor.previous-all-false",
       "group": "V10",
       "planId": "MP-114",
-      "definitionVersion": "tl.v10.monitor-previous-all-false/v1",
+      "definitionVersion": "tl.v10.monitor-previous-all-false/v2",
       "dependsOn": [
         "V10.compile.previous-all-false",
         "V10.inputs"
@@ -8999,7 +8999,7 @@
       "name": "V10.compile.previous-boundary-toggle",
       "group": "V10",
       "planId": "MP-115",
-      "definitionVersion": "tl.v10.compile-previous-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.compile-previous-boundary-toggle/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -9081,7 +9081,7 @@
       "name": "V10.monitor.previous-boundary-toggle",
       "group": "V10",
       "planId": "MP-116",
-      "definitionVersion": "tl.v10.monitor-previous-boundary-toggle/v1",
+      "definitionVersion": "tl.v10.monitor-previous-boundary-toggle/v2",
       "dependsOn": [
         "V10.compile.previous-boundary-toggle",
         "V10.inputs"
@@ -9164,7 +9164,7 @@
       "name": "V10.compile.bounded",
       "group": "V10",
       "planId": "MP-117",
-      "definitionVersion": "tl.v10.compile-bounded/v1",
+      "definitionVersion": "tl.v10.compile-bounded/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -9244,7 +9244,7 @@
       "name": "V10.monitor.bounded",
       "group": "V10",
       "planId": "MP-118",
-      "definitionVersion": "tl.v10.monitor-bounded/v1",
+      "definitionVersion": "tl.v10.monitor-bounded/v2",
       "dependsOn": [
         "V10.compile.bounded"
       ],
@@ -9326,7 +9326,7 @@
       "name": "V10.compile.past",
       "group": "V10",
       "planId": "MP-119",
-      "definitionVersion": "tl.v10.compile-past/v1",
+      "definitionVersion": "tl.v10.compile-past/v2",
       "dependsOn": [],
       "required": true,
       "checkerProcedure": {
@@ -9406,7 +9406,7 @@
       "name": "V10.monitor.past",
       "group": "V10",
       "planId": "MP-120",
-      "definitionVersion": "tl.v10.monitor-past/v1",
+      "definitionVersion": "tl.v10.monitor-past/v2",
       "dependsOn": [
         "V10.compile.past"
       ],
@@ -9488,7 +9488,7 @@
       "name": "V10.compile.unsafe-since",
       "group": "V10",
       "planId": "MP-121",
-      "definitionVersion": "tl.v10.compile-unsafe-since/v1",
+      "definitionVersion": "tl.v10.compile-unsafe-since/v2",
       "dependsOn": [],
       "required": false,
       "checkerProcedure": {
@@ -9568,7 +9568,7 @@
       "name": "V10.monitor.unsafe-since",
       "group": "V10",
       "planId": "MP-122",
-      "definitionVersion": "tl.v10.monitor-unsafe-since/v1",
+      "definitionVersion": "tl.v10.monitor-unsafe-since/v2",
       "dependsOn": [
         "V10.compile.unsafe-since"
       ],
@@ -9650,7 +9650,7 @@
       "name": "V10.compile.safety",
       "group": "V10",
       "planId": "MP-123",
-      "definitionVersion": "tl.v10.compile-safety/v1",
+      "definitionVersion": "tl.v10.compile-safety/v2",
       "dependsOn": [
         "V10.inputs"
       ],
@@ -9732,7 +9732,7 @@
       "name": "V10.monitor.safety",
       "group": "V10",
       "planId": "MP-124",
-      "definitionVersion": "tl.v10.monitor-safety/v1",
+      "definitionVersion": "tl.v10.monitor-safety/v2",
       "dependsOn": [
         "V10.compile.safety",
         "V10.inputs"

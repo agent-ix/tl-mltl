@@ -5,8 +5,17 @@ type: MeasurementPlan
 status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v6.syntax_interval_proof.proved
-definition_version: tl.v6.syntax-interval-proof/v1
+definition_version: tl.v6.syntax-interval-proof/v2
 stage: gate
+ground_truth_kind: mechanical
+protected_apparatus:
+- "campaign/procedures/v6-syntax-interval-proof.json"
+- "src/bin/tl_campaign_check.rs"
+negative_controls:
+- kind: stale-evidence
+  description: "the campaign binds this result to exact source tree revisions and retained bytes."
+- kind: suppressed-observation
+  description: "an absent or unverified direct invocation leaves the required member incomplete."
 statistical_design:
   population: one exact direct native Kani proof for V6.syntax_interval_proof in the five-source Stage 1 campaign
   sampling: complete retained stdout stderr and execution result for the declared command
@@ -14,7 +23,9 @@ statistical_design:
   estimator: count
   error_model: stale source graph, incomplete checks, or proof status mismatch
   uncertainty: bounded unwind 2 proof under one pinned Kani and solver version
-  decision_rule: The measured count must be at least 1.
+  decision_rule:
+    comparator: ge
+    threshold: 1
 relationships:
 - target: ix://agent-ix/tl-mltl/AP-002
   type: measures
