@@ -267,6 +267,14 @@ plugin even when its reported version matches. Cargo and the plugin are
 indirect tools; Quoin snapshots Python as producer. Changed procedure bytes
 require a new measured source graph and definition.
 
+The three syntax V8 members select the library tests and named self-contained
+integration targets. Core and alloc select `future_lowering` and
+`v8_critical_branches`; serde additionally selects `strict_syntax_artifacts`
+and `infinite_formula`. This excludes assurance tests that require local Git,
+virtual-environment, or corpus state unavailable in the sealed source
+projection. The checker still requires both sides of every declared critical
+branch in the exported coverage file.
+
 The machine file's `toolchains` map gives default language identities for
 members. `memberToolchains` may override it by exact Campaign member name when
 members use different toolchains, such as stable Cargo and nightly Miri. Each
