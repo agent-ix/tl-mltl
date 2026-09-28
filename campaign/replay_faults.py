@@ -59,20 +59,15 @@ def mutate(case: str, repo: Path, run_id: str, target: dict) -> None:
                     and row["index"] == target["index"])
     if case == "omission":
         attempts.remove(selected)
-        run["verdict"] = "inconclusive"
     elif case == "repeated_attempt":
         attempts.append(copy.deepcopy(selected))
-        run["verdict"] = "rejected"
     elif case == "absent_checker":
-        (store / "domain-verdicts" / f'{selected["domainVerdictDigest"]}.json').unlink()
-        run["verdict"] = "inconclusive"
+        (store / "results" / f'{selected["checkerResultDigest"]}.json').unlink()
     elif case == "altered_raw":
         artifact = selected["rawArtifacts"][0]
         replace_bytes(store / "raw" / f'{artifact["digest"]}.bin')
-        run["verdict"] = "rejected"
     elif case == "stale_source":
         run["sourceGraphDigest"] = "0" * 64
-        run["verdict"] = "rejected"
     else:
         raise ValueError(f"unknown fault: {case}")
     save(run_path, run)
