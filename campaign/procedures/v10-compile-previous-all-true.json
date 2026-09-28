@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "engineering-assurance.measurement-procedure/v1",
+  "responseProtocol": "quoin.process-evidence/v1",
+  "responseAdapter": "quoin.process-evidence-adapter",
+  "responseAdapterVersion": "1",
+  "repetitions": 1,
+  "timeoutMillis": 120000,
+  "producerName": "python3",
+  "producerVersion": "3.13.11",
+  "sourceRepository": "r2u2",
+  "arguments": [
+    {
+      "kind": "literal",
+      "value": "compiler/c2po.py"
+    },
+    {
+      "kind": "literal",
+      "value": "--spec"
+    },
+    {
+      "kind": "literal",
+      "value": "v10/input.c2po"
+    },
+    {
+      "kind": "literal",
+      "value": "--trace"
+    },
+    {
+      "kind": "literal",
+      "value": "v10/input.csv"
+    },
+    {
+      "kind": "literal",
+      "value": "--output"
+    },
+    {
+      "kind": "output_artifact",
+      "value": "binary"
+    }
+  ],
+  "environment": [
+    {
+      "name": "PYTHONPATH",
+      "kind": "literal",
+      "value": "compiler"
+    }
+  ],
+  "inputs": [
+    {
+      "role": "spec",
+      "required": true
+    },
+    {
+      "role": "trace",
+      "required": true
+    }
+  ],
+  "inputOrigins": [
+    {
+      "role": "spec",
+      "kind": "dependency",
+      "dependencyMember": "V10.inputs",
+      "dependencyArtifactRole": "inputs/previous-all-true.c2po"
+    },
+    {
+      "role": "trace",
+      "kind": "dependency",
+      "dependencyMember": "V10.inputs",
+      "dependencyArtifactRole": "inputs/previous-all-true.csv"
+    }
+  ],
+  "outputs": [
+    {
+      "role": "binary",
+      "required": true
+    }
+  ]
+}

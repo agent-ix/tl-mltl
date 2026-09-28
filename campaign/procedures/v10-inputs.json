@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "engineering-assurance.measurement-procedure/v1",
+  "responseProtocol": "quoin.process-evidence/v1",
+  "responseAdapter": "quoin.process-evidence-adapter",
+  "responseAdapterVersion": "1",
+  "repetitions": 1,
+  "timeoutMillis": 120000,
+  "producerName": "tl_v10_generate",
+  "producerVersion": "0.4.0",
+  "sourceRepository": "tl-mltl",
+  "arguments": [
+    {
+      "kind": "literal",
+      "value": "--output-dir"
+    },
+    {
+      "kind": "literal",
+      "value": "v10"
+    },
+    {
+      "kind": "literal",
+      "value": "--manifest"
+    },
+    {
+      "kind": "output_artifact",
+      "value": "manifest"
+    }
+  ],
+  "environment": [],
+  "inputs": [],
+  "outputs": [
+    {
+      "role": "manifest",
+      "required": true
+    }
+  ],
+  "outputTrees": [
+    {
+      "role": "inputs",
+      "required": true
+    }
+  ]
+}

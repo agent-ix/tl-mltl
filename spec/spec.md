@@ -115,6 +115,9 @@ behavior in the bounded core.
 - [Verification-effectiveness and bounded-proof campaign](./verification-effectiveness-campaign.md)
   (MRS-003), which measures the TL crates' own property, fuzz, mutation, and
   bounded-proof evidence and carries no cross-repository producer dependency.
+- [V1 executable verification campaign](./v1-verification-campaign.md)
+  (MRS-004), with generated measurement procedures and independent checker
+  receipts; the retained source closure still requires a measured repin.
 - [tl-mltl epic](https://github.com/agent-ix/tl-mltl/issues/7).
 - [Typed context child](https://github.com/agent-ix/tl-mltl/issues/24).
 - [Future FRETish consumer](https://github.com/agent-ix/quire-contract-ir/issues/57).

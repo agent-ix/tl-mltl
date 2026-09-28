@@ -1,0 +1,475 @@
+[
+  {
+    "procedure": "inputs",
+    "name": "V10.inputs",
+    "planId": "MP-074",
+    "definitionVersion": "tl.v10.inputs/v1",
+    "dependsOn": []
+  },
+  {
+    "procedure": "compile-zero-singleton-all-true",
+    "name": "V10.compile.zero-singleton-all-true",
+    "planId": "MP-075",
+    "definitionVersion": "tl.v10.compile-zero-singleton-all-true/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-zero-singleton-all-true",
+    "name": "V10.monitor.zero-singleton-all-true",
+    "planId": "MP-076",
+    "definitionVersion": "tl.v10.monitor-zero-singleton-all-true/v1",
+    "dependsOn": [
+      "V10.compile.zero-singleton-all-true",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-zero-singleton-all-false",
+    "name": "V10.compile.zero-singleton-all-false",
+    "planId": "MP-077",
+    "definitionVersion": "tl.v10.compile-zero-singleton-all-false/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-zero-singleton-all-false",
+    "name": "V10.monitor.zero-singleton-all-false",
+    "planId": "MP-078",
+    "definitionVersion": "tl.v10.monitor-zero-singleton-all-false/v1",
+    "dependsOn": [
+      "V10.compile.zero-singleton-all-false",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-zero-singleton-boundary-toggle",
+    "name": "V10.compile.zero-singleton-boundary-toggle",
+    "planId": "MP-079",
+    "definitionVersion": "tl.v10.compile-zero-singleton-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-zero-singleton-boundary-toggle",
+    "name": "V10.monitor.zero-singleton-boundary-toggle",
+    "planId": "MP-080",
+    "definitionVersion": "tl.v10.monitor-zero-singleton-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.compile.zero-singleton-boundary-toggle",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-zero-unit-all-true",
+    "name": "V10.compile.zero-unit-all-true",
+    "planId": "MP-081",
+    "definitionVersion": "tl.v10.compile-zero-unit-all-true/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-zero-unit-all-true",
+    "name": "V10.monitor.zero-unit-all-true",
+    "planId": "MP-082",
+    "definitionVersion": "tl.v10.monitor-zero-unit-all-true/v1",
+    "dependsOn": [
+      "V10.compile.zero-unit-all-true",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-zero-unit-all-false",
+    "name": "V10.compile.zero-unit-all-false",
+    "planId": "MP-083",
+    "definitionVersion": "tl.v10.compile-zero-unit-all-false/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-zero-unit-all-false",
+    "name": "V10.monitor.zero-unit-all-false",
+    "planId": "MP-084",
+    "definitionVersion": "tl.v10.monitor-zero-unit-all-false/v1",
+    "dependsOn": [
+      "V10.compile.zero-unit-all-false",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-zero-unit-boundary-toggle",
+    "name": "V10.compile.zero-unit-boundary-toggle",
+    "planId": "MP-085",
+    "definitionVersion": "tl.v10.compile-zero-unit-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-zero-unit-boundary-toggle",
+    "name": "V10.monitor.zero-unit-boundary-toggle",
+    "planId": "MP-086",
+    "definitionVersion": "tl.v10.monitor-zero-unit-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.compile.zero-unit-boundary-toggle",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-zero-upper-all-true",
+    "name": "V10.compile.zero-upper-all-true",
+    "planId": "MP-087",
+    "definitionVersion": "tl.v10.compile-zero-upper-all-true/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-zero-upper-all-true",
+    "name": "V10.monitor.zero-upper-all-true",
+    "planId": "MP-088",
+    "definitionVersion": "tl.v10.monitor-zero-upper-all-true/v1",
+    "dependsOn": [
+      "V10.compile.zero-upper-all-true",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-zero-upper-all-false",
+    "name": "V10.compile.zero-upper-all-false",
+    "planId": "MP-089",
+    "definitionVersion": "tl.v10.compile-zero-upper-all-false/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-zero-upper-all-false",
+    "name": "V10.monitor.zero-upper-all-false",
+    "planId": "MP-090",
+    "definitionVersion": "tl.v10.monitor-zero-upper-all-false/v1",
+    "dependsOn": [
+      "V10.compile.zero-upper-all-false",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-zero-upper-boundary-toggle",
+    "name": "V10.compile.zero-upper-boundary-toggle",
+    "planId": "MP-091",
+    "definitionVersion": "tl.v10.compile-zero-upper-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-zero-upper-boundary-toggle",
+    "name": "V10.monitor.zero-upper-boundary-toggle",
+    "planId": "MP-092",
+    "definitionVersion": "tl.v10.monitor-zero-upper-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.compile.zero-upper-boundary-toggle",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-nonzero-singleton-one-all-true",
+    "name": "V10.compile.nonzero-singleton-one-all-true",
+    "planId": "MP-093",
+    "definitionVersion": "tl.v10.compile-nonzero-singleton-one-all-true/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-nonzero-singleton-one-all-true",
+    "name": "V10.monitor.nonzero-singleton-one-all-true",
+    "planId": "MP-094",
+    "definitionVersion": "tl.v10.monitor-nonzero-singleton-one-all-true/v1",
+    "dependsOn": [
+      "V10.compile.nonzero-singleton-one-all-true",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-nonzero-singleton-one-all-false",
+    "name": "V10.compile.nonzero-singleton-one-all-false",
+    "planId": "MP-095",
+    "definitionVersion": "tl.v10.compile-nonzero-singleton-one-all-false/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-nonzero-singleton-one-all-false",
+    "name": "V10.monitor.nonzero-singleton-one-all-false",
+    "planId": "MP-096",
+    "definitionVersion": "tl.v10.monitor-nonzero-singleton-one-all-false/v1",
+    "dependsOn": [
+      "V10.compile.nonzero-singleton-one-all-false",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-nonzero-singleton-one-boundary-toggle",
+    "name": "V10.compile.nonzero-singleton-one-boundary-toggle",
+    "planId": "MP-097",
+    "definitionVersion": "tl.v10.compile-nonzero-singleton-one-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-nonzero-singleton-one-boundary-toggle",
+    "name": "V10.monitor.nonzero-singleton-one-boundary-toggle",
+    "planId": "MP-098",
+    "definitionVersion": "tl.v10.monitor-nonzero-singleton-one-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.compile.nonzero-singleton-one-boundary-toggle",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-nonzero-range-all-true",
+    "name": "V10.compile.nonzero-range-all-true",
+    "planId": "MP-099",
+    "definitionVersion": "tl.v10.compile-nonzero-range-all-true/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-nonzero-range-all-true",
+    "name": "V10.monitor.nonzero-range-all-true",
+    "planId": "MP-100",
+    "definitionVersion": "tl.v10.monitor-nonzero-range-all-true/v1",
+    "dependsOn": [
+      "V10.compile.nonzero-range-all-true",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-nonzero-range-all-false",
+    "name": "V10.compile.nonzero-range-all-false",
+    "planId": "MP-101",
+    "definitionVersion": "tl.v10.compile-nonzero-range-all-false/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-nonzero-range-all-false",
+    "name": "V10.monitor.nonzero-range-all-false",
+    "planId": "MP-102",
+    "definitionVersion": "tl.v10.monitor-nonzero-range-all-false/v1",
+    "dependsOn": [
+      "V10.compile.nonzero-range-all-false",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-nonzero-range-boundary-toggle",
+    "name": "V10.compile.nonzero-range-boundary-toggle",
+    "planId": "MP-103",
+    "definitionVersion": "tl.v10.compile-nonzero-range-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-nonzero-range-boundary-toggle",
+    "name": "V10.monitor.nonzero-range-boundary-toggle",
+    "planId": "MP-104",
+    "definitionVersion": "tl.v10.monitor-nonzero-range-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.compile.nonzero-range-boundary-toggle",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-nonzero-singleton-all-true",
+    "name": "V10.compile.nonzero-singleton-all-true",
+    "planId": "MP-105",
+    "definitionVersion": "tl.v10.compile-nonzero-singleton-all-true/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-nonzero-singleton-all-true",
+    "name": "V10.monitor.nonzero-singleton-all-true",
+    "planId": "MP-106",
+    "definitionVersion": "tl.v10.monitor-nonzero-singleton-all-true/v1",
+    "dependsOn": [
+      "V10.compile.nonzero-singleton-all-true",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-nonzero-singleton-all-false",
+    "name": "V10.compile.nonzero-singleton-all-false",
+    "planId": "MP-107",
+    "definitionVersion": "tl.v10.compile-nonzero-singleton-all-false/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-nonzero-singleton-all-false",
+    "name": "V10.monitor.nonzero-singleton-all-false",
+    "planId": "MP-108",
+    "definitionVersion": "tl.v10.monitor-nonzero-singleton-all-false/v1",
+    "dependsOn": [
+      "V10.compile.nonzero-singleton-all-false",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-nonzero-singleton-boundary-toggle",
+    "name": "V10.compile.nonzero-singleton-boundary-toggle",
+    "planId": "MP-109",
+    "definitionVersion": "tl.v10.compile-nonzero-singleton-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-nonzero-singleton-boundary-toggle",
+    "name": "V10.monitor.nonzero-singleton-boundary-toggle",
+    "planId": "MP-110",
+    "definitionVersion": "tl.v10.monitor-nonzero-singleton-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.compile.nonzero-singleton-boundary-toggle",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-previous-all-true",
+    "name": "V10.compile.previous-all-true",
+    "planId": "MP-111",
+    "definitionVersion": "tl.v10.compile-previous-all-true/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-previous-all-true",
+    "name": "V10.monitor.previous-all-true",
+    "planId": "MP-112",
+    "definitionVersion": "tl.v10.monitor-previous-all-true/v1",
+    "dependsOn": [
+      "V10.compile.previous-all-true",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-previous-all-false",
+    "name": "V10.compile.previous-all-false",
+    "planId": "MP-113",
+    "definitionVersion": "tl.v10.compile-previous-all-false/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-previous-all-false",
+    "name": "V10.monitor.previous-all-false",
+    "planId": "MP-114",
+    "definitionVersion": "tl.v10.monitor-previous-all-false/v1",
+    "dependsOn": [
+      "V10.compile.previous-all-false",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-previous-boundary-toggle",
+    "name": "V10.compile.previous-boundary-toggle",
+    "planId": "MP-115",
+    "definitionVersion": "tl.v10.compile-previous-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-previous-boundary-toggle",
+    "name": "V10.monitor.previous-boundary-toggle",
+    "planId": "MP-116",
+    "definitionVersion": "tl.v10.monitor-previous-boundary-toggle/v1",
+    "dependsOn": [
+      "V10.compile.previous-boundary-toggle",
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "compile-bounded",
+    "name": "V10.compile.bounded",
+    "planId": "MP-117",
+    "definitionVersion": "tl.v10.compile-bounded/v1",
+    "dependsOn": []
+  },
+  {
+    "procedure": "monitor-bounded",
+    "name": "V10.monitor.bounded",
+    "planId": "MP-118",
+    "definitionVersion": "tl.v10.monitor-bounded/v1",
+    "dependsOn": [
+      "V10.compile.bounded"
+    ]
+  },
+  {
+    "procedure": "compile-past",
+    "name": "V10.compile.past",
+    "planId": "MP-119",
+    "definitionVersion": "tl.v10.compile-past/v1",
+    "dependsOn": []
+  },
+  {
+    "procedure": "monitor-past",
+    "name": "V10.monitor.past",
+    "planId": "MP-120",
+    "definitionVersion": "tl.v10.monitor-past/v1",
+    "dependsOn": [
+      "V10.compile.past"
+    ]
+  },
+  {
+    "procedure": "compile-unsafe-since",
+    "name": "V10.compile.unsafe-since",
+    "planId": "MP-121",
+    "definitionVersion": "tl.v10.compile-unsafe-since/v1",
+    "dependsOn": []
+  },
+  {
+    "procedure": "monitor-unsafe-since",
+    "name": "V10.monitor.unsafe-since",
+    "planId": "MP-122",
+    "definitionVersion": "tl.v10.monitor-unsafe-since/v1",
+    "dependsOn": [
+      "V10.compile.unsafe-since"
+    ]
+  },
+  {
+    "procedure": "compile-safety",
+    "name": "V10.compile.safety",
+    "planId": "MP-123",
+    "definitionVersion": "tl.v10.compile-safety/v1",
+    "dependsOn": [
+      "V10.inputs"
+    ]
+  },
+  {
+    "procedure": "monitor-safety",
+    "name": "V10.monitor.safety",
+    "planId": "MP-124",
+    "definitionVersion": "tl.v10.monitor-safety/v1",
+    "dependsOn": [
+      "V10.compile.safety",
+      "V10.inputs"
+    ]
+  }
+]

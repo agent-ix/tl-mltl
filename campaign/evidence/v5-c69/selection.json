@@ -1,0 +1,90 @@
+{
+  "runs": [
+    {
+      "crate": "tl-parse",
+      "critical_scope": "V5 selected critical semantics",
+      "selection_regex": "parse_clean_ascii_v4|Parser.*::interval|Parser.*::lower_derived",
+      "source_file": "src/infinite.rs",
+      "source_path": "/Users/peter/dev/.worktrees/tl-parse-v8-reachable",
+      "source_revision": "89c2c1249c741bb94dc07da1eff46605af25e401",
+      "survivor_reviews": [],
+      "test_tail": [
+        "--test",
+        "infinite_v4",
+        "--test",
+        "infinite_trace_corpus",
+        "--test",
+        "owner_infinite_corpus"
+      ]
+    },
+    {
+      "crate": "tl-syntax",
+      "critical_scope": "V5 selected critical semantics",
+      "selection_regex": "TemporalInterval::start|select_infinite_profile|validate_resource_limits|preflight_resource_limits|InfiniteFormulaDocument::content_identity",
+      "source_file": "src/formula/infinite.rs",
+      "source_path": "/Users/peter/dev/tl-syntax",
+      "source_revision": "9de638dc4d14d0ae62a6825473a3a9bb6a9e57ac",
+      "survivor_reviews": [],
+      "test_tail": [
+        "--test",
+        "infinite_formula",
+        "--test",
+        "infinite_trace",
+        "--test",
+        "infinite_trace_corpus"
+      ]
+    },
+    {
+      "crate": "tl-mltl",
+      "critical_scope": "infinite trace/lasso evaluator",
+      "selection_regex": "evaluate_trace|evaluate_lasso",
+      "source_file": "src/infinite/mod.rs",
+      "source_path": "/Users/peter/dev/.worktrees/tl-mltl-v2-v5-hardening",
+      "source_revision": "c69a2d003f891edba1908dfe327cae03488dcd5f",
+      "survivor_reviews": [
+        {
+          "detail": "Both admitted V1 formula and lasso constructors force InfiniteTraceV1; InfiniteClock has only EventPosition, so neither side of the clock/profile mismatch is reachable.",
+          "disposition": "proof_candidate",
+          "name": "src/infinite/mod.rs:675:9: replace || with && in evaluate_lasso"
+        },
+        {
+          "detail": "The later RawTraceRequest::validate rechecks node and observation-position ceilings before evaluation and returns the same typed ResourceIncomplete result.",
+          "disposition": "proof_candidate",
+          "name": "src/infinite/mod.rs:687:9: replace || with && in evaluate_lasso"
+        }
+      ],
+      "test_tail": [
+        "--lib",
+        "--test",
+        "infinite_trace",
+        "--test",
+        "infinite_oracle"
+      ]
+    },
+    {
+      "crate": "tl-rewrite",
+      "critical_scope": "V5 selected critical semantics",
+      "selection_regex": "check_infinite_rewrite|classify_infinite_results",
+      "source_file": "src/infinite.rs",
+      "source_path": "/Users/peter/dev/.worktrees/tl-rewrite-final-test-repin",
+      "source_revision": "e7ed9004e24803ac2611307cfe36b38480ec1a42",
+      "survivor_reviews": [
+        {
+          "detail": "Both admitted V1 formula and lasso documents force InfiniteTraceV1 and the sole EventPosition clock, so the profile/clock mismatch branch is unreachable.",
+          "disposition": "proof_candidate",
+          "name": "src/infinite.rs:917:61: replace || with && in check_infinite_rewrite"
+        }
+      ],
+      "test_tail": [
+        "--lib",
+        "--test",
+        "infinite_conformance",
+        "--test",
+        "infinite_rules",
+        "--test",
+        "infinite_owner_corpus"
+      ]
+    }
+  ],
+  "schema": "tl-mltl.v5-mutation-selection/v1"
+}

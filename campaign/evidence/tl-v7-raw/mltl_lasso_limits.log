@@ -1,0 +1,9 @@
+
+running 1 test
+test every_lasso_resource_dimension_refuses_one_over_without_panic ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 18.03s
+
+   Compiling tl-mltl v0.3.0 (/Users/peter/dev/.worktrees/tl-mltl-v7)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.52s
+     Running tests/infinite_trace.rs (target/miri/aarch64-apple-darwin/debug/build/tl-mltl/e230ee8c621637af/out/infinite_trace-e230ee8c621637af)

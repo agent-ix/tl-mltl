@@ -1,0 +1,258 @@
+{
+  "schema": "tl-mltl.campaign-source-closure/v1",
+  "campaignDefinition": "campaign/stage1-campaign-definition.json",
+  "sources": [
+    {
+      "repository": "tl-syntax",
+      "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
+      "treeDigest": "66ddeb99101843073e3e62f94a5b62aee6bb04a5e4f55c5987a7e0c33e78eee2",
+      "cargoLockDigest": "e095c513a906735da3ff4f3243eb3e8d3c39707ccabb835ef3863260ece1172d",
+      "tlGitDependencies": [],
+      "cargoManifestDigest": "2d3c46109382ce4ec0b16625ee02995a7c8e3021e968b26b28b4a54420e1fe58"
+    },
+    {
+      "repository": "tl-parse",
+      "revision": "5ca6f76936c95232a3a8b86ce33f6f16c4aab606",
+      "treeDigest": "2c8b6e3f5c631b3b1b7e7a4a519ef80417bbffa211d0486aa5add23c8451ba9d",
+      "cargoLockDigest": "70b9d0839caaa74fb4f9309bf9d1d14b07f0bcc2c6bd69d82b32ddc188f021f2",
+      "tlGitDependencies": [
+        {
+          "package": "tl-syntax",
+          "version": "0.4.0",
+          "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
+          "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
+        }
+      ],
+      "cargoManifestDigest": "fad7cf364432c49b1df969671a94f90b1381c7a74c18cccc74b6ffd747e82238"
+    },
+    {
+      "repository": "tl-mltl",
+      "revision": "29cea002008f4a6855f54b73ecd63c234499fa3c",
+      "treeDigest": "a23704cd70ff39d98e4d5c152b8bb5aadc8b6a7d4e4ce9bc865de9f2ebe88d35",
+      "cargoLockDigest": "402173883a14765dcd3c4205e2d75bda43c8f5221b62b6911d822e113836b2e7",
+      "tlGitDependencies": [
+        {
+          "package": "tl-oracle",
+          "version": "0.1.0",
+          "revision": "9bf3994d4c67ee0a9a53dc31316404b9edf14df9",
+          "source": "git+https://github.com/agent-ix/tl-oracle.git?rev=9bf3994d4c67ee0a9a53dc31316404b9edf14df9#9bf3994d4c67ee0a9a53dc31316404b9edf14df9"
+        },
+        {
+          "package": "tl-syntax",
+          "version": "0.4.0",
+          "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
+          "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
+        }
+      ],
+      "cargoManifestDigest": "590a967bf539566d7aa2a79a503981e1c25510dc7fc4c54b9f914a3d2a63a37c"
+    },
+    {
+      "repository": "tl-rewrite",
+      "revision": "8bf12ec736c2c4016f5fef8fe52d50c9b2f1a422",
+      "treeDigest": "6d084e544fa97f2b138053ecfd6899d9923257d42af4162bde836a35d4e2c9d6",
+      "cargoLockDigest": "5533341feb8906424ddcdfed43515407217f1adb0461c77b26a543b89ad0aeb3",
+      "tlGitDependencies": [
+        {
+          "package": "tl-mltl",
+          "version": "0.4.0",
+          "revision": "29cea002008f4a6855f54b73ecd63c234499fa3c",
+          "source": "git+https://github.com/agent-ix/tl-mltl.git?rev=29cea002008f4a6855f54b73ecd63c234499fa3c#29cea002008f4a6855f54b73ecd63c234499fa3c"
+        },
+        {
+          "package": "tl-oracle",
+          "version": "0.1.0",
+          "revision": "9bf3994d4c67ee0a9a53dc31316404b9edf14df9",
+          "source": "git+https://github.com/agent-ix/tl-oracle.git?rev=9bf3994d4c67ee0a9a53dc31316404b9edf14df9#9bf3994d4c67ee0a9a53dc31316404b9edf14df9"
+        },
+        {
+          "package": "tl-parse",
+          "version": "0.4.0",
+          "revision": "5ca6f76936c95232a3a8b86ce33f6f16c4aab606",
+          "source": "git+https://github.com/agent-ix/tl-parse.git?rev=5ca6f76936c95232a3a8b86ce33f6f16c4aab606#5ca6f76936c95232a3a8b86ce33f6f16c4aab606"
+        },
+        {
+          "package": "tl-syntax",
+          "version": "0.4.0",
+          "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
+          "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
+        }
+      ],
+      "cargoManifestDigest": "4a097614acc072af58d294d23a19e66d2908b3a32325b5dd523424263ea46f84"
+    },
+    {
+      "repository": "tl-oracle",
+      "revision": "9bf3994d4c67ee0a9a53dc31316404b9edf14df9",
+      "treeDigest": "662e31afefe3cbee76fdd4ba50c2e5bd1b5f4d983f88739d696e46f868deba85",
+      "cargoLockDigest": "99bab458b8769fe76e1a7a997d5c896c36785f37619a781d98f1b91f505f5905",
+      "tlGitDependencies": [
+        {
+          "package": "tl-syntax",
+          "version": "0.4.0",
+          "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
+          "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
+        }
+      ],
+      "cargoManifestDigest": "8ed873ea0c7d91c322b650ba13b46252ab33809f34e6b03dfa4272b115827e65"
+    },
+    {
+      "repository": "tl-parse-baseline",
+      "revision": "225a3300963199e523958f4abe4c16cc9dcca641",
+      "treeDigest": "4bce777ea0c1281eb8d8bf49817fb84b58f96dc410f0c8b0a8c8f0d95c5380ef",
+      "cargoLockDigest": "ba62c6ff0d11e7e016a85080ae3d214038dbc684452c8c16d7a8e509cf454e90",
+      "tlGitDependencies": [
+        {
+          "package": "tl-syntax",
+          "version": "0.3.0",
+          "revision": "fed48a2fab3f5277131a7012e1a8d10993330cb1",
+          "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=fed48a2fab3f5277131a7012e1a8d10993330cb1#fed48a2fab3f5277131a7012e1a8d10993330cb1"
+        }
+      ],
+      "cargoManifestDigest": "43cf5cd548e599cb8d0e852fda35f455b11a522b075726f449b4b8ae9203a507"
+    },
+    {
+      "repository": "tl-rewrite-baseline",
+      "revision": "9056b8b31f3f7f3772d2bd811c4f6edd2d89b509",
+      "treeDigest": "541989783d8d79758df959614284ba66bb6e9c7bb2f4ec8594ced483117b9589",
+      "cargoLockDigest": "f3898cf8ccc5bbdaa0dfd22492c803c551fa68703cacd4b244d6c4bb18c01a14",
+      "tlGitDependencies": [
+        {
+          "package": "tl-mltl",
+          "version": "0.3.0",
+          "revision": "e7f9b1f5d453aeca39e14b73cf6be6ac1ac0bbf7",
+          "source": "git+https://github.com/agent-ix/tl-mltl.git?rev=e7f9b1f5d453aeca39e14b73cf6be6ac1ac0bbf7#e7f9b1f5d453aeca39e14b73cf6be6ac1ac0bbf7"
+        },
+        {
+          "package": "tl-oracle",
+          "version": "0.1.0",
+          "revision": "1ab90f4ed6d81932c3b8b284ec3ab44592ade397",
+          "source": "git+https://github.com/agent-ix/tl-oracle.git?rev=1ab90f4ed6d81932c3b8b284ec3ab44592ade397#1ab90f4ed6d81932c3b8b284ec3ab44592ade397"
+        },
+        {
+          "package": "tl-parse",
+          "version": "0.3.0",
+          "revision": "fa8232bed2d620666816a59016d479805b3f4a40",
+          "source": "git+https://github.com/agent-ix/tl-parse.git?rev=fa8232bed2d620666816a59016d479805b3f4a40#fa8232bed2d620666816a59016d479805b3f4a40"
+        },
+        {
+          "package": "tl-syntax",
+          "version": "0.3.0",
+          "revision": "8bcbce984f7ec3d86a92f90d866e842cc98b39fb",
+          "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=8bcbce984f7ec3d86a92f90d866e842cc98b39fb#8bcbce984f7ec3d86a92f90d866e842cc98b39fb"
+        }
+      ],
+      "cargoManifestDigest": "fb67c9cab398150500581fb1fa8b6f7e342ef21279a36d7ec9fa0ba4fbb3624f"
+    },
+    {
+      "repository": "tl-mltl-baseline",
+      "revision": "0e4a41083d420ccc85134f4f7e224698ab7859e0",
+      "treeDigest": "b850d1a89491e0e6ca42708c74b97283ca9921212276a21a1e859ebd9fdfd5d2",
+      "cargoLockDigest": "74bfc2e00884b6a6884d9a2ae0fc96f5e241cb425465d72b3c583ef7e3cc48c4",
+      "tlGitDependencies": [
+        {
+          "package": "tl-oracle",
+          "version": "0.1.0",
+          "revision": "80c76669c7967186148d21b4bfa3eeb7d89c2c44",
+          "source": "git+https://github.com/agent-ix/tl-oracle.git?rev=80c76669c7967186148d21b4bfa3eeb7d89c2c44#80c76669c7967186148d21b4bfa3eeb7d89c2c44"
+        },
+        {
+          "package": "tl-syntax",
+          "version": "0.3.0",
+          "revision": "fed48a2fab3f5277131a7012e1a8d10993330cb1",
+          "source": "git+https://github.com/agent-ix/tl-syntax.git?rev=fed48a2fab3f5277131a7012e1a8d10993330cb1#fed48a2fab3f5277131a7012e1a8d10993330cb1"
+        }
+      ],
+      "cargoManifestDigest": "36d0115b40473825398eed5690208ce86b13d427a684abdee857919c0e80fd07"
+    },
+    {
+      "repository": "r2u2",
+      "revision": "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a",
+      "treeDigest": "1e7676bed37a5ff6ab1be3ddee973a1db1e07cd71c29a1a751b892a792018690",
+      "cargoLockDigest": null,
+      "tlGitDependencies": []
+    }
+  ],
+  "equalHarness": [
+    {
+      "repository": "tl-parse",
+      "baselineRevision": "225a3300963199e523958f4abe4c16cc9dcca641",
+      "candidateRevision": "5ca6f76936c95232a3a8b86ce33f6f16c4aab606",
+      "identicalFiles": [
+        {
+          "path": "benches/inputs/SHA256SUMS",
+          "gitBlobOid": "607fed48662d1bfcfd4989c525aa501fcff7ecd3",
+          "sha256": "7ddae464c4f27631bd3e08bce40f8c86797565deaf964262bb38bdedc9a726bd"
+        },
+        {
+          "path": "benches/inputs/bounded-small.txt",
+          "gitBlobOid": "aa164c3768111b030c08b5c2ff1cedcced1a2d08",
+          "sha256": "bfc96dd29dcb1c156ebec73519b3ffd960d9792a6e712823ec549b2cb149a67b"
+        },
+        {
+          "path": "benches/inputs/infinite-fairness.txt",
+          "gitBlobOid": "f55f20a8f645e85b279d5d15670bbfcbabac4d6e",
+          "sha256": "5a50bb3d9990a524906f285978d58b466f575708b687c6f8b23149339da26edc"
+        },
+        {
+          "path": "benches/inputs/infinite-small.txt",
+          "gitBlobOid": "7d0355778b28bf7dc87b4509253c269f52b988b0",
+          "sha256": "26ff773ecffeae5e699bd679e7188c1b738433d69ba19adf2246328ab7bc32b1"
+        },
+        {
+          "path": "benches/inputs/past-small.txt",
+          "gitBlobOid": "7d718498ec06cf0536ca0636eba8db3fd1c2762b",
+          "sha256": "34ea943a6d881360e2db1fe924cac5c8e5df8e906948de386d0c6193f78281b7"
+        },
+        {
+          "path": "benches/inputs/shared-median.txt",
+          "gitBlobOid": "5720ec53470c80181afa7477dc293ef9fbc1b466",
+          "sha256": "24b01e0aeeec862a09551340157bc31ed90f74bbb7017a4f73b21790603696d8"
+        },
+        {
+          "path": "benches/inputs/shared-near-node-cap.txt",
+          "gitBlobOid": "d203da5345779320314767096e7177a57807ce9c",
+          "sha256": "91a938737cb6e831967def1bfd2cce70d87203a8b75940776f6d56002b65df4c"
+        },
+        {
+          "path": "benches/parser_roundtrip.rs",
+          "gitBlobOid": "07a53c9678b112af413b368db2853d734ccd5e88",
+          "sha256": "6de05dd1fe8d5cfe31e1c5d25592fa7351bcaf4c197fa9d3e95cd5dc68d86fbf"
+        }
+      ]
+    },
+    {
+      "repository": "tl-rewrite",
+      "baselineRevision": "9056b8b31f3f7f3772d2bd811c4f6edd2d89b509",
+      "candidateRevision": "8bf12ec736c2c4016f5fef8fe52d50c9b2f1a422",
+      "identicalFiles": [
+        {
+          "path": "benches/input-digests.json",
+          "gitBlobOid": "1aebbfd1c10fec264939cc1dee16620dc9cd7dcd",
+          "sha256": "80a940314b3ac553854971ade71d39317cb68b9658dfc823b635b5debeeb6c32"
+        },
+        {
+          "path": "benches/rewrite_rules.rs",
+          "gitBlobOid": "590a058c2880be5c68b92d71ccfd32bc7677285d",
+          "sha256": "b6c5d7f74a84e402d4dcc9a4f1379531effb1e33b2abef14243adf5a09ef9ad5"
+        }
+      ]
+    },
+    {
+      "repository": "tl-mltl",
+      "baselineRevision": "0e4a41083d420ccc85134f4f7e224698ab7859e0",
+      "candidateRevision": "29cea002008f4a6855f54b73ecd63c234499fa3c",
+      "identicalFiles": [
+        {
+          "path": "benches/input-digests.json",
+          "gitBlobOid": "a8cc78f2292bcf43b4aba6fbc8c838b430e2e77e",
+          "sha256": "db3ad29374d1a19a9cf454c6b1cfe21463d3a138a14822733330809fbd6cfc11"
+        },
+        {
+          "path": "benches/v9_workloads.rs",
+          "gitBlobOid": "a1fc566adf1cad8ef9aa04d384c9826080bcb129",
+          "sha256": "7ac227843519f8d473ed4eb77944070ba8438f5759b11c9774d6473c0e31db24"
+        }
+      ]
+    }
+  ],
+  "interpretation": "Top-level CampaignSource trees are exact; each authored Cargo.lock binds its compiled Git dependencies. Historical V9 baselines retain their own dependency graph."
+}

@@ -30,6 +30,9 @@ relationships:
 
 FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 [TM-004](infinite-trace-test-matrix.md), the accepted TL-13 provider matrix.
+FR-043 through FR-055, NFR-007 through NFR-009, and TC-175 through TC-199 are
+detailed in [TM-006](v1-verification-test-matrix.md). Its planned campaign
+rows are not completion evidence.
 
 ## Stakeholder Requirement Coverage
 
