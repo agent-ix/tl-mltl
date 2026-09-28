@@ -547,7 +547,7 @@ fn validate_plan(repo: &Path, member: &Member) -> Result<PathBuf, String> {
     let expected_path = procedure_path(member)?.to_string_lossy().to_string();
     if !contents
         .lines()
-        .any(|line| line == format!("execution_procedure: {expected_path}"))
+        .any(|line| line == format!("- Execution procedure: `{expected_path}`."))
         || !contents
             .lines()
             .any(|line| line == format!("definition_version: {}", member.definition_version))
@@ -957,10 +957,50 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        binding, member_environment, member_toolchains, selected_inputs, sha256,
+        binding, member_environment, member_toolchains, selected_inputs, sha256, validate_plan,
         validate_rust_binding, validate_toolchains, verify_checker_sources, verify_control_file,
         Contracts, Machine, Member, Procedure, ProcedureEnvironment, Tool,
     };
+
+    // Trace: FR-055-AC-1, TC-197
+    #[test]
+    fn all_authored_quire_plans_bind_exact_procedures_and_versions() {
+        let definition: super::Definition = serde_json::from_str(include_str!(
+            "../../campaign/stage1-campaign-definition.json"
+        ))
+        .unwrap();
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        assert_eq!(definition.members.len(), 120);
+        for member in &definition.members {
+            validate_plan(root, member).unwrap();
+        }
+    }
+
+    // Trace: FR-055-AC-1, TC-197
+    #[test]
+    fn current_quire_plan_binds_exact_procedure_and_version() {
+        let member = Member {
+            name: "V1.independent_oracle".into(),
+            plan_id: "MP-008".into(),
+            definition_version: "tl.v1.v1-independent-oracle/v1".into(),
+            checker_procedure: None,
+        };
+        let root = tempfile::tempdir().unwrap();
+        let plans = root.path().join("spec/assurance");
+        std::fs::create_dir_all(&plans).unwrap();
+        let plan = plans.join("MP-008-v1-independent-oracle.md");
+        let contents = include_str!("../../spec/assurance/MP-008-v1-independent-oracle.md");
+        std::fs::write(&plan, contents).unwrap();
+        assert!(validate_plan(root.path(), &member).is_ok());
+
+        let changed = contents.replace(
+            "- Execution procedure: `campaign/procedures/v1-independent-oracle.json`.",
+            "- Execution procedure: `campaign/procedures/v1-other.json`.",
+        );
+        assert_ne!(changed, contents);
+        std::fs::write(&plan, changed).unwrap();
+        assert!(validate_plan(root.path(), &member).is_err());
+    }
 
     // Trace: FR-055-AC-1, TC-197
     #[test]

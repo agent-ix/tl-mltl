@@ -230,6 +230,23 @@ candidate harness into baseline revision `ae85de4609fcdb1db525eb590f41ed3febcc21
 That run is an exact-graph diagnostic for its own revisions; its receipt does
 not prove the 120-member Campaign's different source graph.
 
+The current 0.3 source heads (`tl-syntax` `6aa9b11`, `tl-parse` `86d4306`,
+`tl-rewrite` `e48cf0b`, `tl-oracle` `2391e5b`, and this PR's measured `tl-mltl`
+`9c68ef0`) have the Campaign-owned targets, but cannot be substituted into
+this definition yet. The current parse benchmark adds a parser-only group;
+its `benches/parser_roundtrip.rs` is not byte-equal to the authored baseline
+`225a330`. The current rewrite benchmark moves report verification outside
+the timed closure; its `benches/rewrite_rules.rs` is not byte-equal to baseline
+`9056b8b`. The pinned V9 input files still match. A trial closure with clean
+checkouts, exact tree and lock digests, and the current candidate harness
+digests is refused by `tl_campaign_config` at
+`tl-parse-baseline/benches/parser_roundtrip.rs harness bytes changed`; the
+rewrite harness has the same independent mismatch. A new paired V9 baseline
+requires explicit source revisions with reviewed, executable harness changes
+and a new measurement. The current rewrite source also retains older 0.3
+`tl-parse` and `tl-mltl` lock revisions, which must remain explicit in any
+proposed closure. No current-head Campaign receipt exists.
+
 `tl_campaign_config --definition FILE --machine FILE --output FILE` derives
 the Quoin configuration from authored procedures. It checks each selected
 checkout's Git revision, cleanliness, and full-tree inventory digest; selected
