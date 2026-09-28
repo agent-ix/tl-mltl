@@ -30,6 +30,10 @@ when Cargo is the producer. Member-specific environments may select a different
 `PATH` and `RUSTC`; missing or contradictory bindings are refused before
 measurement. Duplicate procedure environment names are refused before a
 binding is emitted.
+For cargo-mutants under the Campaign's `process-group-v1` containment,
+configuration requires one exact literal `TL_QUOIN_PROCESS_GROUP_V1=1` entry
+in each authored procedure. A missing, duplicate, runtime-selected, or wrong
+value is refused; a non-mutants procedure cannot select that opt-in.
 For branch coverage, the selected Cargo LLVM coverage procedure requires a
 nightly Rust release and `LLVM_COV` and `LLVM_PROFDATA` bound to absolute file
 paths.
@@ -48,7 +52,7 @@ human prerequisite for implementation and is never set by a test result.
 | FR-055-AC-1 | Each V1–V11 milestone has a named executable gate and precise pass, failure and incomplete states. | Test (TC-197) |
 | FR-055-AC-2 | A missing/failed/stale lane cannot make an aggregate green, while one failed lane does not erase sibling measurements. | Test (TC-198) |
 | FR-055-AC-3 | Automated evidence does not mark TL-215 accepted, publish a source release, assert native parity or claim certification. | Test (TC-199) |
-| FR-055-AC-4 | Campaign config refuses a Cargo-family member whose selected Rust identity, `RUSTC`, `PATH` resolution, or authored Cargo version disagree, and refuses duplicate procedure environment names; exact member environment overrides can bind stable and nightly members in one campaign. Branch coverage additionally requires nightly Rust and `LLVM_COV` and `LLVM_PROFDATA` bound to absolute file paths. | Test (TC-200) |
+| FR-055-AC-4 | Campaign config refuses a Cargo-family member whose selected Rust identity, `RUSTC`, `PATH` resolution, or authored Cargo version disagree, and refuses duplicate procedure environment names; exact member environment overrides can bind stable and nightly members in one campaign. Branch coverage additionally requires nightly Rust and `LLVM_COV` and `LLVM_PROFDATA` bound to absolute file paths. Cargo-mutants requires exactly one literal `TL_QUOIN_PROCESS_GROUP_V1=1` and other producers refuse it. | Test (TC-200) |
 
 ## Dependencies
 
