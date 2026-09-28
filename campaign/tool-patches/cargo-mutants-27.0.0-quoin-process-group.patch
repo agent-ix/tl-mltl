@@ -1,0 +1,236 @@
+--- a/src/process/unix.rs
++++ b/src/process/unix.rs
+@@ -1,9 +1,11 @@
+ use std::os::unix::process::{CommandExt, ExitStatusExt};
+ use std::process::{Child, Command, ExitStatus};
++use std::thread;
++use std::time::{Duration, Instant};
+ 
+ use anyhow::bail;
+ use nix::errno::Errno;
+-use nix::sys::signal::{Signal, killpg};
++use nix::sys::signal::{Signal, kill, killpg};
+ use nix::unistd::Pid;
+ use tracing::warn;
+ 
+@@ -14,8 +16,18 @@
+ #[allow(unknown_lints, clippy::needless_pass_by_ref_mut)] // To match Windows
+ #[mutants::skip] // hard to exercise the ESRCH edge case
+ pub(super) fn terminate_child(child: &mut Child) -> Result<()> {
++    terminate_child_with_mode(child, quoin_process_group())
++}
++
++fn terminate_child_with_mode(child: &mut Child, quoin_group: bool) -> Result<()> {
+     let pid = Pid::from_raw(child.id().try_into().unwrap());
+-    match killpg(pid, Signal::SIGTERM) {
++    // Quoin owns the shared group; never signal that whole group here.
++    let signal = if quoin_group {
++        kill(pid, Signal::SIGTERM)
++    } else {
++        killpg(pid, Signal::SIGTERM)
++    };
++    let signal_result: Result<()> = match signal {
+         Ok(()) => Ok(()),
+         Err(Errno::ESRCH) => {
+             Ok(()) // Probably already gone
+@@ -29,14 +41,40 @@
+             warn!("{}", message);
+             bail!(message);
+         }
++    };
++    signal_result?;
++    if quoin_group {
++        // Process::terminate waits without a deadline. A SIGTERM-resistant
++        // child must not hold cargo-mutants until Quoin's outer timeout.
++        let deadline = Instant::now() + Duration::from_millis(250);
++        while child.try_wait()?.is_none() {
++            if Instant::now() >= deadline {
++                match kill(pid, Signal::SIGKILL) {
++                    Ok(()) | Err(Errno::ESRCH) => break,
++                    Err(errno) => bail!("failed to kill child after SIGTERM: error {errno}"),
++                }
++            }
++            thread::sleep(Duration::from_millis(10));
++        }
+     }
++    Ok(())
+ }
+ 
+ #[mutants::skip]
+ pub(super) fn configure_command(command: &mut Command) {
+-    command.process_group(0);
++    configure_command_with_mode(command, quoin_process_group());
+ }
+ 
++fn quoin_process_group() -> bool {
++    std::env::var_os("TL_QUOIN_PROCESS_GROUP_V1").as_deref() == Some(std::ffi::OsStr::new("1"))
++}
++
++fn configure_command_with_mode(command: &mut Command, quoin_group: bool) {
++    if !quoin_group {
++        command.process_group(0);
++    }
++}
++
+ impl From<ExitStatus> for Exit {
+     fn from(status: ExitStatus) -> Self {
+         if let Some(code) = status.code() {
+@@ -52,3 +90,66 @@
+         }
+     }
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use std::io::{BufRead, BufReader, Read};
++    use std::process::Stdio;
++
++    #[test]
++    fn default_mode_keeps_private_process_group() {
++        let mut command = Command::new("sleep");
++        command.arg("30");
++        configure_command_with_mode(&mut command, false);
++        let mut child = command.spawn().unwrap();
++        let child_pid = Pid::from_raw(child.id().try_into().unwrap());
++        assert_eq!(nix::unistd::getpgid(Some(child_pid)).unwrap(), child_pid);
++        assert_ne!(child_pid, nix::unistd::getpgrp());
++        terminate_child_with_mode(&mut child, false).unwrap();
++        assert!(!child.wait().unwrap().success());
++    }
++
++    #[test]
++    fn quoin_opt_in_inherits_group_and_bounds_sigterm_resistant_child() {
++        let mut command = Command::new("sh");
++        command
++            .args(["-c", "trap '' TERM; printf ready; exec sleep 30"])
++            .stdout(Stdio::piped());
++        configure_command_with_mode(&mut command, true);
++        let mut child = command.spawn().unwrap();
++        let mut ready = [0; 5];
++        child.stdout.take().unwrap().read_exact(&mut ready).unwrap();
++        assert_eq!(&ready, b"ready");
++        let child_pid = Pid::from_raw(child.id().try_into().unwrap());
++        assert_eq!(
++            nix::unistd::getpgid(Some(child_pid)).unwrap(),
++            nix::unistd::getpgrp()
++        );
++        let start = Instant::now();
++        terminate_child_with_mode(&mut child, true).unwrap();
++        assert!(start.elapsed() < Duration::from_secs(2));
++        assert!(!child.wait().unwrap().success());
++    }
++
++    #[test]
++    fn quoin_opt_in_leaves_descendant_for_outer_group_cleanup() {
++        // This is the cooperative boundary: Quoin must terminate the group
++        // when cargo-mutants exits. The inner timeout signals only its child.
++        let mut command = Command::new("sh");
++        command
++            .args(["-c", "sleep 30 & printf '%s\\n' \"$!\"; exec sleep 30"])
++            .stdout(Stdio::piped());
++        configure_command_with_mode(&mut command, true);
++        let mut child = command.spawn().unwrap();
++        let mut line = String::new();
++        BufReader::new(child.stdout.take().unwrap())
++            .read_line(&mut line)
++            .unwrap();
++        let descendant = Pid::from_raw(line.trim().parse().unwrap());
++        terminate_child_with_mode(&mut child, true).unwrap();
++        child.wait().unwrap();
++        assert!(kill(descendant, None).is_ok());
++        kill(descendant, Signal::SIGKILL).unwrap();
++    }
++}
+--- a/src/copy_tree.rs
++++ b/src/copy_tree.rs
+@@ -3,6 +3,8 @@
+ //! Copy a source tree, with some exclusions, to a new temporary directory.
+ 
+ use std::fs;
++#[cfg(unix)]
++use std::os::unix::fs::PermissionsExt;
+ use std::path::Path;
+ use std::sync::atomic::{AtomicBool, Ordering};
+ 
+@@ -69,6 +71,20 @@
+     options: &Options,
+     console: &Console,
+ ) -> Result<TempDir> {
++    let writable_copy =
++        std::env::var_os("TL_QUOIN_PROCESS_GROUP_V1").as_deref() == Some(std::ffi::OsStr::new("1"));
++    copy_tree_with_mode(from_path, name_base, options, console, writable_copy)
++}
++
++fn copy_tree_with_mode(
++    from_path: &Utf8Path,
++    name_base: &str,
++    options: &Options,
++    console: &Console,
++    writable_copy: bool,
++) -> Result<TempDir> {
++    #[cfg(not(unix))]
++    let _ = writable_copy;
+     let mut total_bytes = 0;
+     let mut total_files = 0;
+     let reflink_supported = AtomicBool::new(true);
+@@ -127,6 +143,15 @@
+         if ft.is_file() {
+             let bytes_copied =
+                 copy_file(entry.path(), dest_path.as_std_path(), &reflink_supported)?;
++            #[cfg(unix)]
++            if writable_copy {
++                // EA projects 0400 source. Only the private copy may be
++                // writable so cargo-mutants can replace one mutant at a time.
++                let metadata = fs::metadata(&dest_path)?;
++                let mut permissions = metadata.permissions();
++                permissions.set_mode(permissions.mode() | 0o200);
++                fs::set_permissions(&dest_path, permissions)?;
++            }
+             total_bytes += bytes_copied;
+             total_files += 1;
+             console.copy_progress(dest, total_bytes);
+@@ -166,6 +191,43 @@
+     use crate::options::Options;
+ 
+     use super::copy_tree;
++    #[cfg(unix)]
++    use super::copy_tree_with_mode;
++
++    #[cfg(unix)]
++    #[test]
++    fn quoin_opt_in_only_makes_private_copy_writable() -> Result<()> {
++        use std::os::unix::fs::PermissionsExt;
++
++        let source_dir = TempDir::new().unwrap();
++        let source = Utf8PathBuf::try_from(source_dir.path().to_owned()).unwrap();
++        create_dir(source.join("src"))?;
++        let source_file = source.join("src/lib.rs");
++        write(&source_file, "pub fn original() {}\n")?;
++        std::fs::set_permissions(&source_file, std::fs::Permissions::from_mode(0o400))?;
++        let options = Options::from_arg_strs(["mutants"]);
++        let default_copy =
++            copy_tree_with_mode(&source, "default", &options, &Console::new(), false)?;
++        let default_mode = std::fs::metadata(default_copy.path().join("src/lib.rs"))?
++            .permissions()
++            .mode();
++        assert_eq!(default_mode & 0o200, 0);
++
++        let quoin_copy = copy_tree_with_mode(&source, "quoin", &options, &Console::new(), true)?;
++        let copied = quoin_copy.path().join("src/lib.rs");
++        let copied_mode = std::fs::metadata(&copied)?.permissions().mode();
++        assert_ne!(copied_mode & 0o200, 0);
++        write(&copied, "pub fn mutated() {}\n")?;
++        assert_eq!(
++            std::fs::read_to_string(&source_file)?,
++            "pub fn original() {}\n"
++        );
++        assert_eq!(
++            std::fs::metadata(&source_file)?.permissions().mode() & 0o777,
++            0o400
++        );
++        Ok(())
++    }
+ 
+     /// Test for regression of <https://github.com/sourcefrog/cargo-mutants/issues/450>
+     #[test]
