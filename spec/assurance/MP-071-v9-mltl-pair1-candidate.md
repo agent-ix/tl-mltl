@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v9.mltl_pair1_candidate.verified
 definition_version: tl.v9.mltl-pair1-candidate/v2
+execution_procedure: campaign/procedures/v9-mltl-pair1-candidate.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

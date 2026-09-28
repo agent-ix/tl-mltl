@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v4.mltl_wire_cli_decode.bounded_no_crash
 definition_version: tl.v4.mltl-wire-cli-decode/v2
+execution_procedure: campaign/procedures/v4-mltl-wire-cli-decode.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

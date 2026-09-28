@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v6.ordinary_counterexample_replay.verified
 definition_version: tl.v6.ordinary-counterexample-replay/v2
+execution_procedure: campaign/procedures/v6-ordinary-counterexample-replay.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

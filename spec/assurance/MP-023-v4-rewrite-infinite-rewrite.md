@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v4.rewrite_infinite_rewrite.bounded_no_crash
 definition_version: tl.v4.rewrite-infinite-rewrite/v2
+execution_procedure: campaign/procedures/v4-rewrite-infinite-rewrite.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

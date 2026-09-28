@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v7.mltl_lasso_limits.passed
 definition_version: tl.v7.mltl-lasso-limits/v2
+execution_procedure: campaign/procedures/v7-mltl-lasso-limits.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v7.rewrite_record_limits.passed
 definition_version: tl.v7.rewrite-record-limits/v2
+execution_procedure: campaign/procedures/v7-rewrite-record-limits.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

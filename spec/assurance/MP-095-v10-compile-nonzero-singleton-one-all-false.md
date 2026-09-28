@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v10.compile_nonzero_singleton_one_all_false.verified
 definition_version: tl.v10.compile-nonzero-singleton-one-all-false/v2
+execution_procedure: campaign/procedures/v10-compile-nonzero-singleton-one-all-false.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

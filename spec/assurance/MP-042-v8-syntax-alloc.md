@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v8.syntax_alloc.verified
 definition_version: tl.v8.syntax-alloc/v2
+execution_procedure: campaign/procedures/v8-syntax-alloc.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v1_finite_lasso_oracle.passed
 definition_version: tl.v1.v1-finite-lasso-oracle/v2
+execution_procedure: campaign/procedures/v1-finite-lasso-oracle.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

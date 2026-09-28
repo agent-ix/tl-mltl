@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v3_semantic_properties.passed
 definition_version: tl.v1.v3-semantic-properties/v2
+execution_procedure: campaign/procedures/v3-semantic-properties.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:
