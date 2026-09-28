@@ -236,6 +236,37 @@ fn validate_rust_binding(
                 "{member}: Cargo executable version differs from procedure"
             ));
         }
+        if v8_coverage {
+            if !procedure.environment.iter().any(|entry| {
+                entry.name == "CARGO_HOME"
+                    && entry.kind == "runtime"
+                    && entry.value == "host:CARGO_HOME"
+            }) {
+                return Err(format!("{member}: coverage must bind host:CARGO_HOME"));
+            }
+            let cargo_home = environment
+                .get("CARGO_HOME")
+                .ok_or(format!("{member}: coverage has no CARGO_HOME"))?;
+            if !Path::new(cargo_home).is_absolute() {
+                return Err(format!("{member}: CARGO_HOME must be absolute"));
+            }
+            let output = Command::new(&cargo.executable)
+                .args(["llvm-cov", "--version"])
+                .env_clear()
+                .envs(environment)
+                .output()
+                .map_err(|error| format!("{member}: Cargo plugin probe: {error}"))?;
+            if !output.status.success() {
+                return Err(format!("{member}: Cargo plugin probe failed"));
+            }
+            let selected = String::from_utf8(output.stdout).map_err(|error| error.to_string())?;
+            let mut fields = selected.split_whitespace();
+            if fields.next() != Some("cargo-llvm-cov") || fields.next() != Some("0.8.7") {
+                return Err(format!(
+                    "{member}: Cargo resolves a different cargo-llvm-cov"
+                ));
+            }
+        }
     }
     Ok(())
 }
@@ -1453,12 +1484,21 @@ mod tests {
             std::fs::write(&path, format!("#!/bin/sh\nprintf '%s\\n' '{response}'\n")).unwrap();
             std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
         }
+        std::fs::write(
+            root.join("cargo"),
+            b"#!/bin/sh\nif [ \"$1\" = llvm-cov ]; then\n  if [ -x \"$CARGO_HOME/bin/cargo-llvm-cov\" ]; then exec \"$CARGO_HOME/bin/cargo-llvm-cov\" \"$@\"; fi\n  exec cargo-llvm-cov \"$@\"\nfi\necho cargo 1.100.0-nightly\n",
+        )
+        .unwrap();
         let procedure: Procedure = serde_json::from_str(include_str!(
             "../../campaign/procedures/v8-syntax-core.json"
         ))
         .unwrap();
         let environment = BTreeMap::from([
             ("PATH".into(), root.to_string_lossy().into_owned()),
+            (
+                "CARGO_HOME".into(),
+                root.join("cargo-home").to_string_lossy().into_owned(),
+            ),
             (
                 "RUSTC".into(),
                 root.join("rustc").to_string_lossy().into_owned(),
@@ -1533,6 +1573,21 @@ mod tests {
         std::fs::write(&plugin_path, &plugin_bytes).unwrap();
         tools.get_mut("cargo-llvm-cov@0.8.7").unwrap().digest = sha256(&plugin_bytes);
 
+        let shadow = root.join("cargo-home/bin/cargo-llvm-cov");
+        std::fs::create_dir_all(shadow.parent().unwrap()).unwrap();
+        std::fs::write(&shadow, b"#!/bin/sh\necho cargo-llvm-cov 0.9.0\n").unwrap();
+        std::fs::set_permissions(&shadow, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(validate_rust_binding(
+            "V8.syntax_core",
+            &procedure,
+            &identity,
+            &environment,
+            &tools
+        )
+        .unwrap_err()
+        .contains("Cargo resolves a different cargo-llvm-cov"));
+        std::fs::remove_file(&shadow).unwrap();
+
         let substituted = root.join("other-plugin");
         std::fs::write(&substituted, &plugin_bytes).unwrap();
         tools.get_mut("cargo-llvm-cov@0.8.7").unwrap().executable =
@@ -1571,6 +1626,11 @@ mod tests {
         let cov = write_tool("llvm-cov", "LLVM version 23.1.1-rust-1.100.0-nightly");
         let profdata = write_tool("llvm-profdata", "LLVM version 23.1.1-rust-1.100.0-nightly");
         let cargo = write_tool("cargo", "cargo 1.100.0-nightly (test)");
+        std::fs::write(
+            &cargo,
+            b"#!/bin/sh\nif [ \"$1\" = llvm-cov ]; then exec cargo-llvm-cov \"$@\"; fi\necho cargo 1.100.0-nightly\n",
+        )
+        .unwrap();
         let plugin = write_tool("cargo-llvm-cov", "cargo-llvm-cov 0.8.7");
         let tools = BTreeMap::from([
             (
@@ -1600,6 +1660,14 @@ mod tests {
             (
                 "PATH".into(),
                 directory.path().to_string_lossy().into_owned(),
+            ),
+            (
+                "CARGO_HOME".into(),
+                directory
+                    .path()
+                    .join("cargo-home")
+                    .to_string_lossy()
+                    .into_owned(),
             ),
             ("RUSTC".into(), nightly.to_string_lossy().into_owned()),
             ("LLVM_COV".into(), cov.to_string_lossy().into_owned()),
