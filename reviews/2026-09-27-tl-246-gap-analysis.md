@@ -68,3 +68,15 @@ Reviewed at `09951830acf7ba0d6fa10845e8cf61ff5fe0dc50`. The published definition
 ## Disposition verdict — round 3
 
 **FAIL** — high FND-001 remains open at `09951830acf7ba0d6fa10845e8cf61ff5fe0dc50`. The 120-plan parser fix does not establish Campaign execution or acceptance.
+
+## Dispositions — round 4
+
+Reviewed at `5143f02d8eeb614fb94a163cc96eca107758bf28`. The published CampaignDefinition and source closure are unchanged. The code fix and copied review files add no measured run, and the PR body continues to disclose the local-only scratch baseline trials and host-specific Python limitation.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | still-open | Candidate 5143f02 still has historical definition/closure pins and no full current-source 120-member EA/Quoin receipt. The local scratch preflight and smoke results remain prerequisites, not Campaign acceptance evidence. |
+
+## Disposition verdict — round 4
+
+**FAIL** — high FND-001 remains open. GitHub reports mergeable mechanics, but TL-246 acceptance remains unproved.

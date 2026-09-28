@@ -46,3 +46,15 @@ Reviewed at `09951830acf7ba0d6fa10845e8cf61ff5fe0dc50`. The changed `validate_pl
 ## Disposition verdict — round 3
 
 **CONDITIONAL** for inspected code at `09951830acf7ba0d6fa10845e8cf61ff5fe0dc50`: one medium plan-version binding defect remains. The prior FND-001 is a no-finding placeholder, so it needs no disposition.
+
+## Dispositions — round 4
+
+Reviewed at `5143f02d8eeb614fb94a163cc96eca107758bf28`. The parser now splits the plan's YAML frontmatter, deserializes `definition_version`, and compares the typed value with the Campaign member. The body-spoof, missing, wrong and duplicate version mutations fail in a focused test; the all-120-plan test remains.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-002 | fixed | 5143f02d8eeb614fb94a163cc96eca107758bf28 — typed `PlanFrontmatter` deserialization binds the exact version before config generation; an expected version line in the body cannot satisfy it. |
+
+## Disposition verdict — round 4
+
+**PASS** for the inspected config fix. No real SR-077 finding remains open. This does not establish a full Campaign result.
