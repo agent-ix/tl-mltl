@@ -38,15 +38,14 @@ current main revision, the finite past mapper admits 306 cells and refuses
 1,044. The checker tests bind that partition to current code; the retained
 TL-217 report cannot be reused as a Campaign result for this revision.
 
-The checked-in CampaignDefinition and source closure remain the historical
-source graph. The current mlTL checkout has the V1/V2/V11 test targets and V9
-benchmark harness. The parse and rewrite draft PR #52 heads named by the
-historical closure also contain their required targets, but their Cargo locks
-select the 0.4 graph (`tl-syntax` `6e2fc17`, `tl-oracle` `9bf3994`, and for
-rewrite, `tl-mltl` `29cea002`). This checkout selects the 0.3 graph
-(`tl-syntax` `6aa9b11`, `tl-oracle` `2391e5b`). A coherent source closure for
-this candidate has not been established or measured. The retained definition
-is not a current-candidate Campaign result.
+The checked-in CampaignDefinition and source closure bind the current 0.3
+qualification sources: syntax `6aa9b11`, parse `86d4306`, rewrite `e48cf0b`,
+oracle `2391e5b`, and a clean measured mlTL checkout at `dfa3522`. The parse
+and rewrite V9 baseline aliases use the published harness-staging commits
+`02e167e` and `ac48980`. Each source's Cargo lock and its nested Git
+dependencies are recorded verbatim in the closure; the rewrite lock still
+selects older 0.3 parse and mlTL revisions. This source binding is a
+precondition for measurement, not a current-candidate Campaign result.
 
 V4 has a fixed native gate that reconciles five checked-in libFuzzer reports
 across the four production crates, including both mlTL mapping and evaluation.
@@ -215,7 +214,7 @@ commits; it does not retroactively claim to have measured the artifact commit.
 `stage1-campaign-definition.json` is the external control-plane definition
 for 120 direct native EA measurements (118 required and two optional
 diagnostics). Its `tl-mltl` source is the clean
-`29cea002008f4a6855f54b73ecd63c234499fa3c` checkout. Keep this
+`dfa3522d597bc1882128cefe1fe52b76b4610d4d` checkout. Keep this
 control-plane checkout separate from that measured checkout: the definition
 and generated machine config are later artifacts that name the measured tree,
 so they cannot be part of their own source digest. Pass the clean measured
@@ -230,22 +229,17 @@ candidate harness into baseline revision `ae85de4609fcdb1db525eb590f41ed3febcc21
 That run is an exact-graph diagnostic for its own revisions; its receipt does
 not prove the 120-member Campaign's different source graph.
 
-The current 0.3 source heads (`tl-syntax` `6aa9b11`, `tl-parse` `86d4306`,
-`tl-rewrite` `e48cf0b`, `tl-oracle` `2391e5b`, and this PR's measured `tl-mltl`
-`9c68ef0`) have the Campaign-owned targets, but cannot be substituted into
-this definition yet. The current parse benchmark adds a parser-only group;
-its `benches/parser_roundtrip.rs` is not byte-equal to the authored baseline
-`225a330`. The current rewrite benchmark moves report verification outside
-the timed closure; its `benches/rewrite_rules.rs` is not byte-equal to baseline
-`9056b8b`. The pinned V9 input files still match. A trial closure with clean
-checkouts, exact tree and lock digests, and the current candidate harness
-digests is refused by `tl_campaign_config` at
-`tl-parse-baseline/benches/parser_roundtrip.rs harness bytes changed`; the
-rewrite harness has the same independent mismatch. A new paired V9 baseline
-requires explicit source revisions with reviewed, executable harness changes
-and a new measurement. The current rewrite source also retains older 0.3
-`tl-parse` and `tl-mltl` lock revisions, which must remain explicit in any
-proposed closure. No current-head Campaign receipt exists.
+The parse baseline `02e167e` and rewrite baseline `ac48980` are published
+source revisions with the current candidates' V9 benchmark and input bytes.
+Their locked Criterion smoke tests passed in the local baseline staging trial,
+and the exact candidate/baseline harness digests are in `source-closure.json`. The two
+benchmarks still need a new paired native measurement at this Campaign graph.
+An honest partial Darwin machine fixture passes the exact source, lock,
+harness, checker, and early Cargo bindings, then stops at the missing authored
+`cargo-fuzz@0.13.2` tool (this host has 0.13.1). This host also lacks the
+authored Python 3.13.11 executable. The retained Linux fixture points at
+executables that are not present on Darwin. No full 120-member current-source
+EA/Quoin receipt exists.
 
 `tl_campaign_config --definition FILE --machine FILE --output FILE` derives
 the Quoin configuration from authored procedures. It checks each selected

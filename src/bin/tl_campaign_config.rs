@@ -991,6 +991,34 @@ mod tests {
 
     // Trace: FR-055-AC-1, TC-197
     #[test]
+    fn authored_tl_producers_use_the_measured_package_version() {
+        let package_version = env!("CARGO_PKG_VERSION");
+        let definition: serde_json::Value = serde_json::from_str(include_str!(
+            "../../campaign/stage1-campaign-definition.json"
+        ))
+        .unwrap();
+        assert_eq!(definition["subjectVersion"], package_version);
+        let members = definition["members"].as_array().unwrap();
+        assert_eq!(members.len(), 120);
+        for member in members {
+            assert_eq!(
+                member["checkerProcedure"]["producerName"],
+                "tl_campaign_check"
+            );
+            assert_eq!(
+                member["checkerProcedure"]["producerVersion"],
+                package_version
+            );
+        }
+        let generator: serde_json::Value =
+            serde_json::from_str(include_str!("../../campaign/procedures/v10-inputs.json"))
+                .unwrap();
+        assert_eq!(generator["producerName"], "tl_v10_generate");
+        assert_eq!(generator["producerVersion"], package_version);
+    }
+
+    // Trace: FR-055-AC-1, TC-197
+    #[test]
     fn current_quire_plan_binds_exact_procedure_and_version() {
         let member = Member {
             name: "V1.independent_oracle".into(),

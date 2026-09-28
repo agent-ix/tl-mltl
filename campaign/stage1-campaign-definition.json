@@ -2,42 +2,42 @@
   "schemaVersion": "engineering-assurance.campaign-definition/v1",
   "id": "tl-stage1-v1-v11-mechanical",
   "subjectName": "tl-libraries-stage1",
-  "subjectVersion": "0.4.0",
+  "subjectVersion": "0.3.0",
   "sourceGraph": [
     {
       "repository": "tl-syntax",
-      "revision": "6e2fc17fcfba60c33ab264772bb25550a9c81853",
-      "digest": "66ddeb99101843073e3e62f94a5b62aee6bb04a5e4f55c5987a7e0c33e78eee2"
+      "revision": "6aa9b11e29040d64b437da87c9944e3dedd34a86",
+      "digest": "9e49426a8a68f776e9b3f0a179aca4bfe48d700ae5e4f75898a948c0861dd61c"
     },
     {
       "repository": "tl-parse",
-      "revision": "5ca6f76936c95232a3a8b86ce33f6f16c4aab606",
-      "digest": "2c8b6e3f5c631b3b1b7e7a4a519ef80417bbffa211d0486aa5add23c8451ba9d"
+      "revision": "86d43068b927e3973481222b6f3a7072d81afb81",
+      "digest": "5288daf89d48b27e749c2408ef98fb2cd62cf1af18a803a3c02d1c78bd15d8b1"
     },
     {
       "repository": "tl-mltl",
-      "revision": "29cea002008f4a6855f54b73ecd63c234499fa3c",
-      "digest": "a23704cd70ff39d98e4d5c152b8bb5aadc8b6a7d4e4ce9bc865de9f2ebe88d35"
+      "revision": "dfa3522d597bc1882128cefe1fe52b76b4610d4d",
+      "digest": "87d064052e7c7ef98467d6551227bf85fe4729ec9b922b800ebcebf483c3d279"
     },
     {
       "repository": "tl-rewrite",
-      "revision": "8bf12ec736c2c4016f5fef8fe52d50c9b2f1a422",
-      "digest": "6d084e544fa97f2b138053ecfd6899d9923257d42af4162bde836a35d4e2c9d6"
+      "revision": "e48cf0b6b782d0d40aa3b56708a43558287f4ede",
+      "digest": "a4ef29a74f0b28dbefdc71095ed5ade976e045c76cf6a5c986d0314a5d1d801d"
     },
     {
       "repository": "tl-oracle",
-      "revision": "9bf3994d4c67ee0a9a53dc31316404b9edf14df9",
-      "digest": "662e31afefe3cbee76fdd4ba50c2e5bd1b5f4d983f88739d696e46f868deba85"
+      "revision": "2391e5b7402ae02e8d138f3901b43a1f07acd1b6",
+      "digest": "85b32414ca491dd94e9e828e7e3199f86c31e50235ae6711411e62864fc87b4c"
     },
     {
       "repository": "tl-parse-baseline",
-      "revision": "225a3300963199e523958f4abe4c16cc9dcca641",
-      "digest": "4bce777ea0c1281eb8d8bf49817fb84b58f96dc410f0c8b0a8c8f0d95c5380ef"
+      "revision": "02e167e6728e0daf574dc637700d970a9dcb22e7",
+      "digest": "84aa910867fb8672c680f11a0fffe1d1b8a3090124d09c7247b24a314b7968c7"
     },
     {
       "repository": "tl-rewrite-baseline",
-      "revision": "9056b8b31f3f7f3772d2bd811c4f6edd2d89b509",
-      "digest": "541989783d8d79758df959614284ba66bb6e9c7bb2f4ec8594ced483117b9589"
+      "revision": "ac48980c03c7f87a7311e9536ac1e975fb13e1b4",
+      "digest": "7996e7ecf0fb8707171ef5700d5ee2b5dcb2b57b254b7c6593dd5bb98da3608f"
     },
     {
       "repository": "tl-mltl-baseline",
@@ -61,7 +61,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -141,7 +141,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -221,7 +221,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -301,7 +301,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -381,7 +381,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -461,7 +461,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -541,7 +541,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -621,7 +621,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -701,7 +701,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -781,7 +781,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -861,7 +861,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -941,7 +941,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1021,7 +1021,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1101,7 +1101,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1181,7 +1181,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1261,7 +1261,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1341,7 +1341,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1421,7 +1421,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1501,7 +1501,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1581,7 +1581,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1661,7 +1661,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1741,7 +1741,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1821,7 +1821,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1901,7 +1901,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -1981,7 +1981,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2061,7 +2061,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2141,7 +2141,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2221,7 +2221,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2301,7 +2301,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2381,7 +2381,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2461,7 +2461,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2541,7 +2541,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2621,7 +2621,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2701,7 +2701,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2781,7 +2781,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2863,7 +2863,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -2943,7 +2943,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3023,7 +3023,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3103,7 +3103,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3183,7 +3183,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3265,7 +3265,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3345,7 +3345,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3425,7 +3425,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3505,7 +3505,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3585,7 +3585,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3665,7 +3665,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3747,7 +3747,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3829,7 +3829,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3909,7 +3909,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -3991,7 +3991,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4073,7 +4073,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4153,7 +4153,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4235,7 +4235,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4317,7 +4317,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4397,7 +4397,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4479,7 +4479,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4561,7 +4561,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4641,7 +4641,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4723,7 +4723,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4805,7 +4805,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4889,7 +4889,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -4969,7 +4969,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5051,7 +5051,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5133,7 +5133,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5217,7 +5217,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5297,7 +5297,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5379,7 +5379,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5461,7 +5461,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5545,7 +5545,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5625,7 +5625,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5707,7 +5707,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5790,7 +5790,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5872,7 +5872,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -5955,7 +5955,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6037,7 +6037,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6120,7 +6120,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6202,7 +6202,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6285,7 +6285,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6367,7 +6367,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6450,7 +6450,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6532,7 +6532,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6615,7 +6615,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6697,7 +6697,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6780,7 +6780,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6862,7 +6862,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -6945,7 +6945,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7027,7 +7027,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7110,7 +7110,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7192,7 +7192,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7275,7 +7275,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7357,7 +7357,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7440,7 +7440,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7522,7 +7522,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7605,7 +7605,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7687,7 +7687,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7770,7 +7770,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7852,7 +7852,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -7935,7 +7935,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8017,7 +8017,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8100,7 +8100,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8182,7 +8182,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8265,7 +8265,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8347,7 +8347,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8430,7 +8430,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8512,7 +8512,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8595,7 +8595,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8677,7 +8677,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8760,7 +8760,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8842,7 +8842,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -8925,7 +8925,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -9007,7 +9007,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -9090,7 +9090,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -9170,7 +9170,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -9252,7 +9252,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -9332,7 +9332,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -9414,7 +9414,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -9494,7 +9494,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -9576,7 +9576,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -9658,7 +9658,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
@@ -9741,7 +9741,7 @@
       "checkerProcedure": {
         "schemaVersion": "engineering-assurance.measurement-procedure/v1",
         "producerName": "tl_campaign_check",
-        "producerVersion": "0.4.0",
+        "producerVersion": "0.3.0",
         "sourceRepository": "tl-mltl",
         "arguments": [
           {
