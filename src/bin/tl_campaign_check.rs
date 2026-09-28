@@ -964,6 +964,10 @@ fn v5_kill_rate(caught: u64, missed: u64) -> bool {
             .is_some_and(|(caught_scaled, viable_scaled)| caught_scaled >= viable_scaled)
 }
 
+fn v5_reviews_exact(observed: &BTreeSet<&str>, reviews: &BTreeMap<String, String>) -> bool {
+    observed.len() == reviews.len() && observed.iter().all(|name| reviews.contains_key(*name))
+}
+
 fn v5_survivor_reviews(member: &str, request: &Value) -> Option<BTreeMap<String, String>> {
     if member != "V5.mltl_mutation" {
         return Some(BTreeMap::new());
@@ -985,6 +989,18 @@ fn v5_survivor_reviews(member: &str, request: &Value) -> Option<BTreeMap<String,
         || source_inputs[0]["digest"] != manifest["sourceFileSha256"]
         || sha256(&fs::read("src/infinite/mod.rs").ok()?)
             != manifest["sourceFileSha256"].as_str()?
+    {
+        return None;
+    }
+    let lock_inputs: Vec<_> = request["inputs"]
+        .as_array()?
+        .iter()
+        .filter(|row| row["role"] == "source/Cargo.lock")
+        .collect();
+    if lock_inputs.len() != 1
+        || lock_inputs[0]["path"] != "Cargo.lock"
+        || lock_inputs[0]["digest"] != manifest["cargoLockSha256"]
+        || sha256(&fs::read("Cargo.lock").ok()?) != manifest["cargoLockSha256"].as_str()?
     {
         return None;
     }
@@ -1115,6 +1131,18 @@ fn mutation_accept_reviewed(
     {
         return false;
     }
+    let baseline_log_role = "mutants/mutants.out/log/baseline.log";
+    let Some(baseline_log) = raw_bytes(bundle, baseline_log_role) else {
+        return false;
+    };
+    if baseline_log.is_empty()
+        || !input
+            .raw_artifacts
+            .iter()
+            .any(|item| item.role == baseline_log_role && item.digest == sha256(baseline_log))
+    {
+        return false;
+    }
     let Some(test_argv) = baseline_phases[1]["argv"].as_array() else {
         return false;
     };
@@ -1212,9 +1240,7 @@ fn mutation_accept_reviewed(
     }
     let expected_exit = if missed == 0 { 0 } else { 2 };
     v5_kill_rate(caught, missed)
-        && observed_survivors
-            .iter()
-            .all(|name| reviews.contains_key(*name))
+        && v5_reviews_exact(&observed_survivors, reviews)
         && native["caught"].as_u64() == Some(caught)
         && native["unviable"].as_u64() == Some(unviable)
         && native["missed"].as_u64() == Some(missed)
@@ -2228,6 +2254,8 @@ mod tests {
                 "summary":summary,"phase_results":phases,
                 "diff_path":diff_path,"log_path":log_path}));
         }
+        artifacts.push(json!({"role":"mutants/mutants.out/log/baseline.log",
+            "digest":super::sha256(b"baseline passed"),"bytes":b"baseline passed"}));
         artifacts.push(json!({"role":"mutants/mutants.out/mutants.json",
             "digest":super::sha256(&serde_json::to_vec(&names.iter().map(|name|json!({"name":name}))
                 .collect::<Vec<_>>()).unwrap()),
@@ -2272,6 +2300,18 @@ mod tests {
             &result,
             &unreviewed
         ));
+        let mut extra_review = reviews.clone();
+        extra_review.insert("unobserved mutant".into(), super::sha256(b"extra"));
+        assert!(!super::mutation_accept_reviewed(
+            &input,
+            &bundle,
+            &result,
+            &extra_review
+        ));
+        assert!(!super::v5_reviews_exact(
+            &std::collections::BTreeSet::new(),
+            &reviews
+        ));
         let wrong_exit = json!({"process":{"terminalStatus":{"kind":"exit_code","value":0}}});
         assert!(!super::mutation_accept_reviewed(
             &input,
@@ -2300,6 +2340,30 @@ mod tests {
             &result,
             &reviews
         ));
+        let mut missing_baseline: RawBundle = serde_json::from_value(saved_bundle.clone()).unwrap();
+        missing_baseline
+            .artifacts
+            .retain(|item| item.role != "mutants/mutants.out/log/baseline.log");
+        assert!(!super::mutation_accept_reviewed(
+            &input,
+            &missing_baseline,
+            &result,
+            &reviews
+        ));
+        let mut altered_baseline: RawBundle = serde_json::from_value(saved_bundle.clone()).unwrap();
+        altered_baseline
+            .artifacts
+            .iter_mut()
+            .find(|item| item.role == "mutants/mutants.out/log/baseline.log")
+            .unwrap()
+            .bytes
+            .push(0);
+        assert!(!super::mutation_accept_reviewed(
+            &input,
+            &altered_baseline,
+            &result,
+            &reviews
+        ));
         let mut omitted: RawBundle = serde_json::from_value(saved_bundle).unwrap();
         let ledger = omitted
             .artifacts
@@ -2320,17 +2384,23 @@ mod tests {
 
     #[test]
     fn v5_reviews_require_exact_projected_source_digest() {
-        let request = json!({"inputs":[{"role":"source/src/infinite/mod.rs",
-            "path":"src/infinite/mod.rs",
-            "digest":"290694d21bbc664eb6839cf5bbfd53db832465e21c77ed3e4e6ff18a670ec4c9"}]});
+        let request = json!({"inputs":[
+            {"role":"source/src/infinite/mod.rs", "path":"src/infinite/mod.rs",
+             "digest":"290694d21bbc664eb6839cf5bbfd53db832465e21c77ed3e4e6ff18a670ec4c9"},
+            {"role":"source/Cargo.lock", "path":"Cargo.lock",
+             "digest":"6aa9e3c5dc26bfe312dc33ca5bde174d94159e45e70fdbd06446d59ff4253514"}
+        ]});
         assert_eq!(
             v5_survivor_reviews("V5.mltl_mutation", &request)
                 .unwrap()
                 .len(),
             3
         );
-        let mut altered = request;
+        let mut altered = request.clone();
         altered["inputs"][0]["digest"] = json!("0".repeat(64));
+        assert!(v5_survivor_reviews("V5.mltl_mutation", &altered).is_none());
+        altered["inputs"][0]["digest"] = request["inputs"][0]["digest"].clone();
+        altered["inputs"][1]["digest"] = json!("0".repeat(64));
         assert!(v5_survivor_reviews("V5.mltl_mutation", &altered).is_none());
     }
 
