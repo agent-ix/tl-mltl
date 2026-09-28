@@ -149,7 +149,8 @@ def main() -> None:
                and row.get("domainVerdictDigest") and members[row["member"]]["required"]
                and accepted[row["member"]]["verdict"] == "accept"]
     if not targets:
-        parser.error("run has no completed required member with a checker receipt")
+        parser.error("baseline has no accepted required member with a checker receipt; "
+                     "fault replay needs an accepted target")
     target = next((row for row in targets if row["member"] == "V1.independent_oracle"),
                   targets[0])
     artifact_use = {}
@@ -197,6 +198,7 @@ def main() -> None:
                 dependents |= extended
             records.append(check_case(case, baseline, replay, diagnostic,
                                       chosen["member"], dependents))
+        args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps({
             "schema": "tl-mltl.campaign-fault-replay/v1", "runId": args.run_id,
             "definitionDigest": digest, "baselineVerdict": baseline["decision"]["verdict"],
