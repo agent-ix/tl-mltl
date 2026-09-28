@@ -1518,6 +1518,45 @@ mod tests {
     }
 
     // Trace: FR-055-AC-4, TC-200
+    #[test]
+    fn syntax_v8_coverage_selects_only_sealed_branch_targets() {
+        for (document, tests) in [
+            (
+                include_str!("../../campaign/procedures/v8-syntax-core.json"),
+                vec!["future_lowering", "v8_critical_branches"],
+            ),
+            (
+                include_str!("../../campaign/procedures/v8-syntax-alloc.json"),
+                vec!["future_lowering", "v8_critical_branches"],
+            ),
+            (
+                include_str!("../../campaign/procedures/v8-syntax-serde.json"),
+                vec![
+                    "future_lowering",
+                    "v8_critical_branches",
+                    "strict_syntax_artifacts",
+                    "infinite_formula",
+                ],
+            ),
+        ] {
+            let procedure: Procedure = serde_json::from_str(document).unwrap();
+            let literal = procedure
+                .arguments
+                .iter()
+                .filter(|argument| argument.kind == "literal")
+                .map(|argument| argument.value.as_str())
+                .collect::<Vec<_>>();
+            assert!(literal.contains(&"--lib"));
+            assert!(!literal.contains(&"--tests"));
+            let selected = literal
+                .windows(2)
+                .filter_map(|pair| (pair[0] == "--test").then_some(pair[1]))
+                .collect::<Vec<_>>();
+            assert_eq!(selected, tests);
+        }
+    }
+
+    // Trace: FR-055-AC-4, TC-200
     #[cfg(unix)]
     #[test]
     fn v8_python_bridge_execs_verified_stable_cargo_path() {
