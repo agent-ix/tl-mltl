@@ -43,3 +43,28 @@ Reviewed at `58ff72e181521e2a3600359bcc9f613b5b57f5fd`.
 ## Disposition verdict — round 1
 
 **FAIL** — FND-001 and FND-002 remain open. The MLTL-only imported targets and migrated plans improve readiness, but they do not satisfy TL-246 full Campaign acceptance.
+
+## Dispositions — round 2
+
+Reviewed at `9c68ef0e33b42726ace1ca420d20fb2a8f4b60d4`. The only changed product prose is `campaign/README.md`; the PR description now states the same corrected source-graph constraint. CampaignDefinition and closure pins are unchanged, and no complete Campaign receipt was added.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | still-open | The historical closure still pins measured mlTL 29cea00, syntax 6e2fc17 and oracle 9bf3994; candidate 9c68ef0 and its 0.3 dependency graph have no coherent repin or full 120-member EA/Quoin receipt. |
+| FND-002 | fixed | 9c68ef0e33b42726ace1ca420d20fb2a8f4b60d4 — `campaign/README.md` and PR #101 now explicitly identify the pinned parse/rewrite PR-head assets and historical 0.4 lock incompatibility with candidate mlTL 0.3/syntax 6aa9/oracle 2391. |
+
+## Disposition verdict — round 2
+
+**FAIL** — only high FND-001 remains open. FND-002's source-graph explanation is corrected. GitHub reports PR #101 mergeable, but TL-246's full Campaign acceptance gate remains unproved.
+
+## Dispositions — round 3
+
+Reviewed at `09951830acf7ba0d6fa10845e8cf61ff5fe0dc50`. The published definition and closure remain historical. The README and latest Linear comment distinguish a clean scratch preflight, unpublished parse/rewrite baseline harness commits, and a Mac-only missing Linux Python executable from measured Campaign evidence.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | still-open | No coherent current-candidate published source closure or full 120-member EA/Quoin receipt exists. Local-only parse 02e167e/rewrite ac48980 baseline harness commits pass smoke and strict source/lock/equalHarness preflight, but are unpublished and unmeasured. The later Darwin refusal of `/usr/bin/python3.13` is an environment limit, not a Campaign verdict. |
+
+## Disposition verdict — round 3
+
+**FAIL** — high FND-001 remains open at `09951830acf7ba0d6fa10845e8cf61ff5fe0dc50`. The 120-plan parser fix does not establish Campaign execution or acceptance.

@@ -28,3 +28,21 @@ Inspected Cargo.toml, the checker and V10 replay modules, the config generator, 
 ## Disposition pass 1 recheck
 
 Reviewed `58ff72e181521e2a3600359bcc9f613b5b57f5fd`. The prior placeholder records no actual finding. Added oracle, finite-partition, lasso and benchmark targets use production APIs and independently selected oracle expectations; the previously reviewed checker and config paths are unchanged. `cargo bench --locked --offline --features infinite-trace --bench v9_workloads -- --test` passed all 21 named smoke cases with digest checks. No new code finding from the inspected additions. Full Campaign execution remains in SR-078.
+
+## New findings (disposition pass 3)
+
+Reviewed at `09951830acf7ba0d6fa10845e8cf61ff5fe0dc50`. The changed `validate_plan` parser and its 120-plan and wrong-path tests passed (11 config tests total).
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-002 | medium | `validate_plan` claims to bind a MeasurementPlan's frontmatter `definition_version`, but searches all lines of the file. A plan with a wrong or missing YAML version and the expected `definition_version: ...` line added in its body passes this preflight, so the version check is not tied to the authoritative frontmatter. The new tests mutate only the procedure path and do not cover this case. | src/bin/tl_campaign_config.rs:549 |
+
+## Dispositions
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-002 | still-open | Round 3 new finding: config still searches all lines for definition_version instead of reading the plan frontmatter. Quire validation is a separate gate and does not make this preflight check accurate. |
+
+## Disposition verdict — round 3
+
+**CONDITIONAL** for inspected code at `09951830acf7ba0d6fa10845e8cf61ff5fe0dc50`: one medium plan-version binding defect remains. The prior FND-001 is a no-finding placeholder, so it needs no disposition.

@@ -544,13 +544,26 @@ fn validate_plan(repo: &Path, member: &Member) -> Result<PathBuf, String> {
         return Err(format!("plan {} is ambiguous", member.plan_id));
     }
     let contents = fs::read_to_string(&path).map_err(|error| error.to_string())?;
+    let document = contents
+        .strip_prefix("---\n")
+        .ok_or(format!("{} has no YAML frontmatter", path.display()))?;
+    let (frontmatter, body) = document.split_once("\n---\n").ok_or(format!(
+        "{} has no closing frontmatter fence",
+        path.display()
+    ))?;
+    #[derive(Deserialize)]
+    struct PlanFrontmatter {
+        definition_version: String,
+        #[serde(flatten)]
+        _remaining: BTreeMap<String, serde_yaml_ng::Value>,
+    }
+    let frontmatter: PlanFrontmatter = serde_yaml_ng::from_str(frontmatter)
+        .map_err(|error| format!("{} invalid frontmatter: {error}", path.display()))?;
     let expected_path = procedure_path(member)?.to_string_lossy().to_string();
-    if !contents
+    if !body
         .lines()
         .any(|line| line == format!("- Execution procedure: `{expected_path}`."))
-        || !contents
-            .lines()
-            .any(|line| line == format!("definition_version: {}", member.definition_version))
+        || frontmatter.definition_version != member.definition_version
     {
         return Err(format!(
             "{} does not bind procedure and version",
@@ -1000,6 +1013,39 @@ mod tests {
         assert_ne!(changed, contents);
         std::fs::write(&plan, changed).unwrap();
         assert!(validate_plan(root.path(), &member).is_err());
+    }
+
+    // Trace: FR-055-AC-1, TC-197
+    #[test]
+    fn plan_version_cannot_be_spoofed_from_body_or_duplicate_frontmatter() {
+        let member = Member {
+            name: "V1.independent_oracle".into(),
+            plan_id: "MP-008".into(),
+            definition_version: "tl.v1.v1-independent-oracle/v1".into(),
+            checker_procedure: None,
+        };
+        let root = tempfile::tempdir().unwrap();
+        let plans = root.path().join("spec/assurance");
+        std::fs::create_dir_all(&plans).unwrap();
+        let plan = plans.join("MP-008-v1-independent-oracle.md");
+        let original = include_str!("../../spec/assurance/MP-008-v1-independent-oracle.md");
+        let version = "definition_version: tl.v1.v1-independent-oracle/v1";
+        let wrong = original.replacen(version, "definition_version: wrong/v1", 1);
+        let missing = original.replacen(&format!("{version}\n"), "", 1);
+        let duplicate = original.replacen(version, &format!("{version}\n{version}"), 1);
+        let body_spoof = format!("{wrong}\n{version}\n");
+        let missing_with_body_spoof = format!("{missing}\n{version}\n");
+        for mutation in [
+            wrong,
+            missing,
+            duplicate,
+            body_spoof,
+            missing_with_body_spoof,
+        ] {
+            assert_ne!(mutation, original);
+            std::fs::write(&plan, mutation).unwrap();
+            assert!(validate_plan(root.path(), &member).is_err());
+        }
     }
 
     // Trace: FR-055-AC-1, TC-197
