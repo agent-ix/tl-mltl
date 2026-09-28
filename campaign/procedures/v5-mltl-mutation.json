@@ -79,6 +79,11 @@
   ],
   "environment": [
     {
+      "kind": "literal",
+      "name": "TL_QUOIN_PROCESS_GROUP_V1",
+      "value": "1"
+    },
+    {
       "kind": "runtime",
       "name": "PATH",
       "value": "host:PATH"
