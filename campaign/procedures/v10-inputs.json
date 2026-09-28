@@ -6,7 +6,7 @@
   "repetitions": 1,
   "timeoutMillis": 120000,
   "producerName": "tl_v10_generate",
-  "producerVersion": "0.4.0",
+  "producerVersion": "0.3.0",
   "sourceRepository": "tl-mltl",
   "arguments": [
     {
