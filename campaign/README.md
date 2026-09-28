@@ -251,6 +251,30 @@ machine table. A generated config is only an execution selection, never a
 measurement result. A member passes only after Quoin retains the bounded EA
 producer and checker results and independently reconciles their identities.
 
+After a fresh retained run, `replay_faults.py` exercises five Campaign
+refusal paths without changing the measured checkout or its evidence:
+
+```sh
+python3 campaign/replay_faults.py \
+  --quoin /absolute/path/to/campaign-capable/quoin \
+  --repo /absolute/path/to/clean/measured/tl-mltl \
+  --run-id RUN_ID \
+  --sources /absolute/path/to/sources.json \
+  --output /absolute/path/to/fault-replay.json
+```
+
+The selection has schema `quoin.campaign-sources/v1` and maps every source
+alias to a clean exact checkout. The script verifies the unmodified run,
+then makes separate local Git clones with disposable copies of its evidence
+store. It removes a required attempt, duplicates an attempt, removes a
+checker receipt, alters a unique retained raw artifact, and changes the
+run's source-graph digest. Every replay must refuse or remain inconclusive;
+unrelated sibling decisions must remain stable where Quoin returns a receipt.
+The output is a diagnostic, not Campaign evidence. A false producer pass
+needs a newly executed, self-consistent producer/collection/checker fixture
+with failing native facts. Altering a retained result only tests its digest
+seal, so the script reports that condition as uncovered.
+
 The machine file's `toolchains` map gives default language identities for
 members. `memberToolchains` may override it by exact Campaign member name when
 members use different toolchains, such as stable Cargo and nightly Miri. Each
