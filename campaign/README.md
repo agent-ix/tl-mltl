@@ -264,6 +264,14 @@ This keeps Cargo's compiler-wrapper re-execution off Quoin's single-use
 Python executable snapshot. Changed procedure bytes require a new measured source
 graph and regenerated definition.
 
+The three syntax V8 members select the library tests and named self-contained
+integration targets. Core and alloc select `future_lowering` and
+`v8_critical_branches`; serde additionally selects `strict_syntax_artifacts`
+and `infinite_formula`. This excludes assurance tests that require local Git,
+virtual-environment, or corpus state unavailable in the sealed source
+projection. The checker still requires both sides of every declared critical
+branch in the exported coverage file.
+
 After a fresh retained run, `replay_faults.py` exercises five Campaign
 refusal paths without changing the measured checkout or its evidence:
 
