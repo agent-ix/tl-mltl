@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v1_independent_oracle.passed
 definition_version: tl.v1.v1-independent-oracle/v2
+execution_procedure: campaign/procedures/v1-independent-oracle.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

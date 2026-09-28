@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v6.mltl_horizon_proof.proved
 definition_version: tl.v6.mltl-horizon-proof/v2
+execution_procedure: campaign/procedures/v6-mltl-horizon-proof.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

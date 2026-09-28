@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v10.monitor_zero_unit_boundary_toggle.verified
 definition_version: tl.v10.monitor-zero-unit-boundary-toggle/v2
+execution_procedure: campaign/procedures/v10-monitor-zero-unit-boundary-toggle.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

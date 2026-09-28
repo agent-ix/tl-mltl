@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v2_finite_small_partition.passed
 definition_version: tl.v1.v2-finite-small-partition/v2
+execution_procedure: campaign/procedures/v2-finite-small-partition.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

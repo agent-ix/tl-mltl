@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v6.seeded_false_claim.verified
 definition_version: tl.v6.seeded-false-claim/v2
+execution_procedure: campaign/procedures/v6-seeded-false-claim.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

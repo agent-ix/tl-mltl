@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v5.rewrite_discovery.verified
 definition_version: tl.v5.rewrite-discovery/v2
+execution_procedure: campaign/procedures/v5-rewrite-discovery.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

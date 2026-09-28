@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v11_lasso_population_census.passed
 definition_version: tl.v1.v11-lasso-population-census/v2
+execution_procedure: campaign/procedures/v11-lasso-population-census.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

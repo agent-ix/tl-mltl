@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v1_oracle_fault_injection.passed
 definition_version: tl.v1.v1-oracle-fault-injection/v2
+execution_procedure: campaign/procedures/v1-oracle-fault-injection.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

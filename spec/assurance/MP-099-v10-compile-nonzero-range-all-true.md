@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v10.compile_nonzero_range_all_true.verified
 definition_version: tl.v10.compile-nonzero-range-all-true/v2
+execution_procedure: campaign/procedures/v10-compile-nonzero-range-all-true.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

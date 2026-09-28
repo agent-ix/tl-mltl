@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v6.syntax_interval_proof.proved
 definition_version: tl.v6.syntax-interval-proof/v2
+execution_procedure: campaign/procedures/v6-syntax-interval-proof.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v4.mltl_closed_eval.bounded_no_crash
 definition_version: tl.v4.mltl-closed-eval/v2
+execution_procedure: campaign/procedures/v4-mltl-closed-eval.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

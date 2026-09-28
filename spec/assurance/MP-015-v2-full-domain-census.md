@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v2_full_domain_census.passed
 definition_version: tl.v1.v2-full-domain-census/v2
+execution_procedure: campaign/procedures/v2-full-domain-census.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

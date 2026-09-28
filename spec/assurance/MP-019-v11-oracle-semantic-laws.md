@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v11_oracle_semantic_laws.passed
 definition_version: tl.v1.v11-oracle-semantic-laws/v2
+execution_procedure: campaign/procedures/v11-oracle-semantic-laws.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

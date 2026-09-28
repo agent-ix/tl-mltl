@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v9.rewrite_pair1_baseline.verified
 definition_version: tl.v9.rewrite-pair1-baseline/v2
+execution_procedure: campaign/procedures/v9-rewrite-pair1-baseline.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

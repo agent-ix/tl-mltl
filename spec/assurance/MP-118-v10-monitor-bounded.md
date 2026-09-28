@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v10.monitor_bounded.verified
 definition_version: tl.v10.monitor-bounded/v2
+execution_procedure: campaign/procedures/v10-monitor-bounded.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

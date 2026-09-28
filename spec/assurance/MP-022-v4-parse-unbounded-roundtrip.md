@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v4.parse_unbounded_roundtrip.bounded_no_crash
 definition_version: tl.v4.parse-unbounded-roundtrip/v2
+execution_procedure: campaign/procedures/v4-parse-unbounded-roundtrip.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

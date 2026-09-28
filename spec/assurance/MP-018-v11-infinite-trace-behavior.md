@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v11_infinite_trace_behavior.passed
 definition_version: tl.v1.v11-infinite-trace-behavior/v2
+execution_procedure: campaign/procedures/v11-infinite-trace-behavior.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v5.parse_restored_control.verified
 definition_version: tl.v5.parse-restored-control/v2
+execution_procedure: campaign/procedures/v5-parse-restored-control.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:

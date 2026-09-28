@@ -6,6 +6,7 @@ status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v1.v1_production_infinite_faults.passed
 definition_version: tl.v1.v1-production-infinite-faults/v2
+execution_procedure: campaign/procedures/v1-production-infinite-faults.json
 stage: gate
 ground_truth_kind: mechanical
 protected_apparatus:
