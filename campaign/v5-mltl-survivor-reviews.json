@@ -1,0 +1,25 @@
+{
+  "schema": "tl-mltl.v5-survivor-reviews/v1",
+  "sourceFile": "src/infinite/mod.rs",
+  "sourceFileSha256": "290694d21bbc664eb6839cf5bbfd53db832465e21c77ed3e4e6ff18a670ec4c9",
+  "reviews": [
+    {
+      "name": "src/infinite/mod.rs:703:9: replace || with && in evaluate_lasso",
+      "diffSha256": "239275c69d4c0e08f52292e7585b81bfd207e4cc9d4e2a10cc6059c8d29e6caf",
+      "disposition": "proof_candidate",
+      "detail": "Both validated document constructors require InfiniteTraceV1, and InfiniteClock has only EventPosition. Neither clock nor profile mismatch is reachable for an admitted lasso request."
+    },
+    {
+      "name": "src/infinite/mod.rs:715:9: replace || with && in evaluate_lasso",
+      "diffSha256": "1f127526d59f248acec24e817487de5c10093827155d31d893e43028e7a2f01f",
+      "disposition": "reviewed_limitation",
+      "detail": "The skipped node ceiling is rechecked by RawTraceRequest::validate; an expired deadline is rechecked before the first completion by evaluate_trace. Both return ResourceIncomplete without semantic evidence. The later refusal can spend time and memory materializing observations under a large EvaluationLimit."
+    },
+    {
+      "name": "src/infinite/mod.rs:716:9: replace || with && in evaluate_lasso",
+      "diffSha256": "eb1deda8088652f1ad00570670cad84c02c749fedda9fee2ff034f9aa1fb9556",
+      "disposition": "reviewed_limitation",
+      "detail": "RawTraceRequest::validate independently checks both node and observation-position ceilings and returns ResourceIncomplete before semantic work. The later refusal can spend time and memory materializing observations under a large EvaluationLimit."
+    }
+  ]
+}

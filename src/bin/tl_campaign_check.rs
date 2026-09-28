@@ -938,11 +938,93 @@ fn v5_tail(member: &str) -> Option<&'static [&'static str]> {
     }
 }
 
+fn v5_minimum_selected(member: &str) -> Option<usize> {
+    match member {
+        "V5.parse_mutation" => Some(23),
+        "V5.syntax_mutation" => Some(18),
+        "V5.mltl_mutation" => Some(43),
+        "V5.rewrite_mutation" => Some(37),
+        _ => None,
+    }
+}
+
 fn failed_status(status: &Value) -> bool {
     status["Failure"].as_i64().is_some_and(|code| code != 0)
 }
 
-fn mutation_accept(input: &CheckInput, bundle: &RawBundle) -> bool {
+fn v5_kill_rate(caught: u64, missed: u64) -> bool {
+    let Some(viable) = caught.checked_add(missed) else {
+        return false;
+    };
+    caught > 0
+        && viable > 0
+        && caught
+            .checked_mul(10)
+            .zip(viable.checked_mul(9))
+            .is_some_and(|(caught_scaled, viable_scaled)| caught_scaled >= viable_scaled)
+}
+
+fn v5_survivor_reviews(member: &str, request: &Value) -> Option<BTreeMap<String, String>> {
+    if member != "V5.mltl_mutation" {
+        return Some(BTreeMap::new());
+    }
+    let manifest: Value =
+        serde_json::from_str(include_str!("../../campaign/v5-mltl-survivor-reviews.json")).ok()?;
+    if manifest["schema"] != "tl-mltl.v5-survivor-reviews/v1"
+        || manifest["sourceFile"] != "src/infinite/mod.rs"
+    {
+        return None;
+    }
+    let source_inputs: Vec<_> = request["inputs"]
+        .as_array()?
+        .iter()
+        .filter(|row| row["role"] == "source/src/infinite/mod.rs")
+        .collect();
+    if source_inputs.len() != 1
+        || source_inputs[0]["path"] != "src/infinite/mod.rs"
+        || source_inputs[0]["digest"] != manifest["sourceFileSha256"]
+        || sha256(&fs::read("src/infinite/mod.rs").ok()?)
+            != manifest["sourceFileSha256"].as_str()?
+    {
+        return None;
+    }
+    let mut reviews = BTreeMap::new();
+    for row in manifest["reviews"].as_array()? {
+        let name = row["name"].as_str()?;
+        let diff = row["diffSha256"].as_str()?;
+        let disposition = row["disposition"].as_str()?;
+        let detail = row["detail"].as_str()?;
+        if !name.starts_with("src/infinite/mod.rs:")
+            || diff.len() != 64
+            || !diff.bytes().all(|byte| byte.is_ascii_hexdigit())
+            || !matches!(disposition, "proof_candidate" | "reviewed_limitation")
+            || detail.trim().is_empty()
+            || reviews.insert(name.to_owned(), diff.to_owned()).is_some()
+        {
+            return None;
+        }
+    }
+    (reviews.len() == 3).then_some(reviews)
+}
+
+fn mutation_accept(
+    input: &CheckInput,
+    bundle: &RawBundle,
+    result: &Value,
+    request: &Value,
+) -> bool {
+    let Some(reviews) = v5_survivor_reviews(&input.member, request) else {
+        return false;
+    };
+    mutation_accept_reviewed(input, bundle, result, &reviews)
+}
+
+fn mutation_accept_reviewed(
+    input: &CheckInput,
+    bundle: &RawBundle,
+    result: &Value,
+    reviews: &BTreeMap<String, String>,
+) -> bool {
     let prefix = input.member.split('_').next().unwrap_or("");
     let discovery_member = format!("{prefix}_discovery");
     let Some(dependency) = input
@@ -993,7 +1075,8 @@ fn mutation_accept(input: &CheckInput, bundle: &RawBundle) -> bool {
         .map(|row| row["name"].as_str())
         .collect();
     let Some(names) = names else { return false };
-    if names.len() != expected_selected.len()
+    if names.len() < v5_minimum_selected(&input.member).unwrap_or(usize::MAX)
+        || names.len() != expected_selected.len()
         || names
             .iter()
             .any(|name| !expected_selected.iter().any(|expected| expected == name))
@@ -1047,8 +1130,10 @@ fn mutation_accept(input: &CheckInput, bundle: &RawBundle) -> bool {
         return false;
     }
     let mut caught = 0_u64;
+    let mut missed = 0_u64;
     let mut unviable = 0_u64;
     let mut observed_names = BTreeSet::new();
+    let mut observed_survivors = BTreeSet::new();
     for outcome in outcomes.iter().skip(1) {
         let Some(name) = outcome["scenario"]["Mutant"]["name"].as_str() else {
             return false;
@@ -1077,25 +1162,65 @@ fn mutation_accept(input: &CheckInput, bundle: &RawBundle) -> bool {
                     && failed_status(&phases[0]["process_status"])
                     && phases[0]["argv"] == baseline_phases[0]["argv"]
             }
+            Some("MissedMutant") => {
+                missed += 1;
+                observed_survivors.insert(name);
+                phases.len() == 2
+                    && phases[0]["phase"] == "Build"
+                    && phases[0]["process_status"] == "Success"
+                    && phases[1]["phase"] == "Test"
+                    && phases[1]["process_status"] == "Success"
+                    && phases[0]["argv"] == baseline_phases[0]["argv"]
+                    && phases[1]["argv"] == baseline_phases[1]["argv"]
+            }
             _ => false,
         };
         if !valid {
             return false;
         }
-        for key in ["log_path", "diff_path"] {
-            if let Some(relative) = outcome[key].as_str() {
-                let role = format!("mutants/mutants.out/{relative}");
-                if !input.raw_artifacts.iter().any(|item| item.role == role) {
-                    return false;
-                }
+        for (key, folder) in [("log_path", "log/"), ("diff_path", "diff/")] {
+            let Some(relative) = outcome[key].as_str() else {
+                return false;
+            };
+            if !relative.starts_with(folder)
+                || relative.contains("..")
+                || relative.contains('\\')
+                || relative.len() <= folder.len()
+            {
+                return false;
+            }
+            let role = format!("mutants/mutants.out/{relative}");
+            let Some(bytes) = raw_bytes(bundle, &role) else {
+                return false;
+            };
+            if !input
+                .raw_artifacts
+                .iter()
+                .any(|item| item.role == role && item.digest == sha256(bytes))
+            {
+                return false;
+            }
+            if key == "diff_path"
+                && outcome["summary"] == "MissedMutant"
+                && reviews
+                    .get(name)
+                    .is_none_or(|expected| expected != &sha256(bytes))
+            {
+                return false;
             }
         }
     }
-    caught > 0
+    let expected_exit = if missed == 0 { 0 } else { 2 };
+    v5_kill_rate(caught, missed)
+        && observed_survivors
+            .iter()
+            .all(|name| reviews.contains_key(*name))
         && native["caught"].as_u64() == Some(caught)
         && native["unviable"].as_u64() == Some(unviable)
-        && native["missed"].as_u64() == Some(0)
+        && native["missed"].as_u64() == Some(missed)
         && native["timeout"].as_u64() == Some(0)
+        && result["process"]["terminalStatus"]["kind"] == "exit_code"
+        && result["process"]["terminalStatus"]["value"] == expected_exit
 }
 
 fn v10_target_rows(raw: &[u8]) -> Option<BTreeMap<(usize, usize), bool>> {
@@ -1517,7 +1642,9 @@ fn check(member: &str, definition_digest: &str, result_bytes: &[u8]) -> DomainVe
                     }
                     if process.terminal_status.as_ref().is_none_or(|s| {
                         s.kind != "exit_code"
-                            || if parser == "kani-false" {
+                            || if parser == "mutants-run" {
+                                !matches!(s.value, 0 | 2)
+                            } else if parser == "kani-false" {
                                 s.value == 0
                             } else {
                                 s.value != 0
@@ -1874,7 +2001,8 @@ fn run_args(args: &[String]) -> Result<(), String> {
             binding_reasons.push("critical_coverage_unproved".into());
         }
     }
-    if member_parser(&input.member) == Some("mutants-run") && !mutation_accept(&input, &raw_bundle)
+    if member_parser(&input.member) == Some("mutants-run")
+        && !mutation_accept(&input, &raw_bundle, &result_value, &request_value)
     {
         binding_reasons.push("mutant_outcome_population_unproved".into());
     }
@@ -2000,11 +2128,211 @@ fn main() {
 mod tests {
     use super::{
         cargo_summaries, check, member_parser, v10_compile_inputs, v10_monitor_inputs,
-        v8_parse_example_input, CheckInput,
+        v5_survivor_reviews, v8_parse_example_input, CheckInput, RawBundle,
     };
     use serde_json::{json, Value};
     use std::fs;
     use std::path::Path;
+
+    // Trace: MP-057, FR-055-AC-2, TC-197/198. Native exit 2 is valid only
+    // for a fully reviewed, above-threshold missed-mutant population.
+    #[test]
+    fn v5_mutation_reconciles_native_survivors_and_refuses_seeded_faults() {
+        let directory = tempfile::tempdir().unwrap();
+        let names: Vec<String> = (0..43)
+            .map(|index| {
+                format!("src/infinite/mod.rs:{index}:9: replace || with && in evaluate_lasso")
+            })
+            .collect();
+        let discovery = serde_json::to_vec(
+            &names
+                .iter()
+                .map(|name| json!({"name":name,"file":"src/infinite/mod.rs"}))
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+        let dependency_path = directory.path().join("discovery.json");
+        fs::write(
+            &dependency_path,
+            serde_json::to_vec(&json!({
+                "protocol":"engineering-assurance.producer-execution-result/v1",
+                "requestIdentity":{"digest":"a".repeat(64)},
+                "state":{"kind":"completed"},
+                "process":{
+                    "terminalStatus":{"kind":"exit_code","value":0},
+                    "stdout":{"bytes":discovery,"digest":super::sha256(&discovery),"truncated":false},
+                    "stderr":{"bytes":[],"digest":super::sha256(b""),"truncated":false}
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let build = json!(["cargo", "test", "--no-run", "--all-features"]);
+        let test = json!([
+            "cargo",
+            "test",
+            "--all-features",
+            "--lib",
+            "--test",
+            "infinite_trace",
+            "--test",
+            "infinite_oracle"
+        ]);
+        let phase = |kind: &str, status: Value, argv: &Value| json!({"phase":kind,"process_status":status,"argv":argv});
+        let baseline = json!({
+            "scenario":"Baseline", "summary":"Success",
+            "phase_results":[phase("Build",json!("Success"),&build),
+                             phase("Test",json!("Success"),&test)]
+        });
+        let mut outcomes = vec![baseline];
+        let mut artifacts = Vec::new();
+        let mut reviews = std::collections::BTreeMap::new();
+        for (index, name) in names.iter().enumerate() {
+            let summary = if index < 39 {
+                "CaughtMutant"
+            } else if index < 42 {
+                "MissedMutant"
+            } else {
+                "Unviable"
+            };
+            let diff = format!("diff-{index}").into_bytes();
+            let log = format!("log-{index}").into_bytes();
+            let diff_path = format!("diff/mutant-{index}.diff");
+            let log_path = format!("log/mutant-{index}.log");
+            if summary == "MissedMutant" {
+                reviews.insert(name.clone(), super::sha256(&diff));
+            }
+            for (path, bytes) in [(&diff_path, diff), (&log_path, log)] {
+                artifacts.push(json!({
+                    "role":format!("mutants/mutants.out/{path}"),
+                    "digest":super::sha256(&bytes), "bytes":bytes
+                }));
+            }
+            let phases = if summary == "Unviable" {
+                vec![phase("Build", json!({"Failure":101}), &build)]
+            } else {
+                vec![
+                    phase("Build", json!("Success"), &build),
+                    phase(
+                        "Test",
+                        if summary == "MissedMutant" {
+                            json!("Success")
+                        } else {
+                            json!({"Failure":101})
+                        },
+                        &test,
+                    ),
+                ]
+            };
+            outcomes.push(json!({"scenario":{"Mutant":{"name":name}},
+                "summary":summary,"phase_results":phases,
+                "diff_path":diff_path,"log_path":log_path}));
+        }
+        artifacts.push(json!({"role":"mutants/mutants.out/mutants.json",
+            "digest":super::sha256(&serde_json::to_vec(&names.iter().map(|name|json!({"name":name}))
+                .collect::<Vec<_>>()).unwrap()),
+            "bytes":serde_json::to_vec(&names.iter().map(|name|json!({"name":name}))
+                .collect::<Vec<_>>()).unwrap()}));
+        let native = json!({"cargo_mutants_version":"27.0.0","total_mutants":43,
+            "caught":39,"missed":3,"unviable":1,"timeout":0,"outcomes":outcomes});
+        let native_bytes = serde_json::to_vec(&native).unwrap();
+        artifacts.push(json!({"role":"mutants/mutants.out/outcomes.json",
+            "digest":super::sha256(&native_bytes),"bytes":native_bytes}));
+        let bundle: RawBundle = serde_json::from_value(json!({
+            "schema":"quoin.raw-artifact-bundle/v1","artifacts":artifacts
+        }))
+        .unwrap();
+        let raw_artifacts: Vec<Value> = bundle
+            .artifacts
+            .iter()
+            .map(|item| json!({"role":item.role,"digest":item.digest}))
+            .collect();
+        let input: CheckInput = serde_json::from_value(json!({
+            "schema":"quoin.domain-check-input/v1","definitionPath":"unused",
+            "definitionDigest":"a","member":"V5.mltl_mutation","planId":"MP-057",
+            "definitionVersion":"v2","sourceGraphDigest":"b","requestDigest":"c",
+            "requestPath":"unused","resultPath":"unused","resultDigest":"d",
+            "rawArtifacts":raw_artifacts,"rawBundlePath":"unused","rawBundleDigest":"e",
+            "dependencies":[{"member":"V5.mltl_discovery","index":1,
+                "requestDigest":"a","requestPath":"unused","resultDigest":"b",
+                "resultPath":dependency_path,"rawBundleDigest":"c","rawBundlePath":"unused"}]
+        }))
+        .unwrap();
+        let result = json!({"process":{"terminalStatus":{"kind":"exit_code","value":2}}});
+        assert!(super::mutation_accept_reviewed(
+            &input, &bundle, &result, &reviews
+        ));
+        let saved_bundle = serde_json::to_value(&bundle).unwrap();
+
+        let mut unreviewed = reviews.clone();
+        unreviewed.pop_first();
+        assert!(!super::mutation_accept_reviewed(
+            &input,
+            &bundle,
+            &result,
+            &unreviewed
+        ));
+        let wrong_exit = json!({"process":{"terminalStatus":{"kind":"exit_code","value":0}}});
+        assert!(!super::mutation_accept_reviewed(
+            &input,
+            &bundle,
+            &wrong_exit,
+            &reviews
+        ));
+        let mut altered = bundle;
+        altered
+            .artifacts
+            .iter_mut()
+            .find(|item| item.role.contains("diff/mutant-39"))
+            .unwrap()
+            .bytes
+            .push(0);
+        assert!(!super::mutation_accept_reviewed(
+            &input, &altered, &result, &reviews
+        ));
+        let mut missing_log: RawBundle = serde_json::from_value(saved_bundle.clone()).unwrap();
+        missing_log
+            .artifacts
+            .retain(|item| !item.role.ends_with("log/mutant-39.log"));
+        assert!(!super::mutation_accept_reviewed(
+            &input,
+            &missing_log,
+            &result,
+            &reviews
+        ));
+        let mut omitted: RawBundle = serde_json::from_value(saved_bundle).unwrap();
+        let ledger = omitted
+            .artifacts
+            .iter_mut()
+            .find(|item| item.role.ends_with("outcomes.json"))
+            .unwrap();
+        let mut shortened: Value = serde_json::from_slice(&ledger.bytes).unwrap();
+        shortened["outcomes"].as_array_mut().unwrap().pop();
+        ledger.bytes = serde_json::to_vec(&shortened).unwrap();
+        ledger.digest = super::sha256(&ledger.bytes);
+        assert!(!super::mutation_accept_reviewed(
+            &input, &omitted, &result, &reviews
+        ));
+        assert!(super::v5_kill_rate(39, 3));
+        assert!(!super::v5_kill_rate(37, 5));
+        assert!(!super::v5_kill_rate(u64::MAX, 1));
+    }
+
+    #[test]
+    fn v5_reviews_require_exact_projected_source_digest() {
+        let request = json!({"inputs":[{"role":"source/src/infinite/mod.rs",
+            "path":"src/infinite/mod.rs",
+            "digest":"290694d21bbc664eb6839cf5bbfd53db832465e21c77ed3e4e6ff18a670ec4c9"}]});
+        assert_eq!(
+            v5_survivor_reviews("V5.mltl_mutation", &request)
+                .unwrap()
+                .len(),
+            3
+        );
+        let mut altered = request;
+        altered["inputs"][0]["digest"] = json!("0".repeat(64));
+        assert!(v5_survivor_reviews("V5.mltl_mutation", &altered).is_none());
+    }
 
     // Trace: FR-045-AC-1, FR-055-AC-4, TC-180, TC-200.
     #[test]
