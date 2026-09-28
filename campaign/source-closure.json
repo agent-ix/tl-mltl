@@ -239,7 +239,7 @@
     {
       "repository": "tl-mltl",
       "baselineRevision": "0e4a41083d420ccc85134f4f7e224698ab7859e0",
-      "candidateRevision": "661594b05567bf7395c8843c324ad411ac3b347d",
+      "candidateRevision": "a502ab0cb94ad298f0247c4686f532316a280a97",
       "identicalFiles": [
         {
           "path": "benches/input-digests.json",
