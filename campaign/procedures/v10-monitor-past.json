@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "engineering-assurance.measurement-procedure/v1",
+  "responseProtocol": "quoin.process-evidence/v1",
+  "responseAdapter": "quoin.process-evidence-adapter",
+  "responseAdapterVersion": "1",
+  "repetitions": 1,
+  "timeoutMillis": 120000,
+  "producerName": "r2u2",
+  "producerVersion": "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a",
+  "sourceRepository": "r2u2",
+  "arguments": [
+    {
+      "kind": "input_artifact",
+      "value": "binary"
+    },
+    {
+      "kind": "input_artifact",
+      "value": "trace"
+    }
+  ],
+  "environment": [],
+  "inputs": [
+    {
+      "role": "binary",
+      "required": true
+    },
+    {
+      "role": "trace",
+      "required": true
+    }
+  ],
+  "inputOrigins": [
+    {
+      "role": "binary",
+      "kind": "dependency",
+      "dependencyMember": "V10.compile.past",
+      "dependencyArtifactRole": "binary"
+    },
+    {
+      "role": "trace",
+      "kind": "source_file",
+      "sourceRepository": "tl-mltl",
+      "sourcePath": "corpus/past-c2po-v1/target-4.2/trace.csv"
+    }
+  ],
+  "outputs": []
+}

@@ -1,14 +1,12 @@
 ---
 id: MP-003
-title: "TL property-domain grounding coverage"
+title: TL property-domain grounding coverage
 type: MeasurementPlan
 status: proposed
 owner: tl-verification-campaign-owner
 metric: tl.property-domain-grounding
-definition_version: tl-mltl.property-domain-grounding/v2
-stage: gate
-objective:
-  direction: higher
+definition_version: tl-mltl.property-domain-grounding/v3
+stage: baseline
 statistical_design:
   population: every criterion in the exact tl-mltl Quire property export, classified as applicable, excluded, or blocked
   sampling: complete criterion census; each applicable finite-exhaustive domain is fully enumerated and each generated domain uses three declared seeds and its predeclared accepted-case budget
@@ -20,15 +18,17 @@ statistical_design:
     comparator: ge
     threshold: 1
 relationships:
-  - target: ix://agent-ix/tl-mltl/FR-020
-    type: measures
-  - target: ix://agent-ix/tl-mltl/NFR-005
-    type: measures
+- target: ix://agent-ix/tl-mltl/FR-020
+  type: measures
+- target: ix://agent-ix/tl-mltl/NFR-005
+  type: measures
 ---
 
 # TL property-domain grounding coverage
 
 ## Decision Use
+
+This proposed property-domain grounding plan remains a baseline until its owner-native producer, protected apparatus, and negative controls are implemented and reviewed. A future gate requires a new definition version and a current collection.
 
 The measure decides whether every declared applicable criterion has a reviewable
 property grounding. It does not estimate semantic defect probability or approve
@@ -70,3 +70,7 @@ Report every population and per-seed observation before the grounding fraction.
 A fully grounded row means the declared finite/generated domain and independent
 oracle were exercised as specified. It says nothing about values outside that
 domain or about criteria excluded or blocked by the campaign.
+
+## Measurement Controls
+
+- Objective: higher.

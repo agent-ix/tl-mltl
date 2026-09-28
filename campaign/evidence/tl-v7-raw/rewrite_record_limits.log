@@ -1,0 +1,8 @@
+
+running 1 test
+test tc_053_report_replay_and_all_work_limits_are_exact_and_fail_closed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 191.54s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests/tc_053_profile_subsystems.rs (target/miri/aarch64-apple-darwin/debug/build/tl-rewrite/aeee0f4b8a2f0c70/out/tc_053_profile_subsystems-aeee0f4b8a2f0c70)

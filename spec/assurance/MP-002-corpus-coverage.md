@@ -1,14 +1,12 @@
 ---
 id: MP-002
-title: "MLTL corpus coverage census"
+title: MLTL corpus coverage census
 type: MeasurementPlan
 status: proposed
 owner: tl-mltl-corpus-owner
 metric: tl-mltl.corpus-coverage
-definition_version: tl-mltl.corpus-coverage/v2
-stage: gate
-objective:
-  direction: higher
+definition_version: tl-mltl.corpus-coverage/v3
+stage: baseline
 statistical_design:
   population: every cell in the closed tl-mltl.corpus-campaign/v1 catalog, stratified as applicable, excluded, or blocked
   sampling: complete deterministic enumeration of declared cells; generated property and fuzz inputs are reported separately
@@ -20,15 +18,17 @@ statistical_design:
     comparator: ge
     threshold: 1
 relationships:
-  - target: ix://agent-ix/tl-mltl/MRS-002
-    type: measures
-  - target: ix://agent-ix/tl-mltl/NFR-004
-    type: measures
+- target: ix://agent-ix/tl-mltl/MRS-002
+  type: measures
+- target: ix://agent-ix/tl-mltl/NFR-004
+  type: measures
 ---
 
 # MLTL corpus coverage census
 
 ## Decision Use
+
+This proposed corpus coverage plan remains a baseline until its owner-native producer, protected apparatus, and negative controls are implemented and reviewed. A future gate requires a new definition version and a current collection.
 
 The measurement decides only whether the declared campaign population is
 internally complete enough for implementation/release review. It does not rank
@@ -71,3 +71,7 @@ populated and passed its named checks. Excluded, blocked, unavailable,
 unsupported, non-conclusive, and generated populations remain adjacent and
 cannot improve that ratio by disappearing. Human review evaluates whether the
 dimension catalog itself is adequate.
+
+## Measurement Controls
+
+- Objective: higher.

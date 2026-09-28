@@ -1,0 +1,143 @@
+{
+  "arguments": [
+    {
+      "kind": "literal",
+      "value": "mutants"
+    },
+    {
+      "kind": "literal",
+      "value": "--no-config"
+    },
+    {
+      "kind": "literal",
+      "value": "--all-features"
+    },
+    {
+      "kind": "literal",
+      "value": "--file"
+    },
+    {
+      "kind": "literal",
+      "value": "src/formula/infinite.rs"
+    },
+    {
+      "kind": "literal",
+      "value": "--re"
+    },
+    {
+      "kind": "literal",
+      "value": "TemporalInterval::start|select_infinite_profile|validate_resource_limits|preflight_resource_limits|InfiniteFormulaDocument::content_identity"
+    },
+    {
+      "kind": "literal",
+      "value": "--output"
+    },
+    {
+      "kind": "literal",
+      "value": "mutants.out"
+    },
+    {
+      "kind": "literal",
+      "value": "--timeout"
+    },
+    {
+      "kind": "literal",
+      "value": "120"
+    },
+    {
+      "kind": "literal",
+      "value": "--jobs"
+    },
+    {
+      "kind": "literal",
+      "value": "1"
+    },
+    {
+      "kind": "literal",
+      "value": "--"
+    },
+    {
+      "kind": "literal",
+      "value": "--test"
+    },
+    {
+      "kind": "literal",
+      "value": "infinite_formula"
+    },
+    {
+      "kind": "literal",
+      "value": "--test"
+    },
+    {
+      "kind": "literal",
+      "value": "infinite_trace"
+    },
+    {
+      "kind": "literal",
+      "value": "--test"
+    },
+    {
+      "kind": "literal",
+      "value": "infinite_trace_corpus"
+    }
+  ],
+  "environment": [
+    {
+      "kind": "runtime",
+      "name": "PATH",
+      "value": "host:PATH"
+    },
+    {
+      "kind": "runtime",
+      "name": "HOME",
+      "value": "host:HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "CARGO_HOME",
+      "value": "host:CARGO_HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "RUSTUP_HOME",
+      "value": "host:RUSTUP_HOME"
+    },
+    {
+      "kind": "runtime",
+      "name": "CARGO_TARGET_DIR",
+      "value": "host:CARGO_TARGET_DIR"
+    },
+    {
+      "kind": "runtime",
+      "name": "TMPDIR",
+      "value": "host:TMPDIR"
+    },
+    {
+      "kind": "runtime",
+      "name": "RUSTC",
+      "value": "host:RUSTC"
+    },
+    {
+      "kind": "literal",
+      "name": "CARGO_NET_OFFLINE",
+      "value": "true"
+    }
+  ],
+  "inputs": [],
+  "outputTrees": [
+    {
+      "required": true,
+      "role": "mutants"
+    }
+  ],
+  "outputs": [],
+  "producerName": "cargo-mutants",
+  "producerVersion": "27.0.0",
+  "repetitions": 1,
+  "responseAdapter": "quoin.process-evidence-adapter",
+  "responseAdapterVersion": "1",
+  "responseProtocol": "quoin.process-evidence/v1",
+  "schemaVersion": "engineering-assurance.measurement-procedure/v1",
+  "sourceRepository": "tl-syntax",
+  "timeoutMillis": 1800000
+}

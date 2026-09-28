@@ -1,0 +1,106 @@
+{
+  "runs": [
+    {
+      "archive_path": "/private/tmp/tl-v5-c69-graph-native-r3/tl-parse/native.tar.gz",
+      "archive_sha256": "9f7479a10fd0d26bf63480527c12e4f741cd3ce05d7c8a3a74bfda9126d5e989",
+      "crate": "tl-parse",
+      "critical_scope": "V5 selected critical semantics",
+      "discovery_path": "/private/tmp/tl-v5-c69-graph-native-r3/tl-parse/discovery.json",
+      "discovery_sha256": "675c5729cb01e58c5f2154471262a8812e7af78c05a08fac7542d976dbf5cecd",
+      "selection_regex": "parse_clean_ascii_v4|Parser.*::interval|Parser.*::lower_derived",
+      "source_file": "src/infinite.rs",
+      "source_path": "/Users/peter/dev/.worktrees/tl-parse-v8-reachable",
+      "source_revision": "89c2c1249c741bb94dc07da1eff46605af25e401",
+      "survivor_reviews": [],
+      "test_tail": [
+        "--test",
+        "infinite_v4",
+        "--test",
+        "infinite_trace_corpus",
+        "--test",
+        "owner_infinite_corpus"
+      ]
+    },
+    {
+      "archive_path": "/private/tmp/tl-v5-c69-graph-native-r3/tl-syntax/native.tar.gz",
+      "archive_sha256": "3d16b3e3d5564f1229eac5911c5fb0d625d35c0a243e6d5181c00e57208710fc",
+      "crate": "tl-syntax",
+      "critical_scope": "V5 selected critical semantics",
+      "discovery_path": "/private/tmp/tl-v5-c69-graph-native-r3/tl-syntax/discovery.json",
+      "discovery_sha256": "0b09039c2df743e3d434a23d10f518332809a874af162c89125e36a14e8815a0",
+      "selection_regex": "TemporalInterval::start|select_infinite_profile|validate_resource_limits|preflight_resource_limits|InfiniteFormulaDocument::content_identity",
+      "source_file": "src/formula/infinite.rs",
+      "source_path": "/Users/peter/dev/tl-syntax",
+      "source_revision": "9de638dc4d14d0ae62a6825473a3a9bb6a9e57ac",
+      "survivor_reviews": [],
+      "test_tail": [
+        "--test",
+        "infinite_formula",
+        "--test",
+        "infinite_trace",
+        "--test",
+        "infinite_trace_corpus"
+      ]
+    },
+    {
+      "archive_path": "/private/tmp/tl-v5-c69-graph-native-r3/tl-mltl/native.tar.gz",
+      "archive_sha256": "3a3a752b921b8a4cef1ab37f41ec1c09bbfdaee779be414d396975cd2aeb91ea",
+      "crate": "tl-mltl",
+      "critical_scope": "infinite trace/lasso evaluator",
+      "discovery_path": "/private/tmp/tl-v5-c69-graph-native-r3/tl-mltl/discovery.json",
+      "discovery_sha256": "5be1660476535477f5a26f7ca75e50461ecf32621c3d91b114de108dba8b5cc3",
+      "selection_regex": "evaluate_trace|evaluate_lasso",
+      "source_file": "src/infinite/mod.rs",
+      "source_path": "/Users/peter/dev/.worktrees/tl-mltl-v2-v5-hardening",
+      "source_revision": "c69a2d003f891edba1908dfe327cae03488dcd5f",
+      "survivor_reviews": [
+        {
+          "detail": "Both admitted V1 formula and lasso constructors force InfiniteTraceV1; InfiniteClock has only EventPosition, so neither side of the clock/profile mismatch is reachable.",
+          "disposition": "proof_candidate",
+          "name": "src/infinite/mod.rs:675:9: replace || with && in evaluate_lasso"
+        },
+        {
+          "detail": "The later RawTraceRequest::validate rechecks node and observation-position ceilings before evaluation and returns the same typed ResourceIncomplete result.",
+          "disposition": "proof_candidate",
+          "name": "src/infinite/mod.rs:687:9: replace || with && in evaluate_lasso"
+        }
+      ],
+      "test_tail": [
+        "--lib",
+        "--test",
+        "infinite_trace",
+        "--test",
+        "infinite_oracle"
+      ]
+    },
+    {
+      "archive_path": "/private/tmp/tl-v5-c69-graph-native-r3/tl-rewrite/native.tar.gz",
+      "archive_sha256": "006805612ae48b26d01e67fb46c46d7d6a5ec2f56737f835f4932e589d2df228",
+      "crate": "tl-rewrite",
+      "critical_scope": "V5 selected critical semantics",
+      "discovery_path": "/private/tmp/tl-v5-c69-graph-native-r3/tl-rewrite/discovery.json",
+      "discovery_sha256": "a65d6306c71e09882d52bb783ff602916cc6d8c6a11107da9085ccf7732300cf",
+      "selection_regex": "check_infinite_rewrite|classify_infinite_results",
+      "source_file": "src/infinite.rs",
+      "source_path": "/Users/peter/dev/.worktrees/tl-rewrite-final-test-repin",
+      "source_revision": "e7ed9004e24803ac2611307cfe36b38480ec1a42",
+      "survivor_reviews": [
+        {
+          "detail": "Both admitted V1 formula and lasso documents force InfiniteTraceV1 and the sole EventPosition clock, so the profile/clock mismatch branch is unreachable.",
+          "disposition": "proof_candidate",
+          "name": "src/infinite.rs:917:61: replace || with && in check_infinite_rewrite"
+        }
+      ],
+      "test_tail": [
+        "--lib",
+        "--test",
+        "infinite_conformance",
+        "--test",
+        "infinite_rules",
+        "--test",
+        "infinite_owner_corpus"
+      ]
+    }
+  ],
+  "schema": "tl-mltl.v5-mutation-manifest/v1"
+}
