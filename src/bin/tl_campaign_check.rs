@@ -282,7 +282,7 @@ fn oracle_dependency_tree(stdout: &[u8]) -> bool {
         .is_some_and(|line| line.starts_with("tl-oracle v0.1.0 "))
         && tree
             .lines()
-            .any(|line| line.starts_with("tl-syntax v0.4.0 "))
+            .any(|line| line.starts_with("tl-syntax v0.3.0 "))
         && !tree
             .lines()
             .any(|line| line.starts_with("tl-mltl ") || line.starts_with("tl-rewrite "))
@@ -3027,7 +3027,7 @@ mod tests {
     // Trace: FR-043-AC-1, TC-175, FR-055-AC-2.
     #[test]
     fn direct_oracle_tree_accepts_only_the_independent_normal_graph() {
-        let good = "tl-oracle v0.1.0 (/source/tl-oracle)\ntl-syntax v0.4.0 (git+https://github.com/agent-ix/tl-syntax)\n";
+        let good = "tl-oracle v0.1.0 (/source/tl-oracle)\ntl-syntax v0.3.0 (git+https://github.com/agent-ix/tl-syntax)\n";
         assert_eq!(
             check(
                 "V1.oracle_dependency_boundary",
@@ -3039,8 +3039,9 @@ mod tests {
         );
         for bad in [
             "tl-oracle v0.1.0 (/source/tl-oracle)\n",
-            "tl-oracle v0.1.0 (/source/tl-oracle)\ntl-syntax v0.4.0 (/source/tl-syntax)\ntl-mltl v0.4.0 (/source/tl-mltl)\n",
-            "tl-oracle v0.1.0 (/source/tl-oracle)\ntl-syntax v0.4.0 (/source/tl-syntax)\ntl-rewrite v0.4.0 (/source/tl-rewrite)\n",
+            "tl-oracle v0.1.0 (/source/tl-oracle)\ntl-syntax v0.4.0 (/source/tl-syntax)\n",
+            "tl-oracle v0.1.0 (/source/tl-oracle)\ntl-syntax v0.3.0 (/source/tl-syntax)\ntl-mltl v0.3.0 (/source/tl-mltl)\n",
+            "tl-oracle v0.1.0 (/source/tl-oracle)\ntl-syntax v0.3.0 (/source/tl-syntax)\ntl-rewrite v0.3.0 (/source/tl-rewrite)\n",
             "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n",
         ] {
             assert_eq!(
