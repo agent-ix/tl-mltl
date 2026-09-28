@@ -14,6 +14,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 const V8_CARGO_BRIDGE: &str = "import hashlib,os,sys\np=os.environ['CARGO']\nwith open(p,'rb') as f: digest=hashlib.file_digest(f,'sha256').hexdigest()\nif digest!=os.environ['TL_V8_CARGO_SHA256']: raise SystemExit(74)\nos.execv(p,[p,*sys.argv[1:]])";
+const V7_MIRI_BRIDGE: &str = "import hashlib,os,sys\np=os.environ['TL_V7_CARGO_MIRI']\ns=os.path.join(os.path.dirname(p),'miri')\nwith open(p,'rb') as f: tool=hashlib.file_digest(f,'sha256').hexdigest()\nwith open(s,'rb') as f: sibling=hashlib.file_digest(f,'sha256').hexdigest()\nif tool!=os.environ['TL_V7_CARGO_MIRI_SHA256'] or sibling!=os.environ['TL_V7_MIRI_SHA256']: raise SystemExit(74)\nos.execv(p,[p,*sys.argv[1:]])";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -90,6 +91,25 @@ fn validate_rust_binding(
     tools: &BTreeMap<String, Tool>,
 ) -> Result<(), String> {
     let v8_coverage = member.starts_with("V8.") && member != "V8.parse_example_prep";
+    let v7_miri = member.starts_with("V7.")
+        && !matches!(
+            member,
+            "V7.embedded_core" | "V7.embedded_alloc" | "V7.embedded_serde"
+        );
+    if v7_miri {
+        let expected = ["-I", "-S", "-c", V7_MIRI_BRIDGE, "miri"];
+        if procedure.producer_name != "python3"
+            || procedure.producer_version != "3.13.11"
+            || procedure.arguments.len() < expected.len()
+            || !procedure
+                .arguments
+                .iter()
+                .zip(expected)
+                .all(|(argument, value)| argument.kind == "literal" && argument.value == value)
+        {
+            return Err(format!("{member}: Miri requires the pinned Python bridge"));
+        }
+    }
     if v8_coverage {
         let expected = ["-I", "-S", "-c", V8_CARGO_BRIDGE, "llvm-cov"];
         if procedure.producer_name != "python3"
@@ -105,6 +125,8 @@ fn validate_rust_binding(
                 "{member}: coverage requires the pinned Python Cargo bridge"
             ));
         }
+    }
+    if v7_miri || v8_coverage {
         let python = tools
             .get("python3@3.13.11")
             .ok_or(format!("{member}: missing pinned Python producer"))?;
@@ -114,6 +136,7 @@ fn validate_rust_binding(
         }
     }
     if !v8_coverage
+        && !v7_miri
         && procedure.producer_name != "cargo"
         && !procedure.producer_name.starts_with("cargo-")
     {
@@ -168,6 +191,87 @@ fn validate_rust_binding(
         return Err(format!(
             "{member}: rust toolchain identity differs from observed RUSTC release/host"
         ));
+    }
+    if v7_miri {
+        if !release.contains("-nightly") {
+            return Err(format!("{member}: Miri requires a nightly Rust toolchain"));
+        }
+        for name in [
+            "RUSTUP_HOME",
+            "TL_V7_CARGO_MIRI",
+            "TL_V7_CARGO_MIRI_SHA256",
+            "TL_V7_MIRI_SHA256",
+        ] {
+            if !procedure.environment.iter().any(|entry| {
+                entry.name == name
+                    && entry.kind == "runtime"
+                    && entry.value == format!("host:{name}")
+            }) {
+                return Err(format!("{member}: Miri must bind host:{name}"));
+            }
+        }
+        let cargo_miri = tools
+            .get("cargo-miri@0.1.0")
+            .ok_or(format!("{member}: missing pinned cargo-miri tool"))?;
+        let miri = tools
+            .get("miri@0.1.0")
+            .ok_or(format!("{member}: missing pinned miri sibling"))?;
+        let cargo_miri_path = Path::new(&cargo_miri.executable);
+        let miri_path = Path::new(&miri.executable);
+        for (name, tool, tool_path, digest_name) in [
+            (
+                "cargo-miri",
+                cargo_miri,
+                cargo_miri_path,
+                "TL_V7_CARGO_MIRI_SHA256",
+            ),
+            ("miri", miri, miri_path, "TL_V7_MIRI_SHA256"),
+        ] {
+            let metadata = fs::symlink_metadata(tool_path).map_err(|error| error.to_string())?;
+            if !tool_path.is_absolute()
+                || !metadata.is_file()
+                || metadata.file_type().is_symlink()
+                || metadata.len() > 1_073_741_824
+            {
+                return Err(format!(
+                    "{member}: {name} must be a bounded regular executable"
+                ));
+            }
+            let digest = format!(
+                "{:x}",
+                Sha256::digest(fs::read(tool_path).map_err(|error| error.to_string())?)
+            );
+            if digest != tool.digest || environment.get(digest_name) != Some(&tool.digest) {
+                return Err(format!("{member}: pinned {name} digest changed"));
+            }
+        }
+        if miri_path != cargo_miri_path.with_file_name("miri")
+            || environment.get("TL_V7_CARGO_MIRI") != Some(&cargo_miri.executable)
+            || rustc.parent() != cargo_miri_path.parent()
+        {
+            return Err(format!("{member}: Miri toolchain sibling paths differ"));
+        }
+        let rustup_home = Path::new(
+            environment
+                .get("RUSTUP_HOME")
+                .ok_or(format!("{member}: Miri has no RUSTUP_HOME"))?,
+        );
+        if !rustup_home.is_absolute() || cargo_miri_path.ancestors().nth(4) != Some(rustup_home) {
+            return Err(format!(
+                "{member}: Miri RUSTUP_HOME differs from pinned toolchain"
+            ));
+        }
+        let selected = std::env::split_paths(path)
+            .map(|directory| directory.join("cargo-miri"))
+            .find(|candidate| candidate.is_file())
+            .ok_or(format!("{member}: PATH does not resolve cargo-miri"))?;
+        if selected.canonicalize().map_err(|error| error.to_string())?
+            != cargo_miri_path
+                .canonicalize()
+                .map_err(|error| error.to_string())?
+        {
+            return Err(format!("{member}: PATH resolves a different cargo-miri"));
+        }
     }
     if v8_coverage {
         if !release.contains("-nightly") {
@@ -1130,7 +1234,8 @@ mod tests {
     use super::{
         binding, member_environment, member_toolchains, selected_inputs, sha256, validate_plan,
         validate_rust_binding, validate_toolchains, verify_checker_sources, verify_control_file,
-        Contracts, Machine, Member, Procedure, ProcedureEnvironment, Tool, V8_CARGO_BRIDGE,
+        Contracts, Machine, Member, Procedure, ProcedureEnvironment, Tool, V7_MIRI_BRIDGE,
+        V8_CARGO_BRIDGE,
     };
 
     // Trace: FR-055-AC-1, TC-197
@@ -1173,6 +1278,208 @@ mod tests {
                 .unwrap();
         assert_eq!(generator["producerName"], "tl_v10_generate");
         assert_eq!(generator["producerVersion"], package_version);
+    }
+
+    // Trace: FR-055-AC-4, TC-200
+    #[test]
+    fn all_v7_miri_procedures_exec_pinned_toolchain_from_python() {
+        for document in [
+            include_str!("../../campaign/procedures/v7-syntax-formula-limits.json"),
+            include_str!("../../campaign/procedures/v7-syntax-borrowed-ownership.json"),
+            include_str!("../../campaign/procedures/v7-parse-limits-utf8.json"),
+            include_str!("../../campaign/procedures/v7-mltl-prefix-limits.json"),
+            include_str!("../../campaign/procedures/v7-mltl-lasso-limits.json"),
+            include_str!("../../campaign/procedures/v7-rewrite-budgets.json"),
+            include_str!("../../campaign/procedures/v7-rewrite-record-limits.json"),
+            include_str!("../../campaign/procedures/v7-oracle-limits.json"),
+        ] {
+            let procedure: Procedure = serde_json::from_str(document).unwrap();
+            assert_eq!(procedure.producer_name, "python3");
+            assert_eq!(procedure.producer_version, "3.13.11");
+            for (argument, value) in
+                procedure
+                    .arguments
+                    .iter()
+                    .zip(["-I", "-S", "-c", V7_MIRI_BRIDGE, "miri"])
+            {
+                assert_eq!(argument.kind, "literal");
+                assert_eq!(argument.value, value);
+            }
+            for name in [
+                "RUSTUP_HOME",
+                "TL_V7_CARGO_MIRI",
+                "TL_V7_CARGO_MIRI_SHA256",
+                "TL_V7_MIRI_SHA256",
+            ] {
+                assert!(procedure.environment.iter().any(|entry| {
+                    entry.name == name
+                        && entry.kind == "runtime"
+                        && entry.value == format!("host:{name}")
+                }));
+            }
+        }
+    }
+
+    // Trace: FR-055-AC-4, TC-200
+    #[cfg(unix)]
+    #[test]
+    fn v7_python_bridge_execs_verified_cargo_miri_and_refuses_changed_sibling() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir().unwrap();
+        let cargo_miri = directory.path().join("cargo-miri");
+        let miri = directory.path().join("miri");
+        std::fs::write(&cargo_miri, b"#!/bin/sh\nprintf '%s\\n' \"$@\"\n").unwrap();
+        std::fs::write(&miri, b"original miri").unwrap();
+        std::fs::set_permissions(&cargo_miri, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let cargo_digest = sha256(&std::fs::read(&cargo_miri).unwrap());
+        let miri_digest = sha256(&std::fs::read(&miri).unwrap());
+        let run = |expected_cargo: &str, expected_miri: &str| {
+            std::process::Command::new("python3")
+                .args(["-I", "-S", "-c", V7_MIRI_BRIDGE, "miri", "test"])
+                .env("TL_V7_CARGO_MIRI", &cargo_miri)
+                .env("TL_V7_CARGO_MIRI_SHA256", expected_cargo)
+                .env("TL_V7_MIRI_SHA256", expected_miri)
+                .output()
+                .unwrap()
+        };
+        let accepted = run(&cargo_digest, &miri_digest);
+        assert!(accepted.status.success(), "{:?}", accepted.stderr);
+        assert_eq!(accepted.stdout, b"miri\ntest\n");
+        assert_eq!(run(&"0".repeat(64), &miri_digest).status.code(), Some(74));
+        std::fs::write(&miri, b"changed miri").unwrap();
+        assert_eq!(run(&cargo_digest, &miri_digest).status.code(), Some(74));
+    }
+
+    // Trace: FR-055-AC-4, TC-200
+    #[cfg(unix)]
+    #[test]
+    fn v7_miri_binding_requires_one_pinned_nightly_toolchain() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir().unwrap();
+        let rustup = directory.path().join("rustup-home");
+        let bin = rustup.join("toolchains/nightly-test-x86_64-unknown-linux-gnu/bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        for (name, response) in [
+            (
+                "rustc",
+                "release: 1.100.0-nightly\nhost: x86_64-unknown-linux-gnu",
+            ),
+            ("cargo-miri", "miri 0.1.0"),
+            ("miri", "miri 0.1.0"),
+        ] {
+            let executable = bin.join(name);
+            std::fs::write(
+                &executable,
+                format!("#!/bin/sh\nprintf '%s\\n' '{response}'\n"),
+            )
+            .unwrap();
+            std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        let python = directory.path().join("python3");
+        std::fs::write(&python, b"#!/bin/sh\nprintf '%s\\n' 'Python 3.13.11'\n").unwrap();
+        std::fs::set_permissions(&python, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let digest = |name: &str| sha256(&std::fs::read(bin.join(name)).unwrap());
+        let cargo_digest = digest("cargo-miri");
+        let miri_digest = digest("miri");
+        let mut tools = BTreeMap::from([
+            (
+                "python3@3.13.11".into(),
+                Tool {
+                    executable: python.to_string_lossy().into_owned(),
+                    digest: String::new(),
+                },
+            ),
+            (
+                "cargo-miri@0.1.0".into(),
+                Tool {
+                    executable: bin.join("cargo-miri").to_string_lossy().into_owned(),
+                    digest: cargo_digest.clone(),
+                },
+            ),
+            (
+                "miri@0.1.0".into(),
+                Tool {
+                    executable: bin.join("miri").to_string_lossy().into_owned(),
+                    digest: miri_digest.clone(),
+                },
+            ),
+        ]);
+        let procedure: Procedure = serde_json::from_str(include_str!(
+            "../../campaign/procedures/v7-syntax-formula-limits.json"
+        ))
+        .unwrap();
+        let identity = BTreeMap::from([(
+            "rust".into(),
+            "rustc 1.100.0-nightly (x86_64-unknown-linux-gnu)".into(),
+        )]);
+        let environment = BTreeMap::from([
+            ("PATH".into(), bin.to_string_lossy().into_owned()),
+            (
+                "RUSTC".into(),
+                bin.join("rustc").to_string_lossy().into_owned(),
+            ),
+            ("RUSTUP_HOME".into(), rustup.to_string_lossy().into_owned()),
+            (
+                "TL_V7_CARGO_MIRI".into(),
+                bin.join("cargo-miri").to_string_lossy().into_owned(),
+            ),
+            ("TL_V7_CARGO_MIRI_SHA256".into(), cargo_digest),
+            ("TL_V7_MIRI_SHA256".into(), miri_digest),
+        ]);
+        assert!(validate_rust_binding(
+            "V7.syntax_formula_limits",
+            &procedure,
+            &identity,
+            &environment,
+            &tools
+        )
+        .is_ok());
+
+        let mut changed = environment.clone();
+        changed.insert(
+            "RUSTUP_HOME".into(),
+            directory.path().to_string_lossy().into_owned(),
+        );
+        assert!(validate_rust_binding(
+            "V7.syntax_formula_limits",
+            &procedure,
+            &identity,
+            &changed,
+            &tools
+        )
+        .is_err());
+        let mut changed = environment.clone();
+        changed.insert("TL_V7_MIRI_SHA256".into(), "0".repeat(64));
+        assert!(validate_rust_binding(
+            "V7.syntax_formula_limits",
+            &procedure,
+            &identity,
+            &changed,
+            &tools
+        )
+        .is_err());
+        tools.get_mut("miri@0.1.0").unwrap().executable =
+            bin.join("other-miri").to_string_lossy().into_owned();
+        assert!(validate_rust_binding(
+            "V7.syntax_formula_limits",
+            &procedure,
+            &identity,
+            &environment,
+            &tools
+        )
+        .is_err());
+        let mut changed_procedure = procedure;
+        changed_procedure.arguments[3].value.push(' ');
+        assert!(validate_rust_binding(
+            "V7.syntax_formula_limits",
+            &changed_procedure,
+            &identity,
+            &environment,
+            &tools
+        )
+        .is_err());
     }
 
     // Trace: FR-055-AC-4, TC-200
