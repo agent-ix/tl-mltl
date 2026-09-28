@@ -1152,8 +1152,10 @@ fn evaluator_has_no_derived_future_branch() {
         }
         scanned += 1;
     }
+    // The Campaign adds its checker, replay modules, configuration adapter,
+    // and input generator under src/bin; they are included in this scan.
     assert_eq!(
-        scanned, 25,
+        scanned, 32,
         "the reviewed subsystem source population changed"
     );
 }

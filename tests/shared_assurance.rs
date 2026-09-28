@@ -2235,19 +2235,24 @@ fn no_local_evidence_framework_remains() {
         // .github/workflows/cla.yml, same CLA rollout.
         (".github", 3),
         ("assurance", 3),
+        // TL-246 adds bounded benchmark, Campaign, fuzz, and review artifacts
+        // to the tracked source set. Keep each area separately visible.
+        ("benches", 3),
+        ("campaign", 191),
         // TL-170 deletes the vendored corpus/tl-syntax-v1 copy (14 files) and
         // corpus/tl-syntax-v1.sha256 (1 file); the shared corpus is read from
         // the compiled tl-syntax dependency via tl_syntax::CORPUS_DIR instead.
         // TL-171 deletes corpus/past-history (5 files) and
         // corpus/future-operators (20 files) the same way, leaving only
         // corpus/README.md and the retained corpus/r2u2-v4.2 exchange (35 - 25
-        // = 10).
-        ("corpus", 10),
+        // = 10). TL-246 adds 11 corpus/past-c2po-v1 fixture paths.
+        ("corpus", 21),
         // TL-170 adds examples/emit_shared_corpus_manifest.rs, the bridge
         // producer the chain driver reads its independent malformed-count
         // oracle from now that the manifest is no longer a vendored file.
         ("examples", 4),
         ("scripts", 5),
+        ("fuzz", 13),
         // 110 was measured before TL-180 added ADR-001 and SR-052 (2 files)
         // without moving this control, making 112. This campaign adds 8:
         // corpus-campaign.md, corpus-campaign-test-matrix.md, the documents
@@ -2259,13 +2264,13 @@ fn no_local_evidence_framework_remains() {
         // NFR-006 and its spec review SR-053 (2 files). (Requirement ids are
         // kept off the start of these comment lines: Quire reads a line-leading
         // id as a trace tag, and this test backs none of them.)
-        ("spec", 134),
+        ("spec", 285),
         // TL-179 deletes wire::request, wire::observation, wire::report, and
         // mapping::contract_ir (4 files): the quire-observation-coupled
         // request/result/mapping owner boundary now lives in quire-mltl.
         // TL-65 adds ci_guard.rs and bin/ci_guard.rs (2 files), the NFR-006
         // gate-set guard.
-        ("src", 22),
+        ("src", 32),
         // TL-179 deletes tests/tc_084_temporal_owner_wire.rs (1 file), the
         // dedicated test for the request/result/mapping owner boundary it
         // removed from src/. TL-173 then deletes the two files that test left
@@ -2276,7 +2281,7 @@ fn no_local_evidence_framework_remains() {
         // tests/fixtures/README.md, which existed only to document that one
         // fixture's provenance. Neither was referenced by any remaining test
         // or source file (23 - 2 = 21). TL-65 adds tests/ci_guard.rs (22).
-        ("tests", 22),
+        ("tests", 37),
         // TL-179 deletes the temporal-assessment-request-v1,
         // temporal-assessment-result-v1, and contract-ir-result-map-v1
         // schemas (3 files) alongside the Rust modules that published them.
@@ -2289,7 +2294,7 @@ fn no_local_evidence_framework_remains() {
         ("plan", 35),
         // The readiness and formal gap-analysis skill artifacts live at the
         // root review path required by their output contracts.
-        ("reviews", 3),
+        ("reviews", 28),
     ]
     .into_iter()
     .map(|(area, count)| (area.to_owned(), count))
@@ -2340,14 +2345,15 @@ fn no_local_evidence_framework_remains() {
     // TL-65 (#90) adds src/ci_guard.rs, src/bin/ci_guard.rs,
     // tests/ci_guard.rs, NFR-006 and its spec review SR-053, and the 10-file
     // plan/PLAN-009 bundle (15 files), for 261; the 0.3.0 release adds
-    // CHANGELOG.md, for 262.
+    // CHANGELOG.md, for 262. TL-246's tracked Campaign and qualification
+    // artifacts bring the reviewed current-source population to 681.
     // Check it before taking the shared-input lock: ordinary reviewed source
     // growth must report its own census error without poisoning a mutex whose
     // recovery message is specifically about interrupted input mutation.
     let inspected = tracked.len();
     assert_eq!(
-        inspected, 262,
-        "the source census population changed from the reviewed 262 tracked files \
+        inspected, 681,
+        "the source census population changed from the reviewed 681 tracked files \
          ({inspected} observed); review the census scope and update this control deliberately"
     );
 
