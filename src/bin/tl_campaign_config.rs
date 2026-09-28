@@ -250,6 +250,27 @@ fn validate_rust_binding(
             if !Path::new(cargo_home).is_absolute() {
                 return Err(format!("{member}: CARGO_HOME must be absolute"));
             }
+            let shadow = Path::new(cargo_home).join("bin/cargo-llvm-cov");
+            match fs::symlink_metadata(&shadow) {
+                Ok(_) => {
+                    let selected = shadow.canonicalize().map_err(|error| error.to_string())?;
+                    let pinned = Path::new(
+                        &tools
+                            .get("cargo-llvm-cov@0.8.7")
+                            .ok_or(format!("{member}: missing pinned coverage plugin"))?
+                            .executable,
+                    )
+                    .canonicalize()
+                    .map_err(|error| error.to_string())?;
+                    if selected != pinned {
+                        return Err(format!(
+                            "{member}: CARGO_HOME shadows pinned cargo-llvm-cov"
+                        ));
+                    }
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => return Err(format!("{member}: CARGO_HOME plugin lookup: {error}")),
+            }
             let output = Command::new(&cargo.executable)
                 .args(["llvm-cov", "--version"])
                 .env_clear()
@@ -1585,7 +1606,17 @@ mod tests {
             &tools
         )
         .unwrap_err()
-        .contains("Cargo resolves a different cargo-llvm-cov"));
+        .contains("CARGO_HOME shadows pinned cargo-llvm-cov"));
+        std::fs::write(&shadow, b"#!/bin/sh\necho cargo-llvm-cov 0.8.7\n").unwrap();
+        assert!(validate_rust_binding(
+            "V8.syntax_core",
+            &procedure,
+            &identity,
+            &environment,
+            &tools
+        )
+        .unwrap_err()
+        .contains("CARGO_HOME shadows pinned cargo-llvm-cov"));
         std::fs::remove_file(&shadow).unwrap();
 
         let substituted = root.join("other-plugin");
