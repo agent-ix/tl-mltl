@@ -13,6 +13,8 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
+const V8_CARGO_BRIDGE: &str = "import hashlib,os,sys\np=os.environ['CARGO']\nwith open(p,'rb') as f: digest=hashlib.file_digest(f,'sha256').hexdigest()\nif digest!=os.environ['TL_V8_CARGO_SHA256']: raise SystemExit(74)\nos.execv(p,[p,*sys.argv[1:]])";
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Machine {
@@ -87,17 +89,34 @@ fn validate_rust_binding(
     environment: &BTreeMap<String, String>,
     tools: &BTreeMap<String, Tool>,
 ) -> Result<(), String> {
-    let v8_coverage = member.starts_with("V8.")
-        && procedure
-            .arguments
-            .first()
-            .is_some_and(|argument| argument.kind == "literal" && argument.value == "llvm-cov");
-    if v8_coverage && procedure.producer_name != "cargo" {
-        return Err(format!(
-            "{member}: coverage must launch the stable plugin through pinned Cargo"
-        ));
+    let v8_coverage = member.starts_with("V8.") && member != "V8.parse_example_prep";
+    if v8_coverage {
+        let expected = ["-I", "-S", "-c", V8_CARGO_BRIDGE, "llvm-cov"];
+        if procedure.producer_name != "python3"
+            || procedure.producer_version != "3.13.11"
+            || procedure.arguments.len() < expected.len()
+            || !procedure
+                .arguments
+                .iter()
+                .zip(expected)
+                .all(|(argument, value)| argument.kind == "literal" && argument.value == value)
+        {
+            return Err(format!(
+                "{member}: coverage requires the pinned Python Cargo bridge"
+            ));
+        }
+        let python = tools
+            .get("python3@3.13.11")
+            .ok_or(format!("{member}: missing pinned Python producer"))?;
+        let version = observed_version(Path::new(&python.executable), "--version")?;
+        if version.split_whitespace().collect::<Vec<_>>() != ["Python", "3.13.11"] {
+            return Err(format!("{member}: Python producer version changed"));
+        }
     }
-    if procedure.producer_name != "cargo" && !procedure.producer_name.starts_with("cargo-") {
+    if !v8_coverage
+        && procedure.producer_name != "cargo"
+        && !procedure.producer_name.starts_with("cargo-")
+    {
         return Ok(());
     }
     for name in ["RUSTC", "PATH"] {
@@ -220,23 +239,61 @@ fn validate_rust_binding(
             return Err(format!("{member}: {key} executable version changed"));
         }
     }
-    if procedure.producer_name == "cargo" {
-        if procedure.producer_version != release {
+    if procedure.producer_name == "cargo" || v8_coverage {
+        if !v8_coverage && procedure.producer_version != release {
             return Err(format!(
                 "{member}: Cargo procedure version differs from RUSTC release"
             ));
         }
-        let key = format!("cargo@{}", procedure.producer_version);
+        let key = format!("cargo@{release}");
         let cargo = tools
             .get(&key)
             .ok_or(format!("{member}: missing machine tool {key}"))?;
         let observed = observed_version(Path::new(&cargo.executable), "--version")?;
-        if observed.split_whitespace().nth(1) != Some(procedure.producer_version.as_str()) {
+        if observed.split_whitespace().nth(1) != Some(release) {
             return Err(format!(
                 "{member}: Cargo executable version differs from procedure"
             ));
         }
         if v8_coverage {
+            for name in ["CARGO", "TL_V8_CARGO_SHA256"] {
+                if !procedure.environment.iter().any(|entry| {
+                    entry.name == name
+                        && entry.kind == "runtime"
+                        && entry.value == format!("host:{name}")
+                }) {
+                    return Err(format!("{member}: coverage must bind host:{name}"));
+                }
+            }
+            let cargo_path = Path::new(
+                environment
+                    .get("CARGO")
+                    .ok_or(format!("{member}: coverage has no CARGO"))?,
+            );
+            let cargo_metadata =
+                fs::symlink_metadata(cargo_path).map_err(|error| error.to_string())?;
+            if !cargo_path.is_absolute()
+                || !cargo_metadata.is_file()
+                || cargo_metadata.file_type().is_symlink()
+                || cargo_metadata.len() > 1_073_741_824
+                || cargo_path
+                    .canonicalize()
+                    .map_err(|error| error.to_string())?
+                    != Path::new(&cargo.executable)
+                        .canonicalize()
+                        .map_err(|error| error.to_string())?
+            {
+                return Err(format!("{member}: CARGO differs from pinned nightly Cargo"));
+            }
+            let cargo_digest = format!(
+                "{:x}",
+                Sha256::digest(fs::read(cargo_path).map_err(|error| error.to_string())?)
+            );
+            if cargo_digest != cargo.digest
+                || environment.get("TL_V8_CARGO_SHA256") != Some(&cargo.digest)
+            {
+                return Err(format!("{member}: Cargo executable digest changed"));
+            }
             if !procedure.environment.iter().any(|entry| {
                 entry.name == "CARGO_HOME"
                     && entry.kind == "runtime"
@@ -1073,7 +1130,7 @@ mod tests {
     use super::{
         binding, member_environment, member_toolchains, selected_inputs, sha256, validate_plan,
         validate_rust_binding, validate_toolchains, verify_checker_sources, verify_control_file,
-        Contracts, Machine, Member, Procedure, ProcedureEnvironment, Tool,
+        Contracts, Machine, Member, Procedure, ProcedureEnvironment, Tool, V8_CARGO_BRIDGE,
     };
 
     // Trace: FR-055-AC-1, TC-197
@@ -1120,7 +1177,7 @@ mod tests {
 
     // Trace: FR-055-AC-4, TC-200
     #[test]
-    fn all_v8_coverage_procedures_launch_the_stable_plugin_through_nightly_cargo() {
+    fn all_v8_coverage_procedures_exec_pinned_cargo_from_python() {
         for document in [
             include_str!("../../campaign/procedures/v8-syntax-core.json"),
             include_str!("../../campaign/procedures/v8-syntax-alloc.json"),
@@ -1132,11 +1189,52 @@ mod tests {
             include_str!("../../campaign/procedures/v8-rewrite-infinite.json"),
         ] {
             let procedure: Procedure = serde_json::from_str(document).unwrap();
-            assert_eq!(procedure.producer_name, "cargo");
-            assert_eq!(procedure.producer_version, "1.100.0-nightly");
-            assert_eq!(procedure.arguments[0].kind, "literal");
-            assert_eq!(procedure.arguments[0].value, "llvm-cov");
+            assert_eq!(procedure.producer_name, "python3");
+            assert_eq!(procedure.producer_version, "3.13.11");
+            for (argument, value) in
+                procedure
+                    .arguments
+                    .iter()
+                    .zip(["-I", "-S", "-c", V8_CARGO_BRIDGE, "llvm-cov"])
+            {
+                assert_eq!(argument.kind, "literal");
+                assert_eq!(argument.value, value);
+            }
+            for name in ["CARGO", "TL_V8_CARGO_SHA256"] {
+                assert!(procedure.environment.iter().any(|entry| {
+                    entry.name == name
+                        && entry.kind == "runtime"
+                        && entry.value == format!("host:{name}")
+                }));
+            }
         }
+    }
+
+    // Trace: FR-055-AC-4, TC-200
+    #[cfg(unix)]
+    #[test]
+    fn v8_python_bridge_execs_verified_stable_cargo_path() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir().unwrap();
+        let cargo = directory.path().join("cargo");
+        std::fs::write(&cargo, b"#!/bin/sh\nprintf '%s\\n' \"$@\"\n").unwrap();
+        std::fs::set_permissions(&cargo, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let digest = sha256(&std::fs::read(&cargo).unwrap());
+        let run = |expected: &str| {
+            std::process::Command::new("python3")
+                .args(["-I", "-S", "-c", V8_CARGO_BRIDGE, "llvm-cov", "--version"])
+                .env("CARGO", &cargo)
+                .env("TL_V8_CARGO_SHA256", expected)
+                .output()
+                .unwrap()
+        };
+        let accepted = run(&digest);
+        assert!(accepted.status.success(), "{:?}", accepted.stderr);
+        assert_eq!(accepted.stdout, b"llvm-cov\n--version\n");
+        assert_eq!(run(&"0".repeat(64)).status.code(), Some(74));
+        std::fs::write(&cargo, b"#!/bin/sh\nexit 0\n").unwrap();
+        assert_eq!(run(&digest).status.code(), Some(74));
     }
 
     // Trace: FR-055-AC-1, TC-197
@@ -1497,6 +1595,7 @@ mod tests {
                 "release: 1.100.0-nightly\nhost: x86_64-unknown-linux-gnu",
             ),
             ("cargo", "cargo 1.100.0-nightly (test)"),
+            ("python3", "Python 3.13.11"),
             ("cargo-llvm-cov", "cargo-llvm-cov 0.8.7"),
             ("llvm-cov", "llvm-cov test"),
             ("llvm-profdata", "llvm-profdata test"),
@@ -1510,15 +1609,23 @@ mod tests {
             b"#!/bin/sh\nif [ \"$1\" = llvm-cov ]; then\n  if [ -x \"$CARGO_HOME/bin/cargo-llvm-cov\" ]; then exec \"$CARGO_HOME/bin/cargo-llvm-cov\" \"$@\"; fi\n  exec cargo-llvm-cov \"$@\"\nfi\necho cargo 1.100.0-nightly\n",
         )
         .unwrap();
-        let procedure: Procedure = serde_json::from_str(include_str!(
+        let mut procedure: Procedure = serde_json::from_str(include_str!(
             "../../campaign/procedures/v8-syntax-core.json"
         ))
         .unwrap();
-        let environment = BTreeMap::from([
+        let mut environment = BTreeMap::from([
             ("PATH".into(), root.to_string_lossy().into_owned()),
             (
                 "CARGO_HOME".into(),
                 root.join("cargo-home").to_string_lossy().into_owned(),
+            ),
+            (
+                "CARGO".into(),
+                root.join("cargo").to_string_lossy().into_owned(),
+            ),
+            (
+                "TL_V8_CARGO_SHA256".into(),
+                sha256(&std::fs::read(root.join("cargo")).unwrap()),
             ),
             (
                 "RUSTC".into(),
@@ -1546,10 +1653,17 @@ mod tests {
         let plugin_bytes = std::fs::read(&plugin_path).unwrap();
         let mut tools = BTreeMap::from([
             (
+                "python3@3.13.11".into(),
+                Tool {
+                    executable: root.join("python3").to_string_lossy().into_owned(),
+                    digest: sha256(&std::fs::read(root.join("python3")).unwrap()),
+                },
+            ),
+            (
                 "cargo@1.100.0-nightly".into(),
                 Tool {
                     executable: root.join("cargo").to_string_lossy().into_owned(),
-                    digest: String::new(),
+                    digest: sha256(&std::fs::read(root.join("cargo")).unwrap()),
                 },
             ),
             (
@@ -1568,6 +1682,43 @@ mod tests {
             &tools
         )
         .is_ok());
+
+        let original_bridge = procedure.arguments[3].value.clone();
+        procedure.arguments[3].value.push(' ');
+        assert!(validate_rust_binding(
+            "V8.syntax_core",
+            &procedure,
+            &identity,
+            &environment,
+            &tools
+        )
+        .unwrap_err()
+        .contains("pinned Python Cargo bridge"));
+        procedure.arguments[3].value = original_bridge;
+
+        let cargo_path = environment.remove("CARGO").unwrap();
+        assert!(validate_rust_binding(
+            "V8.syntax_core",
+            &procedure,
+            &identity,
+            &environment,
+            &tools
+        )
+        .is_err());
+        environment.insert("CARGO".into(), cargo_path);
+        let cargo_digest = environment
+            .insert("TL_V8_CARGO_SHA256".into(), "0".repeat(64))
+            .unwrap();
+        assert!(validate_rust_binding(
+            "V8.syntax_core",
+            &procedure,
+            &identity,
+            &environment,
+            &tools
+        )
+        .unwrap_err()
+        .contains("Cargo executable digest changed"));
+        environment.insert("TL_V8_CARGO_SHA256".into(), cargo_digest);
 
         std::fs::write(&plugin_path, b"#!/bin/sh\necho substituted\n").unwrap();
         assert!(validate_rust_binding(
@@ -1657,6 +1808,7 @@ mod tests {
         let cov = write_tool("llvm-cov", "LLVM version 23.1.1-rust-1.100.0-nightly");
         let profdata = write_tool("llvm-profdata", "LLVM version 23.1.1-rust-1.100.0-nightly");
         let cargo = write_tool("cargo", "cargo 1.100.0-nightly (test)");
+        let python = write_tool("python3", "Python 3.13.11");
         std::fs::write(
             &cargo,
             b"#!/bin/sh\nif [ \"$1\" = llvm-cov ]; then exec cargo-llvm-cov \"$@\"; fi\necho cargo 1.100.0-nightly\n",
@@ -1664,6 +1816,13 @@ mod tests {
         .unwrap();
         let plugin = write_tool("cargo-llvm-cov", "cargo-llvm-cov 0.8.7");
         let tools = BTreeMap::from([
+            (
+                "python3@3.13.11".into(),
+                Tool {
+                    executable: python.to_string_lossy().into_owned(),
+                    digest: sha256(&std::fs::read(&python).unwrap()),
+                },
+            ),
             (
                 "cargo@1.100.0-nightly".into(),
                 Tool {
@@ -1699,6 +1858,11 @@ mod tests {
                     .join("cargo-home")
                     .to_string_lossy()
                     .into_owned(),
+            ),
+            ("CARGO".into(), cargo.to_string_lossy().into_owned()),
+            (
+                "TL_V8_CARGO_SHA256".into(),
+                sha256(&std::fs::read(&cargo).unwrap()),
             ),
             ("RUSTC".into(), nightly.to_string_lossy().into_owned()),
             ("LLVM_COV".into(), cov.to_string_lossy().into_owned()),
