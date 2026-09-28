@@ -42,7 +42,19 @@
     },
     {
       "kind": "literal",
-      "value": "--tests"
+      "value": "--test"
+    },
+    {
+      "kind": "literal",
+      "value": "future_lowering"
+    },
+    {
+      "kind": "literal",
+      "value": "--test"
+    },
+    {
+      "kind": "literal",
+      "value": "v8_critical_branches"
     },
     {
       "kind": "literal",

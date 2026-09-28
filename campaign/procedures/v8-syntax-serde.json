@@ -42,7 +42,35 @@
     },
     {
       "kind": "literal",
-      "value": "--tests"
+      "value": "--test"
+    },
+    {
+      "kind": "literal",
+      "value": "future_lowering"
+    },
+    {
+      "kind": "literal",
+      "value": "--test"
+    },
+    {
+      "kind": "literal",
+      "value": "v8_critical_branches"
+    },
+    {
+      "kind": "literal",
+      "value": "--test"
+    },
+    {
+      "kind": "literal",
+      "value": "strict_syntax_artifacts"
+    },
+    {
+      "kind": "literal",
+      "value": "--test"
+    },
+    {
+      "kind": "literal",
+      "value": "infinite_formula"
     },
     {
       "kind": "literal",
