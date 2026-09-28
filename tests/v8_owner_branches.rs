@@ -5,6 +5,8 @@ use tl_mltl::wire::common::{
     is_sha256, produce, read_expected, OwnerLimits, OwnerReadErrorCode, OwnerUsage,
 };
 use tl_mltl::wire::{command, trace, CommandDocument, TraceDocument};
+use tl_mltl::{evaluate_closed, EvaluationError, EvaluationLimits, EvaluationReport};
+use tl_syntax::{Formula, Node, NodeId, NodeKind, PropositionId, SemanticProfile};
 
 // Trace: FR-050-AC-1
 #[test]
@@ -242,4 +244,41 @@ fn command_owner_admits_embedded_formula_and_trace_and_refuses_mismatch() {
         command::derive(&request, limited).unwrap_err().field(),
         "formula"
     );
+}
+
+// Trace: FR-050-AC-1, FR-001-AC-1
+#[test]
+fn evaluator_refuses_unsorted_trace_and_wrong_report_schema() {
+    let nodes = [Node::new(NodeKind::True)];
+    let formula = Formula::new(SemanticProfile::ClosedTraceV1, NodeId(0), &nodes).unwrap();
+    let duplicate = [vec![PropositionId(7), PropositionId(7)]];
+    assert!(matches!(
+        evaluate_closed(
+            formula,
+            "formula-a",
+            &duplicate,
+            "trace-a",
+            EvaluationLimits::default()
+        ),
+        Err(EvaluationError::TraceNotStrictlyOrdered {
+            instant: 0,
+            previous: PropositionId(7),
+            current: PropositionId(7),
+        })
+    ));
+
+    let valid = evaluate_closed(
+        formula,
+        "formula-a",
+        &[vec![]],
+        "trace-a",
+        EvaluationLimits::default(),
+    )
+    .unwrap();
+    let round_trip: EvaluationReport =
+        serde_json::from_value(serde_json::to_value(&valid).unwrap()).unwrap();
+    assert_eq!(round_trip, valid);
+    let mut wrong = serde_json::to_value(valid).unwrap();
+    wrong["schemaVersion"] = json!("tl-mltl.evaluation/v0");
+    assert!(serde_json::from_value::<EvaluationReport>(wrong).is_err());
 }
