@@ -58,3 +58,7 @@ Reviewed at `5143f02d8eeb614fb94a163cc96eca107758bf28`. The parser now splits th
 ## Disposition verdict — round 4
 
 **PASS** for the inspected config fix. No real SR-077 finding remains open. This does not establish a full Campaign result.
+
+## Current graph recheck — disposition pass 5
+
+Reviewed `91f826c7e9aae3881ba38c3e573a0c5810a13fe2` after measured commit `dfa3522d597bc1882128cefe1fe52b76b4610d4d`. No Rust checker/config implementation changed in this round beyond the new version-inventory test. The authored CampaignDefinition has nine distinct source aliases and 120 members (118 required, two optional); all checker versions and the V10 generator version equal package 0.3.0. Independently compared the closure's eight locally available Git trees, Cargo manifest and lock digests, all nested TL Git dependencies, 12 equal-harness file bytes/OIDs/digests, and all 244 plan/procedure/checker bytes against the measured commit. The R2U2 source was checked by the config trial, not independently rehashed here. Focused checker/config tests pass 38/13; no new code finding. Full Campaign execution remains under SR-078.

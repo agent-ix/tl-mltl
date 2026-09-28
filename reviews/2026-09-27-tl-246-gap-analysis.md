@@ -80,3 +80,15 @@ Reviewed at `5143f02d8eeb614fb94a163cc96eca107758bf28`. The published CampaignDe
 ## Disposition verdict — round 4
 
 **FAIL** — high FND-001 remains open. GitHub reports mergeable mechanics, but TL-246 acceptance remains unproved.
+
+## Dispositions — round 5
+
+Reviewed at control `91f826c7e9aae3881ba38c3e573a0c5810a13fe2` and clean measured `dfa3522d597bc1882128cefe1fe52b76b4610d4d`. The source closure and definition now bind the current 0.3 graph with nine exact aliases and reviewed V9 baseline refs. Independent static checks reconciled eight locally available Git trees, their Cargo manifests/locks and nested TL dependencies, all 12 equal-harness file controls, 120 plans/procedures/checker versions and 244 control/measured file bytes. The partial Darwin preflight stopped at missing authored cargo-fuzz 0.13.2 (host has 0.13.1), before a complete machine config or EA/Quoin run. No Campaign receipt or paired V9 measurement for this graph exists.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | still-open | The source repin portion is fixed by control 91f826c and measured dfa3522, but TL-246's acceptance criterion still lacks a full 120-member EA/Quoin Campaign receipt and independent replay. The Darwin tool refusal is an honest preflight stop, not a measured member outcome. |
+
+## Disposition verdict — round 5
+
+**FAIL** for TL-246 acceptance: FND-001 remains open solely on complete current-source Campaign execution and evidence reconciliation. GitHub reports PR #101 mergeable mechanically.
