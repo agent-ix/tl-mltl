@@ -1004,6 +1004,18 @@ fn v5_survivor_reviews(member: &str, request: &Value) -> Option<BTreeMap<String,
     {
         return None;
     }
+    let cargo_inputs: Vec<_> = request["inputs"]
+        .as_array()?
+        .iter()
+        .filter(|row| row["role"] == "source/Cargo.toml")
+        .collect();
+    if cargo_inputs.len() != 1
+        || cargo_inputs[0]["path"] != "Cargo.toml"
+        || cargo_inputs[0]["digest"] != manifest["cargoManifestSha256"]
+        || sha256(&fs::read("Cargo.toml").ok()?) != manifest["cargoManifestSha256"].as_str()?
+    {
+        return None;
+    }
     let mut reviews = BTreeMap::new();
     for row in manifest["reviews"].as_array()? {
         let name = row["name"].as_str()?;
@@ -2388,7 +2400,9 @@ mod tests {
             {"role":"source/src/infinite/mod.rs", "path":"src/infinite/mod.rs",
              "digest":"290694d21bbc664eb6839cf5bbfd53db832465e21c77ed3e4e6ff18a670ec4c9"},
             {"role":"source/Cargo.lock", "path":"Cargo.lock",
-             "digest":"6aa9e3c5dc26bfe312dc33ca5bde174d94159e45e70fdbd06446d59ff4253514"}
+             "digest":"6aa9e3c5dc26bfe312dc33ca5bde174d94159e45e70fdbd06446d59ff4253514"},
+            {"role":"source/Cargo.toml", "path":"Cargo.toml",
+             "digest":"551ec4c6da16a65eac8bffdfb0a2963b95066b6ddc76a2afad95f839e902667d"}
         ]});
         assert_eq!(
             v5_survivor_reviews("V5.mltl_mutation", &request)
@@ -2401,6 +2415,9 @@ mod tests {
         assert!(v5_survivor_reviews("V5.mltl_mutation", &altered).is_none());
         altered["inputs"][0]["digest"] = request["inputs"][0]["digest"].clone();
         altered["inputs"][1]["digest"] = json!("0".repeat(64));
+        assert!(v5_survivor_reviews("V5.mltl_mutation", &altered).is_none());
+        altered["inputs"][1]["digest"] = request["inputs"][1]["digest"].clone();
+        altered["inputs"][2]["digest"] = json!("0".repeat(64));
         assert!(v5_survivor_reviews("V5.mltl_mutation", &altered).is_none());
     }
 

@@ -3,6 +3,7 @@
   "sourceFile": "src/infinite/mod.rs",
   "sourceFileSha256": "290694d21bbc664eb6839cf5bbfd53db832465e21c77ed3e4e6ff18a670ec4c9",
   "cargoLockSha256": "6aa9e3c5dc26bfe312dc33ca5bde174d94159e45e70fdbd06446d59ff4253514",
+  "cargoManifestSha256": "551ec4c6da16a65eac8bffdfb0a2963b95066b6ddc76a2afad95f839e902667d",
   "reviews": [
     {
       "name": "src/infinite/mod.rs:703:9: replace || with && in evaluate_lasso",
