@@ -486,6 +486,7 @@ const V3_CRITERIA: &[&str] = &[
     "FR-055-AC-1",
     "FR-055-AC-2",
     "FR-055-AC-3",
+    "FR-055-AC-4",
 ];
 
 fn semantic_properties(raw: &str) -> bool {
@@ -2004,6 +2005,39 @@ mod tests {
     use serde_json::{json, Value};
     use std::fs;
     use std::path::Path;
+
+    // Trace: FR-045-AC-1, FR-055-AC-4, TC-180, TC-200.
+    #[test]
+    fn captured_v3_native_output_requires_current_criterion_population() {
+        let raw = include_str!("../../campaign/fixtures/v3-native-stdout.txt");
+        let accepted = check(
+            "V3.semantic_properties",
+            &"b".repeat(64),
+            &result(raw, "completed"),
+        );
+        assert_eq!(accepted.verdict, "accept", "{:?}", accepted.reasons);
+
+        let marker_json = raw
+            .lines()
+            .find_map(|line| {
+                line.split_once("TL_CAMPAIGN_PROPERTIES ")
+                    .map(|(_, value)| value)
+            })
+            .unwrap();
+        let mut marker: Value = serde_json::from_str(marker_json).unwrap();
+        marker["classifications"]
+            .as_object_mut()
+            .unwrap()
+            .remove("FR-055-AC-4");
+        let missing = raw.replacen(marker_json, &marker.to_string(), 1);
+        let refused = check(
+            "V3.semantic_properties",
+            &"b".repeat(64),
+            &result(&missing, "completed"),
+        );
+        assert_eq!(refused.verdict, "reject");
+        assert!(refused.reasons.contains(&"native_result_unproved".into()));
+    }
 
     // Trace: FR-055-AC-2, TC-198
     #[test]
