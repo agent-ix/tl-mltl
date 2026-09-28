@@ -100,8 +100,8 @@
       "role": "coverage"
     }
   ],
-  "producerName": "cargo-llvm-cov",
-  "producerVersion": "0.8.7",
+  "producerName": "cargo",
+  "producerVersion": "1.100.0-nightly",
   "repetitions": 1,
   "responseAdapter": "quoin.process-evidence-adapter",
   "responseAdapterVersion": "1",
