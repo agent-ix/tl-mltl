@@ -906,12 +906,32 @@ fn output_path(role: &str) -> Result<&'static str, String> {
     }
 }
 
+fn validate_quoin_process_group(procedure: &Procedure) -> Result<(), String> {
+    let opt_ins: Vec<_> = procedure
+        .environment
+        .iter()
+        .filter(|entry| entry.name == "TL_QUOIN_PROCESS_GROUP_V1")
+        .collect();
+    if procedure.producer_name == "cargo-mutants" {
+        if opt_ins.len() != 1 || opt_ins[0].kind != "literal" || opt_ins[0].value != "1" {
+            return Err("cargo-mutants requires literal TL_QUOIN_PROCESS_GROUP_V1=1".into());
+        }
+    } else if !opt_ins.is_empty() {
+        return Err(format!(
+            "{} cannot select cargo-mutants process-group opt-in",
+            procedure.producer_name
+        ));
+    }
+    Ok(())
+}
+
 fn binding(
     procedure: &Procedure,
     machine: &Machine,
     revisions: &BTreeMap<String, String>,
     selected_environment: &BTreeMap<String, String>,
 ) -> Result<Value, String> {
+    validate_quoin_process_group(procedure)?;
     let tool_key = format!("{}@{}", procedure.producer_name, procedure.producer_version);
     let tool = machine
         .tools
@@ -1233,10 +1253,88 @@ mod tests {
 
     use super::{
         binding, member_environment, member_toolchains, selected_inputs, sha256, validate_plan,
-        validate_rust_binding, validate_toolchains, verify_checker_sources, verify_control_file,
-        Contracts, Machine, Member, Procedure, ProcedureEnvironment, Tool, V7_MIRI_BRIDGE,
-        V8_CARGO_BRIDGE,
+        validate_quoin_process_group, validate_rust_binding, validate_toolchains,
+        verify_checker_sources, verify_control_file, Contracts, Machine, Member, Procedure,
+        ProcedureEnvironment, Tool, V7_MIRI_BRIDGE, V8_CARGO_BRIDGE,
     };
+
+    // Trace: FR-055-AC-4, TC-200
+    #[test]
+    fn v5_cargo_mutants_requires_exact_quoin_process_group_opt_in() {
+        let directory =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("campaign/procedures");
+        let mut mutants_count = 0;
+        let mut controls_count = 0;
+        for entry in std::fs::read_dir(directory).unwrap() {
+            let path = entry.unwrap().path();
+            let name = path.file_name().unwrap().to_string_lossy().into_owned();
+            if !name.starts_with("v5-") || path.extension().is_none_or(|ext| ext != "json") {
+                continue;
+            }
+            let mut procedure: Procedure =
+                serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+            assert!(validate_quoin_process_group(&procedure).is_ok(), "{name}");
+            if procedure.producer_name == "cargo-mutants" {
+                mutants_count += 1;
+                let opt_in = procedure
+                    .environment
+                    .iter()
+                    .position(|entry| entry.name == "TL_QUOIN_PROCESS_GROUP_V1")
+                    .unwrap_or_else(|| panic!("missing process-group opt-in: {name}"));
+                procedure.environment[opt_in].value = "0".into();
+                assert!(validate_quoin_process_group(&procedure).is_err(), "{name}");
+                procedure.environment[opt_in].value = "1".into();
+                procedure.environment[opt_in].kind = "runtime".into();
+                assert!(validate_quoin_process_group(&procedure).is_err(), "{name}");
+                procedure.environment[opt_in].kind = "literal".into();
+                procedure.environment.push(ProcedureEnvironment {
+                    name: "TL_QUOIN_PROCESS_GROUP_V1".into(),
+                    kind: "literal".into(),
+                    value: "1".into(),
+                });
+                assert!(validate_quoin_process_group(&procedure).is_err(), "{name}");
+                procedure
+                    .environment
+                    .retain(|entry| entry.name != "TL_QUOIN_PROCESS_GROUP_V1");
+                assert!(validate_quoin_process_group(&procedure).is_err(), "{name}");
+            } else {
+                assert_eq!(procedure.producer_name, "cargo", "{name}");
+                controls_count += 1;
+                procedure.environment.push(ProcedureEnvironment {
+                    name: "TL_QUOIN_PROCESS_GROUP_V1".into(),
+                    kind: "literal".into(),
+                    value: "1".into(),
+                });
+                assert!(validate_quoin_process_group(&procedure).is_err(), "{name}");
+            }
+        }
+        assert_eq!(mutants_count, 8);
+        assert_eq!(controls_count, 4);
+    }
+
+    // Trace: FR-055-AC-4, TC-200
+    #[test]
+    fn v5_binding_refuses_missing_quoin_process_group_opt_in_before_tool_selection() {
+        let mut procedure: Procedure = serde_json::from_str(include_str!(
+            "../../campaign/procedures/v5-syntax-discovery.json"
+        ))
+        .unwrap();
+        procedure
+            .environment
+            .retain(|entry| entry.name != "TL_QUOIN_PROCESS_GROUP_V1");
+        let machine: Machine = serde_json::from_value(json!({
+            "schema": "tl-mltl.campaign-machine/v1",
+            "sources": {}, "tools": {}, "contracts": {
+                "caller": {}, "containment": {}, "responseProtocol": {}, "responseAdapter": {}
+            },
+            "environment": {}, "timestamp": "", "toolchains": {}, "sourceRemotes": {}
+        }))
+        .unwrap();
+        assert_eq!(
+            binding(&procedure, &machine, &BTreeMap::new(), &BTreeMap::new()).unwrap_err(),
+            "cargo-mutants requires literal TL_QUOIN_PROCESS_GROUP_V1=1"
+        );
+    }
 
     // Trace: FR-055-AC-1, TC-197
     #[test]

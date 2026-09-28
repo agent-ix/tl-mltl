@@ -257,6 +257,19 @@ machine table. A generated config is only an execution selection, never a
 measurement result. A member passes only after Quoin retains the bounded EA
 producer and checker results and independently reconciles their identities.
 
+The eight V5 cargo-mutants procedures require literal
+`TL_QUOIN_PROCESS_GROUP_V1=1`. A proposed patched cargo-mutants 27.0.0 build
+leaves its child in Quoin's invocation-owned process group and signals only
+the immediate child on an inner timeout, escalating to direct SIGKILL after a
+bounded grace. The restored-control
+Cargo procedures do not use this opt-in. Quoin must still terminate and reap
+the complete group, including descendants; the cargo-mutants opt-in alone is
+not descendant containment. Before a V5 run, bind the exact reviewed patched
+tool executable digest and a measured source revision carrying these procedure
+bytes, then repin the external Campaign definition and source closure against
+that clean measured checkout. These procedure changes do not constitute a V5
+run or an accepted mutation result.
+
 For the eight V8 coverage members, the sealed producer is pinned Python
 3.13.11. Its literal bridge verifies pinned nightly Cargo's digest immediately
 before executing its stable path with the `llvm-cov` subcommand. The machine
