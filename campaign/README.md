@@ -289,6 +289,13 @@ date remains explicit in the chosen `RUSTC` path. The first `rustc` found on
 agree with that release and the selected Cargo executable's `--version`.
 The generator refuses contradictory selections before measurement.
 
+For the eight V7 Miri members, bind `RUSTUP_HOME`, `TL_V7_CARGO_MIRI`,
+`TL_V7_CARGO_MIRI_SHA256`, and `TL_V7_MIRI_SHA256` in the selected member
+environment. The machine tools must pin `cargo-miri@0.1.0`, its adjacent
+`miri@0.1.0`, and `python3@3.13.11`. The config generator checks both binary
+digests and their nightly toolchain location. The Python producer checks the
+two digests again immediately before executing the stable `cargo-miri` path.
+
 The direct C2PO compile procedures bind Python 3.13.11. A bounded smoke on
 Linux host `cave` used R2U2 commit
 `336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a` with C2PO 4.1.0
