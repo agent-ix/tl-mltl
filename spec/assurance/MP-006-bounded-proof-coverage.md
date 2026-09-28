@@ -14,7 +14,9 @@ statistical_design:
   estimator: count
   error_model: stale harness or candidate, hidden assumptions, uncovered partitions, disabled unwind checks, insufficient bounds, unsupported constructs, solver/tool drift, timeout, semantic forks, and claim widening
   uncertainty: a conclusive result applies only to the explicitly finite domain and assumptions; no inference is made to larger formulas, traces, histories, arithmetic domains, callers, or unbounded MLTL
-  decision_rule: The measured count must equal 0.
+  decision_rule:
+    comparator: eq
+    threshold: 0
 relationships:
 - target: ix://agent-ix/tl-mltl/FR-023
   type: measures

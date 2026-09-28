@@ -5,8 +5,17 @@ type: MeasurementPlan
 status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v5.parse_discovery.verified
-definition_version: tl.v5.parse-discovery/v1
+definition_version: tl.v5.parse-discovery/v2
 stage: gate
+ground_truth_kind: mechanical
+protected_apparatus:
+- "campaign/procedures/v5-parse-discovery.json"
+- "src/bin/tl_campaign_check.rs"
+negative_controls:
+- kind: stale-evidence
+  description: "the campaign binds this result to exact source tree revisions and retained bytes."
+- kind: suppressed-observation
+  description: "an absent or unverified direct invocation leaves the required member incomplete."
 statistical_design:
   population: one exact direct native discovery invocation for tl-parse in the Stage 1 campaign
   sampling: complete retained stdout stderr and execution result
@@ -14,7 +23,9 @@ statistical_design:
   estimator: count
   error_model: stale source graph, missing mutant, partial native outcome, or failed restoration
   uncertainty: one selected mutant population under pinned cargo-mutants and source revision
-  decision_rule: The measured count must be at least 1.
+  decision_rule:
+    comparator: ge
+    threshold: 1
 relationships:
 - target: ix://agent-ix/tl-mltl/AP-002
   type: measures

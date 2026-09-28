@@ -5,8 +5,8 @@ type: MeasurementPlan
 status: proposed
 owner: tl-verification-campaign-owner
 metric: tl.property-domain-grounding
-definition_version: tl-mltl.property-domain-grounding/v2
-stage: gate
+definition_version: tl-mltl.property-domain-grounding/v3
+stage: baseline
 statistical_design:
   population: every criterion in the exact tl-mltl Quire property export, classified as applicable, excluded, or blocked
   sampling: complete criterion census; each applicable finite-exhaustive domain is fully enumerated and each generated domain uses three declared seeds and its predeclared accepted-case budget
@@ -14,7 +14,9 @@ statistical_design:
   estimator: proportion
   error_model: omitted or stale criteria, classifier overreach, vacuous preconditions, self-oracling, correlated derivation faults, generator bias, excessive discards, incomplete enumeration, and irreproducible shrinking
   uncertainty: finite exhaustive domains have no sampling interval; generated runs expose seed and class variation and make no probability-of-correctness estimate
-  decision_rule: The measured count must be at least 1.
+  decision_rule:
+    comparator: ge
+    threshold: 1
 relationships:
 - target: ix://agent-ix/tl-mltl/FR-020
   type: measures
@@ -25,6 +27,8 @@ relationships:
 # TL property-domain grounding coverage
 
 ## Decision Use
+
+This proposed property-domain grounding plan remains a baseline until its owner-native producer, protected apparatus, and negative controls are implemented and reviewed. A future gate requires a new definition version and a current collection.
 
 The measure decides whether every declared applicable criterion has a reviewable
 property grounding. It does not estimate semantic defect probability or approve

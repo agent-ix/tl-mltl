@@ -995,7 +995,7 @@ mod tests {
         let member = Member {
             name: "V1.independent_oracle".into(),
             plan_id: "MP-008".into(),
-            definition_version: "tl.v1.v1-independent-oracle/v1".into(),
+            definition_version: "tl.v1.v1-independent-oracle/v2".into(),
             checker_procedure: None,
         };
         let root = tempfile::tempdir().unwrap();
@@ -1021,7 +1021,7 @@ mod tests {
         let member = Member {
             name: "V1.independent_oracle".into(),
             plan_id: "MP-008".into(),
-            definition_version: "tl.v1.v1-independent-oracle/v1".into(),
+            definition_version: "tl.v1.v1-independent-oracle/v2".into(),
             checker_procedure: None,
         };
         let root = tempfile::tempdir().unwrap();
@@ -1029,7 +1029,7 @@ mod tests {
         std::fs::create_dir_all(&plans).unwrap();
         let plan = plans.join("MP-008-v1-independent-oracle.md");
         let original = include_str!("../../spec/assurance/MP-008-v1-independent-oracle.md");
-        let version = "definition_version: tl.v1.v1-independent-oracle/v1";
+        let version = "definition_version: tl.v1.v1-independent-oracle/v2";
         let wrong = original.replacen(version, "definition_version: wrong/v1", 1);
         let missing = original.replacen(&format!("{version}\n"), "", 1);
         let duplicate = original.replacen(version, &format!("{version}\n{version}"), 1);

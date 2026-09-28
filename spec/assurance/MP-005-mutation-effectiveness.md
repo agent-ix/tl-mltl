@@ -14,7 +14,9 @@ statistical_design:
   estimator: count
   error_model: nondeterministic baseline or tests, population drift, invalid exclusion, concurrent mutation, timeout ambiguity, unviable mutants, dirty restoration, tool failure, equivalent-mutant misclassification, and denominator suppression
   uncertainty: the pilot measures only the exact selected population; cap-unselected, excluded, unviable, cancelled, tool-error, and not-run rows remain explicit limitations, while timeout is a separately reported conservative non-kill
-  decision_rule: The measured count must equal 0.
+  decision_rule:
+    comparator: eq
+    threshold: 0
 relationships:
 - target: ix://agent-ix/tl-mltl/FR-022
   type: measures

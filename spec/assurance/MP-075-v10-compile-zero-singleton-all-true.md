@@ -5,8 +5,17 @@ type: MeasurementPlan
 status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v10.compile_zero_singleton_all_true.verified
-definition_version: tl.v10.compile-zero-singleton-all-true/v1
+definition_version: tl.v10.compile-zero-singleton-all-true/v2
 stage: gate
+ground_truth_kind: mechanical
+protected_apparatus:
+- "campaign/procedures/v10-compile-zero-singleton-all-true.json"
+- "src/bin/tl_campaign_check.rs"
+negative_controls:
+- kind: stale-evidence
+  description: "source and raw bytes must agree with the exact campaign graph."
+- kind: suppressed-observation
+  description: "a missing native command or checker result cannot pass."
 statistical_design:
   population: one exact direct native invocation for V10.compile.zero-singleton-all-true in the source-bound Stage 1 campaign
   sampling: retained process streams and all declared output artifacts
@@ -14,7 +23,9 @@ statistical_design:
   estimator: count
   error_model: source drift, tool substitution, input drift, missing target positions, or semantic mismatch
   uncertainty: one pinned foreign invocation with independent TL domain checking
-  decision_rule: The measured count must be at least 1.
+  decision_rule:
+    comparator: ge
+    threshold: 1
 relationships:
 - target: ix://agent-ix/tl-mltl/AP-002
   type: measures

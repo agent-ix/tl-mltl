@@ -5,8 +5,17 @@ type: MeasurementPlan
 status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v4.mltl_trace_history_intake.bounded_no_crash
-definition_version: tl.v4.mltl-trace-history-intake/v1
+definition_version: tl.v4.mltl-trace-history-intake/v2
 stage: gate
+ground_truth_kind: mechanical
+protected_apparatus:
+- "campaign/procedures/v4-mltl-trace-history-intake.json"
+- "src/bin/tl_campaign_check.rs"
+negative_controls:
+- kind: stale-evidence
+  description: "the campaign binds this result to exact source tree revisions and retained bytes."
+- kind: suppressed-observation
+  description: "an absent or unverified direct invocation leaves the required member incomplete."
 statistical_design:
   population: one exact direct native libFuzzer invocation for V4.mltl_trace_history_intake in the five-repository Stage 1 campaign
   sampling: complete retained stdout stderr and optional fixed crash artifact
@@ -14,7 +23,9 @@ statistical_design:
   estimator: count
   error_model: stale source graph, missing raw capture, wrong native budget marker, or crash artifact
   uncertainty: one bounded native result; later source revisions require new evidence
-  decision_rule: The measured count must be at least 1.
+  decision_rule:
+    comparator: ge
+    threshold: 1
 relationships:
 - target: ix://agent-ix/tl-mltl/AP-002
   type: measures

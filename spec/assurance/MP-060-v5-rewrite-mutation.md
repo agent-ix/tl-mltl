@@ -5,8 +5,17 @@ type: MeasurementPlan
 status: active
 owner: tl-mltl-evidence-owner
 metric: tl.v5.rewrite_mutation.verified
-definition_version: tl.v5.rewrite-mutation/v1
+definition_version: tl.v5.rewrite-mutation/v2
 stage: gate
+ground_truth_kind: mechanical
+protected_apparatus:
+- "campaign/procedures/v5-rewrite-mutation.json"
+- "src/bin/tl_campaign_check.rs"
+negative_controls:
+- kind: stale-evidence
+  description: "the campaign binds this result to exact source tree revisions and retained bytes."
+- kind: suppressed-observation
+  description: "an absent or unverified direct invocation leaves the required member incomplete."
 statistical_design:
   population: one exact direct native mutation invocation for tl-rewrite in the Stage 1 campaign
   sampling: complete retained stdout stderr and bounded native output tree
@@ -14,7 +23,9 @@ statistical_design:
   estimator: count
   error_model: stale source graph, missing mutant, partial native outcome, or failed restoration
   uncertainty: one selected mutant population under pinned cargo-mutants and source revision
-  decision_rule: The measured count must be at least 1.
+  decision_rule:
+    comparator: ge
+    threshold: 1
 relationships:
 - target: ix://agent-ix/tl-mltl/AP-002
   type: measures

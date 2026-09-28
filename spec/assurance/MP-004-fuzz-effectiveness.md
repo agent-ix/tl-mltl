@@ -14,7 +14,9 @@ statistical_design:
   estimator: count
   error_model: stochastic seed sensitivity, generator/harness bias, unstable instrumentation, counter reset, build or replay contamination, timeout/resource failure, corpus corruption, and irreproducible crashes
   uncertainty: report all repetitions and their exact environments; feature identities compare only within one instrumentation identity and no no-crash probability or confidence interval is inferred
-  decision_rule: The measured count must equal 0.
+  decision_rule:
+    comparator: eq
+    threshold: 0
 relationships:
 - target: ix://agent-ix/tl-mltl/FR-021
   type: measures
