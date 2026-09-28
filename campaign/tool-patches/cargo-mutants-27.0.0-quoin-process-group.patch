@@ -142,3 +142,95 @@
 +        kill(descendant, Signal::SIGKILL).unwrap();
 +    }
 +}
+--- a/src/copy_tree.rs
++++ b/src/copy_tree.rs
+@@ -3,6 +3,8 @@
+ //! Copy a source tree, with some exclusions, to a new temporary directory.
+ 
+ use std::fs;
++#[cfg(unix)]
++use std::os::unix::fs::PermissionsExt;
+ use std::path::Path;
+ use std::sync::atomic::{AtomicBool, Ordering};
+ 
+@@ -69,6 +71,20 @@
+     options: &Options,
+     console: &Console,
+ ) -> Result<TempDir> {
++    let writable_copy =
++        std::env::var_os("TL_QUOIN_PROCESS_GROUP_V1").as_deref() == Some(std::ffi::OsStr::new("1"));
++    copy_tree_with_mode(from_path, name_base, options, console, writable_copy)
++}
++
++fn copy_tree_with_mode(
++    from_path: &Utf8Path,
++    name_base: &str,
++    options: &Options,
++    console: &Console,
++    writable_copy: bool,
++) -> Result<TempDir> {
++    #[cfg(not(unix))]
++    let _ = writable_copy;
+     let mut total_bytes = 0;
+     let mut total_files = 0;
+     let reflink_supported = AtomicBool::new(true);
+@@ -127,6 +143,15 @@
+         if ft.is_file() {
+             let bytes_copied =
+                 copy_file(entry.path(), dest_path.as_std_path(), &reflink_supported)?;
++            #[cfg(unix)]
++            if writable_copy {
++                // EA projects 0400 source. Only the private copy may be
++                // writable so cargo-mutants can replace one mutant at a time.
++                let metadata = fs::metadata(&dest_path)?;
++                let mut permissions = metadata.permissions();
++                permissions.set_mode(permissions.mode() | 0o200);
++                fs::set_permissions(&dest_path, permissions)?;
++            }
+             total_bytes += bytes_copied;
+             total_files += 1;
+             console.copy_progress(dest, total_bytes);
+@@ -166,6 +191,43 @@
+     use crate::options::Options;
+ 
+     use super::copy_tree;
++    #[cfg(unix)]
++    use super::copy_tree_with_mode;
++
++    #[cfg(unix)]
++    #[test]
++    fn quoin_opt_in_only_makes_private_copy_writable() -> Result<()> {
++        use std::os::unix::fs::PermissionsExt;
++
++        let source_dir = TempDir::new().unwrap();
++        let source = Utf8PathBuf::try_from(source_dir.path().to_owned()).unwrap();
++        create_dir(source.join("src"))?;
++        let source_file = source.join("src/lib.rs");
++        write(&source_file, "pub fn original() {}\n")?;
++        std::fs::set_permissions(&source_file, std::fs::Permissions::from_mode(0o400))?;
++        let options = Options::from_arg_strs(["mutants"]);
++        let default_copy =
++            copy_tree_with_mode(&source, "default", &options, &Console::new(), false)?;
++        let default_mode = std::fs::metadata(default_copy.path().join("src/lib.rs"))?
++            .permissions()
++            .mode();
++        assert_eq!(default_mode & 0o200, 0);
++
++        let quoin_copy = copy_tree_with_mode(&source, "quoin", &options, &Console::new(), true)?;
++        let copied = quoin_copy.path().join("src/lib.rs");
++        let copied_mode = std::fs::metadata(&copied)?.permissions().mode();
++        assert_ne!(copied_mode & 0o200, 0);
++        write(&copied, "pub fn mutated() {}\n")?;
++        assert_eq!(
++            std::fs::read_to_string(&source_file)?,
++            "pub fn original() {}\n"
++        );
++        assert_eq!(
++            std::fs::metadata(&source_file)?.permissions().mode() & 0o777,
++            0o400
++        );
++        Ok(())
++    }
+ 
+     /// Test for regression of <https://github.com/sourcefrog/cargo-mutants/issues/450>
+     #[test]
