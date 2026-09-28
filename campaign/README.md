@@ -251,6 +251,19 @@ machine table. A generated config is only an execution selection, never a
 measurement result. A member passes only after Quoin retains the bounded EA
 producer and checker results and independently reconciles their identities.
 
+For the eight V8 coverage members, the sealed producer is pinned Python
+3.13.11. Its literal bridge verifies pinned nightly Cargo's digest immediately
+before executing its stable path with the `llvm-cov` subcommand. The machine
+table must name both Cargo and
+`cargo-llvm-cov@0.8.7`: config generation checks the stable plugin selected by
+`PATH` against that exact executable, digest, and version before Quoin runs.
+It also probes the plugin actually selected by pinned Cargo under the chosen
+environment and refuses a different `CARGO_HOME/bin` plugin even when the
+reported version matches.
+This keeps Cargo's compiler-wrapper re-execution off Quoin's single-use
+Python executable snapshot. Changed procedure bytes require a new measured source
+graph and regenerated definition.
+
 After a fresh retained run, `replay_faults.py` exercises five Campaign
 refusal paths without changing the measured checkout or its evidence:
 

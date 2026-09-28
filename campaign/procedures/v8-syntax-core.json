@@ -2,6 +2,22 @@
   "arguments": [
     {
       "kind": "literal",
+      "value": "-I"
+    },
+    {
+      "kind": "literal",
+      "value": "-S"
+    },
+    {
+      "kind": "literal",
+      "value": "-c"
+    },
+    {
+      "kind": "literal",
+      "value": "import hashlib,os,sys\np=os.environ['CARGO']\nwith open(p,'rb') as f: digest=hashlib.file_digest(f,'sha256').hexdigest()\nif digest!=os.environ['TL_V8_CARGO_SHA256']: raise SystemExit(74)\nos.execv(p,[p,*sys.argv[1:]])"
+    },
+    {
+      "kind": "literal",
       "value": "llvm-cov"
     },
     {
@@ -42,6 +58,16 @@
     }
   ],
   "environment": [
+    {
+      "kind": "runtime",
+      "name": "CARGO",
+      "value": "host:CARGO"
+    },
+    {
+      "kind": "runtime",
+      "name": "TL_V8_CARGO_SHA256",
+      "value": "host:TL_V8_CARGO_SHA256"
+    },
     {
       "kind": "runtime",
       "name": "PATH",
@@ -100,8 +126,8 @@
       "role": "coverage"
     }
   ],
-  "producerName": "cargo-llvm-cov",
-  "producerVersion": "0.8.7",
+  "producerName": "python3",
+  "producerVersion": "3.13.11",
   "repetitions": 1,
   "responseAdapter": "quoin.process-evidence-adapter",
   "responseAdapterVersion": "1",
