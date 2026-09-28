@@ -266,7 +266,8 @@ python3 campaign/replay_faults.py \
 The selection has schema `quoin.campaign-sources/v1` and maps every source
 alias to a clean exact checkout. The script verifies the unmodified run,
 then makes separate local Git clones with disposable copies of its evidence
-store. It removes a required attempt, duplicates an attempt, removes a
+store. Each clone must reproduce the unmodified independent receipt before
+one fault is introduced. It removes a required attempt, duplicates an attempt, removes a
 checker execution result, alters a unique retained raw artifact, and changes the
 run's source-graph digest. Every replay must refuse or remain inconclusive;
 unrelated sibling decisions must remain stable where Quoin returns a receipt.

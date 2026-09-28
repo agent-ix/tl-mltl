@@ -89,12 +89,24 @@ def outcomes(value: dict) -> dict[str, dict]:
     return {member["name"]: member for member in value["decision"]["members"]}
 
 
+def check_clone(baseline: dict, replay: dict | None, diagnostic: str) -> None:
+    if replay is None or replay != baseline:
+        raise AssertionError(f"unmodified disposable clone did not reproduce baseline: "
+                             f"{diagnostic}")
+
+
 def check_case(case: str, baseline: dict, replay: dict | None,
                diagnostic: str, target: str, dependents: set[str]) -> dict:
     if replay is None:
-        # Structural EA refusal is valid for a duplicate or stale run record.
-        if case not in {"repeated_attempt", "stale_source"} or diagnostic.startswith("exit=0"):
-            raise AssertionError(f"{case}: no independent receipt: {diagnostic}")
+        # EA validates these records before Quoin can issue a receipt. Require
+        # its specific structural finding, not an arbitrary CLI/setup failure.
+        expected = {
+            "repeated_attempt": "invalid campaign run: duplicate attempt",
+            "stale_source": "invalid campaign run: procedure binding mismatch at sourceGraphDigest",
+        }.get(case)
+        if (not expected or diagnostic.startswith("exit=0")
+                or expected not in diagnostic):
+            raise AssertionError(f"{case}: no attributable refusal: {diagnostic}")
         return {"case": case, "result": "structural_refusal", "diagnostic": diagnostic}
     verdict = replay["decision"]["verdict"]
     if verdict == "accept":
@@ -181,6 +193,8 @@ def main() -> None:
             copied_store(repo / "spec/evidence", test_repo / "spec/evidence")
             source_selection["sources"][own_alias[0]] = str(test_repo)
             save(selected, source_selection)
+            intact, intact_diagnostic = receipt(command(test_repo))
+            check_clone(baseline, intact, intact_diagnostic)
             mutate(case, test_repo, args.run_id, chosen)
             replay, diagnostic = receipt(command(test_repo))
             dependents = set()

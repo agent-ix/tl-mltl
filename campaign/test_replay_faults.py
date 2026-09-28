@@ -85,9 +85,26 @@ class ReplayFaultTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "unrelated sibling"):
             replay_faults.check_case("altered_raw", baseline, rejected, "exit=1",
                                      "target", set())
-        with self.assertRaisesRegex(AssertionError, "no independent receipt"):
+        with self.assertRaisesRegex(AssertionError, "no attributable refusal"):
             replay_faults.check_case("absent_checker", baseline, None, "exit=2",
                                      "target", set())
+
+    def test_structural_failure_must_name_ea_validation_reason(self) -> None:
+        baseline = {"decision": {"verdict": "accept", "members": []}}
+        with self.assertRaisesRegex(AssertionError, "no attributable refusal"):
+            replay_faults.check_case("repeated_attempt", baseline, None,
+                                     "exit=1 stderr=Git checkout failed", "target", set())
+        for case, reason in (
+            ("repeated_attempt", "invalid campaign run: duplicate attempt"),
+            ("stale_source", "invalid campaign run: procedure binding mismatch "
+             "at sourceGraphDigest"),
+        ):
+            self.assertEqual(replay_faults.check_case(case, baseline, None,
+                                                      f"exit=1 stderr={reason}", "target",
+                                                      set())["result"], "structural_refusal")
+        replay_faults.check_clone(baseline, baseline, "exit=1")
+        with self.assertRaisesRegex(AssertionError, "unmodified disposable clone"):
+            replay_faults.check_clone(baseline, None, "exit=1 stderr=bad source")
 
 
 if __name__ == "__main__":
