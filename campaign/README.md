@@ -39,8 +39,8 @@ current main revision, the finite past mapper admits 306 cells and refuses
 TL-217 report cannot be reused as a Campaign result for this revision.
 
 The checked-in CampaignDefinition and source closure bind the current 0.3
-qualification sources: syntax `6aa9b11`, parse `86d4306`, rewrite `e48cf0b`,
-oracle `2391e5b`, and a clean measured mlTL checkout at `dfa3522`. The parse
+qualification sources: syntax `ef5766e`, parse `86d4306`, rewrite `e48cf0b`,
+oracle `2391e5b`, and a clean measured mlTL checkout at `597c87d`. The parse
 and rewrite V9 baseline aliases use the published harness-staging commits
 `02e167e` and `ac48980`. Each source's Cargo lock and its nested Git
 dependencies are recorded verbatim in the closure; the rewrite lock still
@@ -214,7 +214,7 @@ commits; it does not retroactively claim to have measured the artifact commit.
 `stage1-campaign-definition.json` is the external control-plane definition
 for 120 direct native EA measurements (118 required and two optional
 diagnostics). Its `tl-mltl` source is the clean
-`dfa3522d597bc1882128cefe1fe52b76b4610d4d` checkout. Keep this
+`597c87d20b25edceea5dbe704431878a71a0dbb0` reviewed candidate checkout. Keep this
 control-plane checkout separate from that measured checkout: the definition
 and generated machine config are later artifacts that name the measured tree,
 so they cannot be part of their own source digest. Pass the clean measured
@@ -252,17 +252,16 @@ measurement result. A member passes only after Quoin retains the bounded EA
 producer and checker results and independently reconciles their identities.
 
 The eight V5 cargo-mutants procedures require literal
-`TL_QUOIN_PROCESS_GROUP_V1=1`. A proposed patched cargo-mutants 27.0.0 build
+`TL_QUOIN_PROCESS_GROUP_V1=1`. The reviewed patched cargo-mutants 27.0.0 build
 leaves its child in Quoin's invocation-owned process group and signals only
 the immediate child on an inner timeout, escalating to direct SIGKILL after a
-bounded grace. The restored-control
-Cargo procedures do not use this opt-in. Quoin must still terminate and reap
-the complete group, including descendants; the cargo-mutants opt-in alone is
-not descendant containment. Before a V5 run, bind the exact reviewed patched
-tool executable digest and a measured source revision carrying these procedure
-bytes, then repin the external Campaign definition and source closure against
-that clean measured checkout. These procedure changes do not constitute a V5
-run or an accepted mutation result.
+bounded grace. The restored-control Cargo procedures do not use this opt-in.
+Quoin must still terminate and reap the complete group, including descendants;
+the cargo-mutants opt-in alone is not descendant containment. The measured
+source and external definition are pinned to the reviewed procedure bytes.
+The cave machine fixture binds the reviewed patched tool executable digest.
+A fresh V5 native run and independent replay are required before a V5 member
+can be accepted.
 
 For the eight V8 coverage members, the sealed producer is pinned Python
 3.13.11. Its literal bridge verifies pinned nightly Cargo's digest immediately
