@@ -27,8 +27,8 @@
     },
     {
       "repository": "tl-mltl",
-      "revision": "a502ab0cb94ad298f0247c4686f532316a280a97",
-      "treeDigest": "bd5d5816dd6d69809274fff573406a19769eafc04aa4b2a3b9a00bb9860ae668",
+      "revision": "fd0f7bf0f7b53bcbc0ef8f6ceded7559f191d090",
+      "treeDigest": "00f0531618d4b34b4e16db94f7ddd9988d888e13b004a73566e7a6aa9b5f66fe",
       "cargoLockDigest": "6aa9e3c5dc26bfe312dc33ca5bde174d94159e45e70fdbd06446d59ff4253514",
       "tlGitDependencies": [
         {
@@ -239,7 +239,7 @@
     {
       "repository": "tl-mltl",
       "baselineRevision": "0e4a41083d420ccc85134f4f7e224698ab7859e0",
-      "candidateRevision": "a502ab0cb94ad298f0247c4686f532316a280a97",
+      "candidateRevision": "fd0f7bf0f7b53bcbc0ef8f6ceded7559f191d090",
       "identicalFiles": [
         {
           "path": "benches/input-digests.json",
