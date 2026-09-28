@@ -274,7 +274,30 @@ unrelated sibling decisions must remain stable where Quoin returns a receipt.
 The output is a diagnostic, not Campaign evidence. A false producer pass
 needs a newly executed, self-consistent producer/collection/checker fixture
 with failing native facts. Altering a retained result only tests its digest
-seal, so the script reports that condition as uncovered.
+seal, so the script reports that condition as uncovered. Use
+`false_pass_diagnostic.py` for that separate test on a host with the Rust
+Campaign-capable Quoin binary and a current-source Quoin run config:
+
+```sh
+python3 campaign/false_pass_diagnostic.py \
+  --definition campaign/stage1-campaign-definition.json \
+  --config /absolute/path/to/current-source-run-config.json \
+  --quoin /absolute/path/to/rust-quoin \
+  --python /absolute/path/to/python3.13 \
+  --output-dir /absolute/path/to/new/diagnostic-dir
+```
+
+This makes a disposable Git clone of the config's clean measured mlTL source,
+changes only its V1 procedure to run a Python producer that exits zero while
+printing a failing Cargo summary, and commits that diagnostic procedure only
+in the clone. It builds the unchanged TL checker from that clone, derives a
+one-member definition bound to the clone's exact Git tree, and runs Quoin
+`campaign run` followed by `campaign verify`. The diagnostic requires a
+completed producer result with exit code zero and matching retained stdout
+digest, a TL checker rejection for `native_result_unproved`, and equal
+rejected Quoin run/replay receipts. Its output directory retains the scratch
+source, definition, config, Campaign store, and `diagnostic.json` for review.
+It does not change the published 120-member Campaign or confer acceptance.
 
 The machine file's `toolchains` map gives default language identities for
 members. `memberToolchains` may override it by exact Campaign member name when
