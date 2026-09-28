@@ -207,7 +207,14 @@ fn validate_rust_binding(
         if format!("{:x}", Sha256::digest(&bytes)) != plugin.digest {
             return Err(format!("{member}: {key} executable digest changed"));
         }
-        let version = observed_version(plugin_path, "--version")?;
+        let output = Command::new(plugin_path)
+            .args(["llvm-cov", "--version"])
+            .output()
+            .map_err(|error| format!("{member}: {key} version probe: {error}"))?;
+        if !output.status.success() {
+            return Err(format!("{member}: {key} version probe failed"));
+        }
+        let version = String::from_utf8(output.stdout).map_err(|error| error.to_string())?;
         let mut fields = version.split_whitespace();
         if fields.next() != Some("cargo-llvm-cov") || fields.next() != Some("0.8.7") {
             return Err(format!("{member}: {key} executable version changed"));
@@ -1442,6 +1449,11 @@ mod tests {
             "rustc 1.100.0-nightly (x86_64-unknown-linux-gnu)".into(),
         )]);
         let plugin_path = root.join("cargo-llvm-cov");
+        std::fs::write(
+            &plugin_path,
+            b"#!/bin/sh\n[ \"$1\" = llvm-cov ] && [ \"$2\" = --version ] || exit 2\necho cargo-llvm-cov 0.8.7\n",
+        )
+        .unwrap();
         let plugin_bytes = std::fs::read(&plugin_path).unwrap();
         let mut tools = BTreeMap::from([
             (
