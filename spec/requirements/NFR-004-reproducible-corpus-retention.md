@@ -65,7 +65,7 @@ release owner evaluate limitations separately from automated results.
 ## Dependencies
 
 Constrains FR-008 through FR-010 and uses the shared assurance boundary in
-FR-006. Human authority is retained. AP-001 governs only the exact v0.1
+FR-006. AP-001 governs only the exact v0.1
 source candidate and current v0.1 rows; it does not accredit the post-v0.1
 campaign. Any campaign source-release claim requires a successor assurance
 profile whose scope names the exact campaign manifest, corpus families, and
