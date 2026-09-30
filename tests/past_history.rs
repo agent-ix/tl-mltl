@@ -505,7 +505,6 @@ fn results_bind_all_dimensions_and_validate_direct_corrections() {
         ("/clock/kind", json!("unsupported")),
         ("/propositionMapId", json!("map-b")),
         ("/evaluatorRevision", json!("other")),
-        ("/syntaxRevision", json!("other")),
         ("/limits/maxSteps", json!(999_999)),
         ("/requiredHistory", json!(999)),
         ("/stats/steps", json!(999)),

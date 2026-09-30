@@ -41,7 +41,7 @@ Schema-negative tests reject unknown identities.
 |---|---|---|
 | NFR-002-AC-1 | Unknown schema/profile versions and omitted material identities are rejected. | Test (TC-012, TC-014) |
 | NFR-002-AC-2 | Exchanged records name exact tl-syntax, corpus, external-tool, dependency, and output identities without recording an automated release decision. | Test (TC-016) |
-| NFR-002-AC-4 | Every contextual native record names the exact participating tl-mltl and tl-syntax revisions, complete shared catalog identity, and exact optional requirement context without claiming that tl-mltl validated the caller's provenance or a consuming monitor. | Test (TC-025, TC-028, TC-031) |
+| NFR-002-AC-4 | Every contextual native record names the exact tl-mltl revision, complete shared catalog identity, and exact optional requirement context without claiming that tl-mltl validated the caller's provenance or a consuming monitor. | Test (TC-025, TC-028, TC-031) |
 
 ## Dependencies
 

@@ -9,7 +9,7 @@ use crate::{
     context::{
         bind_formula, catalog_sha256, contextual_formula_request_sha256, contextual_result_sha256,
     },
-    ContextualBindingError, TL_SYNTAX_CORPUS_REVISION, TL_SYNTAX_REVISION,
+    ContextualBindingError, TL_SYNTAX_CORPUS_REVISION,
 };
 
 /// Versioned, identity-bearing horizon and buffer result.
@@ -67,8 +67,6 @@ pub struct ContextualHorizonReport {
     pub schema_version: ContextualHorizonSchemaVersion,
     /// Exact tl-mltl source revision compiled into this result.
     pub source_revision: String,
-    /// Exact shared tl-syntax dependency revision.
-    pub syntax_revision: String,
     /// SHA-256 identity of the complete shared catalog.
     pub signal_catalog_sha256: String,
     /// Exact caller context, or deliberate absence encoded as null.
@@ -98,7 +96,6 @@ pub struct ContextualHorizonReport {
 deserialize_contextual_record!(ContextualHorizonReport {
     schema_version: ContextualHorizonSchemaVersion,
     source_revision: String,
-    syntax_revision: String,
     signal_catalog_sha256: String,
     request_sha256: String,
     result_sha256: String,
@@ -322,12 +319,10 @@ pub fn analyze_horizon_with_context(
     struct Request<'a> {
         formula_id: &'a str,
         source_revision: &'a str,
-        syntax_revision: &'a str,
     }
     let request = Request {
         formula_id: &formula_id,
         source_revision: env!("TL_MLTL_SOURCE_REVISION"),
-        syntax_revision: TL_SYNTAX_REVISION,
     };
     let request_sha256 = contextual_formula_request_sha256(
         "tl-mltl.contextual-horizon/v2/request",
@@ -342,7 +337,6 @@ pub fn analyze_horizon_with_context(
     let mut contextual = ContextualHorizonReport {
         schema_version: ContextualHorizonSchemaVersion::V2,
         source_revision: env!("TL_MLTL_SOURCE_REVISION").to_owned(),
-        syntax_revision: TL_SYNTAX_REVISION.to_owned(),
         signal_catalog_sha256: catalog_sha256(signal_catalog)
             .map_err(|error| ContextualHorizonError::Identity(error.to_string()))?,
         requirement_context: requirement_context.cloned(),

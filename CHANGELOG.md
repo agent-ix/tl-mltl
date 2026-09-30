@@ -17,8 +17,6 @@ from.
 - **Depends on the `tl-syntax` v0.3.0 release.** The dependency is pinned to
   the `v0.3.0` tag commit `4a5614193d21e5ae99950ae683b04ba0ec931358`, with the
   requirement `version = "=0.3.0"` (it was `=0.1.0` at `d52d8954`).
-  `TL_SYNTAX_REVISION` and the `syntaxRevision` field of the C2PO mapping
-  manifest report the new revision.
 - **The past-history corpus digest follows the new pin.** tl-syntax v0.3.0
   rewrote two sentences in the past-history corpus README, so the corpus
   manifest digest changed from `59b86e7c…` to `0bb49748…`. The cases
@@ -132,9 +130,7 @@ gates specified in the V1 spec cycle. The repository has no
   past-evaluation API". *Migration:* call `evaluate_past` from the library.
 - **`TL_SYNTAX_CORPUS_BASIS` was removed** in v0.2.0, along with the vendored
   `corpus/tl-syntax-v1`, `corpus/past-history` and `corpus/future-operators`
-  copies. *Migration:* read the corpora from `tl_syntax::CORPUS_DIR`. There is
-  no separate corpus revision to track any more, because `TL_SYNTAX_REVISION`
-  identifies it.
+  copies. *Migration:* read the corpora from `tl_syntax::CORPUS_DIR`.
 - **The quire-observation-coupled surface was removed** in v0.2.0. This covers
   `wire::{request, observation, report}`, `mapping::contract_ir`, the
   `temporal-assessment-request-v1`, `temporal-assessment-result-v1` and

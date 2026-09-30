@@ -12,7 +12,7 @@ use crate::{
         bind_formula, catalog_sha256, contextual_formula_request_sha256, contextual_result_sha256,
     },
     horizon::lookahead,
-    ContextualBindingError, HorizonError, MAX_RECURSION_DEPTH, TL_SYNTAX_REVISION,
+    ContextualBindingError, HorizonError, MAX_RECURSION_DEPTH,
 };
 
 /// Three-valued result for closed and open-prefix evaluation.
@@ -135,8 +135,6 @@ pub struct ContextualEvaluationReport {
     pub schema_version: ContextualEvaluationSchemaVersion,
     /// Exact tl-mltl source revision compiled into this result.
     pub source_revision: String,
-    /// Exact shared tl-syntax dependency revision.
-    pub syntax_revision: String,
     /// SHA-256 of the complete shared signal catalog document.
     pub signal_catalog_sha256: String,
     /// Exact caller context, or deliberate absence encoded as null.
@@ -172,7 +170,6 @@ pub struct ContextualEvaluationReport {
 deserialize_contextual_record!(ContextualEvaluationReport {
     schema_version: ContextualEvaluationSchemaVersion,
     source_revision: String,
-    syntax_revision: String,
     signal_catalog_sha256: String,
     request_sha256: String,
     result_sha256: String,
@@ -722,7 +719,6 @@ pub fn evaluate_closed_with_context(
         trace_id: &'a str,
         limits: [u64; 3],
         source_revision: &'a str,
-        syntax_revision: &'a str,
     }
     let request = Request {
         formula_id: &formula_id,
@@ -734,7 +730,6 @@ pub fn evaluate_closed_with_context(
             u64::from(limits.max_recursion_depth),
         ],
         source_revision: env!("TL_MLTL_SOURCE_REVISION"),
-        syntax_revision: TL_SYNTAX_REVISION,
     };
     let request_sha256 = contextual_formula_request_sha256(
         "tl-mltl.contextual-evaluation/v2/request",
@@ -749,7 +744,6 @@ pub fn evaluate_closed_with_context(
     let mut contextual = ContextualEvaluationReport {
         schema_version: ContextualEvaluationSchemaVersion::V2,
         source_revision: env!("TL_MLTL_SOURCE_REVISION").to_owned(),
-        syntax_revision: TL_SYNTAX_REVISION.to_owned(),
         signal_catalog_sha256: catalog_sha256(signal_catalog)
             .map_err(|error| ContextualEvaluationError::Identity(error.to_string()))?,
         requirement_context: requirement_context.cloned(),
@@ -853,7 +847,6 @@ pub fn evaluate_prefix_with_context(
         closed: bool,
         limits: [u64; 3],
         source_revision: &'a str,
-        syntax_revision: &'a str,
     }
     let request = Request {
         formula_id: &formula_id,
@@ -866,7 +859,6 @@ pub fn evaluate_prefix_with_context(
             u64::from(limits.max_recursion_depth),
         ],
         source_revision: env!("TL_MLTL_SOURCE_REVISION"),
-        syntax_revision: TL_SYNTAX_REVISION,
     };
     let request_sha256 = contextual_formula_request_sha256(
         "tl-mltl.contextual-prefix-evaluation/v2/request",
@@ -888,7 +880,6 @@ pub fn evaluate_prefix_with_context(
     let mut contextual = ContextualEvaluationReport {
         schema_version: ContextualEvaluationSchemaVersion::V2,
         source_revision: env!("TL_MLTL_SOURCE_REVISION").to_owned(),
-        syntax_revision: TL_SYNTAX_REVISION.to_owned(),
         signal_catalog_sha256: catalog_sha256(signal_catalog)
             .map_err(|error| ContextualEvaluationError::Identity(error.to_string()))?,
         requirement_context: requirement_context.cloned(),

@@ -364,7 +364,6 @@ mod tests {
         ContextualEvaluationReport {
             schema_version: ContextualEvaluationSchemaVersion::V2,
             source_revision: "source".to_owned(),
-            syntax_revision: "syntax".to_owned(),
             signal_catalog_sha256: "catalog".to_owned(),
             requirement_context: None,
             request_sha256: "request".to_owned(),
