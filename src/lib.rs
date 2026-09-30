@@ -94,9 +94,6 @@ pub const TL_SYNTAX_REVISION: &str = "6aa9b11e29040d64b437da87c9944e3dedd34a86";
 /// Shared temporal corpus identity consumed by this crate.
 pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";
 
-/// Merged PGM-01 policy revision governing evidence and qualification boundaries.
-pub const PGM01_POLICY_REVISION: &str = "7dac9d8c19952412b56a0347387666e2ca81e01d";
-
 /// Exact tl-mltl source revision this crate was built from, as set by
 /// `build.rs` via `TL_MLTL_SOURCE_REVISION` (the environment value when
 /// building outside a git checkout, otherwise the checked-out `HEAD`).
