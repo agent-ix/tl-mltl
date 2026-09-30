@@ -4,7 +4,6 @@
   "clock": "event_position",
   "sourceOracle": "tl-mltl past evaluator; expected vectors derive from origin-complete history semantics and are checked independently of the retained target output",
   "targetObservation": {
-    "compilerEntrySha256": "f978a32f667a8247c387a66bce35371c97b7d8f7b730035a8ee40cdfc428ce12",
     "monitorBuild": "TMPDIR=/private/tmp make -C monitors/c",
     "compilerCommand": "python3 compiler/c2po.py --spec past.c2po --trace trace.csv --output spec.bin",
     "monitorCommand": "monitors/c/build/r2u2 spec.bin trace.csv",

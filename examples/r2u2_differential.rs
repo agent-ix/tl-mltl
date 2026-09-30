@@ -184,8 +184,6 @@ fn tool_identity(manifest: &Manifest) -> ToolIdentity {
     ToolIdentity {
         name: "r2u2".to_owned(),
         version: manifest.tools.r2u2.version.clone(),
-        executable_sha256: String::new(),
-        configuration_sha256: String::new(),
     }
 }
 

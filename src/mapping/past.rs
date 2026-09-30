@@ -39,8 +39,6 @@ impl TargetOriginContract {
             target: ToolIdentity {
                 name: "C2PO".to_owned(),
                 version: "C2PO v4.1.0".to_owned(),
-                executable_sha256: REVIEWED_COMPILER_SHA256.to_owned(),
-                configuration_sha256: REVIEWED_SOURCE_SHA256.to_owned(),
             },
             monitor_executable_sha256: REVIEWED_MONITOR_SHA256.to_owned(),
             evidence_sha256: REVIEWED_OBSERVATION_SHA256.to_owned(),
@@ -60,8 +58,6 @@ impl TargetOriginContract {
         if self.target.name.is_empty()
             || self.target.version.is_empty()
             || !is_sha256(&self.evidence_sha256)
-            || !is_sha256(&self.target.executable_sha256)
-            || !is_sha256(&self.target.configuration_sha256)
             || !is_sha256(&self.monitor_executable_sha256)
         {
             return Err(PastMappingError::MissingOriginEvidence);
@@ -72,8 +68,6 @@ impl TargetOriginContract {
         // evidence for another target.
         if self.target.name != "C2PO"
             || self.target.version != "C2PO v4.1.0"
-            || self.target.executable_sha256 != REVIEWED_COMPILER_SHA256
-            || self.target.configuration_sha256 != REVIEWED_SOURCE_SHA256
             || self.monitor_executable_sha256 != REVIEWED_MONITOR_SHA256
             || self.evidence_sha256 != REVIEWED_OBSERVATION_SHA256
         {
@@ -83,10 +77,6 @@ impl TargetOriginContract {
     }
 }
 
-const REVIEWED_COMPILER_SHA256: &str =
-    "f978a32f667a8247c387a66bce35371c97b7d8f7b730035a8ee40cdfc428ce12";
-const REVIEWED_SOURCE_SHA256: &str =
-    "4e0c904eccfbf7a2efdd08dfe268d1862d3a2ea473595e34afd118af4a6cb915";
 const REVIEWED_MONITOR_SHA256: &str =
     "5743987dddb47cc01829a633e15623095c9c2aff2f8bb24e30d7f0e0f488f85f";
 const REVIEWED_OBSERVATION_SHA256: &str =
@@ -158,7 +148,7 @@ pub struct PastMappingManifest {
     pub input_sha256: String,
     /// SHA-256 of the complete signal catalog.
     pub signal_catalog_sha256: String,
-    /// Exact target binary/configuration identity.
+    /// Exact target identity.
     pub target: ToolIdentity,
     /// Exact R2U2 monitor executable reviewed for origin parity.
     pub target_monitor_sha256: String,

@@ -108,8 +108,6 @@ fn retained_r2u2_run_agrees_for_supported_cases() {
             tool: ToolIdentity {
                 name: "r2u2".to_owned(),
                 version: manifest.tools.r2u2.version.clone(),
-                executable_sha256: String::new(),
-                configuration_sha256: String::new(),
             },
             formula_id: case.id,
             trace_id: "r2u2-v4.2-trace".to_owned(),

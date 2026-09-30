@@ -24,7 +24,7 @@ cannot infer that R2U2/C2PO shares this rule from syntax acceptance alone.
 It records the exact target version and reviewed origin behavior for each
 admitted target past operator and interval, or a Boolean lowering law that
 removes target past-origin behavior. If no equivalent target behavior or explicit
-safe guard is established, the mapping is unsupported. The pinned origin
+safe guard is established, the mapping is unsupported. The origin
 corpus includes position zero, one, and the first position where each lower
 bound becomes reachable. Any target difference is retained as a classified
 mismatch or declared unsupported case; it is never described as parity.

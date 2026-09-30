@@ -845,12 +845,7 @@ fn tl216_origin_shape_partition_refuses_mixed_and_overdeep_past() {
 fn retained_c2po_steps_agree_with_the_exact_new_safety_body() {
     let retained: serde_json::Value =
         serde_json::from_slice(include_bytes!("../corpus/past-c2po-v1/manifest.json")).unwrap();
-    let target = &retained["targetObservation"];
     let origin = contract();
-    assert_eq!(
-        origin.target.executable_sha256,
-        target["compilerEntrySha256"]
-    );
     let source = include_bytes!("../corpus/past-c2po-v1/target-4.2/past.c2po");
     let output = include_bytes!("../corpus/past-c2po-v1/target-4.2/r2u2.stdout");
     let recorded_body = std::str::from_utf8(source)

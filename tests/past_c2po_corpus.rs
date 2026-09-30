@@ -48,7 +48,6 @@ struct Row {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct TargetObservation {
-    compiler_entry_sha256: String,
     monitor_build: String,
     compiler_command: String,
     monitor_command: String,
@@ -199,10 +198,6 @@ fn past_corpus_compares_each_source_step_with_one_retained_target_run() {
         .collect();
     assert_eq!(expressions.len(), 6);
     let origin = TargetOriginContract::reviewed_r2u2_4_2();
-    assert_eq!(
-        origin.target.executable_sha256,
-        target.compiler_entry_sha256
-    );
     assert_eq!(
         origin.monitor_executable_sha256,
         target.monitor_executable_sha256

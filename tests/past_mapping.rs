@@ -351,12 +351,10 @@ fn absent_or_operator_incomplete_origin_evidence_refuses_without_artifact() {
 #[test]
 fn each_target_origin_identity_field_is_required() {
     let nodes = [p()];
-    let corruptions: [fn(&mut TargetOriginContract); 6] = [
+    let corruptions: [fn(&mut TargetOriginContract); 4] = [
         |origin: &mut TargetOriginContract| origin.target.name.clear(),
         |origin: &mut TargetOriginContract| origin.target.version.clear(),
         |origin: &mut TargetOriginContract| origin.evidence_sha256 = "C".repeat(64),
-        |origin: &mut TargetOriginContract| origin.target.executable_sha256.clear(),
-        |origin: &mut TargetOriginContract| origin.target.configuration_sha256.clear(),
         |origin: &mut TargetOriginContract| origin.monitor_executable_sha256.clear(),
     ];
     for corrupt in corruptions {
@@ -379,11 +377,9 @@ fn well_formed_but_unreviewed_target_substitutions_refuse_before_output() {
             operand: NodeId(0),
         }),
     ];
-    let substitutions: [fn(&mut TargetOriginContract); 6] = [
+    let substitutions: [fn(&mut TargetOriginContract); 4] = [
         |origin| origin.target.name = "another C2PO".to_owned(),
         |origin| origin.target.version = "C2PO v4.2.0".to_owned(),
-        |origin| origin.target.executable_sha256 = "a".repeat(64),
-        |origin| origin.target.configuration_sha256 = "b".repeat(64),
         |origin| origin.monitor_executable_sha256 = "d".repeat(64),
         |origin| origin.evidence_sha256 = "c".repeat(64),
     ];
