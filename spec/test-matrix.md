@@ -22,7 +22,7 @@ relationships:
 | FR-016 | FR-016-AC-1 through FR-016-AC-6 | TC-076 through TC-080 | ✅ covered |
 | FR-017 | FR-017-AC-1 through FR-017-AC-3 | TC-081 through TC-083 | ✅ covered |
 | FR-018 | FR-018-AC-1 through FR-018-AC-3 | TC-090 | 🚧 planned |
-| FR-019 | FR-019-AC-1 through FR-019-AC-3 | TC-085 | ⛔ retired — superseded by quire-mltl FR-002 (TL-180); TL-179 removed TC-085's backing test with `wire::observation` |
+| FR-019 | FR-019-AC-1, FR-019-AC-2 | TC-085 | ⛔ retired — superseded by quire-mltl FR-002 (TL-180); TL-179 removed TC-085's backing test with `wire::observation` |
 | FR-027 | FR-027-AC-1 through FR-027-AC-3 | TC-086, TC-138 | 🚧 planned |
 | FR-028 | FR-028-AC-1 through FR-028-AC-3 | TC-087, TC-138, TC-139 | 🚧 planned |
 | FR-029 | FR-029-AC-1 through FR-029-AC-3 | TC-088, TC-089, TC-140 | 🚧 planned |
@@ -83,7 +83,7 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 | TC-081 | Every digest-verified W/M corpus case lowers to its pinned canonical document, and each online-prefix lowered graph yields a C2PO manifest identical to its direct canonical pair with no W or M token | Integration | P0 | FR-017-AC-1 | ✅ implemented |
 | TC-082 | Every closed-trace W/M corpus case, lowered or direct, is refused for C2PO with no manifest, and every refused lowering yields its declared refusal code and no graph | Integration | P0 | FR-017-AC-2, NFR-002-AC-1 | ✅ implemented |
 | TC-083 | The recorded tl-parse cross-check is pinned and not a dependency, the corpus is consumed at the compiled tl-syntax revision, exported manifests name no external tool and carry the non-qualification limitation, and no source names FRETish | Integration | P0 | FR-017-AC-3 | ✅ implemented |
-| TC-085 | Bind QObs C00 and preserve temporal dispatch while refusing repair and query semantics | Integration | P0 | FR-019-AC-1, FR-019-AC-2, FR-019-AC-3 | ⛔ retired — FR-019 is superseded by quire-mltl FR-002 (TL-180); its test was removed with `tests/tc_084_temporal_owner_wire.rs` (TL-179) |
+| TC-085 | Bind QObs C00 and preserve temporal dispatch while refusing repair and query semantics | Integration | P0 | FR-019-AC-1, FR-019-AC-2 | ⛔ retired — FR-019 is superseded by quire-mltl FR-002 (TL-180); its test was removed with `tests/tc_084_temporal_owner_wire.rs` (TL-179) |
 | TC-086 | Compare existing bounded API and golden bytes in default and feature-enabled builds | Integration | P0 | FR-027-AC-1, FR-027-AC-3 | ✅ implemented |
 | TC-087 | Check feature-off capability absence and bounded result/CLI byte stability | Integration | P0 | FR-028-AC-1, FR-028-AC-3 | ✅ implemented |
 | TC-088 | Inspect Linear dependency order and TL-215 acceptance gate before implementation or qualification | Inspection | P1 | FR-029-AC-1, FR-029-AC-3 | 🚧 planned |

@@ -37,8 +37,8 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      # `make msrv` runs cargo through this toolchain, and the MSRV attestation
-      # observes its version. Without it installed, `make ci` cannot run.
+      # `make msrv` runs cargo through this toolchain. Without it installed,
+      # `make ci` cannot run.
       - name: Install MSRV toolchain
         uses: dtolnay/rust-toolchain@master
         with:
@@ -57,9 +57,6 @@ jobs:
           npm install --global '@agent-ix/quire-cli' '@agent-ix/quoin' '@agent-ix/ix-flow'
           quoin module ensure-defaults
 
-      - name: Build the pinned assurance environment
-        run: make assurance-env
-
       - name: Install cargo-deny
         uses: taiki-e/install-action@v2
         with:
@@ -67,7 +64,7 @@ jobs:
 
       # `make ci` includes the verifier-only proof so a private-symbol rename
       # cannot silently detach it. This workflow is dispatch-only; install the
-      # pinned verifier before invoking that aggregate.
+      # verifier before invoking that aggregate.
       - name: Install Kani
         uses: model-checking/kani-github-action@v1
         with:

@@ -4,9 +4,7 @@ The MIT OR Apache-2.0 shared temporal corpus (formula fixtures, malformed
 cases, and their manifest), the future-operator corpus (`future-operators`
 under `tl_syntax::CORPUS_DIR`), and the past-history corpus (`past-history`
 under `tl_syntax::CORPUS_DIR`) are all read straight out of the compiled
-`tl-syntax` dependency via `tl_syntax::CORPUS_DIR`, currently
-`6aa9b11e29040d64b437da87c9944e3dedd34a86` (tl-syntax
-`v0.3.0` source). There is no
+`tl-syntax` dependency via `tl_syntax::CORPUS_DIR`. There is no
 retained copy of any of them in this repository and no separate corpus-basis
 revision to track for any of them: each tracks whatever `TL_SYNTAX_REVISION`
 names.

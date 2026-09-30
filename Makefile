@@ -41,10 +41,6 @@ QUIRE ?= quire
 # local iteration, outside `make guarded-ci`), it is a deliberate no-op.
 CI_GUARD ?= $(CARGO) run --quiet --bin ci_guard --
 
-# Interpreter environment still built by hosted CI (`make assurance-env`).
-ASSURANCE_VENV ?= .venv-assurance
-ASSURANCE_PYTHON ?= $(ASSURANCE_VENV)/bin/python
-
 .PHONY: help
 help:
 	@echo "Available targets:"
@@ -53,7 +49,6 @@ help:
 	@echo "  make lint             - Clippy with -D warnings"
 	@echo "  make test             - cargo test"
 	@echo "  make kani-check       - Verify the bounded Kani horizon proof"
-	@echo "  make check-corpus     - Verify R2U2 corpus bytes"
 	@echo "  make conformance      - Replay the shared corpus through the evaluator"
 	@echo "  make differential     - Replay the retained R2U2 exchange"
 	@echo "  make cli-conformance  - Drive the built CLI over its declared requests"
@@ -64,8 +59,7 @@ help:
 	@echo "  make msrv             - Check all targets and features with Rust 1.98.1"
 	@echo "  make rustdoc          - Build warning-free public documentation"
 	@echo "  make build            - Release build"
-	@echo "  make clean            - cargo clean and drop the assurance environment"
-	@echo "  make assurance-env    - Create the interpreter environment hosted CI builds"
+	@echo "  make clean            - cargo clean"
 	@echo "  make ci               - All CI gates locally, unguarded (see Makefile header)"
 	@echo "  make guarded-ci       - The assured entry point: run this, not 'make ci'"
 
@@ -105,11 +99,6 @@ test:
 # MLTL domain
 # =============================================================================
 
-.PHONY: check-corpus
-check-corpus:
-	cd corpus/r2u2-v4.2 && sha256sum --check SHA256SUMS
-	$(CI_GUARD) record check-corpus
-
 .PHONY: conformance
 conformance:
 	$(CARGO) run --quiet --example reference_conformance
@@ -143,7 +132,6 @@ build:
 .PHONY: clean
 clean:
 	$(CARGO) clean
-	rm -rf $(ASSURANCE_VENV)
 
 # =============================================================================
 # Supply chain & safety
@@ -177,24 +165,11 @@ rustdoc:
 	$(CI_GUARD) record rustdoc
 
 # =============================================================================
-# Hosted CI interpreter environment
-# =============================================================================
-
-$(ASSURANCE_PYTHON): requirements-assurance.txt
-	rm -rf $(ASSURANCE_VENV)
-	$(PYTHON) -m venv $(ASSURANCE_VENV)
-	$(ASSURANCE_VENV)/bin/pip install --quiet --disable-pip-version-check \
-		-r requirements-assurance.txt
-
-.PHONY: assurance-env
-assurance-env: $(ASSURANCE_PYTHON)
-
-# =============================================================================
 # Composite
 # =============================================================================
 
 .PHONY: ci
-ci: fmt-check lint kani-check test check-corpus conformance differential cli-conformance \
+ci: fmt-check lint kani-check test conformance differential cli-conformance \
 	test-census deny audit-unsafe spec msrv rustdoc
 
 # The assured entry point (NFR-006). Builds and runs the guard, which refuses

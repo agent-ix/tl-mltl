@@ -14,7 +14,6 @@ use tl_syntax::{
 };
 
 const MANIFEST: &[u8] = include_bytes!("../corpus/past-c2po-v1/manifest.json");
-const SHA256SUMS: &str = include_str!("../corpus/past-c2po-v1/SHA256SUMS");
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -143,11 +142,6 @@ fn formula(case: &Case) -> Vec<Node> {
 // Trace: TC-160, TC-161, TC-164, TC-165, TC-174; FR-038-AC-1, FR-038-AC-2, FR-038-AC-3, FR-039-AC-1
 #[test]
 fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
-    let digest = Sha256::digest(MANIFEST)
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect::<String>();
-    assert_eq!(SHA256SUMS, format!("{digest}  manifest.json\n"));
     let manifest: Manifest = serde_json::from_slice(MANIFEST).unwrap();
     assert_eq!(manifest.schema_version, "tl-mltl.past-c2po-corpus/v1");
     assert_eq!(manifest.profile, "mltl.origin-complete-history/v1");

@@ -12,8 +12,7 @@ make guarded-ci
 make spec
 ```
 
-The library requires Rust 1.98.1 or later and consumes validated `tl-syntax` formulas
-pinned to exact revision `6aa9b11e29040d64b437da87c9944e3dedd34a86`. The
+The library requires Rust 1.98.1 or later and consumes validated `tl-syntax` formulas. The
 shared temporal corpus, the future-operator corpus, and the past-history
 corpus are all read directly from the compiled `tl-syntax` dependency via
 `tl_syntax::CORPUS_DIR`, tracking `TL_SYNTAX_REVISION`. `evaluate_closed` implements
@@ -64,7 +63,7 @@ cargo kani --lib \
 The harness proves the checked horizon-bound addition primitive for all `u32` /
 `u64` operands, including overflow refusal. It does not claim an unbounded MLTL
 evaluator proof. It is part of local `make guarded-ci` and the dispatch-only
-hosted gate, which installs the pinned Kani verifier before running the
+hosted gate, which installs the Kani verifier before running the
 aggregate.
 
 ## Corpora

@@ -68,8 +68,7 @@ defines fixture families, identities, ownership, and lifecycle.
 [FR-010](./requirements/FR-010-explicit-interoperability-dispositions.md)
 defines mapping and external-observation states.
 [NFR-004](./requirements/NFR-004-reproducible-corpus-retention.md) constrains
-reproducibility and retention. [MP-002](./assurance/MP-002-corpus-coverage.md)
-defines the measurement, and [TM-002](./corpus-campaign-test-matrix.md) assigns
+reproducibility and retention. [TM-002](./corpus-campaign-test-matrix.md) assigns
 planned evidence.
 
 ## Admission and implementation gate
@@ -100,8 +99,7 @@ After those gates, implementation order is:
    consumers add exact-digest replay only after the owner revision exists.
 3. Rust adapter owners add loss reports; `tl-mltl` adds observation/comparison
    overlays without executing a target runtime.
-4. The corpus census and replay feed MP-002 through the existing shared Quoin
-   intake. Conditional families enter only through successor manifests after
+4. Conditional families enter only through successor manifests after
    their own dependencies land.
 
 The machine-readable owner, consumer, evidence, predecessor, and external

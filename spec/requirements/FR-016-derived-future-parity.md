@@ -79,8 +79,7 @@ under both semantic profiles.
 
 ## Dependencies
 
-Depends on tl-syntax FR-008 as implemented by `tl-syntax` main
-`8dc18eec5af227f484170362c9e8894b8531a27d`, and implements the tl-mltl portion
+Depends on tl-syntax FR-008, and implements the tl-mltl portion
 of tl-syntax FR-010-AC-1 and FR-010-AC-4 routed by
 [agent-ix/tl-mltl#47](https://github.com/agent-ix/tl-mltl/issues/47). Rewrite
 equivalence belongs to tl-rewrite#35; lowered-graph export belongs to

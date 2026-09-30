@@ -89,8 +89,7 @@ existing future or past semantic profile. TL-179 removed the
 previously described; that layer, and the QObs C00 compatibility dispatch
 FR-019 pinned it to, now live in `quire-mltl` unchanged in behavior.
 
-FR-019 pins that temporal owner boundary to accepted QObs C00 merge
-`2bdeb833a330bfa777c19eb4c28c423f856f3ba6` from merged QObs PR #27 and
+FR-019 pins that temporal owner boundary to accepted QObs C00 and
 publishes explicit compatibility dispatch. It
 delegates the supported temporal path to FR-018 and reports QObs repair-plan and
 aggregate-query inputs as typed unsupported outcomes instead of recreating

@@ -23,7 +23,7 @@ authority boundary.
 ## Scope
 
 Applies to the FR-008 cell census, FR-009 fixture manifests and lifecycle, the
-FR-010 target catalog, MP-002 results, and every coverage or interoperability
+FR-010 target catalog, and every coverage or interoperability
 claim derived from them.
 
 ## Rationale
@@ -50,8 +50,7 @@ and remaining risk reviewable.
 
 Deterministic Rust validators enumerate the declared population, verify strict
 schemas and digests, and mutation-test denominator, status, identity, and
-lifecycle controls. Quire reports requirement/matrix backing, and Quoin retains
-producer results under shared ownership. An independent reviewer and the human
+lifecycle controls. Quire reports requirement/matrix backing. An independent reviewer and the human
 release owner evaluate limitations separately from automated results.
 
 ## Acceptance Criteria
@@ -64,8 +63,4 @@ release owner evaluate limitations separately from automated results.
 
 ## Dependencies
 
-Constrains FR-008 through FR-010. AP-001 governs only the exact v0.1
-source candidate and current v0.1 rows; it does not accredit the post-v0.1
-campaign. Any campaign source-release claim requires a successor assurance
-profile whose scope names the exact campaign manifest, corpus families, and
-source revision.
+Constrains FR-008 through FR-010.

@@ -28,15 +28,11 @@ qualification evidence.
 
 - The tl-syntax `corpus/future-operators` corpus, read from the compiled
   dependency via `tl_syntax::CORPUS_DIR`, corpus
-  `tl-syntax.future-operator-corpus/v1` revision 1, whose `manifest.json`
-  SHA-256 is `e38ef2a7bfc49631932c9c8527b9d08ba1087825e8ae3bccff5f326e74605172`
-  and pins every case and expected document.
+  `tl-syntax.future-operator-corpus/v1` revision 1.
 - Its `derived`, `direct`, and `refused` cases, replayed through
   `tl_syntax::FutureLoweringRequest::lower` and `tl_syntax::Formula::new`.
 - The R2U2/C2PO mapping target of FR-004, identified by the tl-mltl source
   revision and state the build records.
-- The corpus manifest's recorded tl-parse cross-check revision
-  `9ca856b4c040fc2c3329b6defd26a1c9b57de748`.
 
 ## Behavior
 
