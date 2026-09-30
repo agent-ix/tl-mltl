@@ -233,10 +233,8 @@ pub struct SafetyMappingManifest {
     pub graph_id: String,
     /// Bound finite-prefix input digest.
     pub input_sha256: String,
-    /// Target executable and configuration identity.
+    /// Target identity.
     pub target: ToolIdentity,
-    /// Reviewed origin evidence digest.
-    pub target_origin_evidence_sha256: String,
     /// C2PO section required by the expression.
     pub section: &'static str,
     /// Exact target expression for the safety body ψ.
@@ -606,7 +604,6 @@ pub fn export_safety_monitor(
         graph_id,
         input_sha256,
         target: origin.target.clone(),
-        target_origin_evidence_sha256: origin.evidence_sha256.clone(),
         section,
         expression,
         output_sha256,

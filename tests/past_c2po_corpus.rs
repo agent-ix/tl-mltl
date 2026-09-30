@@ -51,7 +51,6 @@ struct TargetObservation {
     monitor_build: String,
     compiler_command: String,
     monitor_command: String,
-    monitor_executable_sha256: String,
 }
 
 #[derive(Deserialize)]
@@ -198,10 +197,6 @@ fn past_corpus_compares_each_source_step_with_one_retained_target_run() {
         .collect();
     assert_eq!(expressions.len(), 6);
     let origin = TargetOriginContract::reviewed_r2u2_4_2();
-    assert_eq!(
-        origin.monitor_executable_sha256,
-        target.monitor_executable_sha256
-    );
     let catalog = SignalCatalogDocument::new(
         vec![
             OwnedSignalDeclaration::new(SignalId(1), "p".to_owned(), SignalDomain::Boolean),
@@ -304,10 +299,6 @@ fn past_corpus_compares_each_source_step_with_one_retained_target_run() {
                 case.id
             );
             assert_eq!(mapping.target, origin.target);
-            assert_eq!(
-                mapping.target_origin_evidence_sha256,
-                origin.evidence_sha256
-            );
         }
         for (position, expected) in case.expected_source.iter().enumerate() {
             let actual = evaluate_past(

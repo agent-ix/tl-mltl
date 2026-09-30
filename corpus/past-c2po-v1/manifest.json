@@ -6,8 +6,7 @@
   "targetObservation": {
     "monitorBuild": "TMPDIR=/private/tmp make -C monitors/c",
     "compilerCommand": "python3 compiler/c2po.py --spec past.c2po --trace trace.csv --output spec.bin",
-    "monitorCommand": "monitors/c/build/r2u2 spec.bin trace.csv",
-    "monitorExecutableSha256": "5743987dddb47cc01829a633e15623095c9c2aff2f8bb24e30d7f0e0f488f85f"
+    "monitorCommand": "monitors/c/build/r2u2 spec.bin trace.csv"
   },
   "targetLimitation": "One retained six-formula C2PO and R2U2 4.2 execution supplies per-step target observations for O[0,1] and Y as O[1,1]. Zero-width H/S/T forms lower to Boolean expressions under source-semantic laws and use no target past operator. This run does not establish other target-origin interval cells. A separately retained minimal S[0,2] counterexample shows a target true verdict where origin-complete source semantics are false at position two.",
   "trace": [

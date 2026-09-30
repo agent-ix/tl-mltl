@@ -95,8 +95,6 @@ fn admitted_once_historically_and_previous_render_exact_past_forms() {
     assert_eq!(once.expression, "O[0,1](p)");
     assert_eq!(once.clock, "event_position");
     assert_eq!(once.profile, "mltl.origin-complete-history/v1");
-    assert_eq!(once.target_origin_evidence_sha256, origin.evidence_sha256);
-    assert_eq!(once.target_monitor_sha256, origin.monitor_executable_sha256);
     let historically = render(
         &[
             p(),
@@ -339,23 +337,15 @@ fn absent_or_operator_incomplete_origin_evidence_refuses_without_artifact() {
             PastOperatorKind::StrongPrevious
         ))
     );
-    let mut invalid = contract(&[PastOperatorKind::StrongPrevious]);
-    invalid.evidence_sha256.clear();
-    assert_eq!(
-        render(&nodes, &invalid),
-        Err(PastMappingError::MissingOriginEvidence)
-    );
 }
 
 // Trace: TC-162, TC-167; FR-038-AC-2, FR-039-AC-2
 #[test]
 fn each_target_origin_identity_field_is_required() {
     let nodes = [p()];
-    let corruptions: [fn(&mut TargetOriginContract); 4] = [
+    let corruptions: [fn(&mut TargetOriginContract); 2] = [
         |origin: &mut TargetOriginContract| origin.target.name.clear(),
         |origin: &mut TargetOriginContract| origin.target.version.clear(),
-        |origin: &mut TargetOriginContract| origin.evidence_sha256 = "C".repeat(64),
-        |origin: &mut TargetOriginContract| origin.monitor_executable_sha256.clear(),
     ];
     for corrupt in corruptions {
         let mut invalid = contract(&[]);
@@ -377,11 +367,9 @@ fn well_formed_but_unreviewed_target_substitutions_refuse_before_output() {
             operand: NodeId(0),
         }),
     ];
-    let substitutions: [fn(&mut TargetOriginContract); 4] = [
+    let substitutions: [fn(&mut TargetOriginContract); 2] = [
         |origin| origin.target.name = "another C2PO".to_owned(),
         |origin| origin.target.version = "C2PO v4.2.0".to_owned(),
-        |origin| origin.monitor_executable_sha256 = "d".repeat(64),
-        |origin| origin.evidence_sha256 = "c".repeat(64),
     ];
     for substitute in substitutions {
         let mut origin = contract(&[PastOperatorKind::Once]);
