@@ -19,8 +19,7 @@ typed signal catalog and caller requirement context through those native
 results.
 
 Formula and profile identities come from the single compiled tl-syntax
-revision declared in `assurance/pins.json`, which this repository reads
-directly via `tl_syntax::CORPUS_DIR`: the shared temporal corpus, the
+dependency, which this repository reads directly via `tl_syntax::CORPUS_DIR`: the shared temporal corpus, the
 future-operator corpus, and the past-history corpus alike.
 
 ## Scope
@@ -71,8 +70,7 @@ identified external records without running their producer.
 
 FR-001 owns reference evaluation, FR-002 owns horizon/resource analysis,
 FR-003 owns prefix semantics, FR-004 owns monitor mapping, and FR-005 owns CLI
-and differential reports. FR-006 owns shared assurance intake and FR-007 owns
-typed context propagation. FR-016 owns direct-versus-lowered W/M parity
+and differential reports. FR-007 owns typed context propagation. FR-016 owns direct-versus-lowered W/M parity
 controls and adds no derived evaluator semantics. FR-017 owns W/M
 canonical-graph interoperability and target loss evidence. FR-027 owns the
 infinite-trace crate boundary, FR-028 owns liveness-backend registration

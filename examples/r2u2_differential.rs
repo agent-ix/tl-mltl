@@ -1,4 +1,4 @@
-//! Replay the retained R2U2 4.2 exchange through the comparison layer (FR-006-AC-2).
+//! Replay the retained R2U2 4.2 exchange through the comparison layer.
 //!
 //! This is a producer, and it is the one that carries this repository's external
 //! compatibility claim. It runs the real crate over the real retained R2U2
@@ -8,8 +8,8 @@
 //! its exact stdout, spec binary, signal map, trace and tool identities are
 //! retained under `corpus/r2u2-v4.2/` and pinned by SHA-256 in that directory's
 //! own manifest. This replay reads those bytes and compares. Executing the
-//! external monitor from an assurance gate would make the gate a producer of the
-//! thing it is checking.
+//! external monitor from a gate would make the gate a producer of the thing it
+//! is checking.
 //!
 //! **A differential result is never a boolean here.** Every row retains, as
 //! separate fields, the comparison classification, the reference truth value,
@@ -18,9 +18,9 @@
 //! three answers, and `pending`, `unsupported` and `tool_error` are three
 //! different reasons to be non-conclusive. Collapsing any of them into one bit
 //! is the exact loss this producer exists to prevent, so each is emitted by its
-//! own row family and each is asserted separately by the chain.
+//! own row family.
 //!
-//! Row vocabulary, all of which the chain enumerates:
+//! Row vocabulary:
 //!
 //! - `pass` — the obligation was discharged
 //! - `fail` — the crate disagreed with what the retained exchange declares
@@ -29,9 +29,7 @@
 //!
 //! `unsupported` maps to a passing proof because the OBLIGATION — a case the
 //! adapter does not support is reported as unsupported and is not silently
-//! compared — was discharged. It is not a pass of the case. The word survives
-//! into the row, into the bytes Quoin retains, and into a chain scenario whose
-//! count oracle is the corpus manifest rather than this producer's own output.
+//! compared — was discharged. It is not a pass of the case.
 
 use std::collections::BTreeMap;
 use std::fs;

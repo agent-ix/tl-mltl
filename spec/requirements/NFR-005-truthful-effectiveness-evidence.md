@@ -74,5 +74,5 @@ named human authority decides release.
 
 ## Dependencies
 
-Constrains FR-020 through FR-024 and relies on the existing FR-006 shared
-assurance path, MRS-002 corpus lifecycle, and applicable human authority.
+Constrains FR-020 through FR-024 and relies on the MRS-002 corpus lifecycle
+and applicable human authority.

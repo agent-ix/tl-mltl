@@ -90,7 +90,6 @@ def main() -> int:
                                 "symbol": "rust-test-census",
                                 "outcome": "unavailable",
                                 "detail": f"census could not be derived: {error}",
-                                "traceIds": ["TC-017"],
                             }
                         ],
                         "matched": False,
@@ -125,7 +124,6 @@ def main() -> int:
                             "outcome": outcome,
                             "detail": "; ".join(problems)
                             or f"{len(observed)} requirement-tagged compiled tests, none ignored",
-                            "traceIds": ["TC-017"],
                         }
                     ],
                     "tagged": sorted(expected),

@@ -1,12 +1,12 @@
-//! Drive the built CLI over its declared request documents (FR-006-AC-2).
+//! Drive the built CLI over its declared request documents.
 //!
 //! This is a producer. It executes the real `tl-mltl` binary — not a
 //! reimplementation of it, and not the library the binary happens to call — over
 //! the request documents `tests/fixtures/cli-requests/manifest.json` declares,
 //! and writes one structured row per case.
 //!
-//! It does not build the binary. `make cli-conformance` and
-//! `make assurance-inputs` build it first and this example refuses to run when
+//! It does not build the binary. `make cli-conformance` builds it first and
+//! this example refuses to run when
 //! it is absent, because an example that can build its own subject can report a
 //! green run against a stale one, and a producer that silently rebuilds is a
 //! producer that can make its own inputs.
@@ -14,7 +14,7 @@
 //! Determinism is measured, not asserted: every case is run twice and the two
 //! stdout byte strings have to be identical.
 //!
-//! Row vocabulary, all of which the chain enumerates:
+//! Row vocabulary:
 //!
 //! - `pass` the obligation was discharged
 //! - `fail` the CLI did not do what the manifest declares
@@ -317,10 +317,9 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
     // rewrites source mtimes on checkout while Cargo correctly declines to
     // rebuild on content, so it reports staleness that is not there.
     //
-    // The real protection for that case is that `make cli-conformance` and
-    // `make assurance-inputs` both run `cargo build --bin tl-mltl` immediately
-    // before this producer, and TC-024's `make -n ci` graph check asserts that
-    // build line is present. That is a gate; this row is an identity check.
+    // The real protection for that case is that `make cli-conformance` runs
+    // `cargo build --bin tl-mltl` immediately before this producer. That is a
+    // gate; this row is an identity check.
     rows.push(Row {
         symbol: "binary-identity".to_owned(),
         outcome: if !head.is_empty() && stamped == head {
@@ -334,8 +333,7 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
                     leftover in the profile directory",
             "headRevision": head,
             "limitation": "catches a binary from another commit; an unrebuilt working \
-                           tree is caught by the build line make runs before this, which \
-                           TC-024 asserts is present",
+                           tree is caught by the build line make runs before this",
             "revisionStampedIntoTheBinary": stamped,
         }),
     });

@@ -2,9 +2,6 @@
 id: NFR-002
 title: Retain governance and qualification boundaries
 type: NFR
-relationships:
-  - target: ix://agent-ix/tl-mltl/NFR-003
-    type: references
 ---
 
 # NFR-002: Retain governance and qualification boundaries
@@ -12,16 +9,15 @@ relationships:
 ## Statement
 
 Every exchanged record shall use an explicit supported schema, exact source and
-corpus pins, contribution provenance, and the explicit, fail-closed
-qualification boundary [NFR-003](./NFR-003-qualification-integrity.md) keeps.
+corpus pins, and contribution provenance.
 Contextual records shall preserve the exact shared signal and caller-context
 identities without claiming their truth. Agent results shall remain distinct
 from human approval and consuming-project validation.
 
 ## Scope
 
-All wire documents, cross-repository pins, evidence records, tracked review
-artifacts, and release claims are in scope.
+All wire documents, cross-repository pins, evidence records, and release
+claims are in scope.
 
 ## Rationale
 
@@ -34,12 +30,10 @@ qualification support even when a Boolean result happens to match.
 |---|---|---|---|
 | Unversioned exchanged document kinds | 0 | 0 | Test |
 | Omitted material provenance identities | 0 | 0 | Inspection |
-| Requirement-tagged tests Cargo does not compile and run | 0 | 0 | Test |
 
 ## Verification
 
-Schema-negative tests reject unknown identities. The compiled Rust test census
-re-derives which requirement-tagged tests Cargo actually runs.
+Schema-negative tests reject unknown identities.
 
 ## Acceptance Criteria
 
@@ -47,29 +41,9 @@ re-derives which requirement-tagged tests Cargo actually runs.
 |---|---|---|
 | NFR-002-AC-1 | Unknown schema/profile versions and omitted material identities are rejected. | Test (TC-012, TC-014) |
 | NFR-002-AC-2 | Exchanged records name exact tl-syntax, corpus, external-tool, dependency, and output identities without recording an automated release decision. | Test (TC-016) |
-| NFR-002-AC-3 | Every requirement-tagged Rust test is a test Cargo actually compiles and runs, and no compiled requirement-tagged test is ignored or configured out, so a matrix row cannot be backed by a tag above a test that never executes. | Test (TC-017) |
 | NFR-002-AC-4 | Every contextual native record names the exact participating tl-mltl and tl-syntax revisions, complete shared catalog identity, and exact optional requirement context without claiming that tl-mltl validated the caller's provenance or a consuming monitor. | Test (TC-025, TC-028, TC-031) |
-| NFR-002-AC-5 | The tracked `SpecReview` review set is non-empty, and every artifact declares an identity unique within it; a duplicate identity is refused while naming every colliding path. | Test (TC-033) |
 
 ## Dependencies
 
 Applies these governance and qualification boundaries to FR-004, FR-005, and
-the repository release workflow. The generic evidence-collection controls this
-requirement formerly carried as NFR-002-AC-3 and NFR-002-AC-4 — host-scoped
-executable census, allowlisted collection environment, corroborated positive
-outputs, envelope self-attestation refusal, and Make execution-control
-policing — were removed with the local evidence framework. What survives of
-that intent, and what does not, is stated in
-[NFR-003](./NFR-003-qualification-integrity.md), which owns the
-shared-assurance intake path and records the measured cost of the removal.
-
-## Historical identifier disclosure
-
-The current compiled-test-census criterion reuses `NFR-002-AC-3`, an identifier
-that the pre-migration requirement used for generic collection controls. That
-reuse predates issue #20 and violates the later stable-identity rule recorded by
-SR-015 FND-1204. This pre-stable repository has no retained evidence requiring a
-compatibility alias, so the identifier is not churned again in this follow-up;
-historical review prose that names the former criterion continues to mean the
-former criterion, while current trace links mean the table row above. The gap is
-accepted and explicit, not represented as a clean identity history.
+the repository release workflow.

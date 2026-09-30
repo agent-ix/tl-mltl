@@ -14,7 +14,7 @@
 //!    actually ran, independent of Make's own exit code.
 //!
 //! This remediates Linear TL-65 / `agent-ix/tl-mltl#14`: a single `.IGNORE:`
-//! line, or an equivalent execution-control surface, used to make all 15 `ci`
+//! line, or an equivalent execution-control surface, used to make all `ci`
 //! prerequisites report success regardless of whether their own recipe
 //! failed. See `spec/requirements/NFR-006-gate-set-integrity.md`. This
 //! mirrors sibling repository tl-rewrite's merged `NFR-004-gate-set-integrity`
@@ -1200,7 +1200,7 @@ mod tests {
         assert!(!dir.path().parent().unwrap().join("escape").exists());
     }
 
-    // The exact 15 declared `ci` prerequisites this repository's Makefile
+    // The exact 14 declared `ci` prerequisites this repository's Makefile
     // names (NFR-006 Scope), in the same order the Makefile declares them.
     // Trace: TC-132, NFR-006-AC-3
     #[test]
@@ -1221,13 +1221,12 @@ mod tests {
             "spec",
             "msrv",
             "rustdoc",
-            "assurance",
         ];
-        assert_eq!(gates.len(), 15);
+        assert_eq!(gates.len(), 14);
         for gate in gates {
             write_record(dir.path(), gate, "run-1").unwrap();
         }
-        assert_eq!(read_records(dir.path()).len(), 15);
+        assert_eq!(read_records(dir.path()).len(), 14);
     }
 
     // Trace: TC-134, NFR-006-AC-5

@@ -24,10 +24,10 @@ relationships:
 
 ## Scope
 
-Touch all 15 `ci` prerequisite recipes in the Makefile (`fmt-check`, `lint`,
+Touch all `ci` prerequisite recipes in the Makefile (`fmt-check`, `lint`,
 `kani-check`, `test`, `check-corpus`, `conformance`, `differential`,
 `cli-conformance`, `test-census`, `deny`, `audit-unsafe`, `spec`, `msrv`,
-`rustdoc`, `assurance`) so each writes a completion record, matching
+`rustdoc`) so each writes a completion record, matching
 Task-024's `GateRecord` contract, only on its own successful completion.
 
 Each recipe's final line becomes a call to the compiled `ci_guard record

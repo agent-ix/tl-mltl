@@ -6,10 +6,6 @@ status: done
 relationships:
   - target: ix://agent-ix/tl-mltl/NFR-006
     type: references
-  - target: ix://agent-ix/tl-mltl/FR-006
-    type: references
-  - target: ix://agent-ix/tl-mltl/NFR-003
-    type: references
   - target: ix://agent-ix/tl-mltl/issues/14
     type: depends_on
 ---
@@ -102,11 +98,10 @@ the start, not discovered later as review findings.
 - **Completion records**: written under `target/ci-gates/<gate>.json`,
   matching tl-rewrite's convention (a `target/`-relative path, cleaned and
   ignored by git already via the existing `target/` `.gitignore` entry).
-- **Gate list**: the 15 declared `ci` prerequisites in this repository's
+- **Gate list**: the declared `ci` prerequisites in this repository's
   actual Makefile, in order: `fmt-check`, `lint`, `kani-check`, `test`,
   `check-corpus`, `conformance`, `differential`, `cli-conformance`,
-  `test-census`, `deny`, `audit-unsafe`, `spec`, `msrv`, `rustdoc`,
-  `assurance`.
+  `test-census`, `deny`, `audit-unsafe`, `spec`, `msrv`, `rustdoc`.
 
 ## Dependency Graph
 
@@ -139,18 +134,11 @@ the start, not discovered later as review findings.
 
 ### Cross-cutting constraints
 
-- NFR-003 applies to every gate whose result the Quoin-bound
-  `assurance-inputs` chain already reads (`conformance`, `differential`,
-  `cli-conformance`, `test-census`, `spec`'s `quire coverage` half, `msrv`);
-  this plan does not duplicate that coverage, and Task-027's reconciliation
-  treats those gates identically to the remaining ones the chain cannot
-  see — the completion record, not the chain, is what NFR-006 reconciles
-  against.
 - Every new production line in this plan is Rust, matching the owner
   directive recorded on TL-65: no task introduces a new Python/shell
   evidence framework; `scripts/*.py` stays as-is and out of this plan's
   scope.
-- No task in this plan touches `scripts/*.py`, `assurance/`, or any gate's
+- No task in this plan touches `scripts/*.py` or any gate's
   own domain correctness (`src/clock.rs`, `src/context.rs`,
   `src/differential.rs`, `src/future/`, `src/mapping/`, `src/past/`,
   `src/wire/`); if a task's implementation seems to need that, stop and
@@ -358,8 +346,7 @@ neither blocks Task-025 or Task-028.
 - Do not start Task-029 until Task-025, Task-027, and Task-028 are each
   individually green — the gate is a joint property, not something any one
   of them can pass alone.
-- No task in this plan touches `scripts/*.py`, `assurance/`, or `NFR-003`'s
-  owned gates; if a task's implementation seems to need that, stop and
+- No task in this plan touches `scripts/*.py`; if a task's implementation seems to need that, stop and
   re-check against NFR-006's Scope section before proceeding.
 - Hosted CI remains manual-only (`workflow_dispatch`) and is not dispatched
   by this plan.
