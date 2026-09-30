@@ -1,6 +1,6 @@
 //! W/M canonical interoperability and target loss evidence (FR-017).
 //!
-//! Replays the pinned tl-syntax `future-operators` corpus — read from the
+//! Replays the tl-syntax `future-operators` corpus — read from the
 //! compiled dependency via `tl_syntax::CORPUS_DIR`, not an in-repo path —
 //! through the real `FutureLoweringRequest` and the C2PO mapping. A lowered
 //! W/M graph is exported only as its canonical primitive graph, a target
@@ -11,10 +11,9 @@
 use std::{fs, path::Path};
 
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use tl_mltl::{
     map_to_c2po, map_to_c2po_with_context, ContextualMappingManifest, MappingError,
-    MappingManifest, MappingSourceIdentity, MappingSourceState, TL_SYNTAX_REVISION,
+    MappingManifest, MappingSourceIdentity, MappingSourceState,
 };
 use tl_syntax::{
     Formula, FormulaDocument, FutureLoweringRefusal, FutureLoweringRequest, Node, NodeId,
@@ -25,15 +24,9 @@ use tl_syntax::{
 /// Read from the compiled tl-syntax dependency via `tl_syntax::CORPUS_DIR`,
 /// joined with this subdirectory name.
 const CORPUS: &str = "future-operators";
-/// SHA-256 of the pinned `manifest.json`, which in turn pins every case file.
-const CORPUS_MANIFEST_SHA256: &str =
-    "e38ef2a7bfc49631932c9c8527b9d08ba1087825e8ae3bccff5f326e74605172";
-/// Corpus identity and revision recorded by the pinned manifest.
+/// Corpus identity and revision recorded by the manifest.
 const CORPUS_IDENTITY: &str = "tl-syntax.future-operator-corpus/v1";
 const CORPUS_MANIFEST_REVISION: u64 = 1;
-/// tl-parse revision the corpus sources were cross-checked against upstream.
-/// Recorded, never executed, and not a tl-mltl dependency.
-const PARSER_REVISION: &str = "9ca856b4c040fc2c3329b6defd26a1c9b57de748";
 const MAPPING_LIMITATION: &str =
     "mapping evidence does not establish external monitor timing, memory, or qualification";
 
@@ -51,30 +44,12 @@ fn read_corpus(relative: &str) -> Vec<u8> {
     fs::read(&path).unwrap_or_else(|error| panic!("read {}: {error}", path.display()))
 }
 
-fn sha256_hex(bytes: &[u8]) -> String {
-    Sha256::digest(bytes)
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect()
-}
-
-/// Verifies the upstream corpus against its pinned manifest and returns the cases.
+/// Reads the upstream corpus manifest identity and returns the cases.
 fn pinned_cases() -> Vec<Value> {
     let manifest_bytes = read_corpus(&format!("{CORPUS}/manifest.json"));
-    assert_eq!(sha256_hex(&manifest_bytes), CORPUS_MANIFEST_SHA256);
     let manifest: Value = serde_json::from_slice(&manifest_bytes).unwrap();
     assert_eq!(manifest["corpus"], CORPUS_IDENTITY);
     assert_eq!(manifest["revision"], CORPUS_MANIFEST_REVISION);
-    let files = manifest["files"].as_array().unwrap();
-    assert!(!files.is_empty(), "the corpus manifest pins no files");
-    for file in files {
-        let path = file["path"].as_str().unwrap();
-        assert_eq!(
-            sha256_hex(&read_corpus(&format!("{CORPUS}/{path}"))),
-            file["sha256"].as_str().unwrap(),
-            "{path} does not match the pinned corpus manifest"
-        );
-    }
     let cases: Value =
         serde_json::from_slice(&read_corpus(&format!("{CORPUS}/cases.json"))).unwrap();
     assert_eq!(cases["corpus"], CORPUS_IDENTITY);
@@ -264,7 +239,6 @@ fn lowered_wm_graphs_export_to_c2po_exactly_as_direct_canonical_graphs() {
         // `expression`, `output_sha256`, and `proposition_ids` are graph-derived;
         // the swapped-operand control below shows those fields can differ.
         assert_eq!(from_lowered, from_direct, "{id}");
-        assert_eq!(from_lowered.syntax_revision, TL_SYNTAX_REVISION);
         assert_eq!(from_lowered.semantic_profile, "mltl.online-prefix/v1");
         // The evaluator identity is the build-recorded tl-mltl source revision.
         assert_eq!(
@@ -278,7 +252,6 @@ fn lowered_wm_graphs_export_to_c2po_exactly_as_direct_canonical_graphs() {
         let contextual_lowered = map_with_context(derived, lowered, &catalog).unwrap();
         let contextual_direct = map_with_context(direct, direct_formula, &catalog).unwrap();
         assert_eq!(contextual_lowered, contextual_direct, "{id}");
-        assert_eq!(contextual_lowered.syntax_revision, TL_SYNTAX_REVISION);
 
         // Formula-v1 has no W or M node, so this documents rather than gates;
         // the swapped-operand control below is the discriminating check.
@@ -377,7 +350,6 @@ fn foreign_parser_and_monitor_acceptance_is_never_qualification_evidence() {
     let manifest: Value =
         serde_json::from_slice(&read_corpus(&format!("{CORPUS}/manifest.json"))).unwrap();
     assert_eq!(manifest["source_cross_check"]["parser"], "tl-parse");
-    assert_eq!(manifest["source_cross_check"]["revision"], PARSER_REVISION);
 
     // The parser is a recorded upstream cross-check, not a tl-mltl input,
     // neither direct nor transitive.

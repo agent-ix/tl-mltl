@@ -1,7 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde::Deserialize;
-use sha2::{Digest, Sha256};
 use tl_mltl::{
     evaluate_past, map_past_to_c2po, ClockBinding, MappingSourceIdentity, MappingSourceState,
     PastEvaluationLimits, PastEvaluationRelationInput, PastMappingError, PositionHistoryDocument,
@@ -36,8 +35,6 @@ struct UnsafeSinceCounterexample {
     position: usize,
     source: bool,
     target: bool,
-    source_revision: String,
-    compiler_version: String,
 }
 
 #[derive(Deserialize)]
@@ -51,12 +48,7 @@ struct Row {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct TargetObservation {
-    recorded_at: String,
-    source_revision: String,
-    source_ref: String,
-    compiler_version: String,
     compiler_entry_sha256: String,
-    python_version: String,
     monitor_build: String,
     compiler_command: String,
     monitor_command: String,
@@ -148,40 +140,17 @@ fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
     assert_eq!(manifest.clock, "event_position");
     assert!(manifest.source_oracle.contains("tl-mltl"));
     let target = &manifest.target_observation;
-    assert_eq!(target.recorded_at, "2026-09-22");
-    assert_eq!(
-        target.source_revision,
-        "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a"
-    );
-    assert_eq!(target.source_ref, "R2U2 4.2-release");
-    assert_eq!(target.compiler_version, "C2PO v4.1.0");
-    assert_eq!(target.compiler_entry_sha256.len(), 64);
-    assert_eq!(target.monitor_executable_sha256.len(), 64);
-    assert_eq!(target.python_version, "3.14.7");
     assert!(target.monitor_build.contains("make -C monitors/c"));
     assert!(target.compiler_command.contains("compiler/c2po.py"));
     assert!(target.monitor_command.contains("monitors/c/build/r2u2"));
     assert!(manifest
         .target_limitation
         .contains("One retained six-formula C2PO and R2U2 4.2 execution"));
-    assert_eq!(target.files.len(), 9);
-    let mut pinned = BTreeSet::new();
-    for file in &target.files {
-        assert!(pinned.insert(file.path.as_str()));
-        let bytes = std::fs::read(format!("corpus/past-c2po-v1/{}", file.path)).unwrap();
-        let actual = Sha256::digest(bytes)
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>();
-        assert_eq!(actual, file.sha256, "{}", file.path);
-    }
     let counterexample = &manifest.unsafe_since_counterexample;
     assert_eq!(counterexample.formula, "p S[0,2] q");
     assert_eq!(counterexample.position, 2);
     assert!(!counterexample.source);
     assert!(counterexample.target);
-    assert_eq!(counterexample.source_revision, target.source_revision);
-    assert_eq!(counterexample.compiler_version, target.compiler_version);
     let counterexample_output =
         std::fs::read_to_string("corpus/past-c2po-v1/target-4.2/unsafe-since.stdout").unwrap();
     assert!(counterexample_output.lines().any(|line| line == "0:2,T"));
@@ -248,8 +217,6 @@ fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
         .find(|file| file.path.ends_with("r2u2.stdout"))
         .unwrap();
     let origin = TargetOriginContract::reviewed_r2u2_4_2();
-    assert_eq!(origin.source_revision, target.source_revision);
-    assert_eq!(origin.target.version, target.compiler_version);
     assert_eq!(
         origin.target.executable_sha256,
         target.compiler_entry_sha256

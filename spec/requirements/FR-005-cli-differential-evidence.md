@@ -29,7 +29,7 @@ manifests, and compare identified external-monitor results using versioned JSON.
 |---|---|---|
 | FR-005-AC-1 | CLI evaluation and analysis match the library API and reject unknown schema identities. | Test (TC-014) |
 | FR-005-AC-2 | Supported differential cases compare truth value and verdict time; unsupported/tool errors remain non-conclusive. | Test (TC-015) |
-| FR-005-AC-3 | Retained reports and checksums identify every input, tool, output, limitation, and requirement reference. | Test (TC-016) |
+| FR-005-AC-3 | Retained reports identify every input, tool, output, limitation, and requirement reference. | Test (TC-016) |
 
 ## Dependencies
 

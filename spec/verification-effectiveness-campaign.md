@@ -73,10 +73,7 @@ planned evidence.
 
 ## Admission and dependency order
 
-Specification and review may proceed while parent work is pending. M0 is
-already landed at tl-mltl v0.1.0, and the W/M specification and
-routed implementations are landed at the exact revisions named by MRS-002.
-Current future/W/M obligations therefore cannot remain blocked merely because
+Specification and review may proceed while parent work is pending. Current future/W/M obligations therefore cannot remain blocked merely because
 this campaign predates those merges.
 
 No campaign implementation begins until MRS-002 and its PLAN-007 bundle are

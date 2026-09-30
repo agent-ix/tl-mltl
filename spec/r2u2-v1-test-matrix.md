@@ -42,4 +42,4 @@ relationships:
 | TC-171 | Show feature-off build has no infinite export and existing bounded mapping bytes are stable | Integration | P0 | FR-040-AC-3 | ✅ implemented |
 | TC-172 | Census every node × interval × context cell with mapped or typed-refused status and no wildcard success | Property | P0 | FR-041-AC-1 | ✅ implemented |
 | TC-173 | Partition unbounded liveness/until, fairness, partial valuation, origin, signal, identity and resource refusals with no partial artifact and exact FR-341 projection | Property | P0 | FR-041-AC-2 | ✅ implemented |
-| TC-174 | Compile the real `c2po_map` fuzz target and exercise digest-pinned strict-reader/mapper seeds | Fuzz | P1 | FR-038-AC-2 | ✅ implemented |
+| TC-174 | Compile the real `c2po_map` fuzz target and exercise strict-reader/mapper seeds | Fuzz | P1 | FR-038-AC-2 | ✅ implemented |

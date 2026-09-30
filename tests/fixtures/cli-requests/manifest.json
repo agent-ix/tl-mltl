@@ -24,9 +24,9 @@
       "id": "map-c2po-accepted",
       "request": "map-c2po.json",
       "expectedExit": 0,
-      "requiredFields": ["schemaVersion", "adapterVersion", "sourceRevision", "syntaxRevision", "expression", "inputSha256", "outputSha256", "limitation"],
+      "requiredFields": ["schemaVersion", "adapterVersion", "sourceRevision", "expression", "inputSha256", "outputSha256", "limitation"],
       "traceIds": ["FR-005-AC-1", "FR-004-AC-3", "TC-014"],
-      "why": "The C2PO adapter manifest through the CLI, carrying the exact source, dependency, input and output identities that make an external exchange attributable."
+      "why": "The C2PO adapter manifest through the CLI, carrying the exact source, input and output identities that make an external exchange attributable."
     },
     {
       "id": "unknown-command-schema-refused",

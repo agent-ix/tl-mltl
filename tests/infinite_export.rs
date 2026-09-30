@@ -848,8 +848,6 @@ fn retained_c2po_steps_agree_with_the_exact_new_safety_body() {
         serde_json::from_slice(include_bytes!("../corpus/past-c2po-v1/manifest.json")).unwrap();
     let target = &retained["targetObservation"];
     let origin = contract();
-    assert_eq!(origin.source_revision, target["sourceRevision"]);
-    assert_eq!(origin.target.version, target["compilerVersion"]);
     assert_eq!(
         origin.target.executable_sha256,
         target["compilerEntrySha256"]

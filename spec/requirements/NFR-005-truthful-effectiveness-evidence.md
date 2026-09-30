@@ -53,7 +53,7 @@ reviewable.
 ## Verification
 
 Rust validators enumerate each finite population and verify schema, identity,
-digest, path, resource, state, and claim invariants. Mutation probes remove or
+path, resource, state, and claim invariants. Mutation probes remove or
 change one denominator, oracle, budget, stop, survivor, bound, assumption,
 unwind, status, or artifact identity at a time and require the owning control to
 name the defect. Quire reports static coverage. Independent review evaluates limitations and claim scope; only the

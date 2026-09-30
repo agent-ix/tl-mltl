@@ -5,16 +5,10 @@ cases, and their manifest), the future-operator corpus (`future-operators`
 under `tl_syntax::CORPUS_DIR`), and the past-history corpus (`past-history`
 under `tl_syntax::CORPUS_DIR`) are all read straight out of the compiled
 `tl-syntax` dependency via `tl_syntax::CORPUS_DIR`. There is no
-retained copy of any of them in this repository and no separate corpus-basis
-revision to track for any of them: each tracks whatever `TL_SYNTAX_REVISION`
-names.
+retained copy of any of them in this repository.
 
-The future-operator corpus's manifest records the tl-parse revision it was
-cross-checked against upstream; tl-mltl neither depends on nor re-runs that
-parser. In this repository the manifest digest is `CORPUS_MANIFEST_SHA256` in
-`tests/future_interop.rs` (TC-081 through TC-083).
+tl-mltl neither depends on nor runs tl-parse.
 
 tl-mltl consumes the formula, profile, trace, horizon, and closed-verdict fields
 without changing their meaning. Evaluator-specific and external-monitor cases
-live in separate versioned manifests so the upstream corpus bytes remain
-reviewable and substitutable by digest.
+live in separate versioned manifests.

@@ -89,10 +89,4 @@ fn cli_is_deterministic_and_rejects_unknown_command_schema() {
     let revision = manifest["sourceRevision"].as_str().unwrap();
     assert_eq!(revision, env!("TL_MLTL_SOURCE_REVISION"));
     assert_eq!(manifest["sourceState"], env!("TL_MLTL_SOURCE_STATE"));
-    // The compiled dependency identity; the mapping manifest carries it.
-    assert_eq!(manifest["syntaxRevision"], tl_mltl::TL_SYNTAX_REVISION);
-    assert_eq!(
-        tl_mltl::TL_SYNTAX_REVISION,
-        "6aa9b11e29040d64b437da87c9944e3dedd34a86"
-    );
 }

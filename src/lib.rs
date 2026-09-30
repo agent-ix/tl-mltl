@@ -82,13 +82,6 @@ pub use wire::{
 };
 
 /// Exact tl-syntax source revision this crate is compiled against.
-///
-/// This is the dependency identity `Cargo.toml` resolves and the value the C2PO
-/// mapping manifest reports as `syntaxRevision`. The shared temporal corpus and
-/// the future-operator corpus are both read straight out of this same compiled
-/// dependency via `tl_syntax::CORPUS_DIR`, so there is no separate basis
-/// revision to track for either: reading through the dependency means each
-/// tracks whatever this revision names.
 pub const TL_SYNTAX_REVISION: &str = "6aa9b11e29040d64b437da87c9944e3dedd34a86";
 
 /// Shared temporal corpus identity consumed by this crate.

@@ -30,8 +30,7 @@ under both semantic profiles.
 
 ## Inputs
 
-- W/M lowerings produced by `tl_syntax::FutureLoweringRequest::lower` at the
-  pinned tl-syntax revision: `p W[a,b] q` as `Or(p U[a,b] q, G[a,b] p)` and
+- W/M lowerings produced by `tl_syntax::FutureLoweringRequest::lower`: `p W[a,b] q` as `Or(p U[a,b] q, G[a,b] p)` and
   `p M[a,b] q` as `And(p R[a,b] q, F[a,b] p)`, appended to a validated graph.
 - The same canonical graph constructed directly, node by node, without the
   lowering request.

@@ -96,7 +96,6 @@ fn admitted_once_historically_and_previous_render_exact_past_forms() {
     assert_eq!(once.clock, "event_position");
     assert_eq!(once.profile, "mltl.origin-complete-history/v1");
     assert_eq!(once.target_origin_evidence_sha256, origin.evidence_sha256);
-    assert_eq!(once.target_source_revision, origin.source_revision);
     assert_eq!(once.target_monitor_sha256, origin.monitor_executable_sha256);
     let historically = render(
         &[
@@ -352,10 +351,7 @@ fn absent_or_operator_incomplete_origin_evidence_refuses_without_artifact() {
 #[test]
 fn each_target_origin_identity_field_is_required() {
     let nodes = [p()];
-    let corruptions: [fn(&mut TargetOriginContract); 9] = [
-        |origin: &mut TargetOriginContract| origin.source_revision.clear(),
-        |origin: &mut TargetOriginContract| origin.source_revision = "a".repeat(39),
-        |origin: &mut TargetOriginContract| origin.source_revision = "A".repeat(40),
+    let corruptions: [fn(&mut TargetOriginContract); 6] = [
         |origin: &mut TargetOriginContract| origin.target.name.clear(),
         |origin: &mut TargetOriginContract| origin.target.version.clear(),
         |origin: &mut TargetOriginContract| origin.evidence_sha256 = "C".repeat(64),
@@ -383,8 +379,7 @@ fn well_formed_but_unreviewed_target_substitutions_refuse_before_output() {
             operand: NodeId(0),
         }),
     ];
-    let substitutions: [fn(&mut TargetOriginContract); 7] = [
-        |origin| origin.source_revision = "f".repeat(40),
+    let substitutions: [fn(&mut TargetOriginContract); 6] = [
         |origin| origin.target.name = "another C2PO".to_owned(),
         |origin| origin.target.version = "C2PO v4.2.0".to_owned(),
         |origin| origin.target.executable_sha256 = "a".repeat(64),

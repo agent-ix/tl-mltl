@@ -45,7 +45,7 @@ TL-native `mltl.infinite-trace/v1` profile. That module consumes
 `tl-syntax.formula-unbounded/v1`, lasso, fairness and partial-valuation
 documents and registers the one `tl-syntax.liveness/v1` backend. QSL's
 `quire.temporal.infinite-trace/v1` member is a correspondence for result
-comparison. See FR-027 through FR-034, AD-002 and ADR-003.
+comparison. See FR-027 through FR-034 and ADR-003.
 
 ### Out of Scope
 
@@ -86,11 +86,10 @@ FR-018 publishes the five artifact contracts tl-mltl itself owns (`trace`,
 their immutable schema/digest and strict-reading discipline. It changes no
 existing future or past semantic profile. TL-179 removed the
 `quire-observation`-coupled request/result/mapping owner boundary FR-018
-previously described; that layer, and the QObs C00 compatibility dispatch
-FR-019 pinned it to, now live in `quire-mltl` unchanged in behavior.
+previously described; that layer, and the QObs C00 compatibility dispatch,
+now live in `quire-mltl` unchanged in behavior.
 
-FR-019 pins that temporal owner boundary to accepted QObs C00 and
-publishes explicit compatibility dispatch. It
+FR-019 publishes explicit QObs C00 compatibility dispatch. It
 delegates the supported temporal path to FR-018 and reports QObs repair-plan and
 aggregate-query inputs as typed unsupported outcomes instead of recreating
 their owner semantics. The upstream enablement prerequisite is satisfied.
@@ -119,6 +118,4 @@ behavior in the bounded core.
 - [Infinite-trace provider scope, tl-mltl#68](https://github.com/agent-ix/tl-mltl/issues/68).
 - [tl-syntax infinite-trace facet, tl-syntax#75](https://github.com/agent-ix/tl-syntax/issues/75).
 - [Liveness profile holes, quire-specification#112](https://github.com/agent-ix/quire-specification/issues/112).
-- [Pinned C2PO language](https://github.com/R2U2/r2u2/blob/336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a/compiler/docs/user/language.md).
-- [Pinned C2PO lexer](https://github.com/R2U2/r2u2/blob/336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a/compiler/c2po/parse_c2po.py).
 - [tl-syntax corpus](https://github.com/agent-ix/tl-syntax/tree/feat/tl-syntax-v0.1/corpus).

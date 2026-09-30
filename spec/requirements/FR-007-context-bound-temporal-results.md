@@ -86,7 +86,7 @@ existing context-free APIs or v1 wire bytes.
 - A contextual C2PO mapping renders each proposition with the exact name of its
   bound Boolean signal instead of the legacy synthetic `p<ID>` alias.
 - A usable C2PO name matches `[A-Za-z_][A-Za-z0-9_]*` and is not a token reserved
-  by the exact pinned C2PO lexer: `STRUCT`, `ENUM`, `INPUT`, `DEFINE`, `FTSPEC`,
+  by the C2PO lexer: `STRUCT`, `ENUM`, `INPUT`, `DEFINE`, `FTSPEC`,
   `PTSPEC`, `foreach`, `forsome`, `forexactly`, `foratleast`, `foratmost`,
   `TAU`, `pow`, `sqrt`, `abs`, `xor`, `prev`, `G`, `F`, `H`, `O`, `U`, `R`,
   `S`, `T`, `M`, `true`, or `false`.
@@ -99,11 +99,9 @@ existing context-free APIs or v1 wire bytes.
   defines no predicate-lowering language and never coerces them to Boolean.
 - Mapping remains a deterministic expression/manifest operation. It does not
   emit a full C2PO program, execute C2PO, execute R2U2, or claim external syntax
-  acceptance beyond the pinned lexical contract.
+  acceptance beyond the lexical contract.
 
-The identifier and reserved-token set above comes from the `C2POLexer` at the
-retained R2U2 source revision
-`336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a`. The lexer is authoritative where
+The identifier and reserved-token set above comes from the `C2POLexer`. The lexer is authoritative where
 its user documentation omits reserved `TAU` and `T`.
 
 ## Contextual differential behavior

@@ -1,11 +1,10 @@
 # R2U2 4.2 differential report
 
-The exact C monitor built from canonical `R2U2/r2u2` tag `4.2-release`, commit
-`336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a`, was run with C2PO 4.1.0.
+The C monitor built from canonical `R2U2/r2u2` tag `4.2-release` was run with
+C2PO.
 Eight declared supported formula/time cases agree with tl-mltl in truth value
 and external verdict index. The raw aggregated verdict stream is retained in
-`r2u2.stdout`; the executable, compiled specification, source inputs, and tool
-script are pinned by SHA-256 in `manifest.json`.
+`r2u2.stdout`.
 
 | Case | tl-mltl | R2U2 | Verdict time | Status |
 |---|---:|---:|---:|---|
