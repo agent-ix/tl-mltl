@@ -1,6 +1,6 @@
 ---
 id: Task-005
-title: Worked fixture, shared intake, and closing review
+title: Worked fixture and closing review
 type: Task
 status: in_progress
 track: Verification
@@ -12,17 +12,16 @@ relationships:
     type: references
 ---
 
-# Task-005: Worked fixture, shared intake, and closing review
+# Task-005: Worked fixture and closing review
 
 ## Scope
 
 Complete strict v1/v2 compatibility, the #57-shaped bounded overlay-response
-fixture, one existing producer-to-Quoin contextual intake path, full traceability,
-exact-head local verification, code review, gap analysis, and remediation.
+fixture, full traceability, exact-head local verification, code review, gap
+analysis, and remediation.
 
 ## Completion Evidence
 
-TC-029 through TC-031 and the full local gate pass at one exact head. Quoin
-retains the native contextual bytes without executing the producer, no generic
+TC-029 and TC-031 and the full local gate pass at one exact head, no generic
 machinery or external execution was added, and closing reviews contain no
 unresolved high or medium finding.

@@ -14,4 +14,4 @@ description: "Contents of the tl-mltl typed context implementation plan."
 - [Task-002: Shared dependencies and contextual wire forms](./tasks/Task-002-contextual-wire.md)
 - [Task-003: Context-bound evaluation and horizon](./tasks/Task-003-evaluation-horizon.md)
 - [Task-004: Named mapping and contextual differential](./tasks/Task-004-mapping-differential.md)
-- [Task-005: Worked fixture, shared intake, and closing review](./tasks/Task-005-verification.md)
+- [Task-005: Worked fixture and closing review](./tasks/Task-005-verification.md)

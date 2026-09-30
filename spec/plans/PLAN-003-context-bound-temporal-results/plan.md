@@ -22,8 +22,7 @@ Implement `agent-ix/tl-mltl#24` by consuming the exact shared tl-syntax signal
 catalog and caller context, using validated Boolean names in C2PO expressions,
 and binding the same identities into evaluation, horizon, mapping, external-
 verdict and differential records. Preserve every context-free API, CLI behavior,
-and v1 byte contract, and extend only native domain results and the existing
-shared intake path.
+and v1 byte contract, and extend only native domain results.
 
 ## Base and landing
 
@@ -52,8 +51,7 @@ tl-syntax#14 reviewed landing
               -> exact named-Boolean C2PO mapping + refusal
                 -> contextual external verdict + differential comparison
                   -> #57-shaped bounded overlay-response fixture
-                    -> existing native producer + Quoin intake exercise
-                      -> full local gate + code review + gap analysis
+                    -> full local gate + code review + gap analysis
 ```
 
 ## Task File Mapping
@@ -64,7 +62,7 @@ tl-syntax#14 reviewed landing
 | Task-002 | Exact shared pin, native v2 fields, version-aware strict serde, digest helpers and v1 snapshots | V2 construction/round-trip controls and the wire portion of TC-029 |
 | Task-003 | Context-aware closed/prefix evaluation and horizon analysis with pre-work formula binding | TC-025 and applicable TC-028 mutation classes |
 | Task-004 | Exact valid signal-name rendering, C2PO refusals, contextual external verdict and differential comparison | TC-026, TC-027, and applicable TC-028 mutation classes |
-| Task-005 | #57-shaped fixture, existing native Quoin intake, compatibility completion, full verification and closing reviews | TC-029 through TC-031, exact-head local gate, and resolved reviews |
+| Task-005 | #57-shaped fixture, compatibility completion, full verification and closing reviews | TC-029, TC-031, exact-head local gate, and resolved reviews |
 
 ## Implementation shape
 
@@ -103,9 +101,7 @@ tl-syntax#14 reviewed landing
   exact requirement revision/clause/anchor/span. It exercises every contextual
   operation but does not parse FRETish, derive IR fields, call tl-rewrite, or
   imply the future adapter is validated.
-- Extend an existing native producer and current intake declaration only as
-  necessary to retain one contextual domain result through Quoin. Add no generic
-  runner, collector, evidence envelope, adapter framework, retention store,
+- Add no generic runner, collector, evidence envelope, adapter framework, retention store,
   bespoke assurance schema, Make target, or hosted workflow behavior.
 
 ## Verification method
@@ -143,9 +139,8 @@ manual-only and is not dispatched by this plan.
    execution.
 5. Existing APIs, CLI, semantic outcomes and exact v1 snapshots remain
    unchanged; all contextual v2 forms are strict and deterministic.
-6. The #57-shaped fixture and one existing native producer demonstrate the
-   shared context through local operations and Quoin intake without importing
-   contract IR, tl-rewrite, Quire, Quoin, or a generic evidence/runtime layer.
+6. The #57-shaped fixture demonstrates the shared context through local
+   operations without importing contract IR, tl-rewrite, Quire, Quoin, or a generic evidence/runtime layer.
 7. The crate remains `publish = false`, `MIT OR Apache-2.0`, and makes no claim
    of provenance truth, external acceptance, universal rewrite equivalence,
    consuming-monitor qualification, accreditation, certification, or release.

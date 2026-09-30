@@ -131,8 +131,8 @@ store, approval mechanism, or retention runtime.
 
 ## Dependencies
 
-Depends on FR-008 for coverage identity. Each conditional family also depends on its owning accepted profile
-and implementation revision before any fixture can become canonical. The
+Depends on FR-008 for coverage identity. Each conditional family also depends
+on its owning accepted profile and implementation revision before any fixture can become canonical. The
 ownership table above is closed to TL-owned families and the Rust adapter
 repositories that emit a mapping target; a family whose authoritative owner is
 an agent-ix/Quire repository is out of this campaign's scope under ADR-002 and
