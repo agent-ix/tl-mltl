@@ -68,18 +68,10 @@ defines fixture families, identities, ownership, and lifecycle.
 [FR-010](./requirements/FR-010-explicit-interoperability-dispositions.md)
 defines mapping and external-observation states.
 [NFR-004](./requirements/NFR-004-reproducible-corpus-retention.md) constrains
-reproducibility and retention. [MP-002](./assurance/MP-002-corpus-coverage.md)
-defines the measurement, and [TM-002](./corpus-campaign-test-matrix.md) assigns
+reproducibility and retention. [TM-002](./corpus-campaign-test-matrix.md) assigns
 planned evidence.
 
 ## Admission and implementation gate
-
-M0 is closed at `tl-mltl` v0.1.0 (`4bff387`). The W/M specification and routed
-implementations have also landed: tl-syntax #37/#42 (`8d3ff98`/`8dc18ee`),
-tl-parse #32 (`9ca856b`), tl-rewrite #36 (`033a687`), and tl-mltl #49/#50
-(`36604b8`/`1770705`). W/M cells are therefore part of the current eligible
-population and cannot remain `blocked` merely because this campaign predates
-those merges.
 
 Past/history rows remain `blocked` until their exact specification and
 implementation revisions are independently accepted and landed. A blocked row
@@ -96,12 +88,10 @@ After those gates, implementation order is:
 
 1. `tl-mltl` implements the campaign/dimension/cell schema and fail-closed
    census for already landed future-v1 and W/M contracts.
-2. Each authoritative owner publishes its family manifest and canonical cases;
-   consumers add exact-digest replay only after the owner revision exists.
+2. Each authoritative owner publishes its family manifest and canonical cases.
 3. Rust adapter owners add loss reports; `tl-mltl` adds observation/comparison
    overlays without executing a target runtime.
-4. The corpus census and replay feed MP-002 through the existing shared Quoin
-   intake. Conditional families enter only through successor manifests after
+4. Conditional families enter only through successor manifests after
    their own dependencies land.
 
 The machine-readable owner, consumer, evidence, predecessor, and external

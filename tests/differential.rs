@@ -1,7 +1,6 @@
 use std::{collections::BTreeMap, fs, path::PathBuf};
 
 use serde::Deserialize;
-use sha2::{Digest, Sha256};
 use tl_mltl::{
     compare_external, evaluate_prefix_at, ComparisonStatus, EvaluationLimits, ExternalStatus,
     ExternalVerdict, ToolIdentity, TruthValue,
@@ -13,7 +12,6 @@ use tl_syntax::{FormulaDocument, PropositionId};
 struct Manifest {
     source: Source,
     tools: Tools,
-    artifacts: BTreeMap<String, String>,
     trace: Vec<Vec<PropositionId>>,
     cases: Vec<Case>,
     unsupported_cases: Vec<UnsupportedCase>,
@@ -32,7 +30,6 @@ struct Tools {
 #[derive(Deserialize)]
 struct R2u2 {
     version: String,
-    sha256: String,
 }
 
 #[derive(Deserialize)]
@@ -59,13 +56,6 @@ struct UnsupportedCase {
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("corpus/r2u2-v4.2")
-}
-
-fn sha256(path: PathBuf) -> String {
-    Sha256::digest(fs::read(path).unwrap())
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect()
 }
 
 fn time_indexed_verdicts(stdout: &str) -> BTreeMap<(u32, u64), bool> {
@@ -118,8 +108,6 @@ fn retained_r2u2_run_agrees_for_supported_cases() {
             tool: ToolIdentity {
                 name: "r2u2".to_owned(),
                 version: manifest.tools.r2u2.version.clone(),
-                executable_sha256: manifest.tools.r2u2.sha256.clone(),
-                configuration_sha256: manifest.artifacts["spec.bin"].clone(),
             },
             formula_id: case.id,
             trace_id: "r2u2-v4.2-trace".to_owned(),
@@ -146,9 +134,6 @@ fn retained_external_inputs_and_nonconclusive_cases_are_complete() {
     let root = root();
     let manifest: Manifest =
         serde_json::from_slice(&fs::read(root.join("manifest.json")).unwrap()).unwrap();
-    for (path, expected) in &manifest.artifacts {
-        assert_eq!(&sha256(root.join(path)), expected, "{path}");
-    }
     assert_eq!(manifest.unsupported_cases.len(), 1);
     assert_eq!(
         manifest.unsupported_cases[0].id,

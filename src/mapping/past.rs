@@ -13,21 +13,14 @@ use tl_syntax::{
 
 use super::legacy::{is_c2po_identifier, sha256_hex};
 use super::MappingSourceIdentity;
-use crate::{context::bind_formula, ContextualBindingError, ToolIdentity, TL_SYNTAX_REVISION};
+use crate::{context::bind_formula, ContextualBindingError, ToolIdentity};
 
 /// Reviewed target-origin behavior, bound to one exact target version and
-/// operator set. The evidence digest identifies the separately replayable
-/// target observations used to establish false-before-origin parity.
+/// operator set.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TargetOriginContract {
-    /// Exact source revision of the reviewed C2PO/R2U2 target.
-    pub source_revision: String,
     /// Exact external tool identity.
     pub target: ToolIdentity,
-    /// SHA-256 of the reviewed R2U2 monitor executable.
-    pub monitor_executable_sha256: String,
-    /// Lowercase SHA-256 of the reviewed target-origin evidence artifact.
-    pub evidence_sha256: String,
     /// Past operators with a retained target observation or a zero-interval
     /// Boolean lowering that removes target-origin behavior.
     pub admitted_operators: BTreeSet<PastOperatorKind>,
@@ -38,15 +31,10 @@ impl TargetOriginContract {
     /// compiler. This is reviewed historical evidence, not a fresh target run.
     pub fn reviewed_r2u2_4_2() -> Self {
         Self {
-            source_revision: REVIEWED_SOURCE_REVISION.to_owned(),
             target: ToolIdentity {
                 name: "C2PO".to_owned(),
                 version: "C2PO v4.1.0".to_owned(),
-                executable_sha256: REVIEWED_COMPILER_SHA256.to_owned(),
-                configuration_sha256: REVIEWED_SOURCE_SHA256.to_owned(),
             },
-            monitor_executable_sha256: REVIEWED_MONITOR_SHA256.to_owned(),
-            evidence_sha256: REVIEWED_OBSERVATION_SHA256.to_owned(),
             admitted_operators: [
                 PastOperatorKind::Once,
                 PastOperatorKind::Historically,
@@ -60,43 +48,17 @@ impl TargetOriginContract {
     }
 
     pub(crate) fn validate(&self) -> Result<(), PastMappingError> {
-        if !is_hex_of_length(&self.source_revision, 40)
-            || self.target.name.is_empty()
-            || self.target.version.is_empty()
-            || !is_sha256(&self.evidence_sha256)
-            || !is_sha256(&self.target.executable_sha256)
-            || !is_sha256(&self.target.configuration_sha256)
-            || !is_sha256(&self.monitor_executable_sha256)
-        {
+        if self.target.name.is_empty() || self.target.version.is_empty() {
             return Err(PastMappingError::MissingOriginEvidence);
         }
         // These interval admissions were measured only against this exact
-        // retained R2U2 4.2/C2PO target and origin-observation artifact.
-        // A caller-supplied digest of the right shape is not equivalence
-        // evidence for another target.
-        if self.source_revision != REVIEWED_SOURCE_REVISION
-            || self.target.name != "C2PO"
-            || self.target.version != "C2PO v4.1.0"
-            || self.target.executable_sha256 != REVIEWED_COMPILER_SHA256
-            || self.target.configuration_sha256 != REVIEWED_SOURCE_SHA256
-            || self.monitor_executable_sha256 != REVIEWED_MONITOR_SHA256
-            || self.evidence_sha256 != REVIEWED_OBSERVATION_SHA256
-        {
+        // retained R2U2 4.2/C2PO target.
+        if self.target.name != "C2PO" || self.target.version != "C2PO v4.1.0" {
             return Err(PastMappingError::TargetOriginMismatch);
         }
         Ok(())
     }
 }
-
-const REVIEWED_SOURCE_REVISION: &str = "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a";
-const REVIEWED_COMPILER_SHA256: &str =
-    "f978a32f667a8247c387a66bce35371c97b7d8f7b730035a8ee40cdfc428ce12";
-const REVIEWED_SOURCE_SHA256: &str =
-    "4e0c904eccfbf7a2efdd08dfe268d1862d3a2ea473595e34afd118af4a6cb915";
-const REVIEWED_MONITOR_SHA256: &str =
-    "5743987dddb47cc01829a633e15623095c9c2aff2f8bb24e30d7f0e0f488f85f";
-const REVIEWED_OBSERVATION_SHA256: &str =
-    "378b4ba53bb5a4aa685fe26a570285df171a3a829d984afd2a682ceb60312085";
 
 /// Typed refusal without a partial C2PO expression or manifest.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -152,8 +114,6 @@ pub struct PastMappingManifest {
     pub source_revision: String,
     /// Exact tl-mltl source tree state.
     pub source_state: String,
-    /// Exact tl-syntax dependency revision.
-    pub syntax_revision: &'static str,
     /// Canonical formula-v2 graph content identity.
     pub graph_id: String,
     /// Caller formula identity.
@@ -166,14 +126,8 @@ pub struct PastMappingManifest {
     pub input_sha256: String,
     /// SHA-256 of the complete signal catalog.
     pub signal_catalog_sha256: String,
-    /// Exact target binary/configuration identity.
+    /// Exact target identity.
     pub target: ToolIdentity,
-    /// Exact source revision of the reviewed target implementation.
-    pub target_source_revision: String,
-    /// Exact R2U2 monitor executable reviewed for origin parity.
-    pub target_monitor_sha256: String,
-    /// SHA-256 of separately reviewed target-origin evidence.
-    pub target_origin_evidence_sha256: String,
     /// Canonical C2PO expression, intended for a PTSPEC section.
     pub expression: String,
     /// SHA-256 of the expression bytes.
@@ -451,17 +405,6 @@ fn validate_origin_shape(formula: Formula<'_>) -> Result<(), PastMappingError> {
     Ok(())
 }
 
-fn is_sha256(value: &str) -> bool {
-    is_hex_of_length(value, 64)
-}
-
-fn is_hex_of_length(value: &str, length: usize) -> bool {
-    value.len() == length
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
-}
-
 /// Maps a validated formula-v2 past graph under an explicit reviewed target
 /// origin contract. Every refusal returns no executable artifact.
 #[allow(clippy::too_many_arguments)]
@@ -506,7 +449,6 @@ pub fn map_past_to_c2po(
         adapter_version: env!("CARGO_PKG_VERSION"),
         source_revision: source.revision,
         source_state: source.state.as_str().to_owned(),
-        syntax_revision: TL_SYNTAX_REVISION,
         graph_id,
         formula_id: formula_id.to_owned(),
         profile: SemanticProfile::OriginCompleteHistoryV1.as_str(),
@@ -514,9 +456,6 @@ pub fn map_past_to_c2po(
         input_sha256: sha256_hex(formula_bytes),
         signal_catalog_sha256,
         target: origin.target.clone(),
-        target_source_revision: origin.source_revision.clone(),
-        target_monitor_sha256: origin.monitor_executable_sha256.clone(),
-        target_origin_evidence_sha256: origin.evidence_sha256.clone(),
         output_sha256: sha256_hex(expression.as_bytes()),
         expression,
         limitation:

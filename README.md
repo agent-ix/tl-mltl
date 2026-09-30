@@ -12,11 +12,10 @@ make guarded-ci
 make spec
 ```
 
-The library requires Rust 1.98.1 or later and consumes validated `tl-syntax` formulas
-pinned to exact revision `6aa9b11e29040d64b437da87c9944e3dedd34a86`. The
+The library requires Rust 1.98.1 or later and consumes validated `tl-syntax` formulas. The
 shared temporal corpus, the future-operator corpus, and the past-history
 corpus are all read directly from the compiled `tl-syntax` dependency via
-`tl_syntax::CORPUS_DIR`, tracking `TL_SYNTAX_REVISION`. `evaluate_closed` implements
+`tl_syntax::CORPUS_DIR`. `evaluate_closed` implements
 the declared all-false-after-closure profile at time zero, while
 `evaluate_closed_at` selects another verdict time. `evaluate_prefix` and
 `evaluate_prefix_at` preserve unknown future observations as `pending`.
@@ -52,8 +51,8 @@ record.
 
 ## Bounded formal check
 
-Kani is an optional, manual-only supplementary check. With Kani 0.68.0
-installed, run:
+Kani is an optional, manual-only supplementary check. With Kani installed,
+run:
 
 ```bash
 cargo kani --lib \
@@ -64,7 +63,7 @@ cargo kani --lib \
 The harness proves the checked horizon-bound addition primitive for all `u32` /
 `u64` operands, including overflow refusal. It does not claim an unbounded MLTL
 evaluator proof. It is part of local `make guarded-ci` and the dispatch-only
-hosted gate, which installs the pinned Kani verifier before running the
+hosted gate, which installs the Kani verifier before running the
 aggregate.
 
 ## Corpora
@@ -74,8 +73,7 @@ aggregate.
   via `tl_syntax::CORPUS_DIR`; none is retained as a copy in this repository.
   Lowered W/M graphs map to C2PO only through the canonical graph; see FR-017.
 - `corpus/r2u2-v4.2/` retains a real differential run of canonical R2U2 tag
-  `4.2-release` at commit `336a2453…`, including C2PO inputs, compiled binary,
-  raw verdicts, exact tool/configuration digests, and 8/8 supported formula/time
+  `4.2-release`, including C2PO inputs, compiled binary, raw verdicts, and 8/8 supported formula/time
   agreements across unary, Until, Release, nested, and nonzero-time cases.
 - Closed-profile mapping remains explicitly unsupported; it is not silently
   reinterpreted as online-prefix semantics.

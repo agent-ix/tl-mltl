@@ -84,8 +84,6 @@ fn tool() -> ToolIdentity {
     ToolIdentity {
         name: "external-fixture".to_owned(),
         version: "1".to_owned(),
-        executable_sha256: "a".repeat(64),
-        configuration_sha256: "b".repeat(64),
     }
 }
 
@@ -269,24 +267,6 @@ fn contextual_identities_change_for_independent_operation_inputs() {
     .unwrap();
     assert_ne!(mapping.request_sha256, mapping_changed.request_sha256);
     assert_ne!(mapping.result_sha256, mapping_changed.result_sha256);
-
-    let external = ContextualExternalVerdict {
-        schema_version: ContextualExternalVerdictSchemaVersion::V2,
-        tool: tool(),
-        formula_id: evaluation.formula_id.clone(),
-        trace_id: evaluation.trace_id.clone(),
-        signal_catalog_sha256: evaluation.signal_catalog_sha256.clone(),
-        requirement_context: Some(context.clone()),
-        status: ExternalStatus::Conclusive,
-        value: Some(true),
-        verdict_time: Some(evaluation.verdict_time),
-        detail: None,
-    };
-    let first = compare_external_with_context(&evaluation, external.clone()).unwrap();
-    let mut changed_tool = external;
-    changed_tool.tool.configuration_sha256 = "c".repeat(64);
-    let changed = compare_external_with_context(&evaluation, changed_tool).unwrap();
-    assert_ne!(first.comparison_sha256, changed.comparison_sha256);
 }
 
 // Trace: TC-031, FR-007-AC-7, StR-003-VC-1, NFR-002-AC-4

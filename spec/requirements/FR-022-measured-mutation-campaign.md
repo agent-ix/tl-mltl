@@ -124,12 +124,7 @@ exports that relation separately, as the non-coverage `implements` relation
 `agent-ix/quire-rs#171` delivered.
 
 The relation is a *precondition to be asserted, not a property to be assumed*.
-Measured at this specification head with the installed `quire 0.32.2`
-(engine `acd1be63`): `quire symbols --scope . --json` reports 695 extracted
-symbols, 608 of a kind that can carry the relation, and **0 bound
-`implements` edges** — while six `/// Implements: FR-00x` annotations for
-FR-001 through FR-005 are present in `src/`. Whatever the cause, an empty
-relation is the state a mutation selection would silently inherit.
+An empty relation is the state a mutation selection would silently inherit.
 
 Before selection, therefore, the owning repository shall assert — in an
 executable control, not in prose — that the relation is non-empty and complete

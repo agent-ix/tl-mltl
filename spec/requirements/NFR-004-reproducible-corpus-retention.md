@@ -23,7 +23,7 @@ authority boundary.
 ## Scope
 
 Applies to the FR-008 cell census, FR-009 fixture manifests and lifecycle, the
-FR-010 target catalog, MP-002 results, and every coverage or interoperability
+FR-010 target catalog, and every coverage or interoperability
 claim derived from them.
 
 ## Rationale
@@ -41,17 +41,14 @@ and remaining risk reviewable.
 | Applicable cells with one canonical fixture and independent expected result | complete applicable population | 100% | Test |
 | Excluded or blocked cells without a reason/dependency | 0 | 0 | Test |
 | Duplicate case/cell identities or silent removals | 0 | 0 | Test |
-| Canonical artifacts with missing digest, owner, source, license, or limitation | 0 | 0 | Test |
 | Generated inputs counted as canonical conformance | 0 | 0 | Test |
 | Unsupported/unavailable/non-conclusive target states collapsed or omitted | 0 | 0 | Test |
 | Automated source-release, qualification, or certification decisions | 0 | 0 | Test |
 
 ## Verification
 
-Deterministic Rust validators enumerate the declared population, verify strict
-schemas and digests, and mutation-test denominator, status, identity, and
-lifecycle controls. Quire reports requirement/matrix backing, and Quoin retains
-producer results under shared ownership. An independent reviewer and the human
+Deterministic Rust validators enumerate the declared population and mutation-test denominator, status, identity, and
+lifecycle controls. Quire reports requirement/matrix backing. An independent reviewer and the human
 release owner evaluate limitations separately from automated results.
 
 ## Acceptance Criteria
@@ -59,13 +56,9 @@ release owner evaluate limitations separately from automated results.
 | ID | Criteria | Verification |
 |---|---|---|
 | NFR-004-AC-1 | Repeating the census and replay with identical repository, dependency, corpus, tool, configuration, and environment identities produces byte-identical ordered machine records. | Test (TC-101, TC-103) |
-| NFR-004-AC-2 | Every denominator change, duplicate, silent removal, status lie, digest/provenance omission, generated/canonical substitution, or collapsed target state makes its owning control fail and names the affected identities. | Test (TC-099, TC-101, TC-103) |
+| NFR-004-AC-2 | Every denominator change, duplicate, silent removal, status lie, generated/canonical substitution, or collapsed target state makes its owning control fail and names the affected identities. | Test (TC-099, TC-101, TC-103) |
 | NFR-004-AC-3 | Reports publish applicable, excluded, blocked, covered, unsupported, unavailable, non-conclusive, and not-run populations separately and never infer source release, qualification, certification, or monitor acceptance. | Test (TC-100, TC-103) |
 
 ## Dependencies
 
-Constrains FR-008 through FR-010. AP-001 governs only the exact v0.1
-source candidate and current v0.1 rows; it does not accredit the post-v0.1
-campaign. Any campaign source-release claim requires a successor assurance
-profile whose scope names the exact campaign manifest, corpus families, and
-source revision.
+Constrains FR-008 through FR-010.

@@ -6,8 +6,7 @@
 //!
 //! It does not execute R2U2. The external monitor was run once, out of band, and
 //! its exact stdout, spec binary, signal map, trace and tool identities are
-//! retained under `corpus/r2u2-v4.2/` and pinned by SHA-256 in that directory's
-//! own manifest. This replay reads those bytes and compares. Executing the
+//! retained under `corpus/r2u2-v4.2/`. This replay reads those bytes and compares. Executing the
 //! external monitor from a gate would make the gate a producer of the thing it
 //! is checking.
 //!
@@ -53,7 +52,6 @@ const TRACE_ID: &str = "r2u2-v4.2-trace";
 struct Manifest {
     source: Source,
     tools: Tools,
-    artifacts: BTreeMap<String, String>,
     trace: Vec<Vec<PropositionId>>,
     cases: Vec<Case>,
     unsupported_cases: Vec<UnsupportedCase>,
@@ -61,7 +59,6 @@ struct Manifest {
 
 #[derive(Deserialize)]
 struct Source {
-    revision: String,
     license: String,
 }
 
@@ -73,7 +70,6 @@ struct Tools {
 #[derive(Deserialize)]
 struct R2u2 {
     version: String,
-    sha256: String,
 }
 
 #[derive(Deserialize)]
@@ -188,12 +184,6 @@ fn tool_identity(manifest: &Manifest) -> ToolIdentity {
     ToolIdentity {
         name: "r2u2".to_owned(),
         version: manifest.tools.r2u2.version.clone(),
-        executable_sha256: manifest.tools.r2u2.sha256.clone(),
-        configuration_sha256: manifest
-            .artifacts
-            .get("spec.bin")
-            .cloned()
-            .unwrap_or_default(),
     }
 }
 
@@ -261,7 +251,6 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
                     "outputSha256": manifest_row.output_sha256,
                     "propositionIds": manifest_row.proposition_ids,
                     "adapterVersion": manifest_row.adapter_version,
-                    "syntaxRevision": manifest_row.syntax_revision,
                     "sourceRevision": manifest_row.source_revision,
                     "sourceState": manifest_row.source_state,
                     "externalTool": manifest_row.external_tool,
@@ -545,7 +534,6 @@ fn run(arguments: &[String]) -> Result<Vec<Row>, String> {
                 "declaredRefusal": case.expected_refusal,
                 "observedRefusal": observed,
                 "declaredProfile": "mltl.closed-trace/v1",
-                "sourceRevision": manifest.source.revision,
             }),
         });
     }

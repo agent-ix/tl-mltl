@@ -13,10 +13,6 @@ pub struct ToolIdentity {
     pub name: String,
     /// Exact version string.
     pub version: String,
-    /// SHA-256 digest of the executed binary.
-    pub executable_sha256: String,
-    /// SHA-256 digest of material configuration.
-    pub configuration_sha256: String,
 }
 
 /// External monitor execution state.
@@ -393,8 +389,6 @@ mod tests {
             tool: ToolIdentity {
                 name: "external".to_owned(),
                 version: "1".to_owned(),
-                executable_sha256: "binary".to_owned(),
-                configuration_sha256: "config".to_owned(),
             },
             formula_id: "formula".to_owned(),
             trace_id: "trace".to_owned(),

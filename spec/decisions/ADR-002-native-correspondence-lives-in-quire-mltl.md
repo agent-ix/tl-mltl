@@ -30,7 +30,7 @@ to Quire types.
 ## Context
 
 The M4 corpus-coverage campaign (MRS-002, FR-008 through FR-010, NFR-004,
-MP-002, TM-002, PLAN-007) was first authored in September 2026 on branch
+TM-002, PLAN-007) was first authored in September 2026 on branch
 `issue/38-corpus-interop-spec` (PR #44, never merged). That revision predates
 the TL-175 ruling and declared a native-predicate/native-temporal
 correspondence coverage dimension owned here, with:
@@ -63,7 +63,7 @@ removed from `tl-mltl`'s M4 campaign and specified in `quire-mltl` instead.
 
 - `tl-mltl` keeps the TL-owned campaign: MRS-002's closed coverage model,
   FR-008's dimension catalog, FR-009's TL-owned and Rust-adapter fixture
-  families, FR-010's C2PO/R2U2 dispositions, NFR-004, MP-002, TM-002, and
+  families, FR-010's C2PO/R2U2 dispositions, NFR-004, TM-002, and
   PLAN-007's seven TL-owned tasks.
 - FR-008's dimension catalog admits no native-predicate or native-temporal
   class; a cell naming one is an unknown-dimension refusal.

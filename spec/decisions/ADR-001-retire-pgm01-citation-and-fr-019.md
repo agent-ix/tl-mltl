@@ -89,10 +89,7 @@ erasing them:
   as the successor that carries this boundary forward, ported unchanged in
   behavior by TL-178.
 - **NFR-002** drops its `references: quire-contract-ir/PGM-01` edge and its
-  PGM-01-citing prose, and is reworded to lean on
-  [NFR-003](../requirements/NFR-003-qualification-integrity.md) — which
-  already owns the shared-assurance intake path this repository actually
-  runs — instead of a governance program `tl-mltl` no longer cites.
+  PGM-01-citing prose.
 - **SR-044 through SR-051**, the frozen SpecReviews that covered PR #67 / #70,
   FR-018 / FR-019, are not edited. This repository's convention, confirmed by
   precedent in `quire-contract-ir`'s own PGM-01-R08/R09 withdrawal notes (which

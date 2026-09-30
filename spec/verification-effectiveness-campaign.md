@@ -40,8 +40,6 @@ each TL-* crate stays independent of the agent-ix/Quire ecosystem.
   conclusive and non-conclusive states, and reviewed survivor dispositions.
 - Narrow Kani proof claims that bind exact harnesses, assumptions, bounds,
   unwind checks, solver/toolchain identities, outcomes, and counterexamples.
-- Domain-produced structured records mapped through the existing Engineering
-  Assurance, Quire, and Quoin boundary.
 
 ### Out of scope
 
@@ -69,18 +67,13 @@ budgets, stopping, plateau, and crash handling.
 [FR-022](./requirements/FR-022-measured-mutation-campaign.md) owns mutation
 population identity, execution states, scores, and survivor disposition.
 [FR-023](./requirements/FR-023-bounded-kani-claims.md) owns bounded Kani claim
-semantics. [FR-024](./requirements/FR-024-shared-effectiveness-intake.md) owns
-the shared producer/intake boundary. [NFR-005](./requirements/NFR-005-truthful-effectiveness-evidence.md)
-constrains reproducibility, retention, and claim language. MP-003 through MP-006
-define the four measurements, and TM-003 assigns planned evidence.
+semantics. [NFR-005](./requirements/NFR-005-truthful-effectiveness-evidence.md)
+constrains reproducibility, retention, and claim language, and TM-003 assigns
+planned evidence.
 
 ## Admission and dependency order
 
-Specification and review may proceed while parent work is pending. M0 is
-already landed at tl-mltl v0.1.0 (`4bff387`), and the W/M specification and
-routed implementations are landed at the exact revisions named by MRS-002.
-Current future/W/M obligations therefore cannot remain blocked merely because
-this campaign predates those merges.
+Specification and review may proceed while parent work is pending.
 
 No campaign implementation begins until MRS-002 and its PLAN-007 bundle are
 independently accepted and landed and MRS-003 itself is human-accepted at an
@@ -105,8 +98,6 @@ Implementation follows this order:
    bounded-arithmetic proposition. Matrix priority orders admitted candidates
    but is not by itself a Kani-candidate trigger. A primitive proof cannot be
    widened to its caller or to the evaluator as a whole.
-5. Rust domain producers emit the records; Quire supplies static facts and
-   Quoin validates, binds, retains, and presents them for human review.
 
 Sibling implementation remains tracked by tl-syntax #26, tl-parse #25, and
 tl-rewrite #27. Historical tl-mltl #31 supplies the landed property baseline and

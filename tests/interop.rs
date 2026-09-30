@@ -25,8 +25,6 @@ fn tool() -> ToolIdentity {
     ToolIdentity {
         name: "r2u2".to_owned(),
         version: "vX.Y.Z-test-fixture".to_owned(),
-        executable_sha256: "1".repeat(64),
-        configuration_sha256: "2".repeat(64),
     }
 }
 

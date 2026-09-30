@@ -12,7 +12,7 @@ use crate::{
     context::{
         bind_formula, catalog_sha256, contextual_formula_request_sha256, contextual_result_sha256,
     },
-    ContextualBindingError, ToolIdentity, MAX_RECURSION_DEPTH, TL_SYNTAX_REVISION,
+    ContextualBindingError, ToolIdentity, MAX_RECURSION_DEPTH,
 };
 
 /// Named source identity embedded in a mapping manifest.
@@ -65,8 +65,6 @@ pub struct MappingManifest {
     pub source_revision: String,
     /// Whether the source checkout was clean or modified when built.
     pub source_state: String,
-    /// Exact tl-syntax dependency identity.
-    pub syntax_revision: String,
     /// Caller-provided formula identity.
     pub formula_id: String,
     /// Online semantic profile identity.
@@ -119,8 +117,6 @@ pub struct ContextualMappingManifest {
     pub source_revision: String,
     /// Whether the source checkout was clean or modified when built.
     pub source_state: String,
-    /// Exact tl-syntax dependency identity.
-    pub syntax_revision: String,
     /// SHA-256 identity of the complete shared catalog.
     pub signal_catalog_sha256: String,
     /// Exact caller context, or deliberate absence encoded as null.
@@ -152,7 +148,6 @@ deserialize_contextual_record!(ContextualMappingManifest {
     adapter_version: String,
     source_revision: String,
     source_state: String,
-    syntax_revision: String,
     signal_catalog_sha256: String,
     request_sha256: String,
     result_sha256: String,
@@ -482,7 +477,6 @@ pub fn map_to_c2po(
         adapter_version: env!("CARGO_PKG_VERSION").to_owned(),
         source_revision: source.revision,
         source_state: source.state.as_str().to_owned(),
-        syntax_revision: TL_SYNTAX_REVISION.to_owned(),
         formula_id: formula_id.into(),
         semantic_profile: formula.profile().as_str().to_owned(),
         input_sha256: sha256_hex(formula_bytes),
@@ -522,7 +516,6 @@ pub fn map_to_c2po_with_context(
         source_state: &'a str,
         external_tool: Option<&'a ToolIdentity>,
         work_limit: u64,
-        syntax_revision: &'a str,
     }
     let request = Request {
         formula_id: &formula_id,
@@ -531,7 +524,6 @@ pub fn map_to_c2po_with_context(
         source_state: source.state.as_str(),
         external_tool: external_tool.as_ref(),
         work_limit,
-        syntax_revision: TL_SYNTAX_REVISION,
     };
     let request_sha256 = contextual_formula_request_sha256(
         "tl-mltl.contextual-mapping/v2/request",
@@ -557,7 +549,6 @@ pub fn map_to_c2po_with_context(
         adapter_version: env!("CARGO_PKG_VERSION").to_owned(),
         source_revision: source.revision,
         source_state: source.state.as_str().to_owned(),
-        syntax_revision: TL_SYNTAX_REVISION.to_owned(),
         signal_catalog_sha256: catalog_sha256(signal_catalog)
             .map_err(|error| MappingError::InvalidCatalog(error.to_string()))?,
         requirement_context: requirement_context.cloned(),

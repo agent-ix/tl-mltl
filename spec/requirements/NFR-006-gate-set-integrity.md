@@ -66,10 +66,7 @@ each:
    and its own recipe's exit status, written only on that recipe's own
    successful completion; the entry point compares the resulting record set
    against the exact declared `ci` prerequisite set — parsed from the
-   Makefile's own `ci:` rule, currently 14 prerequisites (`fmt-check`,
-   `lint`, `kani-check`, `test`, `check-corpus`, `conformance`,
-   `differential`, `cli-conformance`, `test-census`, `deny`, `audit-unsafe`,
-   `spec`, `msrv`, `rustdoc`) — and reports a violation naming
+   Makefile's own `ci:` rule — and reports a violation naming
    any mismatch in either direction, rather than trusting Make's own exit
    code.
 

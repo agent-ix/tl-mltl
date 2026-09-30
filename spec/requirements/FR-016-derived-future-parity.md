@@ -30,8 +30,7 @@ under both semantic profiles.
 
 ## Inputs
 
-- W/M lowerings produced by `tl_syntax::FutureLoweringRequest::lower` at the
-  pinned tl-syntax revision: `p W[a,b] q` as `Or(p U[a,b] q, G[a,b] p)` and
+- W/M lowerings produced by `tl_syntax::FutureLoweringRequest::lower`: `p W[a,b] q` as `Or(p U[a,b] q, G[a,b] p)` and
   `p M[a,b] q` as `And(p R[a,b] q, F[a,b] p)`, appended to a validated graph.
 - The same canonical graph constructed directly, node by node, without the
   lowering request.
@@ -79,8 +78,7 @@ under both semantic profiles.
 
 ## Dependencies
 
-Depends on tl-syntax FR-008 as implemented by `tl-syntax` main
-`8dc18eec5af227f484170362c9e8894b8531a27d`, and implements the tl-mltl portion
+Depends on tl-syntax FR-008, and implements the tl-mltl portion
 of tl-syntax FR-010-AC-1 and FR-010-AC-4 routed by
 [agent-ix/tl-mltl#47](https://github.com/agent-ix/tl-mltl/issues/47). Rewrite
 equivalence belongs to tl-rewrite#35; lowered-graph export belongs to

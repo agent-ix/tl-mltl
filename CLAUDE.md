@@ -10,7 +10,6 @@ make fmt              # format with rustfmt
 make fmt-check        # verify formatting (CI gate)
 make lint             # clippy with -D warnings
 make test             # cargo test
-make check-corpus     # verify shared and R2U2 corpus checksums
 make conformance      # replay the shared corpus through the evaluator
 make differential     # replay the retained R2U2 exchange
 make cli-conformance  # drive the built CLI over its declared requests
@@ -87,7 +86,7 @@ src/differential.rs    # external-verdict comparison, never a boolean
 src/main.rs            # JSON command CLI
 examples/              # the three domain producers
 tests/                 # reference, corpus, differential, and CLI tests
-corpus/                # pinned shared and R2U2 differential records
+corpus/                # shared and R2U2 differential records
 spec/                  # requirements artifacts (from /spec-create-spec)
 scripts/               # the test census and the unsafe-comment audit
 ```

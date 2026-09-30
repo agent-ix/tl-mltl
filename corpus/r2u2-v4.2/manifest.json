@@ -3,26 +3,17 @@
   "source": {
     "repository": "https://github.com/R2U2/r2u2",
     "tag": "4.2-release",
-    "revision": "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a",
     "license": "Apache-2.0"
   },
   "tools": {
     "c2po": {
       "version": "4.1.0",
-      "path": "compiler/c2po.py",
-      "sha256": "f978a32f667a8247c387a66bce35371c97b7d8f7b730035a8ee40cdfc428ce12"
+      "path": "compiler/c2po.py"
     },
     "r2u2": {
       "version": "4.2-release",
-      "path": "monitors/c/build/r2u2",
-      "sha256": "6b98ee5cfcad7073eef49a333b00be1e5b512ed9d3bed6b4e07418357a87ab92"
+      "path": "monitors/c/build/r2u2"
     }
-  },
-  "artifacts": {
-    "formulas.c2po": "1b16e7446bce55e42b927ce5a3439041cec59e6bfeaff626ef0d78caf00b2938",
-    "signals.map": "257aad1e39c430cf87490fba85d855f9f265af435687ca16ea18b331d4abac5d",
-    "trace.csv": "4f0b0db7cfe9746c323696c3f4a3ae3e5844af4003f9e870587c7c39f40b963a",
-    "spec.bin": "234c5f0a1fb827c1ef10cab4ed4ae9ce8ffdb07e6863c6fa9522730e49ca0da8"
   },
   "trace": [[], [0, 1], [1], [1]],
   "cases": [
