@@ -20,7 +20,7 @@ fn ci_guard_bin() -> &'static str {
 
 /// A fixture Makefile with two `ci` prerequisites, `gate-a` and `gate-b`,
 /// each running `cmd` and then calling this binary's `record` subcommand —
-/// exactly the pattern the real Makefile now uses for all 15 gates.
+/// exactly the pattern the real Makefile now uses for all 14 gates.
 fn fixture_makefile(cmd: &str, extra_header: &str) -> String {
     let guard = ci_guard_bin();
     format!(

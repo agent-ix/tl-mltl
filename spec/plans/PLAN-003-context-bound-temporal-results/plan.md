@@ -124,10 +124,6 @@ external identity, or outcome at a time and asserts the corresponding request,
 result, or comparison identity changes or the operation refuses. Controls retain
 the unchanged case beside each mutation class.
 
-TC-030 uses the existing producer-owned shared path. Quoin retains the native
-bytes; Quoin and Quire run no producer; C2PO and R2U2 are never executed. No
-Python test helper or new orchestration target is introduced.
-
 The full local `make ci CARGO_TARGET_DIR=target/cargo-review` gate runs at an
 exact candidate head after implementation and closing fixes. Hosted CI remains
 manual-only and is not dispatched by this plan.

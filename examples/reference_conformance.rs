@@ -1,10 +1,8 @@
-//! Replay the shared temporal corpus through the reference semantics (FR-006-AC-2).
+//! Replay the shared temporal corpus through the reference semantics.
 //!
 //! This is a producer. It runs the real crate over the real corpus bytes and
 //! writes one declared structured row per obligation to stdout. It computes no
-//! aggregate verdict, retains nothing, and knows nothing about Quoin: the
-//! assurance chain reads these rows, and a row this file does not emit is a
-//! result nothing downstream can invent.
+//! aggregate verdict and retains nothing.
 //!
 //! Every expectation comes from `manifest.json` in `tl_syntax::CORPUS_DIR`,
 //! read straight out of the compiled dependency rather than a vendored copy,
@@ -14,7 +12,7 @@
 //! than skipped, because a skipped obligation and a discharged one must not
 //! print the same thing.
 //!
-//! Row vocabulary, all of which the chain enumerates:
+//! Row vocabulary:
 //!
 //! - `pass`      the obligation was discharged
 //! - `fail`      the crate disagreed with the corpus declaration
@@ -23,8 +21,7 @@
 //! `malformed` is not a defect and it is not a pass of the input. Three of the
 //! eight shared fixtures are malformed by design, so reporting them as `fail`
 //! would report a permanently failing proof for a permanently correct
-//! evaluator. The word survives into the row, into the bytes Quoin retains, and
-//! into a chain scenario whose count oracle is the corpus manifest.
+//! evaluator.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -33,13 +30,8 @@ use std::process::ExitCode;
 
 use serde::Deserialize;
 use serde_json::{json, Value};
-use tl_mltl::{
-    analyze_horizon, evaluate_closed, evaluate_closed_with_context, EvaluationLimits, TruthValue,
-};
-use tl_syntax::{
-    Formula, FormulaDocument, OwnedSignalDeclaration, PropositionBinding, PropositionId,
-    RequirementContextDocument, SignalCatalogDocument, SignalDomain, SignalId, SourceSpan,
-};
+use tl_mltl::{analyze_horizon, evaluate_closed, EvaluationLimits, TruthValue};
+use tl_syntax::{FormulaDocument, PropositionId};
 
 const PROTOCOL: &str = "tl-mltl.reference-conformance/v1";
 
@@ -140,50 +132,6 @@ fn truth_name(value: TruthValue) -> &'static str {
     }
 }
 
-/// One producer-owned contextual result in the existing conformance stream.
-///
-/// The chain retains this already-produced JSON value; it does not execute this
-/// function. The selected fixture has one direct Boolean proposition so the
-/// catalog binding is explicit and inspectable rather than inferred.
-fn contextual_native_result(
-    fixture: &Fixture,
-    formula: Formula<'_>,
-) -> Result<Option<Value>, String> {
-    if fixture.id != "short-trace-future-v1" {
-        return Ok(None);
-    }
-    let catalog = SignalCatalogDocument::new(
-        vec![OwnedSignalDeclaration::new(
-            SignalId(101),
-            "response_within_2_cycles".to_owned(),
-            SignalDomain::Boolean,
-        )],
-        vec![PropositionBinding::new(PropositionId(1), SignalId(101))],
-    )
-    .map_err(|error| format!("construct contextual catalog: {error}"))?;
-    let context = RequirementContextDocument::new(
-        "agent-ix/tl-mltl/FR-007".to_owned(),
-        "1".to_owned(),
-        "AC-6".to_owned(),
-        "reference-conformance.contextual-native-result".to_owned(),
-        SourceSpan::new(0, 1).map_err(|error| format!("construct context span: {error}"))?,
-    )
-    .map_err(|error| format!("construct contextual requirement context: {error}"))?;
-    let report = evaluate_closed_with_context(
-        formula,
-        fixture.id.clone(),
-        &fixture.trace,
-        format!("{}-trace", fixture.id),
-        EvaluationLimits::default(),
-        &catalog,
-        Some(&context),
-    )
-    .map_err(|error| format!("produce contextual native result: {error}"))?;
-    serde_json::to_value(report)
-        .map(Some)
-        .map_err(|error| format!("serialize contextual native result: {error}"))
-}
-
 fn manifest_path(arguments: &[String]) -> Result<PathBuf, String> {
     let mut iterator = arguments.iter();
     while let Some(argument) = iterator.next() {
@@ -276,19 +224,7 @@ fn closed_row(fixture: &Fixture, corpus: &Path) -> Result<Option<Row>, String> {
             fixture.id
         )
     })?;
-    let contextual_native = contextual_native_result(fixture, formula)?;
-    let trace_ids = if contextual_native.is_some() {
-        vec![
-            "FR-001-AC-1",
-            "FR-001-AC-2",
-            "FR-007-AC-6",
-            "TC-001",
-            "TC-003",
-            "TC-030",
-        ]
-    } else {
-        vec!["FR-001-AC-1", "FR-001-AC-2", "TC-001", "TC-003"]
-    };
+    let trace_ids = vec!["FR-001-AC-1", "FR-001-AC-2", "TC-001", "TC-003"];
     Ok(Some(
         match evaluate_closed(
             formula,
@@ -303,7 +239,7 @@ fn closed_row(fixture: &Fixture, corpus: &Path) -> Result<Option<Row>, String> {
                     TruthValue::False => Some(false),
                     TruthValue::Pending => None,
                 };
-                let mut detail = json!({
+                let detail = json!({
                     "declaredByCorpusManifest": expected,
                     "verdict": truth_name(report.verdict),
                     "verdictTime": report.verdict_time,
@@ -312,9 +248,6 @@ fn closed_row(fixture: &Fixture, corpus: &Path) -> Result<Option<Row>, String> {
                     "semanticProfile": report.semantic_profile,
                     "schemaVersion": report.schema_version,
                 });
-                if let Some(contextual_native) = contextual_native {
-                    detail["contextualNative"] = contextual_native;
-                }
                 Row {
                     symbol,
                     family: "closed",
@@ -524,9 +457,8 @@ fn main() -> ExitCode {
             for row in &rows {
                 println!("{}", row.emit());
             }
-            // A producer that reported a failing row exits non-zero. The rows are
-            // the structured result the chain reads; this is the status the shell
-            // reads, so `make conformance` cannot report success over a failure.
+            // A producer that reported a failing row exits non-zero, so
+            // `make conformance` cannot report success over a failure.
             if rows.iter().any(|row| row.outcome == "fail") {
                 eprintln!("reference_conformance: at least one obligation was not discharged");
                 return ExitCode::FAILURE;

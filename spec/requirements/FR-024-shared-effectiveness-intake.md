@@ -5,8 +5,6 @@ type: FR
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-003
     type: implements
-  - target: ix://agent-ix/tl-mltl/FR-006
-    type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-009
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-020
@@ -143,7 +141,7 @@ the applicable assurance profile can make a release decision.
 
 ## Dependencies
 
-Depends on FR-006 shared-assurance allocation, FR-009 path/resource rules, and
+Depends on FR-009 path/resource rules and
 all four domain record contracts. Complete reviewed local `implements`
 bindings, atomic mutation raw
 evidence, immutable binary attachment support,

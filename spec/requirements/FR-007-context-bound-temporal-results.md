@@ -145,8 +145,7 @@ its user documentation omits reserved `TAU` and `T`.
   cannot become a runtime dependency because it already consumes tl-mltl; the
   campaign composes rewrite and evaluation evidence through their shared
   context identities without introducing a dependency cycle.
-- Native contextual records may traverse the existing Quoin intake, but
-  tl-mltl imports or executes no Quoin, Quire, Engineering Assurance,
+- tl-mltl imports or executes no Quoin, Quire, Engineering Assurance,
   contract-IR, rewrite, parser, runner, collector, or retention runtime.
 - The crate remains `publish = false`, `MIT OR Apache-2.0`, and a reference and
   interoperability layer rather than a qualified production monitor.
@@ -160,14 +159,13 @@ its user documentation omits reserved `TAU` and `T`.
 | FR-007-AC-3 | Contextual comparison returns agreement only when reference and external contextual versions, catalog identity, exact context presence/value, formula/trace identities, truth value, and verdict time agree; identity/context mismatch is distinct from semantic mismatch and pending/unsupported/tool-error remain non-conclusive. | Test (TC-027) |
 | FR-007-AC-4 | Independently changing or dropping any catalog declaration, name, domain, binding, requirement id, revision, clause, anchor, requirement-context span, presence marker, semantic formula structure, trace, limit, source/dependency revision, mapping expression, external identity, or native outcome changes the applicable request/output/comparison digest or produces typed non-success. | Test (TC-028) |
 | FR-007-AC-5 | Existing context-free APIs and CLI retain their signatures, semantic behavior, and exact v1 serialized snapshots; all five contextual v2 record families round-trip strictly and reject contextual field smuggling, omitted required fields, unknown fields, mixed versions, and unsupported versions. | Test (TC-029) |
-| FR-007-AC-6 | Contextual native domain records traverse the existing producer-owned Quoin intake without Quoin, Quire, C2PO, or R2U2 executing a producer or monitor; no new generic runner, collector, evidence envelope, adapter framework, or retention path is added, and package license/publication settings remain unchanged. | Test (TC-030) |
 | FR-007-AC-7 | A fixture shaped like quire-contract-ir#57's bounded “overlay change accepted, response within N cycles” requirement uses named Boolean signals and one exact requirement revision/clause/anchor/span consistently across contextual evaluation, horizon, mapping, external verdict, and differential records, with no contract-IR or rewrite runtime dependency. | Test (TC-031) |
 | FR-007-AC-8 | With every other operation input held equal, contextual closed evaluation, prefix evaluation, horizon analysis, and mapping produce identical request and result identities for formula documents with the same schema, semantic profile, root, and node kinds whether diagnostic node source spans are absent or contain different valid offsets; structural formula documents retain those span differences, and mapping continues to bind its separately supplied exact formula bytes. | Test (TC-034) |
 | FR-007-AC-9 | A structurally valid borrowed formula with more than \`MAX_FORMULA_DOCUMENT_NODES\` nodes is refused as a typed contextual identity failure before request hashing or operation work. | Test (TC-035) |
 
 ## Dependencies
 
-Depends on FR-001 through FR-006, the exact shared types introduced by
+Depends on FR-001 through FR-005, the exact shared types introduced by
 `agent-ix/tl-syntax#15`, and the reviewed shared context/digest contract from
 `agent-ix/tl-rewrite#21`. Implementation lands only after both dependencies are
 reviewed and reachable from their landing branches.

@@ -5,8 +5,6 @@ type: FR
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-003
     type: implements
-  - target: ix://agent-ix/tl-mltl/FR-006
-    type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-008
     type: depends_on
 ---
@@ -122,7 +120,7 @@ result, complete provenance, review, and a successor manifest.
 
 ## Dependencies
 
-Depends on FR-006 for shared static facts/intake and FR-008/FR-009 for class
+Depends on FR-008/FR-009 for class
 and canonical-fixture boundaries. Each repository owns its domain generators,
 oracles, and tests; tl-mltl owns only its own evaluator/horizon/mapping rows and
 the campaign-level contract.

@@ -10,8 +10,6 @@ relationships:
     type: part_of
   - target: ix://agent-ix/tl-mltl/FR-007
     type: references
-  - target: ix://agent-ix/tl-mltl/FR-006
-    type: references
 ---
 
 # Task-005: Worked fixture, shared intake, and closing review

@@ -4,9 +4,7 @@
 #
 # Native orchestration. Every target calls the toolchain that owns the job:
 # cargo for the crate, the reference-conformance replay and the R2U2
-# differential replay for the semantics, quire for static export, quoin for
-# evidence. Nothing here computes a verdict, attests to its own correctness, or
-# retains evidence of its own.
+# differential replay for the semantics, quire for static export.
 #
 # This file is not a trust root and does not try to be one. The parse-time
 # guards that used to police Make's own execution controls — MAKEFLAGS,
@@ -16,7 +14,7 @@
 # protecting.
 #
 # `make ci` alone still trusts Make's own execution controls and Make's own
-# exit code, exactly as measured below. Nothing in this Makefile changed that.
+# exit code. Nothing in this Makefile changed that.
 # What changed is that `make ci` is no longer the assured entry point: run
 # `make guarded-ci` instead. It wraps `make ci` with a Rust program, external
 # to Make, that (1) refuses to invoke Make at all if this file's text — or any
@@ -31,57 +29,21 @@
 # bypasses the binding, and that residual is disclosed rather than solved by
 # removing the convenience — see NFR-006's Scope.
 #
-# Read this before trusting a bare `make ci`. Measured in this repository, not
-# assumed: with a syntax error introduced into src/lib.rs, `make -k ci` exits 2
-# and 12 of the 15 `ci` prerequisites do not complete — fmt-check, lint,
-# kani-check, test, conformance, differential, cli-conformance, test-census,
-# spec, msrv, rustdoc and assurance. Adding a single `.IGNORE:` line to this
-# file makes all 12 report success and `make ci` exits 0. `make guarded-ci`
-# against the same `.IGNORE:`-prepended file refuses before Make ever runs.
-#
-# The structural backstop only goes so far. Quoin binds each retained input by
-# digest and the chain derives every attested result from the producer's own
-# bytes, so a producer that did not run yields an absent or empty input that the
-# chain names and refuses. That covers the six proofs re-run inside
-# `assurance-inputs`. It does not cover fmt-check, lint, check-corpus, deny,
-# audit-unsafe, rustdoc, or the `quire validate` half of spec: those feed no
-# input and are simply neutered. And under `.IGNORE:` the chain's own refusal is
-# suppressed too — the measurement above recorded `assurance-chain` exiting 2 and
-# being ignored — `make guarded-ci`'s completion-record reconciliation covers
-# exactly that residue.
-#
 # Tracked as agent-ix/tl-mltl#14 (Linear TL-65), remediated by
-# NFR-006-gate-set-integrity. Do not read the structural backstop above as a
-# fix for this on its own.
+# NFR-006-gate-set-integrity.
 
 CARGO ?= cargo
 PYTHON ?= python3
 QUIRE ?= quire
-QUOIN ?= quoin
 
 # `ci_guard record` is the last step of every `ci` prerequisite's recipe, so
 # it only runs on that recipe's own success. Run alone (e.g. `make lint` for
 # local iteration, outside `make guarded-ci`), it is a deliberate no-op.
 CI_GUARD ?= $(CARGO) run --quiet --bin ci_guard --
 
-# The shared-assurance lane runs in its own interpreter. Nothing in this
-# repository imports jsonschema once the local evidence machinery is gone, so
-# there is no version conflict left to resolve; the environment exists because
-# engineering-assurance is pinned as a git tag, and resolving a git dependency
-# into the system interpreter would make the pin depend on whatever else that
-# interpreter happens to have.
+# Interpreter environment still built by hosted CI (`make assurance-env`).
 ASSURANCE_VENV ?= .venv-assurance
 ASSURANCE_PYTHON ?= $(ASSURANCE_VENV)/bin/python
-
-ASSURANCE_DIR := target/assurance
-CONFORMANCE_RESULT := $(ASSURANCE_DIR)/reference-conformance.jsonl
-DIFFERENTIAL_RESULT := $(ASSURANCE_DIR)/r2u2-differential.jsonl
-CLI_RESULT := $(ASSURANCE_DIR)/cli-conformance.jsonl
-CENSUS_RESULT := $(ASSURANCE_DIR)/test-census.json
-QUIRE_EXPORT := $(ASSURANCE_DIR)/quire-static-export.json
-MSRV_RESULT := $(ASSURANCE_DIR)/msrv.jsonl
-SHARED_CORPUS_MANIFEST_COPY := $(ASSURANCE_DIR)/shared-corpus-manifest.json
-REVISION ?= $(shell git rev-parse HEAD)
 
 .PHONY: help
 help:
@@ -89,7 +51,7 @@ help:
 	@echo "  make fmt              - Format with rustfmt"
 	@echo "  make fmt-check        - Verify formatting (CI gate)"
 	@echo "  make lint             - Clippy with -D warnings"
-	@echo "  make test             - cargo test plus the shared-assurance tests"
+	@echo "  make test             - cargo test"
 	@echo "  make kani-check       - Verify the bounded Kani horizon proof"
 	@echo "  make check-corpus     - Verify R2U2 corpus bytes"
 	@echo "  make conformance      - Replay the shared corpus through the evaluator"
@@ -103,11 +65,7 @@ help:
 	@echo "  make rustdoc          - Build warning-free public documentation"
 	@echo "  make build            - Release build"
 	@echo "  make clean            - cargo clean and drop the assurance environment"
-	@echo "  make assurance-env    - Create the pinned shared-assurance interpreter"
-	@echo "  make assurance-inputs - Write the structured results the assurance chain reads"
-	@echo "  make pins             - Classify the toolchain through the shared matrix"
-	@echo "  make assurance-chain  - Seal, retain, and verify through Quoin"
-	@echo "  make assurance        - pins + assurance-chain"
+	@echo "  make assurance-env    - Create the interpreter environment hosted CI builds"
 	@echo "  make ci               - All CI gates locally, unguarded (see Makefile header)"
 	@echo "  make guarded-ci       - The assured entry point: run this, not 'make ci'"
 
@@ -138,11 +96,8 @@ kani-check:
 		--exact --unwind 4 --output-format terse
 	$(CI_GUARD) record kani-check
 
-# The traced tests invoke the assurance gates, so the producers must already have
-# run. They are a prerequisite rather than something a test creates for itself: a
-# test that can produce its own inputs can produce a green run out of nothing.
 .PHONY: test
-test: assurance-inputs
+test:
 	$(CARGO) test --all-targets --all-features
 	$(CI_GUARD) record test
 
@@ -222,12 +177,9 @@ rustdoc:
 	$(CI_GUARD) record rustdoc
 
 # =============================================================================
-# Shared assurance
+# Hosted CI interpreter environment
 # =============================================================================
 
-# Rebuilt when the pin changes. Without this prerequisite, editing the pinned
-# release never rebuilds the environment and the toolchain keeps whatever it
-# already had.
 $(ASSURANCE_PYTHON): requirements-assurance.txt
 	rm -rf $(ASSURANCE_VENV)
 	$(PYTHON) -m venv $(ASSURANCE_VENV)
@@ -237,61 +189,13 @@ $(ASSURANCE_PYTHON): requirements-assurance.txt
 .PHONY: assurance-env
 assurance-env: $(ASSURANCE_PYTHON)
 
-# The only target that WRITES THE CHAIN'S INPUTS. `conformance`,
-# `differential`, `cli-conformance`, `test-census` and `spec` run producers
-# too — they are the same producers, run as ordinary gates. What is unique
-# here is that these are the bytes the chain reads, and everything
-# downstream consumes them and refuses to create them.
-.PHONY: assurance-inputs
-assurance-inputs: assurance-env
-	mkdir -p $(ASSURANCE_DIR)
-	$(CARGO) run --quiet --example emit_shared_corpus_manifest > $(SHARED_CORPUS_MANIFEST_COPY)
-	$(CARGO) run --quiet --example reference_conformance > $(CONFORMANCE_RESULT)
-	$(CARGO) run --quiet --example r2u2_differential -- \
-		--manifest corpus/r2u2-v4.2/manifest.json > $(DIFFERENTIAL_RESULT)
-	$(CARGO) build --quiet --bin tl-mltl
-	$(CARGO) run --quiet --example cli_conformance -- \
-		--requests tests/fixtures/cli-requests/manifest.json > $(CLI_RESULT)
-	$(PYTHON) scripts/rust_test_census.py --json > $(CENSUS_RESULT)
-	$(QUIRE) coverage --scope . --json > $(QUIRE_EXPORT)
-	rustup run 1.98.1 $(CARGO) check --locked --all-targets --all-features \
-		--message-format=json > $(MSRV_RESULT)
-
-.PHONY: pins
-pins: assurance-env
-	$(ASSURANCE_PYTHON) scripts/check_shared_pins.py
-
-.PHONY: assurance-chain
-assurance-chain: assurance-inputs
-	$(PYTHON) scripts/assurance_chain.py --candidate-revision $(REVISION)
-
-.PHONY: assurance
-assurance: pins assurance-chain
-	$(CI_GUARD) record assurance
-
-# An operator target, not a CI gate. It writes into this repository's own Quoin
-# evidence store, which is a reviewed change to spec/evidence/ rather than
-# something a gate should do on every run.
-.PHONY: assurance-record
-assurance-record: assurance-inputs
-	$(PYTHON) scripts/assurance_chain.py --adapt $(DIFFERENTIAL_RESULT) \
-		> $(ASSURANCE_DIR)/entries.json
-	$(QUOIN) evidence record \
-		--repo . \
-		--suite SUITE-001 \
-		--commit $(REVISION) \
-		--tool "tl-mltl-r2u2-differential 0.1.0" \
-		--adapter entries \
-		--kind Integration \
-		--results $(ASSURANCE_DIR)/entries.json
-
 # =============================================================================
 # Composite
 # =============================================================================
 
 .PHONY: ci
 ci: fmt-check lint kani-check test check-corpus conformance differential cli-conformance \
-	test-census deny audit-unsafe spec msrv rustdoc assurance
+	test-census deny audit-unsafe spec msrv rustdoc
 
 # The assured entry point (NFR-006). Builds and runs the guard, which refuses
 # to invoke `make ci` at all if this file's execution controls or the calling

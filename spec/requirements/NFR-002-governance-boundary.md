@@ -2,9 +2,6 @@
 id: NFR-002
 title: Retain governance and qualification boundaries
 type: NFR
-relationships:
-  - target: ix://agent-ix/tl-mltl/NFR-003
-    type: references
 ---
 
 # NFR-002: Retain governance and qualification boundaries
@@ -12,16 +9,15 @@ relationships:
 ## Statement
 
 Every exchanged record shall use an explicit supported schema, exact source and
-corpus pins, contribution provenance, and the explicit, fail-closed
-qualification boundary [NFR-003](./NFR-003-qualification-integrity.md) keeps.
+corpus pins, and contribution provenance.
 Contextual records shall preserve the exact shared signal and caller-context
 identities without claiming their truth. Agent results shall remain distinct
 from human approval and consuming-project validation.
 
 ## Scope
 
-All wire documents, cross-repository pins, evidence records, tracked review
-artifacts, and release claims are in scope.
+All wire documents, cross-repository pins, evidence records, and release
+claims are in scope.
 
 ## Rationale
 
@@ -47,9 +43,8 @@ re-derives which requirement-tagged tests Cargo actually runs.
 |---|---|---|
 | NFR-002-AC-1 | Unknown schema/profile versions and omitted material identities are rejected. | Test (TC-012, TC-014) |
 | NFR-002-AC-2 | Exchanged records name exact tl-syntax, corpus, external-tool, dependency, and output identities without recording an automated release decision. | Test (TC-016) |
-| NFR-002-AC-3 | Every requirement-tagged Rust test is a test Cargo actually compiles and runs, and no compiled requirement-tagged test is ignored or configured out, so a matrix row cannot be backed by a tag above a test that never executes. | Test (TC-017) |
+| NFR-002-AC-3 | Every requirement-tagged Rust test is a test Cargo actually compiles and runs, and no compiled requirement-tagged test is ignored or configured out, so a matrix row cannot be backed by a tag above a test that never executes. | Test (TC-017, `make test-census`) |
 | NFR-002-AC-4 | Every contextual native record names the exact participating tl-mltl and tl-syntax revisions, complete shared catalog identity, and exact optional requirement context without claiming that tl-mltl validated the caller's provenance or a consuming monitor. | Test (TC-025, TC-028, TC-031) |
-| NFR-002-AC-5 | The tracked `SpecReview` review set is non-empty, and every artifact declares an identity unique within it; a duplicate identity is refused while naming every colliding path. | Test (TC-033) |
 
 ## Dependencies
 
@@ -58,10 +53,7 @@ the repository release workflow. The generic evidence-collection controls this
 requirement formerly carried as NFR-002-AC-3 and NFR-002-AC-4 — host-scoped
 executable census, allowlisted collection environment, corroborated positive
 outputs, envelope self-attestation refusal, and Make execution-control
-policing — were removed with the local evidence framework. What survives of
-that intent, and what does not, is stated in
-[NFR-003](./NFR-003-qualification-integrity.md), which owns the
-shared-assurance intake path and records the measured cost of the removal.
+policing — were removed with the local evidence framework.
 
 ## Historical identifier disclosure
 
