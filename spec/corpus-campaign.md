@@ -73,10 +73,6 @@ planned evidence.
 
 ## Admission and implementation gate
 
-W/M cells are therefore part of the current eligible
-population and cannot remain `blocked` merely because this campaign predates
-those merges.
-
 Past/history rows remain `blocked` until their exact specification and
 implementation revisions are independently accepted and landed. A blocked row
 is visible but excluded from the applicable-coverage denominator and cannot own

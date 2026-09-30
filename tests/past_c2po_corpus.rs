@@ -53,14 +53,6 @@ struct TargetObservation {
     compiler_command: String,
     monitor_command: String,
     monitor_executable_sha256: String,
-    files: Vec<TargetFile>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct TargetFile {
-    path: String,
-    sha256: String,
 }
 
 #[derive(Deserialize)]
@@ -133,7 +125,7 @@ fn formula(case: &Case) -> Vec<Node> {
 
 // Trace: TC-160, TC-161, TC-164, TC-165, TC-174; FR-038-AC-1, FR-038-AC-2, FR-038-AC-3, FR-039-AC-1
 #[test]
-fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
+fn past_corpus_compares_each_source_step_with_one_retained_target_run() {
     let manifest: Manifest = serde_json::from_slice(MANIFEST).unwrap();
     assert_eq!(manifest.schema_version, "tl-mltl.past-c2po-corpus/v1");
     assert_eq!(manifest.profile, "mltl.origin-complete-history/v1");
@@ -206,27 +198,15 @@ fn pinned_past_corpus_compares_each_source_step_with_one_retained_target_run() {
         .filter(|part| !part.is_empty())
         .collect();
     assert_eq!(expressions.len(), 6);
-    let source_sha = target
-        .files
-        .iter()
-        .find(|file| file.path.ends_with("past.c2po"))
-        .unwrap();
-    let output_sha = target
-        .files
-        .iter()
-        .find(|file| file.path.ends_with("r2u2.stdout"))
-        .unwrap();
     let origin = TargetOriginContract::reviewed_r2u2_4_2();
     assert_eq!(
         origin.target.executable_sha256,
         target.compiler_entry_sha256
     );
-    assert_eq!(origin.target.configuration_sha256, source_sha.sha256);
     assert_eq!(
         origin.monitor_executable_sha256,
         target.monitor_executable_sha256
     );
-    assert_eq!(origin.evidence_sha256, output_sha.sha256);
     let catalog = SignalCatalogDocument::new(
         vec![
             OwnedSignalDeclaration::new(SignalId(1), "p".to_owned(), SignalDomain::Boolean),

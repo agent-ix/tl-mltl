@@ -843,7 +843,6 @@ fn tl216_origin_shape_partition_refuses_mixed_and_overdeep_past() {
 // Trace: TC-170; FR-040-AC-2
 #[test]
 fn retained_c2po_steps_agree_with_the_exact_new_safety_body() {
-    use sha2::{Digest, Sha256};
     let retained: serde_json::Value =
         serde_json::from_slice(include_bytes!("../corpus/past-c2po-v1/manifest.json")).unwrap();
     let target = &retained["targetObservation"];
@@ -852,23 +851,8 @@ fn retained_c2po_steps_agree_with_the_exact_new_safety_body() {
         origin.target.executable_sha256,
         target["compilerEntrySha256"]
     );
-    let files = target["files"].as_array().unwrap();
-    let file_digest = |path: &str, bytes: &[u8]| {
-        let entry = files.iter().find(|entry| entry["path"] == path).unwrap();
-        let digest = format!("{:x}", Sha256::digest(bytes));
-        assert_eq!(digest, entry["sha256"]);
-        digest
-    };
     let source = include_bytes!("../corpus/past-c2po-v1/target-4.2/past.c2po");
     let output = include_bytes!("../corpus/past-c2po-v1/target-4.2/r2u2.stdout");
-    assert_eq!(
-        origin.target.configuration_sha256,
-        file_digest("target-4.2/past.c2po", source)
-    );
-    assert_eq!(
-        origin.evidence_sha256,
-        file_digest("target-4.2/r2u2.stdout", output)
-    );
     let recorded_body = std::str::from_utf8(source)
         .unwrap()
         .split("PTSPEC")

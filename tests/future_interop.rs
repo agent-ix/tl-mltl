@@ -45,7 +45,7 @@ fn read_corpus(relative: &str) -> Vec<u8> {
 }
 
 /// Reads the upstream corpus manifest identity and returns the cases.
-fn pinned_cases() -> Vec<Value> {
+fn cases() -> Vec<Value> {
     let manifest_bytes = read_corpus(&format!("{CORPUS}/manifest.json"));
     let manifest: Value = serde_json::from_slice(&manifest_bytes).unwrap();
     assert_eq!(manifest["corpus"], CORPUS_IDENTITY);
@@ -207,14 +207,14 @@ fn derived_cases(cases: &[Value]) -> Vec<&Value> {
 // Trace: TC-081, FR-017-AC-1
 #[test]
 fn lowered_wm_graphs_export_to_c2po_exactly_as_direct_canonical_graphs() {
-    let cases = pinned_cases();
+    let cases = cases();
     let mut exported = 0;
     for derived in derived_cases(&cases) {
         let id = derived["id"].as_str().unwrap();
         let lowered_nodes = replay(derived).unwrap_or_else(|refusal| panic!("{id}: {refusal:?}"));
         let lowered = case_formula(derived, &lowered_nodes);
 
-        // The exported graph is the pinned canonical document, spans aside.
+        // The exported graph is the canonical document, spans aside.
         let expected: FormulaDocument = serde_json::from_slice(&read_corpus(&format!(
             "{CORPUS}/{}",
             derived["expected"].as_str().unwrap()
@@ -297,7 +297,7 @@ fn lowered_wm_graphs_export_to_c2po_exactly_as_direct_canonical_graphs() {
 // Trace: TC-082, FR-017-AC-2, NFR-002-AC-1
 #[test]
 fn unpreservable_targets_and_refused_lowerings_emit_no_manifest() {
-    let cases = pinned_cases();
+    let cases = cases();
     let mut profile_refusals = 0;
     for derived in derived_cases(&cases) {
         if profile(derived) != SemanticProfile::ClosedTraceV1 {
@@ -346,7 +346,7 @@ fn unpreservable_targets_and_refused_lowerings_emit_no_manifest() {
 // Trace: TC-083, FR-017-AC-3
 #[test]
 fn foreign_parser_and_monitor_acceptance_is_never_qualification_evidence() {
-    let cases = pinned_cases();
+    let cases = cases();
     let manifest: Value =
         serde_json::from_slice(&read_corpus(&format!("{CORPUS}/manifest.json"))).unwrap();
     assert_eq!(manifest["source_cross_check"]["parser"], "tl-parse");

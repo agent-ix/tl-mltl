@@ -73,8 +73,7 @@ planned evidence.
 
 ## Admission and dependency order
 
-Specification and review may proceed while parent work is pending. Current future/W/M obligations therefore cannot remain blocked merely because
-this campaign predates those merges.
+Specification and review may proceed while parent work is pending.
 
 No campaign implementation begins until MRS-002 and its PLAN-007 bundle are
 independently accepted and landed and MRS-003 itself is human-accepted at an
