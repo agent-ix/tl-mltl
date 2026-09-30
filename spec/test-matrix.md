@@ -66,7 +66,7 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 | TC-014 | Exercise deterministic CLI schemas | Integration | P0 | FR-005-AC-1, NFR-001-AC-1, NFR-002-AC-1 | ✅ implemented |
 | TC-015 | Compare supported and non-conclusive differential cases | Integration | P0 | FR-005-AC-2, StR-001-VC-2 | ✅ implemented |
 | TC-016 | Verify retained differential inputs and non-conclusive cases are complete | Integration | P0 | FR-005-AC-3, NFR-002-AC-2 | ✅ implemented |
-| TC-025 | Bind shared signal/context identity and exact tl-mltl/tl-syntax revisions into contextual closed/prefix evaluation and horizon records | Integration | P0 | FR-007-AC-1, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4 | ✅ implemented |
+| TC-025 | Bind shared signal/context identity and exact tl-mltl revision into contextual closed/prefix evaluation and horizon records | Integration | P0 | FR-007-AC-1, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4 | ✅ implemented |
 | TC-026 | Render exact valid non-reserved Boolean signal names in C2PO expressions and refuse every lexical, reserved, or unresolved name case without output | Property | P0 | FR-007-AC-2, StR-003-VC-2 | ✅ implemented |
 | TC-027 | Compare contextual external verdicts without executing a monitor and keep context/version mismatch, semantic mismatch, and non-conclusive states distinct | Integration | P0 | FR-007-AC-3, StR-003-VC-2 | ✅ implemented |
 | TC-028 | Detect every independent catalog, context, semantic input, revision, expression, external identity, and outcome mutation through native digests or typed refusal | Property | P0 | FR-007-AC-4, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4 | ✅ implemented |

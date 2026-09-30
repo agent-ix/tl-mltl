@@ -81,9 +81,6 @@ pub use wire::{
     CommandDocument, CommandSchemaVersion, Operation, TraceDocument, TraceSchemaVersion,
 };
 
-/// Exact tl-syntax source revision this crate is compiled against.
-pub const TL_SYNTAX_REVISION: &str = "6aa9b11e29040d64b437da87c9944e3dedd34a86";
-
 /// Shared temporal corpus identity consumed by this crate.
 pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";
 

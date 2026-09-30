@@ -48,12 +48,11 @@ existing context-free APIs or v1 wire bytes.
   fixed-decimal declarations.
 - Contextual reports carry the SHA-256 identity of the complete deterministic
   signal-catalog document, the exact shared requirement-context document or
-  explicit absence, the exact tl-mltl source revision, and the exact tl-syntax
-  dependency revision. The retained tl-syntax corpus basis remains a separate
+  explicit absence, and the exact tl-mltl source revision. The retained tl-syntax corpus basis remains a separate
   identity and is included only where the existing operation uses it.
 - Operation- and schema-specific request digests bind the complete catalog
   document, exact context presence/value, formula structure and identity, trace
-  and limits where applicable, source/dependency revisions, and every existing
+  and limits where applicable, source revision, and every existing
   operation input. Output or comparison digests bind the corresponding request
   identity and native outcome so context mutation cannot preserve the result
   identity.
@@ -139,8 +138,7 @@ its user documentation omits reserved `TAU` and `T`.
 - The existing v1 CLI remains the context-free compatibility surface. A new CLI
   request schema, contract-IR/FRETish parser, or scalar trace representation is
   outside this ticket.
-- Participating TL revisions in this crate are tl-mltl and tl-syntax. tl-rewrite
-  cannot become a runtime dependency because it already consumes tl-mltl; the
+- tl-rewrite cannot become a runtime dependency because it already consumes tl-mltl; the
   campaign composes rewrite and evaluation evidence through their shared
   context identities without introducing a dependency cycle.
 - tl-mltl imports or executes no Quoin, Quire, Engineering Assurance,
@@ -152,10 +150,10 @@ its user documentation omits reserved `TAU` and `T`.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-007-AC-1 | Context-aware closed/prefix evaluation and horizon analysis resolve every formula proposition through one shared catalog and carry its complete digest identity, exact optional requirement context, distinct clause span, operation inputs, outcomes, and exact tl-mltl/tl-syntax revisions. | Test (TC-025) |
+| FR-007-AC-1 | Context-aware closed/prefix evaluation and horizon analysis resolve every formula proposition through one shared catalog and carry its complete digest identity, exact optional requirement context, distinct clause span, operation inputs, outcomes, and exact tl-mltl revision. | Test (TC-025) |
 | FR-007-AC-2 | Contextual mapping renders each proposition with its exact bound Boolean signal name; every invalid or pinned-reserved C2PO name and every unresolved proposition returns a typed refusal identifying the signal or proposition and emits no expression/manifest, while unused bounded scalar declarations are neither coerced nor rejected. | Test (TC-026) |
 | FR-007-AC-3 | Contextual comparison returns agreement only when reference and external contextual versions, catalog identity, exact context presence/value, formula/trace identities, truth value, and verdict time agree; identity/context mismatch is distinct from semantic mismatch and pending/unsupported/tool-error remain non-conclusive. | Test (TC-027) |
-| FR-007-AC-4 | Independently changing or dropping any catalog declaration, name, domain, binding, requirement id, revision, clause, anchor, requirement-context span, presence marker, semantic formula structure, trace, limit, source/dependency revision, mapping expression, external identity, or native outcome changes the applicable request/output/comparison digest or produces typed non-success. | Test (TC-028) |
+| FR-007-AC-4 | Independently changing or dropping any catalog declaration, name, domain, binding, requirement id, revision, clause, anchor, requirement-context span, presence marker, semantic formula structure, trace, limit, source revision, mapping expression, external identity, or native outcome changes the applicable request/output/comparison digest or produces typed non-success. | Test (TC-028) |
 | FR-007-AC-5 | Existing context-free APIs and CLI retain their signatures, semantic behavior, and exact v1 serialized snapshots; all five contextual v2 record families round-trip strictly and reject contextual field smuggling, omitted required fields, unknown fields, mixed versions, and unsupported versions. | Test (TC-029) |
 | FR-007-AC-7 | A fixture shaped like quire-contract-ir#57's bounded “overlay change accepted, response within N cycles” requirement uses named Boolean signals and one exact requirement revision/clause/anchor/span consistently across contextual evaluation, horizon, mapping, external verdict, and differential records, with no contract-IR or rewrite runtime dependency. | Test (TC-031) |
 | FR-007-AC-8 | With every other operation input held equal, contextual closed evaluation, prefix evaluation, horizon analysis, and mapping produce identical request and result identities for formula documents with the same schema, semantic profile, root, and node kinds whether diagnostic node source spans are absent or contain different valid offsets; structural formula documents retain those span differences, and mapping continues to bind its separately supplied exact formula bytes. | Test (TC-034) |

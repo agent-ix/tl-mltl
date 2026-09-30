@@ -12,7 +12,7 @@ use tl_syntax::{
     Formula, FormulaDocument, NodeId, NodeKind, PropositionId, SemanticProfile, PAST_OPERATORS_V1,
 };
 
-use crate::{context::domain_sha256, MAX_RECURSION_DEPTH, TL_SYNTAX_REVISION};
+use crate::{context::domain_sha256, MAX_RECURSION_DEPTH};
 
 /// Position-history wire identity.
 pub const POSITION_HISTORY_V1: &str = "tl-mltl.position-history/v1";
@@ -1467,8 +1467,6 @@ pub struct PastEvaluationReport {
     pub evaluator_identity: PastEvaluatorIdentity,
     /// Exact source revision compiled into the evaluator.
     pub evaluator_revision: String,
-    /// Exact tl-syntax revision compiled into the evaluator.
-    pub syntax_revision: String,
     /// Effective evaluation limits.
     pub limits: PastEvaluationLimits,
     /// Checked maximum reverse offset.
@@ -1506,8 +1504,6 @@ struct PastEvaluationReportWire {
     evaluator_identity: PastEvaluatorIdentity,
     #[serde(deserialize_with = "deserialize_identity")]
     evaluator_revision: String,
-    #[serde(deserialize_with = "deserialize_identity")]
-    syntax_revision: String,
     limits: PastEvaluationLimits,
     required_history: u64,
     stats: PastEvaluationStats,
@@ -1533,7 +1529,6 @@ impl PastEvaluationReport {
             proposition_map_id: wire.proposition_map_id,
             evaluator_identity: wire.evaluator_identity,
             evaluator_revision: wire.evaluator_revision,
-            syntax_revision: wire.syntax_revision,
             limits: wire.limits,
             required_history: wire.required_history,
             stats: wire.stats,
@@ -1611,17 +1606,11 @@ impl PastEvaluationReport {
                 field: "semanticProfile",
             });
         }
-        if self.syntax_revision != TL_SYNTAX_REVISION {
-            return Err(PastResultValidationError::IdentityMismatch {
-                field: "syntaxRevision",
-            });
-        }
         for (field, identity) in [
             ("formulaId", self.formula_id.as_str()),
             ("historyId", self.history.history_id.as_str()),
             ("propositionMapId", self.proposition_map_id.as_str()),
             ("evaluatorRevision", self.evaluator_revision.as_str()),
-            ("syntaxRevision", self.syntax_revision.as_str()),
         ] {
             if identity.is_empty() || identity.len() > MAX_IDENTITY_BYTES {
                 return Err(PastResultValidationError::IdentityMismatch { field });
@@ -1777,7 +1766,6 @@ impl PastEvaluationReport {
                     || self.proposition_map_id != predecessor.proposition_map_id
                     || self.evaluator_identity != predecessor.evaluator_identity
                     || self.evaluator_revision != predecessor.evaluator_revision
-                    || self.syntax_revision != predecessor.syntax_revision
                     || self.limits != predecessor.limits
                 {
                     return Err(PastResultValidationError::PredecessorContextMismatch);
@@ -2171,10 +2159,6 @@ fn correction_relation(
             predecessor.evaluator_revision == env!("TL_MLTL_SOURCE_REVISION"),
             "evaluatorRevision",
         ),
-        (
-            predecessor.syntax_revision == TL_SYNTAX_REVISION,
-            "syntaxRevision",
-        ),
     ] {
         if !matches {
             return Err(PastEvaluationError::CorrectionContextMismatch { field });
@@ -2335,7 +2319,6 @@ fn evaluate_past_inner<'history>(
         proposition_map_id,
         evaluator_identity: PastEvaluatorIdentity::V1,
         evaluator_revision: env!("TL_MLTL_SOURCE_REVISION").to_owned(),
-        syntax_revision: TL_SYNTAX_REVISION.to_owned(),
         limits,
         required_history: requirement.required_positions,
         stats: *observed,
