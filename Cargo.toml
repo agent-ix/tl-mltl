@@ -14,6 +14,9 @@ build = "build.rs"
 default = []
 infinite-trace = []
 
+[lints.clippy]
+undocumented_unsafe_blocks = "deny"
+
 [lib]
 name = "tl_mltl"
 path = "src/lib.rs"

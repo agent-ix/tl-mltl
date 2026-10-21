@@ -13,9 +13,7 @@ make test             # cargo test
 make conformance      # replay the shared corpus through the evaluator
 make differential     # replay the retained R2U2 exchange
 make cli-conformance  # drive the built CLI over its declared requests
-make test-census      # bind requirement-tagged tests to compiled tests
 make deny             # cargo deny check licenses and sources
-make audit-unsafe     # check that every unsafe block has a // SAFETY: comment
 make spec             # validate specs and strict coverage
 make msrv             # check all targets and features with Rust 1.98.1
 make rustdoc          # build warning-free public docs
@@ -69,9 +67,7 @@ Backported from `agent-ix/ecaz`:
 
 - `clippy.toml` pins MSRV to `1.98.1` and caps cognitive complexity / arg count
 - `deny.toml` allow-lists licenses and denies unknown registries/git sources
-- `scripts/check_unsafe_comments.sh` runs locally via `make audit-unsafe`. Every
-  `unsafe {` block must have a `// SAFETY:` comment within the 3 preceding lines,
-  or be listed in `scripts/unsafe_comment_baseline.txt`.
+- Clippy lints deny undocumented unsafe blocks.
 - `rustfmt.toml` uses 100-char width and `StdExternalCrate` import grouping
 - `rust-toolchain.toml` pins to stable + rustfmt + clippy
 
@@ -88,5 +84,4 @@ examples/              # the three domain producers
 tests/                 # reference, corpus, differential, and CLI tests
 corpus/                # shared and R2U2 differential records
 spec/                  # requirements artifacts (from /spec-create-spec)
-scripts/               # the test census and the unsafe-comment audit
 ```

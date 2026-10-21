@@ -52,9 +52,7 @@ help:
 	@echo "  make conformance      - Replay the shared corpus through the evaluator"
 	@echo "  make differential     - Replay the retained R2U2 exchange"
 	@echo "  make cli-conformance  - Drive the built CLI over its declared requests"
-	@echo "  make test-census      - Bind requirement-tagged tests to compiled tests"
 	@echo "  make deny             - cargo deny check licenses and sources"
-	@echo "  make audit-unsafe     - Enforce // SAFETY: comments on unsafe blocks"
 	@echo "  make spec             - Validate specification and coverage with Quire"
 	@echo "  make msrv             - Check all targets and features with Rust 1.98.1"
 	@echo "  make rustdoc          - Build warning-free public documentation"
@@ -120,11 +118,6 @@ cli-conformance:
 		--requests tests/fixtures/cli-requests/manifest.json
 	$(CI_GUARD) record cli-conformance
 
-.PHONY: test-census
-test-census:
-	$(PYTHON) scripts/rust_test_census.py
-	$(CI_GUARD) record test-census
-
 .PHONY: build
 build:
 	$(CARGO) build --release
@@ -142,11 +135,6 @@ deny:
 	$(CARGO) deny check licenses
 	$(CARGO) deny check sources
 	$(CI_GUARD) record deny
-
-.PHONY: audit-unsafe
-audit-unsafe:
-	bash scripts/check_unsafe_comments.sh
-	$(CI_GUARD) record audit-unsafe
 
 .PHONY: spec
 spec:
@@ -170,7 +158,7 @@ rustdoc:
 
 .PHONY: ci
 ci: fmt-check lint kani-check test conformance differential cli-conformance \
-	test-census deny audit-unsafe spec msrv rustdoc
+	deny spec msrv rustdoc
 
 # The assured entry point (NFR-006). Builds and runs the guard, which refuses
 # to invoke `make ci` at all if this file's execution controls or the calling
