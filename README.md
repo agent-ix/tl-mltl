@@ -93,3 +93,5 @@ validate, accredit, or qualify R2U2, another monitor, or a consuming project.
 
 Licensed under either of Apache License, Version 2.0 or MIT license at your
 option.
+
+<!-- STD-30 language-boundary canary: inert README change. -->
