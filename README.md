@@ -4,21 +4,14 @@
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](#license)
 [![Rust](https://img.shields.io/badge/rust-1.98.1%2B-orange?logo=rust)](Cargo.toml)
 
-tl-mltl is a Rust crate that evaluates Mission-time Linear Temporal Logic (MLTL)
-formulas over finite traces, computes how far ahead a formula looks, and maps
-formulas to the R2U2 runtime monitor. It builds on the formula and profile types
-of [tl-syntax](https://github.com/agent-ix/tl-syntax) and belongs to the TL
-family with [tl-parse](https://github.com/agent-ix/tl-parse),
-[tl-rewrite](https://github.com/agent-ix/tl-rewrite),
-[tl-oracle](https://github.com/agent-ix/tl-oracle) and
-[quire-mltl](https://github.com/agent-ix/quire-mltl).
+tl-mltl tells you whether a Mission-time Linear Temporal Logic (MLTL) formula holds
+on a trace. It evaluates a closed trace to true or false and an open prefix to
+true, false or pending, and reports how far ahead the formula looks and how many
+instants a monitor must buffer.
 
-The crate evaluates a closed trace to true or false, evaluates an open prefix to
-true, false or pending, reports the checked lookahead and buffer length of a
-formula, evaluates bounded past-time formulas over a position history, and emits
-C2PO expressions with SHA-256 identities. It compares a verdict from an external
-monitor with its own and classifies the pair. It does not parse text, does not
-rewrite formulas, does not run R2U2 or C2PO, and does not depend on Quire.
+It also evaluates bounded past-time formulas over a position history, maps formulas
+to C2PO expressions for the R2U2 runtime monitor, and compares R2U2's verdict with
+its own, classifying the pair as agreement or mismatch.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.svg">
@@ -55,7 +48,7 @@ cargo build --release
 ## Usage
 
 This evaluates `F[1,2] p0` over a closed trace, evaluates it over an open
-prefix, and reports its horizon. It mirrors `tests/reference.rs`.
+prefix, and reports its horizon.
 
 ```rust
 use tl_mltl::{analyze_horizon, evaluate_closed, evaluate_prefix, EvaluationLimits, TruthValue};
@@ -92,7 +85,7 @@ and the command-line tool, are in [docs/examples.md](docs/examples.md).
 
 ## A worked example
 
-A deadline requirement fails on a recorded trace. [docs/scenario.md](docs/scenario.md) follows the investigation through tl-parse, tl-syntax, tl-rewrite, tl-mltl, R2U2, tl-oracle and quire-mltl on the retained R2U2 case `r2u2-future-deadline-v1`. It shows what to look at in each step and ends with a triage guide for results that disagree.
+A deadline requirement, `F[0,3] p2`, is false on a recorded trace. [docs/scenario.md](docs/scenario.md) walks through finding out why, using tl-parse, tl-syntax, tl-rewrite, tl-mltl, R2U2, tl-oracle and quire-mltl on the retained R2U2 case `r2u2-future-deadline-v1`. It shows what to look at in each step and ends with a guide for results that disagree.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/scenario-sequence-dark.svg">
@@ -110,12 +103,10 @@ A deadline requirement fails on a recorded trace. [docs/scenario.md](docs/scenar
 | `wire` | Strict readers and canonical writers for the owner documents `tl-mltl.command/v1` and `tl-mltl.trace/v1`, and the schemas of the past-time documents. |
 | `clock` | Exact event-position and fixed-sample clock primitives. |
 | `differential` (crate root) | `compare_external`, `compare_external_with_context` and the external-verdict and report types. |
-| `ci_guard` | Checks that the local `ci` gate set that ran matches the declared set. |
 
 | Binary | What it does |
 | --- | --- |
 | `tl-mltl` | Reads one `tl-mltl.command/v1` JSON request and prints an evaluation, horizon or mapping record. See [docs/cli.md](docs/cli.md). |
-| `ci_guard` | Runs `make ci` and reconciles the gates that completed. |
 
 | Feature | Default | Adds |
 | --- | ---: | --- |
@@ -126,19 +117,12 @@ See [docs/api-reference.md](docs/api-reference.md).
 
 ## The TL stack
 
-tl-mltl evaluates formulas over finite traces. It reads the graphs and profiles
-defined by tl-syntax. tl-rewrite and quire-mltl build on it, and tl-oracle is a
-development-only reference evaluator that tl-mltl tests against. tl-mltl is
-independent of Quire. quire-mltl is the one TL crate that connects the family to
-Quire.
+tl-mltl evaluates tl-syntax formulas over traces. tl-rewrite and quire-mltl build on it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/tl-stack-dark.svg">
   <img alt="The TL crates. tl-syntax defines the formula graph, profiles and signal catalog, and tl-parse, tl-oracle, tl-mltl, tl-rewrite and quire-mltl all depend on it. tl-rewrite depends on tl-mltl. quire-mltl depends on tl-mltl and quire-observation, and is the single bridge to Quire. Dashed lines are development-only: tl-mltl and tl-rewrite test against tl-oracle, and tl-rewrite tests against tl-parse." src="docs/images/tl-stack-light.svg">
 </picture>
-
-[docs/how-it-works.md](docs/how-it-works.md) shows where each crate sits in the
-text-to-outcome pipeline.
 
 ## Building and testing
 
@@ -150,18 +134,12 @@ make cli-conformance  # drive the built CLI over its declared requests
 make guarded-ci       # every local gate, with the gate-set check
 ```
 
-The toolchain is pinned to 1.98.1 in `rust-toolchain.toml`, which is also the
-minimum version (`make msrv` checks it). Hosted CI is
-manual-only; the checks run locally. Run `make guarded-ci` for the full set,
-because a bare `make ci` does not detect a Makefile that suppresses failures.
+Run `make guarded-ci` for the full set.
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CLA.md](CLA.md). Work is specified
-before it is implemented; see [CLAUDE.md](CLAUDE.md) for the workflow and
-commands. The change history is in [CHANGELOG.md](CHANGELOG.md). Agent-assisted
-contributions go through the same requirements, testing and review gates as
-every other contribution.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CLA.md](CLA.md). The change history is in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
