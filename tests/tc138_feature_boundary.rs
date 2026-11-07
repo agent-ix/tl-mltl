@@ -127,7 +127,7 @@ infinite-trace = ["tl-mltl/infinite-trace"]
 
 [dependencies]
 tl-mltl = {{ path = {owner}, default-features = false }}
-tl-syntax = {{ version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "6aa9b11e29040d64b437da87c9944e3dedd34a86", features = ["alloc", "serde"] }}
+tl-syntax = {{ version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", branch = "main", features = ["alloc", "serde"] }}
 serde_json = "=1.0.151"
 "#)).unwrap();
     fs::write(root.join("src/main.rs"), CONSUMER).unwrap();
