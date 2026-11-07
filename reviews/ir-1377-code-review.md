@@ -26,3 +26,12 @@ Rust/code review (rust-review lane folded in) of tl-mltl#126, which switches tl-
 ## Coverage
 
 Examined: Cargo.toml, fuzz/Cargo.toml, Cargo.lock, fuzz/Cargo.lock (tl-syntax entries), tests/future_interop.rs (TC-083 / FR-017-AC-3), tests/tc138_feature_boundary.rs (consumer manifest), upstream tl-syntax manifests at 6aa9b11 and d97d3d7, tl-oracle@9bf3994 Cargo.toml, quire-mltl Cargo.toml. gap-analysis skipped: no production code changed; manual check of FR-017-AC-3 against TC-083 found its three clauses still asserted. No cargo commands run; CI is workflow_dispatch-only and has no run for this head.
+
+## Dispositions
+
+Round 1, reviewed at `4a30aa44f79c0fb7e0e34943adcbb35e73ee822b` (fix commit 4a30aa44 on top of b7a01360). No new findings; no other `6aa9b11` reference remains outside `reviews/`.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | tests/tc138_feature_boundary.rs:130 consumer now declares tl-syntax `branch = "main"` with the same git URL as Cargo.toml, so it resolves the same source as tl-mltl. |
+| FND-002 | fixed | tests/future_interop.rs assert message and comment now describe tl-parse only as the corpus authoring dialect. |
