@@ -25,10 +25,32 @@ rewrite formulas, does not run R2U2 or C2PO, and does not depend on Quire.
   <img alt="A formula and a trace go into tl-mltl. evaluate_closed or evaluate_prefix returns a verdict, here true at time 0, and pending when the prefix does not decide it. analyze_horizon returns a lookahead of 2 and a buffer of 3 instants. map_to_c2po returns a manifest with the C2PO expression and SHA-256 digests of its input and output. C2PO and R2U2 run outside this crate, and compare_external classifies their verdict against the reference verdict, here 8 of 8 supported cases agree." src="docs/images/hero-light.svg">
 </picture>
 
-> **Status: prerelease.** The API is not stable. The crate has `publish = false`
-> and other TL crates depend on it through git. Registry publication waits for
-> the v0.1 assurance review. Results from this crate do not validate, accredit
-> or qualify R2U2, another monitor, or a consuming project.
+## Getting started
+
+tl-mltl is not on crates.io. Depend on it through git:
+
+```toml
+[dependencies]
+tl-mltl = { git = "https://github.com/agent-ix/tl-mltl" }
+```
+
+Add `rev = "<commit>"` to pin a commit. It needs the Rust version in `rust-version` in `Cargo.toml`, or newer.
+
+Enable the `infinite-trace` feature for the infinite-trace evaluator: `features = ["infinite-trace"]`.
+
+To install the command-line tool:
+
+```sh
+cargo install --git https://github.com/agent-ix/tl-mltl --bin tl-mltl
+```
+
+To build from a clone:
+
+```sh
+git clone https://github.com/agent-ix/tl-mltl.git
+cd tl-mltl
+cargo build --release
+```
 
 ## Usage
 
