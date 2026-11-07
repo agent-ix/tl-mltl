@@ -349,7 +349,12 @@ fn foreign_parser_and_monitor_acceptance_is_never_qualification_evidence() {
     let cases = cases();
     let manifest: Value =
         serde_json::from_slice(&read_corpus(&format!("{CORPUS}/manifest.json"))).unwrap();
-    assert_eq!(manifest["source_cross_check"]["parser"], "tl-parse");
+    assert!(
+        manifest["derived_dialect"]
+            .as_str()
+            .is_some_and(|dialect| dialect.starts_with("tl-parse.")),
+        "upstream manifest no longer records the tl-parse cross-check dialect"
+    );
 
     // The parser is a recorded upstream cross-check, not a tl-mltl input,
     // neither direct nor transitive.
