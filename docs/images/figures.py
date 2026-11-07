@@ -13,13 +13,15 @@ differential report) and the CLI request fixtures.
 
 The block between the two SHARED markers is identical in every TL repository
 (tl-syntax, tl-parse, tl-rewrite, tl-mltl, tl-oracle, quire-mltl). Copy it
-verbatim and call tl_stack(here="<crate>") and stack_pipeline(here="<crate>").
+verbatim and call tl_stack(here="<crate>") and stack_pipeline(here="<crate>"). The block
+between the two SHARED SCENARIO markers is also identical in every TL repository; call
+scenario_sequence(here="<crate>").
 """
 
 import json
 from pathlib import Path
 
-from docs_figures import FONTS, SMALL, TITLE, Figure  # noqa: F401
+from docs_figures import FONTS, LABEL, SMALL, TITLE, Figure  # noqa: F401
 
 STYLE = "ix-docs"
 
@@ -150,6 +152,96 @@ def stack_pipeline(here="tl-syntax"):
 # ==== SHARED (end) ============================================================
 
 
+# ==== SHARED SCENARIO: copy verbatim into sibling figures.py (begin) ==========
+
+SCENARIO_LANES = [
+    # (name, one-word role, step number whose look-here callout sits on this lane)
+    ("engineer", "you", None),
+    ("tl-parse", "text", 1),
+    ("tl-syntax", "signals", 2),
+    ("tl-rewrite", "normalize", 3),
+    ("tl-mltl", "evaluate", 4),
+    ("R2U2", "outside", None),
+    ("tl-oracle", "reference", 5),
+    ("quire-mltl", "assurance", 6),
+]
+
+SCENARIO_LOOK = [
+    # (step, crate, what to look at) for the case r2u2-future-deadline-v1
+    (1, "tl-parse", "the tree is one F node, interval [0,3], over p2"),
+    (2, "tl-syntax", "p2 is bound to signal s2, the signal the requirement waits for"),
+    (3, "tl-rewrite", "status Unchanged: no rule applies and no step is recorded"),
+    (4, "tl-mltl", "s2 is absent at instants 0 to 3, so false at time 0; R2U2 agrees"),
+    (5, "tl-oracle", "a second evaluator reads the same formula and trace and returns false"),
+    (6, "quire-mltl", "false becomes Value false only if the observation views allow a value"),
+]
+
+
+def scenario_sequence(here=None):
+    """The debugging walkthrough as a sequence diagram; the lane named `here` is highlighted."""
+    f = Figure(
+        "scenario-sequence",
+        980,
+        684,
+        "A deadline requirement fails on a recorded trace, and the engineer asks why. The engineer "
+        "sends F[0,3] p2 to tl-parse and gets a formula document, binds p2 to signal s2 with tl-syntax, "
+        "and sends the document to tl-rewrite, which reports Unchanged. tl-mltl evaluates the formula "
+        "and trace and returns false at time 0 with a buffer of 4 instants, and R2U2, which runs outside "
+        "the crates, returns false at time 0 for the C2PO expression F[0,3](p2). tl-oracle evaluates the "
+        "same formula and trace independently and returns false. quire-mltl maps the result to Value false. "
+        "Numbered rings mark where to look at each step.",
+    )
+    w, h = 112, 50
+    step = (980 - w) / (len(SCENARIO_LANES) - 1)
+    cx = [round(i * step + w / 2) for i in range(len(SCENARIO_LANES))]
+    lane = {name: i for i, (name, _, _) in enumerate(SCENARIO_LANES)}
+    bottom = 492
+    for i, (name, sub, _) in enumerate(SCENARIO_LANES):
+        if name == "engineer":
+            role = "code"
+        elif name == here:
+            role = "logic"
+        else:
+            role = "ink"
+        f.box(cx[i] - w // 2, 0, w, h, role, name, sub, dashed=(name == "R2U2"))
+        f.line([(cx[i], h + 2), (cx[i], bottom)], "faint", dashed=True, arrow=False, weight=1.0)
+    y = 82
+    pairs = [
+        # (from, to, go label, go role, back label, back role, dashed, ring step)
+        ("engineer", "tl-parse", "F[0,3] p2", "code", "formula doc", "model", False, 1),
+        ("engineer", "tl-syntax", "signal catalog", "ink", "p2 bound to s2", "model", False, 2),
+        ("engineer", "tl-rewrite", "formula doc", "model", "Unchanged", "evidence", False, 3),
+        ("engineer", "tl-mltl", "formula + trace", "model", "false at 0, buffer 4", "evidence", False, 4),
+        ("tl-mltl", "R2U2", "F[0,3](p2)", "model", "false at 0", "evidence", True, None),
+        ("engineer", "tl-oracle", "formula + trace", "model", "false", "evidence", True, 5),
+        ("engineer", "quire-mltl", "result", "model", "Value false", "evidence", False, 6),
+    ]
+    for a, b, go, go_role, back, back_role, dev, ring in pairs:
+        ia, ib = lane[a], lane[b]
+        f.line([(cx[ia] + 3, y), (cx[ib] - 3, y)], go_role, dashed=dev, weight=1.5 if dev else 2.4)
+        f.text(cx[ia] + 12, y - 7, go, go_role, "mono", SMALL)
+        yb = y + 26
+        f.line([(cx[ib] - 3, yb), (cx[ia] + 3, yb)], back_role, dashed=dev, weight=1.5 if dev else 2.4)
+        f.text(cx[ia] + 26, yb - 7, back, back_role, "mono", SMALL)
+        if ring:
+            rx, ry = cx[ib] + 22, y + 13
+            f.dot(rx, ry, 9, "evidence", filled=False)
+            f.text(rx, ry + 4, str(ring), "evidence", "mono", SMALL, "middle")
+        y += 62
+    f.text(0, bottom + 32, "Look here", "muted", "title", TITLE)
+    ly = bottom + 56
+    for n, crate, what in SCENARIO_LOOK:
+        f.dot(9, ly - 4, 9, "evidence", filled=False)
+        f.text(9, ly, str(n), "evidence", "mono", SMALL, "middle")
+        f.text(30, ly, crate, "logic" if crate == here else "muted", "mono", SMALL)
+        f.text(140, ly, what, "ink", "mono", SMALL)
+        ly += 22
+    return f
+
+
+# ==== SHARED SCENARIO (end) ===================================================
+
+
 # ---- repository data ---------------------------------------------------------
 
 CASE = "r2u2-until-lower-bound-v1"
@@ -254,4 +346,118 @@ def pipeline_here():
     return stack_pipeline(here="tl-mltl")
 
 
-FIGURES = [hero, tl_stack_here, pipeline_here]
+SCENARIO_CASE = "r2u2-future-deadline-v1"
+
+
+def scenario_sequence_here():
+    return scenario_sequence(here="tl-mltl")
+
+
+def scenario_trace():
+    """The recorded trace with the F[0,3] window: the required proposition never holds."""
+    corpus = load("corpus/r2u2-v4.2/manifest.json")
+    report = load("corpus/r2u2-v4.2/differential-report.json")
+    case = next(c for c in corpus["cases"] if c["id"] == SCENARIO_CASE)
+    outcome = next(c for c in report["cases"] if c["id"] == SCENARIO_CASE)
+    nodes = case["formula"]["nodes"]
+    future = next(n for n in nodes if n["kind"] == "future")
+    prop = nodes[future["operand"]]["proposition"]
+    start, end = future["interval"]["start"], future["interval"]["end"]
+    trace = corpus["trace"]
+    # The R2U2 input rows must agree with the trace tl-mltl evaluated, for the signals drawn here.
+    rows = [list(map(int, r.split(","))) for r in (ROOT / "corpus/r2u2-v4.2/trace.csv").read_text().split()]
+    drawn = sorted({p for instant in trace for p in instant} | {prop})
+    for t, instant in enumerate(trace):
+        for p in drawn:
+            assert rows[t][p] == int(p in instant), (t, p)
+    held = [t for t in range(start, end + 1) if prop in trace[t]]
+    assert not held and outcome["verdict"] is False
+    tool = f"R2U2 {corpus['source']['tag'].split('-')[0]}"
+    f = Figure(
+        "scenario-trace",
+        980,
+        318,
+        f"The recorded trace has {len(trace)} instants, 0 to {len(trace) - 1}. The requirement F[{start},{end}] p{prop} "
+        f"asks for signal s{prop} to hold at some instant from {start} to {end}. Signal s{prop} is false at every one of "
+        f"those instants, so the deadline is missed and the verdict is false at time {outcome['verdictTime']}. "
+        f"R2U2 reports the same verdict.",
+    )
+    x0, pitch, cw = 150, 190, 150
+    f.text(0, 18, "instant", "muted", "mono", SMALL)
+    for t in range(len(trace)):
+        f.text(x0 + t * pitch + cw / 2, 18, str(t), "muted", "mono", LABEL, "middle")
+    ry = 34
+    for p in drawn:
+        focus = p == prop
+        y = ry + (drawn.index(p)) * 54
+        f.text(0, y + 28, f"p{p} (s{p})", "ink" if focus else "muted", "mono", LABEL)
+        for t in range(len(trace)):
+            x = x0 + t * pitch
+            f.rect(x, y + 4, cw, 38, "faint", fill=False, weight=1.0, rx=3)
+            if p in trace[t]:
+                f.dot(x + cw / 2, y + 23, 8, "model")
+            else:
+                f.text(x + cw / 2, y + 28, "absent" if focus else "-", "evidence" if focus else "faint", "mono", SMALL, "middle")
+    fy = ry + drawn.index(prop) * 54
+    f.rect(x0 - 8, fy - 2, (end - start) * pitch + cw + 16, 46, "logic", dashed=True, fill=False, weight=1.8, rx=6)
+    wy = ry + len(drawn) * 54 + 6
+    f.text(x0 - 8, wy + 8, f"F[{start},{end}] p{prop}: the window covers instants {start} to {end}", "logic", "mono", LABEL)
+    by = wy + 34
+    f.box(0, by, 560, 68, "evidence", f"verdict false at time {outcome['verdictTime']}",
+          f"p{prop} never holds at instants {start} to {end}",
+          "the deadline passes with no event")
+    f.box(640, by, 340, 68, "ink", tool, f"false at time {outcome['verdictTime']}", "agrees with tl-mltl", dashed=True)
+    f.line([(560, by + 34), (637, by + 34)], "evidence", arrow=True)
+    f.note(566, by + 26, "compare", "evidence")
+    return f
+
+
+def scenario_decision():
+    """General triage: which stage to inspect, by the first question answered no."""
+    f = Figure(
+        "scenario-decision",
+        980,
+        470,
+        "General guidance for any formula and trace. Work down five questions. Does the formula "
+        "document read back as the requirement; is every proposition bound to the intended signal; "
+        "does the rewritten formula give the original verdict; do tl-mltl and tl-oracle return the "
+        "same verdict; does the monitor verdict match tl-mltl. The first answer of no points at the "
+        "stage to inspect: text or parse, binding, rewrite, evaluator, or monitor mapping. If every "
+        "answer is yes, the verdict stands for this input and the requirement or the recorded trace "
+        "is what to re-read.",
+    )
+    rows = [
+        ("Does the formula document read back as the requirement?",
+         "compare the tl-parse canonical text with the requirement",
+         "Text or parse", "tl-parse diagnostics and the document"),
+        ("Is every proposition bound to the intended signal?",
+         "read the bindings in the tl-syntax signal catalog",
+         "Binding", "the catalog or the proposition map"),
+        ("Does the rewritten formula give the original verdict?",
+         "tl-rewrite equivalence check on the same trace",
+         "Rewrite", "the rule named in the tl-rewrite report"),
+        ("Do tl-mltl and tl-oracle return the same verdict?",
+         "evaluate the same formula and trace in both",
+         "Evaluator", "tl-mltl or tl-oracle; shrink the trace"),
+        ("Does the monitor verdict match tl-mltl?",
+         "compare_external classifies the pair",
+         "Monitor mapping", "the C2PO expression or the monitor run"),
+    ]
+    qw, fx, fw, h, pitch = 500, 590, 390, 56, 80
+    for i, (q, sub, fault, where) in enumerate(rows):
+        y = i * pitch
+        f.box(0, y, qw, h, "logic", q, sub)
+        f.box(fx, y, fw, h, "evidence", fault, where)
+        f.line([(qw, y + h / 2), (fx - 3, y + h / 2)], "evidence")
+        f.note(qw + 12, y + h / 2 - 8, "no", "evidence")
+        f.line([(qw / 2, y + h + 2), (qw / 2, y + pitch - 3)], "model")
+        f.note(qw / 2 + 10, y + h + 17, "yes", "model")
+    y = len(rows) * pitch
+    f.box(0, y, qw, 62, "model", "Every stage agrees", "the verdict is correct for this input",
+          "re-read the requirement and the recorded trace")
+    f.text(fx, y + 24, "General guidance for any formula and trace.", "muted", "mono", SMALL)
+    f.text(fx, y + 44, "The first answer of no marks the stage to inspect.", "muted", "mono", SMALL)
+    return f
+
+
+FIGURES = [hero, tl_stack_here, pipeline_here, scenario_sequence_here, scenario_trace, scenario_decision]

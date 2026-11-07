@@ -9,6 +9,7 @@ tl-mltl evaluates Mission-time Linear Temporal Logic (MLTL) formulas over finite
 | [horizon.md](horizon.md) | Lookahead, propagation delay, buffer length and required history, and how each is computed. |
 | [monitors-interop.md](monitors-interop.md) | The C2PO mapping, mapping manifests, external verdicts, differential comparison and the retained R2U2 exchange. |
 | [cli.md](cli.md) | The `tl-mltl` command, its request and trace documents, exit status and the conformance producers. |
+| [scenario.md](scenario.md) | A worked debugging example across the TL crates on a retained R2U2 case, with a triage guide. |
 | [examples.md](examples.md) | Runnable examples for evaluation, horizon, mapping, comparison, past-time evaluation and the CLI. |
 | [api-reference.md](api-reference.md) | Public types and functions by module, with their error types. |
 
