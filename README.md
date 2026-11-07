@@ -85,7 +85,7 @@ and the command-line tool, are in [docs/examples.md](docs/examples.md).
 
 ## A worked example
 
-A deadline requirement fails on a recorded trace. [docs/scenario.md](docs/scenario.md) follows the investigation through tl-parse, tl-syntax, tl-rewrite, tl-mltl, R2U2, tl-oracle and quire-mltl on the retained R2U2 case `r2u2-future-deadline-v1`. It shows what to look at in each step and ends with a triage guide for results that disagree.
+A deadline requirement, `F[0,3] p2`, is false on a recorded trace. [docs/scenario.md](docs/scenario.md) walks through finding out why, using tl-parse, tl-syntax, tl-rewrite, tl-mltl, R2U2, tl-oracle and quire-mltl on the retained R2U2 case `r2u2-future-deadline-v1`. It shows what to look at in each step and ends with a guide for results that disagree.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/scenario-sequence-dark.svg">
