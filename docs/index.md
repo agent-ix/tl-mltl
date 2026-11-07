@@ -12,9 +12,3 @@ tl-mltl evaluates Mission-time Linear Temporal Logic (MLTL) formulas over finite
 | [scenario.md](scenario.md) | A worked debugging example across the TL crates on a retained R2U2 case, with a triage guide. |
 | [examples.md](examples.md) | Runnable examples for evaluation, horizon, mapping, comparison, past-time evaluation and the CLI. |
 | [api-reference.md](api-reference.md) | Public types and functions by module, with their error types. |
-
-## Scope
-
-The crate owns evaluation, horizon analysis, mapping and comparison. It reads the formula, profile and signal types of tl-syntax. It does not parse text (tl-parse), rewrite formulas (tl-rewrite) or connect to Quire (quire-mltl). tl-oracle is an independent reference evaluator used only in development tests. No TL crate except quire-mltl depends on Quire.
-
-The public API is not stable and the crate has `publish = false`. A result from this crate describes the formula and trace it was given. It does not validate, accredit or qualify R2U2, another monitor, or a project that uses the crate.
