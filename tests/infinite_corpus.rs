@@ -61,7 +61,7 @@ fn observations(
 }
 
 // Owner corpus, strict formula reader, and all settlement/refusal cases.
-// Trace: TC-138, TC-141, TC-143, TC-146, TC-155; FR-027-AC-1, FR-030-AC-1, FR-030-AC-2, FR-032-AC-1, FR-034-AC-1
+// Trace: TC-138, TC-141, TC-143, TC-146, TC-155, FR-027-AC-1, FR-030-AC-1, FR-030-AC-2, FR-032-AC-1, FR-034-AC-1
 #[test]
 fn owner_infinite_corpus_replays_from_the_compiled_syntax_revision() {
     let root = Path::new(CORPUS_DIR).join("infinite-trace");

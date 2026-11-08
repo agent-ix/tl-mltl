@@ -1397,7 +1397,7 @@ mod tests {
         }
     }
 
-    // Trace: TC-158; FR-033-AC-3
+    // Trace: TC-158, FR-033-AC-3
     #[test]
     fn provider_fault_and_resource_exhaustion_have_distinct_execution_axes() {
         let fault = provider_fault(identity(), 3);

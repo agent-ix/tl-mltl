@@ -105,8 +105,10 @@ schema/digest/strict-reading discipline shared across all five.
 The five retained contracts remain fully implemented and are exercised by
 existing tests (`tests/cli.rs`, `tests/past_history.rs`,
 `tests/past_history_corpus.rs`, and others) that predate this requirement and
-are not yet tagged with dedicated FR-018 trace comments; TC-090 is recorded
-as planned pending that tagging. TL-179 removed the QObs-coupled request/
+predate this requirement; `tests/tc_090_owner_wire_contracts.rs` now carries
+the FR-018 trace tags (schema bytes against the published digest for all five
+contracts, strict trace reading, owner ceilings, and the absence of any
+Quire-ecosystem dependency). TL-179 removed the QObs-coupled request/
 result/mapping layer and its dedicated test (`tests/tc_084_temporal_owner_wire.rs`,
 formerly TC-084) outright rather than porting it, since that behavior now
 lives in `quire-mltl`.

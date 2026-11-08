@@ -11,7 +11,7 @@ relationships:
 
 ## Functional Requirement Coverage
 
-| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| Functional Req | Acceptance Criteria | Test Cases | Status |
 |---|---|---|---|
 | FR-001 | FR-001-AC-1 through FR-001-AC-3 | TC-001 through TC-004 | ✅ covered |
 | FR-002 | FR-002-AC-1 through FR-002-AC-3 | TC-005 through TC-008 | ✅ covered |
@@ -21,7 +21,7 @@ relationships:
 | FR-007 | FR-007-AC-1 through FR-007-AC-5, FR-007-AC-7 through FR-007-AC-9 | TC-025 through TC-029, TC-031, TC-034, TC-035 | ✅ covered |
 | FR-016 | FR-016-AC-1 through FR-016-AC-6 | TC-076 through TC-080 | ✅ covered |
 | FR-017 | FR-017-AC-1 through FR-017-AC-3 | TC-081 through TC-083 | ✅ covered |
-| FR-018 | FR-018-AC-1 through FR-018-AC-3 | TC-090 | 🚧 planned |
+| FR-018 | FR-018-AC-1 through FR-018-AC-3 | TC-090 | ✅ implemented |
 | FR-019 | FR-019-AC-1, FR-019-AC-2 | TC-085 | ⛔ retired — superseded by quire-mltl FR-002 (TL-180); TL-179 removed TC-085's backing test with `wire::observation` |
 | FR-027 | FR-027-AC-1 through FR-027-AC-3 | TC-086, TC-138 | 🚧 planned |
 | FR-028 | FR-028-AC-1 through FR-028-AC-3 | TC-087, TC-138, TC-139 | 🚧 planned |
@@ -32,7 +32,7 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 
 ## Stakeholder Requirement Coverage
 
-| Stakeholder Req | Trace to US/FR | Test/Validation | Coverage Status |
+| Stakeholder Req | Trace to US/FR | Test/Validation | Status |
 |---|---|---|---|
 | StR-001 | FR-001, FR-005, FR-016 | TC-001, TC-002, TC-015, TC-076 | ✅ covered |
 | StR-002 | FR-002, FR-003, FR-004, FR-017 | TC-006, TC-009, TC-011, TC-081 | ✅ covered |
@@ -88,7 +88,7 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 | TC-087 | Check feature-off capability absence and bounded result/CLI byte stability | Integration | P0 | FR-028-AC-1, FR-028-AC-3 | ✅ implemented |
 | TC-088 | Inspect Linear dependency order and TL-215 acceptance gate before implementation or qualification | Inspection | P1 | FR-029-AC-1, FR-029-AC-3 | 🚧 planned |
 | TC-089 | Bind infinite evidence to the exact provider, TL profile, graph and clock identities | Integration | P0 | FR-029-AC-2 | ✅ implemented |
-| TC-090 | Confirm every retained TL-owned wire contract (`trace/v1`, `command/v1`, `position-history/v1`, `history-requirement/v1`, `past-evaluation/v1`) publishes immutable schema bytes/digest, strictly rejects malformed/noncanonical input under enforced `OwnerLimits`, and that removing the QObs-coupled request/result/mapping layer (TL-179) leaves existing future/past/CLI/legacy-mapping behavior unchanged | Inspection | P1 | FR-018-AC-1, FR-018-AC-2, FR-018-AC-3 | 🚧 planned |
+| TC-090 | Confirm every retained TL-owned wire contract (`trace/v1`, `command/v1`, `position-history/v1`, `history-requirement/v1`, `past-evaluation/v1`) publishes immutable schema bytes/digest, strictly rejects malformed/noncanonical input under enforced `OwnerLimits`, and that removing the QObs-coupled request/result/mapping layer (TL-179) leaves existing future/past/CLI/legacy-mapping behavior unchanged | Inspection | P1 | FR-018-AC-1, FR-018-AC-2, FR-018-AC-3 | ✅ implemented |
 | TC-130 | Static inspector rejects each of `SHELL`, `.SHELLFLAGS`, `MAKEFLAGS`, `.ONESHELL:`, `.DEFAULT:`, `.IGNORE:`, `.SILENT:`, a `-`-prefixed recipe line, `\|\| true`/`\|\| :`, a stderr-to-`/dev/null` redirect, `$(eval`, a bare `;` command separator (including a quoted-value/trailing-comment MAKEFLAGS variation and a check-and-record chain), and a surface inside a recursively scanned `include`d file; a clean control and `for`/`while`/`if`/`case` control-flow semicolons are accepted without a false positive | Unit | P0 | NFR-006-AC-1 | ✅ implemented |
 | TC-131 | Entry point invoked with `MAKEFLAGS` set to an `-i`/`-k`/`-S`-equivalent value, including a bundled short-flag token in both `ik` and `-ik` form, in the environment is refused before Make starts; a clean environment is not; `\|\| true` is detected wherever it appears on a recipe line, including immediately before a trailing `;` and further commands | Unit | P0 | NFR-006-AC-2 | ✅ implemented |
 | TC-132 | Running each of the `ci` prerequisites individually against its real recipe writes exactly one completion record naming that gate and its exit status; a recipe forced to fail writes no record for that gate | Integration | P0 | NFR-006-AC-3 | ✅ implemented |
@@ -96,4 +96,4 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 | TC-134 | A completion record deleted after being written, and one rewritten with a run-id preceding the evaluated run, are each treated as absent by reconciliation | Integration | P0 | NFR-006-AC-5 | ✅ implemented |
 | TC-135 | The entry point run against a `.IGNORE:`-prepended copy of the real Makefile, a skeleton Makefile with every recipe replaced by a failing stub, and a recipe line joining a failing check and the completion-record call with a bare `;`, each exits non-zero with a named violation — the direct reproduction of the tracked measurement in TL-65/`agent-ix/tl-mltl#14` | Integration | P0 | NFR-006-AC-6 | ✅ implemented |
 | TC-136 | The entry point run against an unmodified fixture Makefile with a clean environment and every gate passing, including ordinary shell control-flow semicolons, exits zero with no violation reported | Integration | P0 | NFR-006-AC-7 | ✅ implemented |
-| TC-137 | Inspect README, CLAUDE.md, and `.github/workflows/*.yml` for every reference to running the full local gate set; each names the entry point (`make guarded-ci`), not a bare `make ci` | Inspection | P1 | NFR-006-AC-8 | ✅ implemented |
+| TC-137 | Inspect README, CLAUDE.md, and `.github/workflows/*.yml` for every reference to running the full local gate set; each names the entry point (`make guarded-ci`), not a bare `make ci` | Integration | P1 | NFR-006-AC-8 | ✅ implemented |

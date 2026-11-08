@@ -107,7 +107,7 @@ fn main() {
 }
 "##;
 
-// Trace: TC-138, TC-171; FR-027-AC-1 through FR-027-AC-3, FR-028-AC-3, FR-034-AC-3
+// Trace: TC-138, TC-171, FR-027-AC-1, FR-027-AC-2, FR-027-AC-3, FR-028-AC-3, FR-034-AC-3
 #[test]
 fn external_consumer_feature_tree_and_complete_bounded_bytes() {
     let scratch = Path::new(env!("CARGO_MANIFEST_DIR")).join("target");

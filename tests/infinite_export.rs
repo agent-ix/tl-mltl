@@ -86,7 +86,7 @@ fn export(
     )
 }
 
-// Trace: TC-168, TC-169, TC-171; FR-040-AC-1 and FR-040-AC-3
+// Trace: TC-168, TC-169, TC-171, FR-040-AC-1, FR-040-AC-3
 #[test]
 fn exact_outer_safety_guard_exports_only_its_finite_horizon_body() {
     let past = graph(vec![
@@ -127,7 +127,7 @@ fn exact_outer_safety_guard_exports_only_its_finite_horizon_body() {
     assert_eq!(evidence.decision_horizon, 1);
 }
 
-// Trace: TC-172, TC-173; FR-041-AC-1 and FR-041-AC-2
+// Trace: TC-172, TC-173, FR-041-AC-1, FR-041-AC-2
 #[test]
 fn unsupported_shape_partial_observation_and_mixed_target_context_refuse() {
     let unbounded = graph(vec![
@@ -187,7 +187,7 @@ fn unsupported_shape_partial_observation_and_mixed_target_context_refuse() {
     );
 }
 
-// Trace: TC-172, TC-173; FR-041-AC-1 and FR-041-AC-2
+// Trace: TC-172, TC-173, FR-041-AC-1, FR-041-AC-2
 #[test]
 fn each_unbounded_future_family_has_a_distinct_typed_refusal() {
     let atom = node(K::Proposition {
@@ -258,7 +258,7 @@ fn each_unbounded_future_family_has_a_distinct_typed_refusal() {
     );
 }
 
-// Trace: TC-172, TC-173; FR-041-AC-1 and FR-041-AC-2
+// Trace: TC-172, TC-173, FR-041-AC-1, FR-041-AC-2
 #[test]
 fn nonempty_fairness_refuses_before_target_output_and_empty_fairness_is_neutral() {
     let safety = graph(vec![
@@ -313,7 +313,7 @@ fn nonempty_fairness_refuses_before_target_output_and_empty_fairness_is_neutral(
     );
 }
 
-// Trace: TC-170; FR-040-AC-2
+// Trace: TC-170, FR-040-AC-2
 #[test]
 fn export_refuses_a_noncanonical_prefix_and_missing_formula_binding() {
     let past = graph(vec![
@@ -347,7 +347,7 @@ fn export_refuses_a_noncanonical_prefix_and_missing_formula_binding() {
     );
 }
 
-// Trace: TC-166, TC-173; FR-039-AC-1, FR-041-AC-2
+// Trace: TC-166, TC-173, FR-039-AC-1, FR-041-AC-2
 #[test]
 fn safety_export_refuses_target_origin_mismatch_before_artifact() {
     let bounds = Interval::new(2, 2).unwrap();
@@ -373,7 +373,7 @@ fn safety_export_refuses_target_origin_mismatch_before_artifact() {
     );
 }
 
-// Trace: TC-166, TC-173; FR-039-AC-1, FR-041-AC-2
+// Trace: TC-166, TC-173, FR-039-AC-1, FR-041-AC-2
 #[test]
 fn safety_export_refuses_exhausted_work_and_unreviewed_past_operator() {
     let safety = graph(vec![
@@ -421,7 +421,7 @@ fn safety_export_refuses_exhausted_work_and_unreviewed_past_operator() {
     );
 }
 
-// Trace: TC-172, TC-173; FR-041-AC-1, FR-041-AC-2
+// Trace: TC-172, TC-173, FR-041-AC-1, FR-041-AC-2
 #[test]
 fn safety_export_refuses_unbounded_past_inside_the_finite_body() {
     let safety = graph(vec![
@@ -443,7 +443,7 @@ fn safety_export_refuses_unbounded_past_inside_the_finite_body() {
     );
 }
 
-// Trace: TC-169, TC-170; FR-040-AC-1 and FR-040-AC-2
+// Trace: TC-169, TC-170, FR-040-AC-1, FR-040-AC-2
 #[test]
 fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive() {
     let safety = graph(vec![
@@ -523,7 +523,7 @@ fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive(
     );
 }
 
-// Trace: TC-172; FR-041-AC-1
+// Trace: TC-172, FR-041-AC-1
 #[test]
 fn every_syntax_node_and_interval_kind_has_an_explicit_export_class() {
     let atom = node(K::Proposition {
@@ -644,7 +644,7 @@ fn every_syntax_node_and_interval_kind_has_an_explicit_export_class() {
     assert_eq!(cells, 16);
 }
 
-// Trace: TC-168, TC-172; FR-040-AC-1, FR-041-AC-1
+// Trace: TC-168, TC-172, FR-040-AC-1, FR-041-AC-1
 #[test]
 fn zero_width_temporal_cells_lower_to_boolean_without_mixed_target_syntax() {
     let zero = TemporalInterval::Closed(Interval::new(0, 0).unwrap());
@@ -671,7 +671,7 @@ fn zero_width_temporal_cells_lower_to_boolean_without_mixed_target_syntax() {
     assert_eq!(mapped.decision_horizon, 0);
 }
 
-// Trace: TC-173; FR-041-AC-2
+// Trace: TC-173, FR-041-AC-2
 #[test]
 fn every_typed_refusal_projects_to_unavailable_truth_and_basis() {
     use tl_mltl::infinite::{Disposition, EvidenceBasis, ExecutionDisposition, TruthAvailability};
@@ -697,7 +697,7 @@ fn every_typed_refusal_projects_to_unavailable_truth_and_basis() {
     );
 }
 
-// Trace: TC-173; FR-041-AC-2
+// Trace: TC-173, FR-041-AC-2
 #[test]
 fn unsupported_signal_and_conflicting_observation_refuse_without_artifacts() {
     let formula = graph(vec![
@@ -738,7 +738,7 @@ fn unsupported_signal_and_conflicting_observation_refuse_without_artifacts() {
     );
 }
 
-// Trace: TC-169, TC-170; FR-040-AC-1 and FR-040-AC-2
+// Trace: TC-169, TC-170, FR-040-AC-1, FR-040-AC-2
 #[test]
 fn bounded_future_violation_requires_the_whole_decision_horizon() {
     let safety = graph(vec![
@@ -787,7 +787,7 @@ fn bounded_future_violation_requires_the_whole_decision_horizon() {
     }
 }
 
-// Trace: TC-172, TC-173; FR-041-AC-1 and FR-041-AC-2
+// Trace: TC-172, TC-173, FR-041-AC-1, FR-041-AC-2
 #[test]
 fn tl216_origin_shape_partition_refuses_mixed_and_overdeep_past() {
     let mixed = graph(vec![
@@ -832,7 +832,7 @@ fn tl216_origin_shape_partition_refuses_mixed_and_overdeep_past() {
     );
 }
 
-// Trace: TC-170; FR-040-AC-2
+// Trace: TC-170, FR-040-AC-2
 #[test]
 fn retained_c2po_steps_agree_with_the_exact_new_safety_body() {
     let retained: serde_json::Value =
@@ -926,7 +926,7 @@ fn retained_c2po_steps_agree_with_the_exact_new_safety_body() {
     assert_eq!(checked, 3);
 }
 
-// Trace: TC-172; FR-041-AC-1
+// Trace: TC-172, FR-041-AC-1
 #[test]
 fn node_interval_and_placement_census_has_exact_mapped_or_refused_cells() {
     #[derive(Clone, Copy)]
@@ -1092,7 +1092,7 @@ fn node_interval_and_placement_census_has_exact_mapped_or_refused_cells() {
     assert_eq!(checked, 171); // Nine noninterval nodes and eight interval nodes across placements.
 }
 
-// Trace: TC-172; FR-041-AC-1
+// Trace: TC-172, FR-041-AC-1
 #[test]
 fn temporal_nesting_cross_product_classifies_target_context() {
     let atom = node(K::Proposition {

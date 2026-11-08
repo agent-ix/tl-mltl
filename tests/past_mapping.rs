@@ -73,7 +73,7 @@ fn interval(a: u32, b: u32) -> Interval {
     Interval::new(a, b).unwrap()
 }
 
-// Trace: TC-160, TC-165; FR-038-AC-1, FR-039-AC-1
+// Trace: TC-160, TC-165, FR-038-AC-1, FR-039-AC-1
 #[test]
 fn admitted_once_historically_and_previous_render_exact_past_forms() {
     let origin = contract(&[
@@ -118,7 +118,7 @@ fn admitted_once_historically_and_previous_render_exact_past_forms() {
     assert_eq!(previous.expression, "O[1,1](p)");
 }
 
-// Trace: TC-160, TC-161, TC-166; FR-038-AC-1, FR-039-AC-1
+// Trace: TC-160, TC-161, TC-166, FR-038-AC-1, FR-039-AC-1
 #[test]
 fn since_and_triggered_zero_windows_lower_without_target_past_operators() {
     let origin = contract(&[PastOperatorKind::Since, PastOperatorKind::Triggered]);
@@ -152,7 +152,7 @@ fn since_and_triggered_zero_windows_lower_without_target_past_operators() {
     assert_eq!(trigger.expression, "(!(!q))");
 }
 
-// Trace: TC-161; FR-038-AC-1
+// Trace: TC-161, FR-038-AC-1
 #[test]
 fn zero_window_lowerings_preserve_source_verdicts_at_origin() {
     let interval = interval(0, 0);
@@ -268,7 +268,7 @@ fn zero_window_lowerings_preserve_source_verdicts_at_origin() {
     }
 }
 
-// Trace: TC-166, TC-167; FR-039-AC-1, FR-039-AC-2
+// Trace: TC-166, TC-167, FR-039-AC-1, FR-039-AC-2
 #[test]
 fn target_4_2_origin_mismatch_intervals_refuse_without_artifact() {
     let origin = contract(&[
@@ -324,7 +324,7 @@ fn target_4_2_origin_mismatch_intervals_refuse_without_artifact() {
     }
 }
 
-// Trace: TC-162, TC-167; FR-038-AC-2, FR-039-AC-2
+// Trace: TC-162, TC-167, FR-038-AC-2, FR-039-AC-2
 #[test]
 fn absent_or_operator_incomplete_origin_evidence_refuses_without_artifact() {
     let nodes = [
@@ -339,7 +339,7 @@ fn absent_or_operator_incomplete_origin_evidence_refuses_without_artifact() {
     );
 }
 
-// Trace: TC-162, TC-167; FR-038-AC-2, FR-039-AC-2
+// Trace: TC-162, TC-167, FR-038-AC-2, FR-039-AC-2
 #[test]
 fn each_target_origin_identity_field_is_required() {
     let nodes = [p()];
@@ -357,7 +357,7 @@ fn each_target_origin_identity_field_is_required() {
     }
 }
 
-// Trace: TC-166, TC-167; FR-039-AC-1, FR-039-AC-2
+// Trace: TC-166, TC-167, FR-039-AC-1, FR-039-AC-2
 #[test]
 fn well_formed_but_unreviewed_target_substitutions_refuse_before_output() {
     let nodes = [
@@ -381,7 +381,7 @@ fn well_formed_but_unreviewed_target_substitutions_refuse_before_output() {
     }
 }
 
-// Trace: TC-166; FR-039-AC-1
+// Trace: TC-166, FR-039-AC-1
 #[test]
 fn reviewed_target_admits_only_measured_origin_interval_cells() {
     let origin = contract(&[
@@ -448,7 +448,7 @@ fn reviewed_target_admits_only_measured_origin_interval_cells() {
     }
 }
 
-// Trace: TC-166, TC-167; FR-039-AC-1, FR-039-AC-2
+// Trace: TC-166, TC-167, FR-039-AC-1, FR-039-AC-2
 #[test]
 fn only_reviewed_homogeneous_temporal_nesting_is_exported() {
     let origin = contract(&[
@@ -529,7 +529,7 @@ fn only_reviewed_homogeneous_temporal_nesting_is_exported() {
     );
 }
 
-// Trace: TC-162, TC-167; FR-038-AC-2, FR-039-AC-2
+// Trace: TC-162, TC-167, FR-038-AC-2, FR-039-AC-2
 #[test]
 fn past_mapping_refuses_wrong_profile_and_exhausted_render_budget() {
     let nodes = [p()];
@@ -548,7 +548,7 @@ fn past_mapping_refuses_wrong_profile_and_exhausted_render_budget() {
     );
 }
 
-// Trace: TC-162, TC-167; FR-038-AC-2, FR-039-AC-2
+// Trace: TC-162, TC-167, FR-038-AC-2, FR-039-AC-2
 #[test]
 fn past_mapping_refuses_signal_names_with_no_target_identifier() {
     let nodes = [p()];

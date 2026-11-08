@@ -471,3 +471,36 @@ fn exported_makeflags_directive_is_refused_before_make_runs() {
     // Refused before Make ran at all: no completion records exist.
     assert!(!dir.path().join("target/ci-gates/gate-a.json").exists());
 }
+
+// README and CLAUDE.md name the guarded entry point, and no hosted workflow
+// step runs a bare `make ci`.
+// Trace: TC-137, NFR-006-AC-8
+#[test]
+fn documented_and_hosted_gate_invocations_name_the_guarded_entry_point() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    for doc in ["README.md", "CLAUDE.md"] {
+        let text = fs::read_to_string(root.join(doc)).expect("doc is readable");
+        assert!(
+            text.contains("make guarded-ci"),
+            "{doc} must name `make guarded-ci`"
+        );
+    }
+    let mut workflows = 0;
+    for entry in fs::read_dir(root.join(".github/workflows")).expect("workflows dir") {
+        let path = entry.expect("dir entry").path();
+        if path.extension().and_then(|e| e.to_str()) != Some("yml") {
+            continue;
+        }
+        workflows += 1;
+        let text = fs::read_to_string(&path).expect("workflow is readable");
+        for line in text.lines() {
+            let step = line.trim();
+            assert!(
+                !(step.starts_with("run:") && step.contains("make ci")),
+                "{} runs a bare `make ci`: {step}",
+                path.display()
+            );
+        }
+    }
+    assert!(workflows > 0, "no workflows found");
+}

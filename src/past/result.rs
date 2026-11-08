@@ -12,7 +12,7 @@ pub use super::{
 /// Exact checked-in JSON Schema bytes for [`super::PAST_EVALUATION_V1`].
 pub const SCHEMA_BYTES: &[u8] = include_bytes!("../../schemas/past-evaluation-v1.schema.json");
 /// Lowercase SHA-256 digest of [`SCHEMA_BYTES`].
-pub const SCHEMA_SHA256: &str = "a269301cf8150d57bb9f79e5784fbe29461ef37eb5eaeb3e571543eff2e2fa73";
+pub const SCHEMA_SHA256: &str = "c8dc260e85029a2a2ae727e0ef38f7a61424d0c4cc670134674bb00191f1ff84";
 
 /// Constructor-private validated past result.
 #[derive(Clone, Debug, Eq, PartialEq)]
