@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "tl-mltl.campaign-members/v1",
+  "tools": [
+    {"name": "rustc", "command": ["rustc", "--version"]},
+    {"name": "cargo", "command": ["cargo", "--version"]},
+    {"name": "rustfmt", "command": ["rustfmt", "--version"]},
+    {"name": "clippy", "command": ["cargo", "clippy", "--version"]},
+    {"name": "cargo-fuzz", "command": ["cargo", "fuzz", "--version"]},
+    {"name": "cargo-kani", "command": ["cargo", "kani", "--version"]},
+    {"name": "cargo-mutants", "command": ["cargo", "mutants", "--version"]},
+    {"name": "cargo-llvm-cov", "command": ["cargo", "llvm-cov", "--version"]},
+    {"name": "quire", "command": ["quire", "--version"]}
+  ],
+  "members": [
+    {
+      "id": "format",
+      "technique": "static",
+      "kind": "test",
+      "command": ["cargo", "fmt", "--all", "--", "--check"],
+      "tools": ["rustfmt"],
+      "determinism": "exact",
+      "covers": ["make:fmt-check"]
+    },
+    {
+      "id": "lint",
+      "technique": "static",
+      "kind": "test",
+      "command": ["cargo", "clippy", "--all-targets", "--all-features", "--", "-D", "warnings"],
+      "tools": ["clippy"],
+      "determinism": "exact",
+      "covers": ["make:lint"]
+    },
+    {
+      "id": "test-suite",
+      "technique": "tests",
+      "kind": "test",
+      "command": ["cargo", "test", "--all-targets", "--all-features"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "covers": ["make:test"]
+    },
+    {
+      "id": "reference-conformance",
+      "technique": "conformance",
+      "kind": "test",
+      "command": ["make", "conformance"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "covers": ["make:conformance"]
+    },
+    {
+      "id": "cli-conformance",
+      "technique": "conformance",
+      "kind": "test",
+      "command": ["make", "cli-conformance"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "covers": ["make:cli-conformance"]
+    },
+    {
+      "id": "r2u2-retained-replay",
+      "technique": "differential",
+      "kind": "differential",
+      "command": ["make", "differential"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "covers": ["make:differential"],
+      "note": "Replays retained bytes under corpus/r2u2-v4.2; it does not execute R2U2."
+    },
+    {
+      "id": "sweep-small-scope-fast",
+      "technique": "exhaustive-sweep",
+      "kind": "sweep",
+      "command": ["cargo", "test", "--test", "finite_oracle"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "evidence": {"env": "TL_MLTL_EVIDENCE_DIR", "volatileKeys": ["runtimeMs"]},
+      "covers": []
+    },
+    {
+      "id": "sweep-small-scope-full",
+      "technique": "exhaustive-sweep",
+      "kind": "sweep",
+      "command": ["make", "sweep-full"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "evidence": {"env": "TL_MLTL_EVIDENCE_DIR", "volatileKeys": ["runtimeMs"]},
+      "covers": ["make:sweep-full"],
+      "note": "Nightly-scale; release build, long."
+    },
+    {
+      "id": "fuzz-c2po-map-corpus",
+      "technique": "fuzz",
+      "kind": "fuzz",
+      "command": ["cargo", "test", "--test", "c2po_map_fuzz"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "covers": []
+    },
+    {
+      "id": "fuzz-c2po-map-live",
+      "technique": "fuzz",
+      "kind": "fuzz",
+      "command": ["cargo", "fuzz", "run", "c2po_map", "--", "-runs=100000", "-seed=5457"],
+      "tools": ["cargo-fuzz"],
+      "determinism": "seeded",
+      "seed": "5457",
+      "covers": ["fuzz:c2po_map"]
+    },
+    {
+      "id": "kani-horizon-bound",
+      "technique": "kani",
+      "kind": "kani",
+      "command": ["make", "kani-check"],
+      "tools": ["cargo-kani"],
+      "determinism": "exact",
+      "covers": ["make:kani-check"]
+    },
+    {
+      "id": "mutation",
+      "technique": "mutation",
+      "kind": "mutation",
+      "state": "planned",
+      "ticket": "TL-231",
+      "determinism": "seeded",
+      "note": "Register with a command once the Make target lands on main."
+    },
+    {
+      "id": "coverage",
+      "technique": "coverage",
+      "kind": "coverage",
+      "state": "planned",
+      "ticket": "TL-234",
+      "determinism": "exact",
+      "note": "Register with a command once the Make target lands on main."
+    },
+    {
+      "id": "r2u2-live-differential",
+      "technique": "differential",
+      "kind": "differential",
+      "state": "planned",
+      "ticket": "TL-237",
+      "determinism": "exact",
+      "note": "Live pinned R2U2 differential; needs a local R2U2 build."
+    }
+  ]
+}

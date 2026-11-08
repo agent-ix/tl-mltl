@@ -13,6 +13,9 @@ make test             # cargo test
 make conformance      # replay the shared corpus through the evaluator
 make differential     # replay the retained R2U2 exchange
 make cli-conformance  # drive the built CLI over its declared requests
+make campaign-inventory # campaign member list covers every evidence target
+make campaign-run     # run all campaign members, write target/campaign/report.json
+make campaign-replay REPORT=path # source-bound replay of a retained report
 make deny             # cargo deny check licenses and sources
 make spec             # validate specs and strict coverage
 make msrv             # check all targets and features with Rust 1.98.1
