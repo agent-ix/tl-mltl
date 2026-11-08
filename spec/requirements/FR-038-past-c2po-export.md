@@ -39,9 +39,9 @@ semantics. Nonzero S/T intervals and other unobserved cells are refused.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-038-AC-1 | Admitted H/O/S/Y and guarded T exports have exact parsed C2PO forms and preserve graph, clock and source identities. | Test (TC-160, TC-161) |
-| FR-038-AC-2 | Unsupported node/interval/target combinations refuse without partial expression; legacy future manifests remain byte-identical. | Test (TC-162, TC-163) |
-| FR-038-AC-3 | Per-step target observations are compared with the independent tl-mltl past evaluator on the pinned corpus, without treating replay as a target runtime run. | Test (TC-164) |
+| FR-038-AC-1 | Admitted H/O/S/Y and guarded T exports have exact parsed C2PO forms and preserve graph, clock and source identities. | property-based-testing (TC-160, TC-161) |
+| FR-038-AC-2 | Unsupported node/interval/target combinations refuse without partial expression; legacy future manifests remain byte-identical. | fuzzing (TC-162, TC-163) |
+| FR-038-AC-3 | Per-step target observations are compared with the independent tl-mltl past evaluator on the pinned corpus, without treating replay as a target runtime run. | integration-testing (TC-164) |
 
 ## Dependencies
 

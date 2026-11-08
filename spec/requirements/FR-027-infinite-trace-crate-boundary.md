@@ -49,9 +49,9 @@ baseline crate is std-only; this feature does not assert `no_std` support.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-027-AC-1 | Default builds expose existing bounded APIs but no infinite provider; opt-in builds expose `tl_mltl::infinite` and retain bounded API and wire bytes. | Test (TC-086, TC-138) |
-| FR-027-AC-2 | Module-import and dependency-tree checks show no bounded import of `infinite`, no provider-only dependency when disabled, and no implicit feature selection from tl-rewrite. | Test (TC-138) |
-| FR-027-AC-3 | Every existing FR-001 through FR-019 criterion and golden byte remains valid in both feature sets. | Test (TC-086, TC-138) |
+| FR-027-AC-1 | Default builds expose existing bounded APIs but no infinite provider; opt-in builds expose `tl_mltl::infinite` and retain bounded API and wire bytes. | integration-testing (TC-086, TC-138) |
+| FR-027-AC-2 | Module-import and dependency-tree checks show no bounded import of `infinite`, no provider-only dependency when disabled, and no implicit feature selection from tl-rewrite. | integration-testing (TC-138) |
+| FR-027-AC-3 | Every existing FR-001 through FR-019 criterion and golden byte remains valid in both feature sets. | integration-testing (TC-086, TC-138) |
 
 ## Dependencies
 

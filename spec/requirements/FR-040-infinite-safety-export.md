@@ -39,9 +39,9 @@ identities and exact input and output digests.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-040-AC-1 | Every admitted `G[0,)ψ` export preserves the profile and yields only refutation or non-conclusive comparison, never proof. | Test (TC-168, TC-169) |
-| FR-040-AC-2 | Finite bad-prefix replay establishes each reported violation under the provider's infinite semantics. | Test (TC-170) |
-| FR-040-AC-3 | Feature-off builds expose no infinite export and retain bounded mapping bytes. | Test (TC-171) |
+| FR-040-AC-1 | Every admitted `G[0,)ψ` export preserves the profile and yields only refutation or non-conclusive comparison, never proof. | integration-testing (TC-168, TC-169) |
+| FR-040-AC-2 | Finite bad-prefix replay establishes each reported violation under the provider's infinite semantics. | integration-testing (TC-170) |
+| FR-040-AC-3 | Feature-off builds expose no infinite export and retain bounded mapping bytes. | integration-testing (TC-171) |
 
 ## Dependencies
 

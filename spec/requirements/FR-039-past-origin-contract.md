@@ -33,8 +33,8 @@ mismatch or declared unsupported case; it is never described as parity.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-039-AC-1 | Every admitted past operator has a reviewed target-origin equivalence or guard, checked at and around origin. | Test (TC-165, TC-166) |
-| FR-039-AC-2 | A target origin mismatch or missing target evidence refuses with a typed cause and no C2PO artifact. | Test (TC-167) |
+| FR-039-AC-1 | Every admitted past operator has a reviewed target-origin equivalence or guard, checked at and around origin. | integration-testing (TC-165, TC-166) |
+| FR-039-AC-2 | A target origin mismatch or missing target evidence refuses with a typed cause and no C2PO artifact. | integration-testing (TC-167) |
 
 ## Dependencies
 

@@ -9,6 +9,36 @@ relationships:
 
 # tl-mltl v0.1 Test Matrix
 
+## Verification Classification
+
+Each acceptance criterion's `Verification` cell names its method from the Quoin
+verification catalog, and the method is the classification:
+
+- `property-based-testing`: a tagged test asserts the criterion over generated
+  inputs (`proptest`) or over a systematically enumerated bounded domain (every
+  trace up to a stated length, every window, every Boolean completion) against
+  an independent oracle or direct semantics. Hand-picked input lists, however
+  long, and tables that merely claim completeness are not property tests.
+- `unit-testing`, `integration-testing`, `fuzzing`: example-only. Fixed inputs
+  with expected outputs, or a bounded fuzz run, assert the criterion; no tagged
+  property test does.
+- `Inspection`: excluded from property testing. FR-018-AC-1 through AC-3 pin
+  retained owner-contract schema bytes and reader behavior, discharged by
+  inspection of the pinned contracts; FR-029-AC-1 and AC-3 state documentary
+  facts (a dependency route, the absence of a claim) with no input domain.
+- Rows still `Test` with no tagged test (FR-008 through FR-010, FR-020 through
+  FR-023, NFR-004, NFR-005) are planned, unbacked rows. They carry no
+  classification until a test exists to classify; the property, fuzz, mutation
+  and Kani machinery they describe is campaign work, not a property of the
+  evaluator.
+- `Withdrawn`: FR-019-AC-1 and AC-2.
+
+The Measurement and Evaluation rows (`NFR-*-M-*`) are derived counts over the
+criteria above and carry no classification of their own. Unit and property
+tests that exist but are not yet tagged to a criterion (`tests/finite_oracle.rs`,
+the `once`/`historically` properties in `tests/past_history.rs`) do not count
+until tagged.
+
 ## Functional Requirement Coverage
 
 | Functional Req | Acceptance Criteria | Test Cases | Status |
@@ -67,9 +97,9 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 | TC-015 | Compare supported and non-conclusive differential cases | Integration | P0 | FR-005-AC-2, StR-001-VC-2 | ✅ implemented |
 | TC-016 | Verify retained differential inputs and non-conclusive cases are complete | Integration | P0 | FR-005-AC-3, NFR-002-AC-2 | ✅ implemented |
 | TC-025 | Bind shared signal/context identity and exact tl-mltl revision into contextual closed/prefix evaluation and horizon records | Integration | P0 | FR-007-AC-1, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4 | ✅ implemented |
-| TC-026 | Render exact valid non-reserved Boolean signal names in C2PO expressions and refuse every lexical, reserved, or unresolved name case without output | Property | P0 | FR-007-AC-2, StR-003-VC-2 | ✅ implemented |
+| TC-026 | Render exact valid non-reserved Boolean signal names in C2PO expressions and refuse every lexical, reserved, or unresolved name case without output | Unit | P0 | FR-007-AC-2, StR-003-VC-2 | ✅ implemented |
 | TC-027 | Compare contextual external verdicts without executing a monitor and keep context/version mismatch, semantic mismatch, and non-conclusive states distinct | Integration | P0 | FR-007-AC-3, StR-003-VC-2 | ✅ implemented |
-| TC-028 | Detect every independent catalog, context, semantic input, revision, expression, external identity, and outcome mutation through native digests or typed refusal | Property | P0 | FR-007-AC-4, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4 | ✅ implemented |
+| TC-028 | Detect every independent catalog, context, semantic input, revision, expression, external identity, and outcome mutation through native digests or typed refusal | Unit | P0 | FR-007-AC-4, StR-003-VC-1, NFR-001-AC-1, NFR-002-AC-4 | ✅ implemented |
 | TC-029 | Preserve existing context-free API/CLI behavior and exact v1 bytes while strictly round-tripping all contextual v2 native record families | Snapshot | P0 | FR-007-AC-5, NFR-001-AC-1 | ✅ implemented |
 | TC-031 | Exercise the bounded overlay-response example with one shared named-signal catalog and requirement context across every contextual operation | Integration | P0 | FR-007-AC-7, StR-003-VC-1, NFR-002-AC-4 | ✅ implemented |
 | TC-032 | Generate 512 bounded closed/prefix formula and trace inputs; closing the prefix agrees with closed evaluation | Property | P0 | FR-003-AC-2 | ✅ implemented |

@@ -36,9 +36,9 @@ the denotation of the claim formula on an admitted trace.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-032-AC-1 | Empty and nonempty prefixes, loop-entry boundaries and repeated loops match an independent infinite-word oracle. | Test (TC-150, TC-151) |
-| FR-032-AC-2 | Empty premise sets admit all valid lassos; each nonempty premise is visited infinitely often on every admitted completion, including partial cases. | Test (TC-152, TC-153) |
-| FR-032-AC-3 | Unfair or empty fair-admission cases do not produce vacuous proof or refutation; malformed or foreign lasso/fairness identities refuse without partial result. | Test (TC-154) |
+| FR-032-AC-1 | Empty and nonempty prefixes, loop-entry boundaries and repeated loops match an independent infinite-word oracle. | integration-testing (TC-150, TC-151) |
+| FR-032-AC-2 | Empty premise sets admit all valid lassos; each nonempty premise is visited infinitely often on every admitted completion, including partial cases. | property-based-testing (TC-152, TC-153) |
+| FR-032-AC-3 | Unfair or empty fair-admission cases do not produce vacuous proof or refutation; malformed or foreign lasso/fairness identities refuse without partial result. | integration-testing (TC-154) |
 
 ## Dependencies
 

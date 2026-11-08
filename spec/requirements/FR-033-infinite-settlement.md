@@ -44,9 +44,9 @@ closure-as-false semantics.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-033-AC-1 | Trace-scoped proved, refuted and inconclusive are distinguished by independent complete and partial infinite cases, with subject scope and sound witness/counterexample details; one lasso cannot prove a model. | Test (TC-155, TC-156) |
-| FR-033-AC-2 | A finite prefix cannot prove liveness and refutes only a continuation-invariant safety violation. | Test (TC-157) |
-| FR-033-AC-3 | Unsupported and both failed execution dispositions keep their exact FR-341 axis combinations and never become Boolean verdicts. | Test (TC-158) |
+| FR-033-AC-1 | Trace-scoped proved, refuted and inconclusive are distinguished by independent complete and partial infinite cases, with subject scope and sound witness/counterexample details; one lasso cannot prove a model. | property-based-testing (TC-155, TC-156) |
+| FR-033-AC-2 | A finite prefix cannot prove liveness and refutes only a continuation-invariant safety violation. | unit-testing (TC-157) |
+| FR-033-AC-3 | Unsupported and both failed execution dispositions keep their exact FR-341 axis combinations and never become Boolean verdicts. | integration-testing (TC-158) |
 
 ## Dependencies
 

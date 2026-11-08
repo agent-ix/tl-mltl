@@ -53,9 +53,9 @@ qualification evidence.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-017-AC-1 | Every derived case lowers to its expected document, ignoring spans. Each of the seven online-prefix derived cases yields v1 and context-bound v2 C2PO manifests equal to its direct pair's, bound to the build-recorded tl-mltl source revision and state, with no standalone `W` or `M` token. A lowering with swapped operands does not yield its direct pair's manifest. | Test (TC-081) |
-| FR-017-AC-2 | All eight closed-trace derived cases and their direct pairs are refused by both the v1 and context-bound v2 C2PO mappings with `UnsupportedProfile` and no manifest. All sixteen refused cases produce their declared refusal code and no graph. | Test (TC-082) |
-| FR-017-AC-3 | `Cargo.toml` names no tl-parse dependency. Every exported manifest has no external tool and the non-qualification limitation. No file under `src/` names FRETish. | Test (TC-083) |
+| FR-017-AC-1 | Every derived case lowers to its expected document, ignoring spans. Each of the seven online-prefix derived cases yields v1 and context-bound v2 C2PO manifests equal to its direct pair's, bound to the build-recorded tl-mltl source revision and state, with no standalone `W` or `M` token. A lowering with swapped operands does not yield its direct pair's manifest. | integration-testing (TC-081) |
+| FR-017-AC-2 | All eight closed-trace derived cases and their direct pairs are refused by both the v1 and context-bound v2 C2PO mappings with `UnsupportedProfile` and no manifest. All sixteen refused cases produce their declared refusal code and no graph. | integration-testing (TC-082) |
+| FR-017-AC-3 | `Cargo.toml` names no tl-parse dependency. Every exported manifest has no external tool and the non-qualification limitation. No file under `src/` names FRETish. | integration-testing (TC-083) |
 
 ## Dependencies
 

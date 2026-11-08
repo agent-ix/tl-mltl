@@ -40,9 +40,9 @@ it is pending. Both project to `inconclusive` with distinct typed details.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-030-AC-1 | Complete valuations agree with ordinary Boolean infinite semantics; missing values produce exactly the FR-160 possibility set under common completions. | Test (TC-141, TC-142) |
-| FR-030-AC-2 | Conflicting and missing valuations keep distinct reasons and closure behavior despite equal possibility sets; empty sets refuse rather than becoming vacuous proof or refutation. | Test (TC-143) |
-| FR-030-AC-3 | Repeated proposition references and loop visits use the same completion for one lasso position, and an identity mismatch refuses before evaluation. | Test (TC-144) |
+| FR-030-AC-1 | Complete valuations agree with ordinary Boolean infinite semantics; missing values produce exactly the FR-160 possibility set under common completions. | property-based-testing (TC-141, TC-142) |
+| FR-030-AC-2 | Conflicting and missing valuations keep distinct reasons and closure behavior despite equal possibility sets; empty sets refuse rather than becoming vacuous proof or refutation. | property-based-testing (TC-143) |
+| FR-030-AC-3 | Repeated proposition references and loop visits use the same completion for one lasso position, and an identity mismatch refuses before evaluation. | property-based-testing (TC-144) |
 
 ## Dependencies
 

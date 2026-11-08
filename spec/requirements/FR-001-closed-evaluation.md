@@ -29,9 +29,9 @@ convenience entry point evaluates time zero.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-001-AC-1 | All Boolean and temporal operators match declared primitive, nested, boundary, and short-trace oracles. | Test (TC-001, TC-002) |
-| FR-001-AC-2 | Evaluation is deterministic and preserves formula, profile, trace, requested verdict time, observation boundary, and referenced proposition identities. | Test (TC-003) |
-| FR-001-AC-3 | Unsupported profiles and impractical work limits return explicit non-verdict errors. | Test (TC-004) |
+| FR-001-AC-1 | All Boolean and temporal operators match declared primitive, nested, boundary, and short-trace oracles. | property-based-testing (TC-001, TC-002) |
+| FR-001-AC-2 | Evaluation is deterministic and preserves formula, profile, trace, requested verdict time, observation boundary, and referenced proposition identities. | unit-testing (TC-003) |
+| FR-001-AC-3 | Unsupported profiles and impractical work limits return explicit non-verdict errors. | unit-testing (TC-004) |
 
 ## Dependencies
 

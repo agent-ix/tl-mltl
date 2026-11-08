@@ -28,9 +28,9 @@ or impersonating an external monitor.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-004-AC-1 | Supported mappings are stable and preserve formula/proposition identities. | Test (TC-011) |
-| FR-004-AC-2 | Unsupported mappings return a typed reason and no executable artifact. | Test (TC-012) |
-| FR-004-AC-3 | Manifest digests and external-tool identities detect substitution. | Test (TC-013) |
+| FR-004-AC-1 | Supported mappings are stable and preserve formula/proposition identities. | unit-testing (TC-011) |
+| FR-004-AC-2 | Unsupported mappings return a typed reason and no executable artifact. | unit-testing (TC-012) |
+| FR-004-AC-3 | Manifest digests and external-tool identities detect substitution. | unit-testing (TC-013) |
 
 ## Dependencies
 
