@@ -60,8 +60,7 @@ each TL-* crate stays independent of the agent-ix/Quire ecosystem.
 
 ## Requirements architecture
 
-[FR-020](./requirements/FR-020-property-obligation-ledger.md) owns the complete
-criterion/property ledger and grounded run contract.
+[FR-020](./requirements/FR-020-property-obligation-ledger.md) owns the evaluator property laws, their seeds and case counts, and the independent-oracle comparison.
 [FR-021](./requirements/FR-021-budgeted-fuzz-campaigns.md) owns fuzz campaign
 budgets, stopping, plateau, and crash handling.
 [FR-022](./requirements/FR-022-measured-mutation-campaign.md) owns mutation
@@ -84,9 +83,10 @@ effectiveness credit.
 
 Implementation follows this order:
 
-1. Each owning repository completes the FR-020 criterion census and grounded
-   property baseline using Quoin `spec-correctness`; the already merged
-   tl-mltl property test is historical input, not a complete ledger.
+1. Each owning repository runs its FR-020 property laws as tagged
+   generated-input tests with recorded seeds and case counts, using Quoin
+   `spec-correctness` to ground criteria; the already merged tl-mltl property
+   test is a baseline, not the full law set.
 2. Owners run FR-021 only at reviewed byte-oriented or structured-input fuzz
    boundaries selected from the evidence catalog. Generated inputs remain
    outside the canonical MRS-002 corpus unless promoted under FR-009.

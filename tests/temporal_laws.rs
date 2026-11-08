@@ -334,7 +334,7 @@ fn assert_equivalent(lhs: &T, rhs: &T, word: &[[bool; 2]], at: u64) -> Result<()
 
 // ------------------------------------------------------------------- duality
 
-// Trace: TC-002, FR-001-AC-1
+// Trace: TC-002, FR-001-AC-1, TC-104, TC-107, FR-020-AC-1, FR-020-AC-4
 // spec-correctness: row=FR-001-AC-1 property=universal extraction=extractable origin=regex
 #[test]
 fn boolean_connectives_satisfy_de_morgan_and_definitional_identities() {
@@ -372,7 +372,7 @@ fn boolean_connectives_satisfy_de_morgan_and_definitional_identities() {
     );
 }
 
-// Trace: TC-002, FR-001-AC-1
+// Trace: TC-002, FR-001-AC-1, TC-104, TC-107, FR-020-AC-1, FR-020-AC-4
 // spec-correctness: row=FR-001-AC-1 property=universal extraction=extractable origin=regex
 #[test]
 fn future_operators_satisfy_their_duals() {
@@ -402,7 +402,7 @@ fn future_operators_satisfy_their_duals() {
     );
 }
 
-// Trace: TC-002, FR-001-AC-1
+// Trace: TC-002, FR-001-AC-1, TC-104, TC-107, FR-020-AC-1, FR-020-AC-4
 // spec-correctness: row=FR-001-AC-1 property=universal extraction=extractable origin=regex
 #[test]
 fn past_operators_satisfy_their_duals() {
@@ -459,7 +459,7 @@ fn split() -> impl Strategy<Value = (u32, u32, u32)> {
     })
 }
 
-// Trace: TC-002, FR-001-AC-1
+// Trace: TC-002, FR-001-AC-1, TC-104, TC-107, FR-020-AC-1, FR-020-AC-4
 // spec-correctness: row=FR-001-AC-1 property=universal extraction=extractable origin=regex
 #[test]
 fn future_intervals_split_at_any_interior_point() {
@@ -509,7 +509,7 @@ fn future_intervals_split_at_any_interior_point() {
     );
 }
 
-// Trace: TC-002, FR-001-AC-1
+// Trace: TC-002, FR-001-AC-1, TC-104, TC-107, FR-020-AC-1, FR-020-AC-4
 // spec-correctness: row=FR-001-AC-1 property=universal extraction=extractable origin=regex
 #[test]
 fn past_intervals_split_at_any_interior_point() {
@@ -555,7 +555,7 @@ fn past_intervals_split_at_any_interior_point() {
 
 // ------------------------------------------------------------------- shift
 
-// Trace: TC-002, FR-001-AC-1
+// Trace: TC-002, FR-001-AC-1, TC-104, TC-107, FR-020-AC-1, FR-020-AC-4
 // spec-correctness: row=FR-001-AC-1 property=universal extraction=extractable origin=regex
 #[test]
 fn shifting_every_bound_by_k_equals_evaluating_k_steps_later() {
@@ -608,7 +608,7 @@ fn shifting_every_bound_by_k_equals_evaluating_k_steps_later() {
     );
 }
 
-// Trace: TC-002, FR-001-AC-1
+// Trace: TC-002, FR-001-AC-1, TC-104, TC-107, FR-020-AC-1, FR-020-AC-4
 // spec-correctness: row=FR-001-AC-1 property=universal extraction=extractable origin=regex
 #[test]
 fn evaluating_at_t_equals_evaluating_the_suffix_from_t_at_zero() {
@@ -627,7 +627,7 @@ fn evaluating_at_t_equals_evaluating_the_suffix_from_t_at_zero() {
 
 // ----------------------------------------------------- monotonicity, horizon
 
-// Trace: TC-009, FR-003-AC-1
+// Trace: TC-009, FR-003-AC-1, TC-104, TC-107, FR-020-AC-1, FR-020-AC-4
 #[test]
 fn a_settled_prefix_verdict_survives_every_extension() {
     run(
@@ -659,7 +659,7 @@ fn a_settled_prefix_verdict_survives_every_extension() {
     );
 }
 
-// Trace: TC-008, FR-002-AC-1
+// Trace: TC-008, FR-002-AC-1, TC-104, TC-107, FR-020-AC-1, FR-020-AC-4
 #[test]
 fn the_verdict_is_fixed_once_the_prefix_reaches_the_horizon() {
     run(
@@ -698,7 +698,7 @@ fn the_verdict_is_fixed_once_the_prefix_reaches_the_horizon() {
     );
 }
 
-// Trace: TC-008, FR-002-AC-1
+// Trace: TC-008, FR-002-AC-1, TC-104, TC-107, FR-020-AC-1, FR-020-AC-4
 #[test]
 fn horizon_follows_the_nesting_of_interval_upper_bounds() {
     run(

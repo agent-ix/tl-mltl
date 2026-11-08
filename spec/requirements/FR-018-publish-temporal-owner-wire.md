@@ -87,9 +87,9 @@ refuses with a typed error and no partial view.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-018-AC-1 | Every one of the five retained owner contracts publishes exact schema bytes/digest, and its bounded reader accepts only canonical bytes matching that digest, returning a constructor-private validated view. | Inspection (TC-090) |
-| FR-018-AC-2 | Every reader rejects unknown/duplicate/missing/reordered fields, trailing/noncanonical bytes, and identity/digest mutation with a typed error and no partial output; every owner-declared resource ceiling is enforced before allocation or traversal. | Inspection (TC-090) |
-| FR-018-AC-3 | Removing the `quire-observation`-coupled request/result/mapping layer (TL-179) changes no existing future evaluator, past evaluator, CLI schema, or `mapping::legacy` C2PO mapping behavior. | Inspection (TC-090) |
+| FR-018-AC-1 | Every one of the five retained owner contracts publishes exact schema bytes/digest, and its bounded reader accepts only canonical bytes matching that digest, returning a constructor-private validated view. | integration-testing (TC-090) |
+| FR-018-AC-2 | Every reader rejects unknown/duplicate/missing/reordered fields, trailing/noncanonical bytes, and identity/digest mutation with a typed error and no partial output; every owner-declared resource ceiling is enforced before allocation or traversal. | integration-testing (TC-090) |
+| FR-018-AC-3 | Removing the `quire-observation`-coupled request/result/mapping layer (TL-179) changes no existing future evaluator, past evaluator, CLI schema, or `mapping::legacy` C2PO mapping behavior. | integration-testing (TC-090) |
 
 ## Dependencies
 

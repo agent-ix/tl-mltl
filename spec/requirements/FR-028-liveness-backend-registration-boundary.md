@@ -58,9 +58,9 @@ verdicts, reports and CLI schemas keep their bytes and meanings.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-028-AC-1 | The feature-off absence path yields `unsupported` with the required capability warning, and the feature-on provider registers exactly once. | Test (TC-087, TC-139) |
-| FR-028-AC-2 | Two registrants, subject/identity mismatch, or a model request without model-wide capability refuse without routing to a bounded evaluator or returning a partial result; the selected registered provider's detailed route preserves FR-341 reason, evidence and provider identity. | Test (TC-139) |
-| FR-028-AC-3 | Every existing bounded verdict, report and CLI schema is byte-identical with the feature enabled or disabled. | Test (TC-087, TC-138) |
+| FR-028-AC-1 | The feature-off absence path yields `unsupported` with the required capability warning, and the feature-on provider registers exactly once. | integration-testing (TC-087, TC-139) |
+| FR-028-AC-2 | Two registrants, subject/identity mismatch, or a model request without model-wide capability refuse without routing to a bounded evaluator or returning a partial result; the selected registered provider's detailed route preserves FR-341 reason, evidence and provider identity. | integration-testing (TC-139) |
+| FR-028-AC-3 | Every existing bounded verdict, report and CLI schema is byte-identical with the feature enabled or disabled. | integration-testing (TC-087, TC-138) |
 
 ## Dependencies
 

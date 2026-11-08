@@ -34,9 +34,9 @@ provider-only dependency; the feature build retains bounded golden bytes.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-034-AC-1 | Each identity axis is preserved or yields a typed pre-evaluation refusal when mismatched; no mixed-owner result is emitted. | Test (TC-159) |
-| FR-034-AC-2 | At-limit work completes, one-over each limit is resource-incomplete, and checked arithmetic never wraps or panics on caller input. | Test (TC-159) |
-| FR-034-AC-3 | Repeated runs with identical pins and inputs produce byte-identical results; bounded golden bytes agree between feature-off and feature-on builds. | Test (TC-138, TC-159) |
+| FR-034-AC-1 | Each identity axis is preserved or yields a typed pre-evaluation refusal when mismatched; no mixed-owner result is emitted. | unit-testing (TC-159) |
+| FR-034-AC-2 | At-limit work completes, one-over each limit is resource-incomplete, and checked arithmetic never wraps or panics on caller input. | unit-testing (TC-159) |
+| FR-034-AC-3 | Repeated runs with identical pins and inputs produce byte-identical results; bounded golden bytes agree between feature-off and feature-on builds. | integration-testing (TC-138, TC-159) |
 
 ## Dependencies
 

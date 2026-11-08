@@ -48,8 +48,8 @@ classification table and has a positive or negative test.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-041-AC-1 | The complete node × interval × context table has one mapped/refused class per combination and no wildcard acceptance. | Test (TC-172) |
-| FR-041-AC-2 | Each refusal keeps its typed cause, FR-341 projection where applicable, and emits no artifact; unknown additions fail closed. | Test (TC-173) |
+| FR-041-AC-1 | The complete node × interval × context table has one mapped/refused class per combination and no wildcard acceptance. | unit-testing (TC-172) |
+| FR-041-AC-2 | Each refusal keeps its typed cause, FR-341 projection where applicable, and emits no artifact; unknown additions fail closed. | unit-testing (TC-173) |
 
 ## Dependencies
 

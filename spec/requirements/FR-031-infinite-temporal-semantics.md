@@ -39,9 +39,9 @@ not a change to the TL wire spelling or profile identity.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-031-AC-1 | F/G/U/R closed and unbounded intervals match independent inductive oracles on lasso witnesses, including lower bound zero and nonzero. | Test (TC-145, TC-146) |
-| FR-031-AC-2 | O/H/S/T and Y match independent origin-based past oracles on mixed future/past graphs; no backward loop wrap or finite-closure substitution occurs. | Test (TC-147, TC-148) |
-| FR-031-AC-3 | Boolean duals, U/R and S/T duals, W/M lowering and TL-to-QSL interval correspondence preserve verdicts under their stated preconditions. | Test (TC-149) |
+| FR-031-AC-1 | F/G/U/R closed and unbounded intervals match independent inductive oracles on lasso witnesses, including lower bound zero and nonzero. | property-based-testing (TC-145, TC-146) |
+| FR-031-AC-2 | O/H/S/T and Y match independent origin-based past oracles on mixed future/past graphs; no backward loop wrap or finite-closure substitution occurs. | unit-testing (TC-147, TC-148) |
+| FR-031-AC-3 | Boolean duals, U/R and S/T duals, W/M lowering and TL-to-QSL interval correspondence preserve verdicts under their stated preconditions. | property-based-testing (TC-149) |
 
 ## Dependencies
 

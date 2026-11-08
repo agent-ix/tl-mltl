@@ -20,7 +20,7 @@ and refuse any broader interpretation.
 
 ## Inputs
 
-- Applicable FR-020 obligation and selection rationale:
+- Selection rationale for a criterion with an FR-020 property-law gap:
   `property_gap`, `fuzz_plateau`, `fuzz_counterexample`,
   `mutation_survivor`, or `reviewed_bounded_arithmetic`.
 - Exact candidate, harness path/symbol/digest, Kani/Rust/solver versions,
@@ -43,7 +43,7 @@ and refuse any broader interpretation.
 ## Behavior
 
 The finite candidate-source registry contains every row explicitly selected
-from an FR-020 property gap, FR-021 plateau/counterexample, raw FR-022
+from an FR-020 property-law gap, FR-021 plateau/counterexample, raw FR-022
 missed/timeout outcome, or reviewed bounded-arithmetic proposition. The registry
 binds the exact source-record digest and selection review; a matrix priority by
 itself cannot add a row. Every registry row appears exactly once as
@@ -117,7 +117,7 @@ harness must rerun at its exact landed candidate and retain a new result.
 
 ## Dependencies
 
-Depends on FR-020 grounding and a reviewed selection rationale. Mutation- or
+Depends on the FR-020 property laws and a reviewed selection rationale. Mutation- or
 fuzz-driven selections conditionally depend on the exact FR-021/FR-022 result;
 reviewed bounded-arithmetic selections do not. Kani is
 the selected initial bounded-proof tool, not a source-language, runtime, or

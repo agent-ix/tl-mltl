@@ -24,7 +24,7 @@ non-conclusive states, limitations, and human authority.
 
 ## Scope
 
-Applies to every MRS-003 ledger, run, campaign, proof, summary, and retained
+Applies to every MRS-003 run, campaign, proof, summary, and retained
 artifact. It constrains evidence
 claims and does not alter temporal semantics.
 
@@ -41,7 +41,7 @@ reviewable.
 | Metric | Target | Threshold | Method |
 |---|---|---|---|
 | Quire criteria classified exactly once | complete exported population | 100% | Test |
-| Applicable property rows with complete grounding and discriminating oracle | complete applicable population | 100% | Test |
+| Property-law tests with a recorded seed, case count and discriminating oracle | every FR-020 property law | 100% | Test |
 | Fuzz repetitions missing finite budgets, seeds, snapshots, stop reason, or retained corpus/crash identity | 0 | 0 | Test |
 | Selected mutants missing identity, execution state, or missed/timeout disposition | 0 | 0 | Test |
 | Bounded-proof claims missing assumptions, bounds, unwind/cover results, toolchain, or non-claims | 0 | 0 | Test |

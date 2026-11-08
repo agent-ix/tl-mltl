@@ -25,7 +25,7 @@ mutant outcome and reviewed survivor disposition.
 - Exact source revision, locked dependencies, compiler/toolchain, mutation tool
   and configuration, baseline command/result, and timeout/resource limits.
 - Exact Quire `implements` exports for the selected requirements plus the
-  exact owning TestMatrix priorities established by FR-020.
+  exact TestMatrix priorities of the test cases that trace to them.
 - Closed mutation operator, path, generated-population, exclusion, and
   deterministic selection rules.
 
@@ -113,8 +113,8 @@ ratio never hides the queue.
 
 ## Dependencies
 
-Depends on FR-009 path/retention rules and the FR-020 grounded property
-baseline. FR-021 is a conditional input
+Depends on FR-009 path/retention rules and the FR-020 property laws
+as the baseline suite under test. FR-021 is a conditional input
 only for a mutation selection justified by a fuzz result; a repository with no
 applicable Fuzz-kind boundary records that exclusion rather than fabricating
 fuzz evidence. Each source repository owns its mutation producer and
