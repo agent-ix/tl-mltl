@@ -190,7 +190,7 @@ rustdoc:
 # and cargo-fuzz.
 .PHONY: fuzz-check
 fuzz-check:
-	$(CARGO) +nightly fuzz build
+	rustup run nightly cargo fuzz build
 	cd fuzz && $(CARGO) deny check --config ../deny.toml
 	$(CI_GUARD) record fuzz-check
 
@@ -198,7 +198,7 @@ fuzz-check:
 # (no mutation, no campaign). Longer campaigns are manual: see fuzz/README.md.
 .PHONY: fuzz-smoke
 fuzz-smoke:
-	$(CARGO) +nightly fuzz list | xargs -I % $(CARGO) +nightly fuzz run % fuzz/corpus/% -- -runs=0
+	rustup run nightly cargo fuzz list | xargs -I % rustup run nightly cargo fuzz run % fuzz/corpus/% -- -runs=0
 
 # =============================================================================
 # Composite
