@@ -61,8 +61,9 @@ failed.
 
 ## Fuzz execution record
 
-Source: branch `tl-infinite-fuzz-mutation`, revision `d22aff6` (fuzz targets
-and seeds; later commits change only tests and a `#[cfg(test)]` unit test).
+Source: branch `tl-infinite-fuzz-mutation`, fuzz targets and seeds at revision
+`77914ba`. The campaign ran on the same sources as `d22aff6`, before a rebase
+onto `main`; later commits change only tests and a `#[cfg(test)]` unit test.
 Host: Darwin 25.4.0, arm64, 2026-11-08. Toolchain: rustc
 `1.100.0-nightly (1303417c4 2026-09-21)`, cargo-fuzz 0.13.1, libFuzzer via
 libfuzzer-sys 0.4.13, quire 0.38.3 (engine 0.52.1), quoin 0.29.4. Reference
