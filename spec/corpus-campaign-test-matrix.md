@@ -40,7 +40,7 @@ relationships:
 | TC-091 | Strictly round-trip the closed campaign, dimension, and coverage-cell schemas, exact tuple/set digest preimages, and refuse duplicate, omitted, unknown, reordered, or contradictory entries | Integration | P0 | FR-008-AC-1 | 🚧 planned |
 | TC-092 | Enumerate every reviewed cell-obligation tuple exactly once, require every dimension class, pin the ordered set digest, and mutation-test each census status | Property | P0 | FR-008-AC-1, FR-008-AC-2 | 🚧 planned |
 | TC-093 | Replay every applicable current-profile semantic cell against stored independent Rust-oracle or reviewed boundary-proof results | Property | P0 | FR-008-AC-2, FR-008-AC-3, FR-008-AC-5, FR-010-AC-4 | 🚧 planned |
-| TC-094 | Exercise empty/singleton/short/exact/long and early/late witness/counterexample closed-prefix progress transitions at every interval boundary class | Property | P0 | FR-008-AC-3 | 🚧 planned |
+| TC-094 | Exercise empty/singleton/short/exact/long and early/late witness/counterexample closed-prefix progress transitions at every interval boundary class | Property | P0 | FR-008-AC-3 | ✅ implemented |
 | TC-095 | Refuse malformed, profile-incompatible, missing-history, stale-context, and resource-over-limit cells at their declared stage and reason | Integration | P0 | FR-008-AC-3 | 🚧 planned |
 | TC-096 | Compare W/M internal source fixtures with exact canonical graphs and prove no second evaluator branch or semantic-cell population exists | Integration | P0 | FR-008-AC-4 | 🚧 planned |
 | TC-097 | Admit past/history cells only after their exact tl-syntax profile and routed evaluator revisions land, then bind anchor/history/capture/clock and superseding-result states | Integration | P0 | FR-008-AC-4 | 🚧 planned |

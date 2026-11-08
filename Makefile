@@ -49,6 +49,7 @@ help:
 	@echo "  make lint             - Clippy with -D warnings"
 	@echo "  make test             - cargo test"
 	@echo "  make kani-check       - Verify the bounded Kani horizon proof"
+	@echo "  make sweep-full       - Nightly full small-scope sweep against tl-oracle (release, long)"
 	@echo "  make conformance      - Replay the shared corpus through the evaluator"
 	@echo "  make differential     - Replay the retained R2U2 exchange"
 	@echo "  make cli-conformance  - Drive the built CLI over its declared requests"
@@ -96,6 +97,14 @@ test:
 # =============================================================================
 # MLTL domain
 # =============================================================================
+
+# The fast small-scope subset runs inside `make test`. The full sweep (wider
+# intervals, longer traces, depth two over every shape and a seeded depth-three
+# sample) is nightly work and is deliberately not a `ci` prerequisite. Evidence
+# JSON lands in $$TL_MLTL_EVIDENCE_DIR (default target/tmp/small-scope-evidence).
+.PHONY: sweep-full
+sweep-full:
+	$(CARGO) test --release --test finite_oracle -- --ignored --nocapture
 
 .PHONY: conformance
 conformance:
