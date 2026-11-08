@@ -26,6 +26,10 @@ changes. Per-row test locations:
 | TC-152, TC-153, TC-154 | `tests/infinite_matrix_rows.rs` (brute-force fairness filter, foreign/malformed identities) |
 | TC-156 | `tests/infinite_matrix_rows.rs` (every witness/counterexample replayed on the full loop) |
 | TC-158 | `tests/infinite_matrix_rows.rs` (public routes) and the `src/infinite/mod.rs` unit test for the provider-fault axis |
+| TC-141, TC-145, TC-146, TC-147, TC-148, TC-150, TC-151 (also) | `tests/infinite_reference_corpus.rs` (counted lasso corpus against `tl-oracle`'s scanning and successor-fixpoint procedures) |
+| TC-142, TC-143, TC-152, TC-153 (also) | `tests/infinite_reference_corpus.rs` (partial evidence with and without fairness), `tests/infinite_laws.rs` (partial monotonicity, missing versus conflicting, fairness weakening) |
+| TC-089, TC-157 (also) | `tests/infinite_reference_corpus.rs` and `tests/infinite_laws.rs` (finite evidence and exhausted budgets never settle a liveness claim as satisfied; prefix refutation holds on every extension) |
+| TC-146, TC-149, TC-151 (also) | `tests/infinite_laws.rs` (unbounded dualities, lasso rewriting invariance, bounded embedding) |
 
 ## Functional Requirement Coverage
 
