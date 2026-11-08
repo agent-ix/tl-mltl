@@ -154,7 +154,7 @@ fn a_silent_target_where_the_reference_is_conclusive_is_missing() {
                         && verdict(lines[i]) != verdict(lines[i - 1])
                         && lines
                             .get(i + 1)
-                            .map_or(true, |n| formula(n) != formula(lines[i]))
+                            .is_none_or(|n| formula(n) != formula(lines[i]))
                 })
                 .map(|i| (k.clone(), i))
         })
