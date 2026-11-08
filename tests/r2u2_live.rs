@@ -136,14 +136,58 @@ fn simulated_stdout(flip: Option<(&str, usize)>) -> BTreeMap<String, String> {
     out
 }
 
-fn replay_with(stdout: &BTreeMap<String, String>) -> tl_mltl::r2u2_live::Report {
+/// A recorded live run directory: outputs plus the `report.json` a live run
+/// would have written (digests of the generated inputs and the given stdout).
+fn recorded_dir(stdout: &BTreeMap<String, String>, mode: &str) -> tempfile::TempDir {
     let out = tempfile::tempdir().unwrap();
+    let mut rec = run(Path::new(REPO), &Source::None("x".into()), out.path()).unwrap();
+    rec.mode = mode.to_owned();
+    for g in &mut rec.groups {
+        g.stdout_sha256 = stdout
+            .get(&g.group)
+            .map(|t| tl_mltl::campaign::sha256_hex(t.as_bytes()));
+    }
+    fs::write(
+        out.path().join("report.json"),
+        serde_json::to_vec(&rec).unwrap(),
+    )
+    .unwrap();
     for (g, text) in stdout {
         let d = out.path().join("outputs").join(g);
         fs::create_dir_all(&d).unwrap();
         fs::write(d.join("r2u2.stdout"), text).unwrap();
     }
+    out
+}
+
+fn replay_with(stdout: &BTreeMap<String, String>) -> tl_mltl::r2u2_live::Report {
+    let out = recorded_dir(stdout, "ran");
     run(Path::new(REPO), &Source::Recorded, out.path()).unwrap()
+}
+
+#[test]
+fn replay_refuses_unrecorded_unlive_or_altered_outputs() {
+    let stdout = simulated_stdout(None);
+    let none = tempfile::tempdir().unwrap();
+    assert!(run(Path::new(REPO), &Source::Recorded, none.path()).is_err());
+    let notlive = recorded_dir(&stdout, "tool_unavailable");
+    let e = run(Path::new(REPO), &Source::Recorded, notlive.path()).unwrap_err();
+    assert!(e.contains("not a live run"), "{e}");
+    let altered = recorded_dir(&stdout, "ran");
+    let g = stdout.keys().next().unwrap();
+    fs::write(
+        altered.path().join("outputs").join(g).join("r2u2.stdout"),
+        "0:0,T\n",
+    )
+    .unwrap();
+    let e = run(Path::new(REPO), &Source::Recorded, altered.path()).unwrap_err();
+    assert!(e.contains("does not match"), "{e}");
+}
+
+#[test]
+fn a_run_that_compares_nothing_never_passes() {
+    let r = replay_with(&BTreeMap::new());
+    assert_ne!(r.outcome, "pass");
 }
 
 #[test]

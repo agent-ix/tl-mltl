@@ -19,12 +19,12 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use tl_syntax::{
     Formula, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration, PropositionBinding,
     PropositionId, SemanticProfile, SignalCatalogDocument, SignalDomain, SignalId,
 };
 
+use crate::campaign::sha256_hex;
 use crate::{
     evaluate_past, map_past_to_c2po, ClockBinding, MappingSourceIdentity, MappingSourceState,
     PastEvaluationLimits, PastEvaluationRelationInput, PositionHistoryDocument,
@@ -356,17 +356,6 @@ pub fn export(case: &GridCase) -> Result<String, String> {
     })
 }
 
-/// Lower-case hex SHA-256.
-pub fn sha256_hex(bytes: &[u8]) -> String {
-    use std::fmt::Write;
-    Sha256::digest(bytes)
-        .iter()
-        .fold(String::new(), |mut s, b| {
-            let _ = write!(s, "{b:02x}");
-            s
-        })
-}
-
 /// A group's R2U2 inputs.
 pub struct GroupInputs {
     /// `spec.c2po` text.
@@ -562,7 +551,8 @@ pub struct Report {
     pub refusals: BTreeMap<String, usize>,
     /// Every case.
     pub cases: Vec<CaseRow>,
-    /// `pass` only when R2U2 ran/replayed and no case is unexplained or missing.
+    /// `pass` only when R2U2 ran/replayed, at least one case was compared, and no
+    /// case is unexplained, missing or not run.
     pub outcome: String,
     /// What this report does not claim.
     pub non_claims: Vec<String>,
@@ -661,6 +651,11 @@ pub fn check_tool(root: &Path, pin: &Pin) -> Result<BTreeMap<String, String>, St
     ]))
 }
 
+/// Probe the checkout for the campaign: `Ok` with the observed identities.
+pub fn probe(repo: &Path, root: &Path) -> Result<BTreeMap<String, String>, String> {
+    check_tool(root, &read_pin(repo)?)
+}
+
 /// Where target stdout comes from.
 pub enum Source<'a> {
     /// Run R2U2 from this checkout.
@@ -688,12 +683,19 @@ pub fn run(repo: &Path, source: &Source<'_>, out: &Path) -> Result<Report, Strin
         Source::None(why) => (mode, detail) = ("tool_unavailable", Some(why.clone())),
         Source::Recorded => {}
     }
+    let recorded = match source {
+        Source::Recorded => Some(read_recorded(out)?),
+        _ => None,
+    };
     let mut rows: BTreeMap<String, CaseRow> = BTreeMap::new();
     let mut records = Vec::new();
     for group in groups() {
         let admitted = group_admitted(&plan, group);
         let inputs = group_inputs(group, &admitted);
         let name = group.name();
+        if let Some(rec) = &recorded {
+            verify_recorded_group(rec, &name, &inputs, &out.join("outputs").join(&name))?;
+        }
         let in_dir = out.join("inputs").join(&name);
         let out_dir = out.join("outputs").join(&name);
         fs::create_dir_all(&in_dir).map_err(|e| e.to_string())?;
@@ -752,6 +754,55 @@ pub fn run(repo: &Path, source: &Source<'_>, out: &Path) -> Result<Report, Strin
     Ok(finish(pin, mode, detail, observed, records, cases))
 }
 
+/// The report a live run wrote under `out`; a replay is bound to it.
+fn read_recorded(out: &Path) -> Result<Report, String> {
+    let bytes = fs::read(out.join("report.json")).map_err(|e| {
+        format!(
+            "replay needs the recorded live report.json under {}: {e}",
+            out.display()
+        )
+    })?;
+    let rec: Report = serde_json::from_slice(&bytes).map_err(|e| format!("report.json: {e}"))?;
+    if rec.mode != "ran" {
+        return Err(format!(
+            "recorded report is mode {:?}, not a live run; nothing to replay",
+            rec.mode
+        ));
+    }
+    Ok(rec)
+}
+
+/// Refuse a replay whose regenerated inputs or recorded R2U2 output differ
+/// from what the live run recorded.
+fn verify_recorded_group(
+    rec: &Report,
+    name: &str,
+    inputs: &GroupInputs,
+    out_dir: &Path,
+) -> Result<(), String> {
+    let g = rec
+        .groups
+        .iter()
+        .find(|g| g.group == name)
+        .ok_or_else(|| format!("recorded report has no group {name}"))?;
+    if g.spec_sha256 != sha256_hex(inputs.spec.as_bytes())
+        || g.trace_sha256 != sha256_hex(inputs.trace.as_bytes())
+    {
+        return Err(format!(
+            "group {name}: the grid no longer generates the inputs the live run used"
+        ));
+    }
+    let now = fs::read(out_dir.join("r2u2.stdout"))
+        .ok()
+        .map(|b| sha256_hex(&b));
+    if now != g.stdout_sha256 {
+        return Err(format!(
+            "group {name}: recorded r2u2.stdout does not match the live run's digest"
+        ));
+    }
+    Ok(())
+}
+
 fn run_group(root: &Path, in_dir: &Path, out_dir: &Path) -> Result<String, String> {
     let abs = |p: &Path| fs::canonicalize(p).map_err(|e| e.to_string());
     let (spec, trace, bin) = (
@@ -805,9 +856,15 @@ fn finish(
             CaseStatus::Unexplained | CaseStatus::MissingTarget | CaseStatus::NotRun
         )
     });
+    let compared = cases.iter().any(|c| {
+        matches!(
+            c.status,
+            CaseStatus::Agree | CaseStatus::OriginProfileDifference
+        )
+    });
     let outcome = if mode == "tool_unavailable" {
         "not_run"
-    } else if bad {
+    } else if bad || !compared {
         "fail"
     } else {
         "pass"

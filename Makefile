@@ -122,9 +122,6 @@ differential:
 		--manifest corpus/r2u2-v4.2/manifest.json
 	$(CI_GUARD) record differential
 
-# The example drives the CLI binary, so the binary has to exist. It is built
-# here rather than located by the example, because an example that can build its
-# own subject can report a green run against a stale one.
 # Live past-time R2U2 differential (TL-217). Needs a built R2U2 checkout at
 # $(R2U2_ROOT) on the revision pinned in campaign/tool-versions.json. Without
 # one it writes the generated inputs and a not_run report and exits 2; it never
@@ -138,6 +135,9 @@ r2u2-past-differential:
 r2u2-past-replay:
 	$(CARGO) run --quiet --bin r2u2_live -- replay --out target/r2u2
 
+# The example drives the CLI binary, so the binary has to exist. It is built
+# here rather than located by the example, because an example that can build its
+# own subject can report a green run against a stale one.
 .PHONY: cli-conformance
 cli-conformance:
 	$(CARGO) build --quiet --bin tl-mltl
