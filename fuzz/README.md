@@ -14,7 +14,7 @@ Run with `cargo fuzz run c2po_map` from this directory. The checked-in
 
 | Target | Input | Check |
 | --- | --- | --- |
-| `evaluator_differential` | `arbitrary`-built closed-future or origin-past formula DAG (intervals up to width 8, up to 32 nodes) and a trace of up to 12 positions | production `evaluate_closed_at` / `evaluate_past` equals tl-oracle at every position the oracle decides |
+| `evaluator_differential` | `arbitrary`-built closed-future or origin-past formula DAG (interval endpoints up to 8, up to 32 nodes) and a trace of up to 12 positions | production `evaluate_closed_at` / `evaluate_past` equals tl-oracle at every position the oracle decides |
 | `wire_cli_decode` | arbitrary bytes (at most 16 KiB) | the CLI request path (parse, validate formula, analyze/evaluate) never panics; `ValidatedCommand` and `ValidatedTrace` readers return a typed error or a value whose canonical bytes are the input and which re-reads to itself, under owner maxima and tight limits |
 | `history_intake` | arbitrary bytes read as `position-history/v1`, plus a structured builder of out-of-order, duplicated, sparse, huge-position observations | construction and `corrected` revisions return a typed error or a value that `derive`/`read` round-trips under owner and tight limits, and that `evaluate_past` accepts or refuses at any anchor |
 

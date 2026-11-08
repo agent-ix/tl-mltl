@@ -9,13 +9,7 @@
    "cargo_fuzz": "cargo-fuzz 0.13.1",
    "host": "aarch64-apple-darwin",
    "sanitizer": "address (cargo-fuzz default)",
-   "libfuzzer_flags": "-max_total_time=60 -max_len=1024 -rss_limit_mb=8192",
-   "final_corpus_entries_after": {
-    "evaluator_differential": 2108,
-    "wire_cli_decode": 7274,
-    "history_intake": 5648,
-    "c2po_map": 7060
-   }
+   "libfuzzer_flags": "-max_total_time=60 -max_len=1024 -rss_limit_mb=8192"
   }
  ],
  "runs": [
