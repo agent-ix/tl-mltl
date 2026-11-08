@@ -9,8 +9,8 @@ use std::path::Path;
 use std::process::Command;
 
 use tl_mltl::r2u2_live::{
-    check_tool, classify, generate_grid, group_inputs, parse_r2u2_stdout, plan, read_pin, run,
-    CaseStatus, Group, Pin, Source,
+    check_tool, classify, expand_aggregated, generate_grid, group_inputs, parse_r2u2_stdout, plan,
+    read_pin, run, CaseStatus, Group, Pin, Source,
 };
 
 const REPO: &str = env!("CARGO_MANIFEST_DIR");
@@ -263,4 +263,53 @@ fn group_inputs_list_one_expression_per_admitted_case() {
     assert!(inputs.spec.starts_with("INPUT\n  p,q: bool;\nPTSPEC\n"));
     assert_eq!(inputs.spec.lines().count(), 3 + admitted.len());
     assert_eq!(inputs.trace.lines().count(), 9);
+}
+
+#[test]
+fn aggregated_r2u2_verdicts_expand_to_every_covered_position() {
+    let raw = parse_r2u2_stdout("0:0,T\n0:3,F\n1:2,F\n");
+    let v = expand_aggregated(&raw);
+    assert_eq!(
+        v.iter().map(|(k, b)| (*k, *b)).collect::<Vec<_>>(),
+        vec![
+            ((0, 0), true),
+            ((0, 1), false),
+            ((0, 2), false),
+            ((0, 3), false),
+            ((1, 0), false),
+            ((1, 1), false),
+            ((1, 2), false),
+        ]
+    );
+}
+
+fn copy_dir(from: &Path, to: &Path) {
+    fs::create_dir_all(to).unwrap();
+    for e in fs::read_dir(from).unwrap() {
+        let e = e.unwrap();
+        let dest = to.join(e.file_name());
+        if e.file_type().unwrap().is_dir() {
+            copy_dir(&e.path(), &dest);
+        } else {
+            fs::copy(e.path(), dest).unwrap();
+        }
+    }
+}
+
+#[test]
+fn committed_live_r2u2_evidence_replays_to_the_recorded_summary() {
+    let root = Path::new(REPO).join("corpus/r2u2-live-v1");
+    let past = tempfile::tempdir().unwrap();
+    copy_dir(&root.join("past"), past.path());
+    let r = run(Path::new(REPO), &Source::Recorded, past.path()).unwrap();
+    assert_eq!(r.outcome, "pass");
+    assert_eq!(r.summary.get("agree"), Some(&42));
+    assert_eq!(r.summary.get("unsupported"), Some(&1791));
+    let future = tempfile::tempdir().unwrap();
+    copy_dir(&root.join("future"), future.path());
+    let r = tl_mltl::r2u2_future::run_future(Path::new(REPO), &Source::Recorded, future.path())
+        .unwrap();
+    assert_eq!(r.outcome, "pass");
+    assert_eq!(r.summary.get("agree"), Some(&1536));
+    assert_eq!(r.summary.len(), 1);
 }
