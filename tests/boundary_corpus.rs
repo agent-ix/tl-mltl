@@ -1,4 +1,5 @@
-//! TL-225: the hand-authored boundary corpus (`corpus/boundary-v1`).
+//! TL-225: the hand-authored boundary corpus (`boundary-v1`, owned by tl-syntax
+//! and read through `tl_syntax::CORPUS_DIR`).
 //!
 //! Every operator x interval-shape cell carries at least one positive, one
 //! negative and one boundary case, plus the named edge conditions (point
@@ -46,7 +47,7 @@ struct Case {
 }
 
 fn load() -> Vec<Case> {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("corpus/boundary-v1/cases.json");
+    let path = PathBuf::from(tl_syntax::CORPUS_DIR).join("boundary-v1/cases.json");
     let doc: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
     assert_eq!(doc["schema"], "tl-mltl.boundary-corpus/v1");
     doc["cases"]
