@@ -253,9 +253,8 @@ impl CompleteWord {
             Op::Since => {
                 (start..=past_end).any(|d| past(1, d) && (start..d).all(|earlier| past(0, earlier)))
             }
-            Op::Triggered => {
-                !(start..=past_end).any(|d| !past(1, d) && (start..d).all(|earlier| !past(0, earlier)))
-            }
+            Op::Triggered => !(start..=past_end)
+                .any(|d| !past(1, d) && (start..d).all(|earlier| !past(0, earlier))),
         }
     }
 }
