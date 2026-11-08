@@ -211,7 +211,7 @@ impl Word {
     fn span(&self) -> usize {
         self.values.len() * 2 + 2
     }
-    /// `l U[a,) r` at `i`: some `j >= i+a` has `r`, with `l` on `[i, j)`.
+    /// `l U[a,) r` at `i`: some `j >= i+a` has `r`, with `l` on `[i+a, j)`.
     fn until(
         &self,
         i: usize,
@@ -219,7 +219,7 @@ impl Word {
         l: &dyn Fn(usize) -> bool,
         r: &dyn Fn(usize) -> bool,
     ) -> bool {
-        (i + a..=i + a + self.span()).any(|j| r(j) && (i..j).all(l))
+        (i + a..=i + a + self.span()).any(|j| r(j) && (i + a..j).all(l))
     }
     /// `l R[a,) r` is the Boolean dual of `until`.
     fn release(
@@ -332,7 +332,7 @@ fn until_release_match_direct_word_oracle_induction_and_duality_with_nonzero_low
                 // Duality: R == !U(!p, !q), evaluated by the provider itself.
                 let got_d = eval(&d_doc, &word_doc, i as u64, None, EvidenceClosure::Closed);
                 assert_eq!(got_r.disposition, got_d.disposition, "dual {ctx}");
-                // Induction on the lower bound: U[a,) at i == p_i && U[a-1,) at i+1.
+                // Induction on the lower bound: U[a,) at i == U[a-1,) at i+1.
                 if let Some(doc) = &l_doc {
                     let next = eval(
                         doc,
@@ -343,7 +343,7 @@ fn until_release_match_direct_word_oracle_induction_and_duality_with_nonzero_low
                     );
                     expect(
                         &got_u,
-                        w.at(i, 0) && next.disposition == Disposition::Proved,
+                        next.disposition == Disposition::Proved,
                         &format!("induction {ctx}"),
                     );
                 } else {

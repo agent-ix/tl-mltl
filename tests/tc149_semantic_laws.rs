@@ -231,7 +231,8 @@ impl CompleteWord {
     }
 
     fn denotation(&self, op: Op, start: usize, upper: Option<usize>, anchor: usize) -> bool {
-        // QSL [a,*] is the set of natural offsets d >= a. A complete lasso
+        // QSL [a,*] is the set of natural offsets d >= a, and the left operand
+        // of until and since covers `[a,d)` as in QSL FR-043-AC-4. A complete lasso
         // needs one full cycle after both the lower bound and finite prefix.
         let future_end = upper.map_or_else(
             || self.prefix.len().max(anchor + start) + self.cycle.len() - anchor,
@@ -244,17 +245,16 @@ impl CompleteWord {
             Op::Future => (start..future_end).any(|d| future(0, d)),
             Op::Globally => (start..future_end).all(|d| future(0, d)),
             Op::Until => (start..future_end)
-                .any(|d| future(1, d) && (0..d).all(|earlier| future(0, earlier))),
+                .any(|d| future(1, d) && (start..d).all(|earlier| future(0, earlier))),
             Op::Release => !(start..future_end)
-                .any(|d| !future(1, d) && (0..d).all(|earlier| !future(0, earlier))),
+                .any(|d| !future(1, d) && (start..d).all(|earlier| !future(0, earlier))),
             Op::Once => (start..=past_end).any(|d| past(0, d)),
             Op::Historically => (start..=past_end).all(|d| past(0, d)),
             Op::Since => {
-                (start..=past_end).any(|d| past(1, d) && (0..d).all(|earlier| past(0, earlier)))
+                (start..=past_end).any(|d| past(1, d) && (start..d).all(|earlier| past(0, earlier)))
             }
-            Op::Triggered => {
-                !(start..=past_end).any(|d| !past(1, d) && (0..d).all(|earlier| !past(0, earlier)))
-            }
+            Op::Triggered => !(start..=past_end)
+                .any(|d| !past(1, d) && (start..d).all(|earlier| !past(0, earlier))),
         }
     }
 }

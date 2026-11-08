@@ -181,9 +181,11 @@ fn future_until(
         }
     }
     .ok_or(InfiniteError::ResourceIncomplete)?;
-    for witness in position..=end {
+    // The left operand covers the offsets `[a, i)` before the witness `i`, so
+    // nothing below the lower bound is read (FR-031).
+    for witness in min_witness..=end {
         budget.step()?;
-        if witness >= min_witness && right.at(witness) {
+        if right.at(witness) {
             return Ok(true);
         }
         if !left.at(witness) {
@@ -225,9 +227,11 @@ fn past_since(
     let min_witness =
         usize::try_from(interval.start()).map_err(|_| InfiniteError::ResourceIncomplete)?;
     let end = upper(interval, position)?.min(position);
-    for offset in 0..=end {
+    // The left operand covers the offsets `[a, i)` between the witness and the
+    // selected position, so nothing below the lower bound is read (FR-031).
+    for offset in min_witness..=end {
         budget.step()?;
-        if offset >= min_witness && position.checked_sub(offset).is_some_and(|at| right.at(at)) {
+        if position.checked_sub(offset).is_some_and(|at| right.at(at)) {
             return Ok(true);
         }
         if !position.checked_sub(offset).is_some_and(|at| left.at(at)) {
