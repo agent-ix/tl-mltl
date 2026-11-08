@@ -37,7 +37,9 @@ the formula reads, for every lower bound. Past operators
 look toward origin zero, so unbounded past intervals remain finite at each
 selected position and never wrap a lasso backward before origin. `O/H/S/T`
 follow the corresponding FR-161 inductive/dual clauses with the same origin
-boundary. Derived W/M lower exactly as tl-syntax FR-008 specifies. Interval
+boundary. `p S[a,b] q` holds at `t` when `q` holds at some `t-d` with
+`a <= d <= b` and `p` holds at every `t-j` with `a <= j < d`, so the left
+operand is not read below the lower bound, as for `U`; `T` is its dual. Derived W/M lower exactly as tl-syntax FR-008 specifies. Interval
 translation from TL `[a,)` to QSL `[a,*]` is a correspondence of denotations,
 not a change to the TL wire spelling or profile identity.
 
@@ -46,7 +48,7 @@ not a change to the TL wire spelling or profile identity.
 | ID | Criteria | Verification |
 |---|---|---|
 | FR-031-AC-1 | F/G/U/R closed and unbounded intervals match independent inductive oracles on lasso witnesses, including lower bound zero and nonzero; for a nonzero lower bound the `U` and `R` guard excludes the offsets below it. | property-based-testing (TC-145, TC-146) |
-| FR-031-AC-2 | O/H/S/T and Y match independent origin-based past oracles on mixed future/past graphs; no backward loop wrap or finite-closure substitution occurs. | unit-testing (TC-147, TC-148) |
+| FR-031-AC-2 | O/H/S/T and Y match independent origin-based past oracles on mixed future/past graphs, with the `S`/`T` guard excluding the offsets below a nonzero lower bound; no backward loop wrap or finite-closure substitution occurs. | unit-testing (TC-147, TC-148) |
 | FR-031-AC-3 | Boolean duals, U/R and S/T duals, W/M lowering and TL-to-QSL interval correspondence preserve verdicts under their stated preconditions, and a bounded future formula gets the same verdict from the infinite provider as from the closed-trace evaluator at every lower bound. | property-based-testing (TC-149) |
 
 ## Dependencies
