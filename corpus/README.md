@@ -22,3 +22,17 @@ production, replays the online-prefix cases against production (the oracle does
 not model that profile), and checks that every cell keeps its three cases. A case
 tagged `work-limit` or `oracle-abstains` is checked by production only, because
 the oracle's resource and empty-trace behaviour differs by design.
+
+## Live R2U2 evidence (`r2u2-live-v1`)
+
+`make r2u2-nightly` output against the pinned R2U2 (`campaign/tool-versions.json`,
+revision `336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a`, C monitor built with
+`make -C monitors/c`, C2PO run by Python 3.14.7). `past/` is the TL-217 past-time
+grid, `future/` the TL-237 exhaustive future suite. Each holds the generated
+`spec.c2po` and `trace.csv`, R2U2's raw `r2u2.stdout`, and `report.json` with the
+tool identities and input/output digests; `replay-report.json` is the source-bound
+recomputation. `tests/r2u2_live.rs` replays both without running R2U2.
+Past: 42 agree, 1791 refused at export (`TargetOriginShapeUnverified` 1683,
+`TargetOriginIntervalMismatch` 108), 0 mismatches. Future: 1536 of 1536 case rows agree.
+R2U2 prints one tuple per range of equal truth (aggregation), so the future
+comparison expands each tuple over the positions it covers.

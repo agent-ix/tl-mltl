@@ -139,7 +139,13 @@ fn one_flipped_verdict_is_an_unexplained_disagreement() {
 fn a_silent_target_where_the_reference_is_conclusive_is_missing() {
     let mut s = simulated(None);
     let k = s.keys().find(|k| !s[*k].is_empty()).unwrap().clone();
-    let rest: String = s[&k].lines().skip(1).map(|l| format!("{l}\n")).collect();
+    // Drop the final tuple: a later tuple would cover an earlier position
+    // (R2U2 aggregates ranges), so only the last one leaves a position silent.
+    let lines: Vec<&str> = s[&k].lines().collect();
+    let rest: String = lines[..lines.len() - 1]
+        .iter()
+        .map(|l| format!("{l}\n"))
+        .collect();
     s.insert(k, rest);
     let r = replay(&s);
     assert_eq!(r.outcome, "fail");

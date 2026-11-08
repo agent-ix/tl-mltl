@@ -399,6 +399,28 @@ pub fn parse_r2u2_stdout(text: &str) -> BTreeMap<(usize, u64), bool> {
         .collect()
 }
 
+/// Expand R2U2's aggregated verdict stream into one verdict per position.
+///
+/// R2U2 prints a verdict tuple `(truth, t)` only for the last position of a
+/// range it resolved at once (`monitors/c/docs/user/output.md`): the tuple
+/// covers every position after the formula's previous tuple up to `t`. A
+/// position after a formula's last tuple stays absent (still pending).
+pub fn expand_aggregated(raw: &BTreeMap<(usize, u64), bool>) -> BTreeMap<(usize, u64), bool> {
+    let mut out = BTreeMap::new();
+    let mut prev: Option<(usize, u64)> = None;
+    for (&(f, t), &v) in raw {
+        let from = match prev {
+            Some((pf, pt)) if pf == f => pt + 1,
+            _ => 0,
+        };
+        for at in from..=t {
+            out.insert((f, at), v);
+        }
+        prev = Some((f, t));
+    }
+    out
+}
+
 /// Per-case comparison result.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]

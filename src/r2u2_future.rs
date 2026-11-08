@@ -20,7 +20,7 @@ use tl_syntax::{Formula, Interval, Node, NodeId, NodeKind, PropositionId, Semant
 
 use crate::campaign::sha256_hex;
 use crate::r2u2_live::{
-    check_tool, finish, parse_r2u2_stdout, read_pin, read_recorded, run_group,
+    check_tool, expand_aggregated, finish, parse_r2u2_stdout, read_pin, read_recorded, run_group,
     verify_recorded_group, CaseRow, CaseStatus, GroupRecord, Report, Source,
 };
 use crate::{
@@ -275,7 +275,9 @@ pub fn run_future(repo: &Path, source: &Source<'_>, out: &Path) -> Result<Report
             Source::Live(root) => Some(run_group(root, &in_dir, &out_dir)?),
             _ => fs::read_to_string(out_dir.join("r2u2.stdout")).ok(),
         };
-        let target = stdout.as_deref().map(parse_r2u2_stdout);
+        let target = stdout
+            .as_deref()
+            .map(|s| expand_aggregated(&parse_r2u2_stdout(s)));
         records.push(GroupRecord {
             group: name.clone(),
             cases: corpus.len(),
