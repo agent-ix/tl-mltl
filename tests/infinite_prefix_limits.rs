@@ -89,6 +89,22 @@ fn every_prefix_work_limit_is_inclusive_and_independent() {
     };
     assert!(failed(route(&built, &prefix, below_cells)));
 
+    // The position pre-check runs before the safety-fragment check: an
+    // unsupported formula is reported unsupported at the bound and exhausted
+    // one position past it.
+    let liveness = build(&T::F(Iv::Open(0), bx(T::P(0))), &[]);
+    let at_bound = EvaluationLimit {
+        max_positions: observations,
+        ..base
+    };
+    let unsupported = route(&liveness, &prefix, at_bound).unwrap();
+    assert_eq!(unsupported.disposition, Disposition::Unsupported);
+    let one_past = EvaluationLimit {
+        max_positions: observations - 1,
+        ..base
+    };
+    assert!(failed(route(&liveness, &prefix, one_past)));
+
     // An already-expired deadline refuses on its own.
     let expired = EvaluationLimit {
         deadline: Some(std::time::Instant::now()),
