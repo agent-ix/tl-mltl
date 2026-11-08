@@ -16,7 +16,7 @@ relationships:
 ## Scope
 
 Retain the exact clean revision's local results, tool and dependency identities,
-PGM-01 checks, and explicit limitations in a checksummed evidence record.
+validation checks, and explicit limitations in a checksummed evidence record.
 
 ## Completion Evidence
 

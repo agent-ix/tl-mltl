@@ -14,7 +14,7 @@ relationships:
 ## Dependency DAG
 
 ```text
-PGM-01 + exact tl-syntax revision
+exact tl-syntax revision
   -> specification and assurance foundation
   -> closed and caller-time evaluation semantics
   -> checked horizon and prefix semantics
@@ -33,7 +33,7 @@ PGM-01 + exact tl-syntax revision
 | Task-003 | Horizon and prefix behavior | Checked resource and pending-decision tests |
 | Task-004 | Mapping and differential interoperability | Exact tool identities and retained formula/time comparisons |
 | Task-005 | Verification and review remediation | Complete local gate and resolved actionable review findings |
-| Task-006 | Exact-candidate evidence | Sealed PGM-01 validations and checksummed retained record |
+| Task-006 | Exact-candidate evidence | Sealed validations and checksummed retained record |
 | Task-007 | Human source-release decision | Maintainer review and explicit release decision |
 
 ## Exit Criteria
