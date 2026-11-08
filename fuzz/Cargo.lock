@@ -180,7 +180,7 @@ checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -225,29 +225,82 @@ dependencies = [
 ]
 
 [[package]]
+name = "syn"
+version = "3.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
+name = "thiserror"
+version = "2.0.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09e52cb86a36cede5cb101bf8908837b3e4c6e5e59fe7fd85c23fb56200d189e"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "2.0.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
+]
+
+[[package]]
 name = "tl-mltl"
 version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "tl-syntax",
+ "tl-syntax 0.3.0",
 ]
 
 [[package]]
 name = "tl-mltl-fuzz"
 version = "0.0.0"
 dependencies = [
+ "arbitrary",
  "libfuzzer-sys",
+ "serde_json",
  "sha2",
  "tl-mltl",
- "tl-syntax",
+ "tl-oracle",
+ "tl-syntax 0.3.0",
+]
+
+[[package]]
+name = "tl-oracle"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/tl-oracle.git?rev=9bf3994d4c67ee0a9a53dc31316404b9edf14df9#9bf3994d4c67ee0a9a53dc31316404b9edf14df9"
+dependencies = [
+ "thiserror",
+ "tl-syntax 0.4.0",
 ]
 
 [[package]]
 name = "tl-syntax"
 version = "0.3.0"
 source = "git+https://github.com/agent-ix/tl-syntax.git?branch=main#d97d3d732a8f161337bb57d3559d82bae9d38a5d"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
+name = "tl-syntax"
+version = "0.4.0"
+source = "git+https://github.com/agent-ix/tl-syntax.git?rev=6e2fc17fcfba60c33ab264772bb25550a9c81853#6e2fc17fcfba60c33ab264772bb25550a9c81853"
 dependencies = [
  "serde",
  "serde_json",

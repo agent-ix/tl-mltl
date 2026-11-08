@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "tl-mltl.command/v1",
+  "operation": "analyze",
+  "formulaId": "cli-unknown-request-field-v1",
+  "verdictOverride": true,
+  "formula": {
+    "schema_version": "tl-syntax.formula/v1",
+    "semantic_profile": "mltl.online-prefix/v1",
+    "root": 0,
+    "nodes": [{"kind": "true"}]
+  },
+  "trace": null
+}

@@ -4,6 +4,8 @@ allow = [
     "MIT",
     "Apache-2.0",
     "Unicode-3.0",
+    # libfuzzer-sys (fuzz/ harness only) is "(MIT OR Apache-2.0) AND NCSA".
+    "NCSA",
 ]
 confidence-threshold = 0.9
 

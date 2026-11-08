@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "tl-mltl.command/v1",
+  "operation": "analyze",
+  "formulaId": "cli-analyze-v1",
+  "formula": {
+    "schema_version": "tl-syntax.formula/v1",
+    "semantic_profile": "mltl.online-prefix/v1",
+    "root": 1,
+    "nodes": [
+      {"kind": "proposition", "proposition": 0},
+      {"kind": "future", "interval": {"start": 1, "end": 3}, "operand": 0}
+    ]
+  },
+  "trace": null
+}
