@@ -34,7 +34,7 @@ all-false completion made the route refute a satisfiable safety claim).
 | FND-2234 | low | Survivor dispositions: `mod.rs:1035:13` and `mod.rs:1036:13` (`||` to `&&`) sit in an observation-shape check that duplicates `validate_shape()`, which runs first and returns the same `IdentityMismatch`; the guard is unreachable. `mod.rs:1134:65` (`!=` to `==`) complements every completion bit, so the same 2^n completions are enumerated in a different order; only `evaluation_steps` can differ. | FR-033-AC-2, FR-034-AC-1 |
 | FND-2235 | medium | Spec question, no code change made. FR-001 puts the left operand of `U[a,b]` on `[a,i)`; FR-031 puts it on every offset from zero. For a lower bound above zero the finite closed evaluator and the infinite provider disagree on the same word. The bounded-embedding law is restricted to lower bound zero for `U` and `R`, and `until_guard_range_differs_between_the_finite_and_infinite_profiles` pins the divergence. | FR-001-AC-1, FR-031-AC-1, FR-031-AC-3 |
 | FND-2236 | low | No shared cargo-mutants configuration existed on `main` when the pilot ran (TL-231 had no open PR), so the pilot uses explicit command-line scoping, recorded below, and adds no configuration file. It runs the release profile with thin LTO off, so integer overflow wraps rather than panics; mutants that only differ by overflow are not distinguished. It measures the whole infinite-trace test selection; the share of kills owed only to the TL-222/TL-223 tests was not measured. | FR-022 |
-| FND-2237 | low | `tl-oracle` `main` does not contain the commit tl-mltl pins (`9bf3994`, on a draft-PR branch with syntax 0.4.0 and `v11.rs`). The new `tl_oracle::fixpoint` module therefore exists on `main` (agent-ix/tl-oracle#10) and on a branch off the pinned commit, which tl-mltl consumes. | NFR-005 |
+| FND-2237 | low | tl-mltl previously pinned `tl-oracle` at `9bf3994`, a commit reachable only from an unmerged branch (syntax 0.4.0 with serde, plus an unused `v11.rs` census). `tl-oracle` `main` now carries the syntax 0.4.0 dependency (agent-ix/tl-oracle#11) and `tl_oracle::fixpoint` (agent-ix/tl-oracle#10, no `v11`), and tl-mltl pins `main` commit `3e6743a`. | NFR-005 |
 
 ## Law and fuzz sensitivity
 
@@ -67,7 +67,7 @@ onto `main`; later commits change only tests and a `#[cfg(test)]` unit test.
 Host: Darwin 25.4.0, arm64, 2026-11-08. Toolchain: rustc
 `1.100.0-nightly (1303417c4 2026-09-21)`, cargo-fuzz 0.13.1, libFuzzer via
 libfuzzer-sys 0.4.13, quire 0.38.3 (engine 0.52.1), quoin 0.29.4. Reference
-procedures: `tl-oracle` rev `ac80fea`.
+procedures: `tl-oracle` rev `3e6743a` (`main`; the runs predate the repin and used the same `fixpoint` source on an unmerged branch).
 
 Each target ran `cargo +nightly fuzz run -s none <target> <scratch-corpus>
 corpus/<target> -- -seed=20261108 -max_total_time=180 -fork=8`. The 12
