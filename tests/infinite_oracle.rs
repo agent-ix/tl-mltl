@@ -335,7 +335,7 @@ fn trace(prefix: &[[PartialValue; 2]], loop_cells: &[[PartialValue; 2]]) -> Lass
     .unwrap()
 }
 
-// Trace: TC-141, TC-145, TC-146, TC-147, TC-148, TC-151; FR-030-AC-1, FR-031-AC-1, FR-031-AC-2, FR-032-AC-1
+// Trace: TC-141, TC-145, TC-146, TC-147, TC-148, TC-151, FR-030-AC-1, FR-031-AC-1, FR-031-AC-2, FR-032-AC-1
 #[test]
 fn cross_compare_small_lassos() {
     use PartialValue::{Conflicting as C, False as F, Missing as M, True as T};
@@ -398,7 +398,7 @@ fn cross_compare_small_lassos() {
     assert_eq!(checked, 26 * 8 * 8);
 }
 
-// Trace: TC-142, TC-153; FR-030-AC-1, FR-032-AC-2
+// Trace: TC-142, TC-153, FR-030-AC-1, FR-032-AC-2
 #[test]
 fn cross_compare_fairness_and_partial_completions() {
     use PartialValue::{Conflicting as C, False as F, Missing as M, True as T};

@@ -99,7 +99,7 @@ fn run_with_closure(
     .unwrap()
 }
 
-// Trace: TC-143; FR-030-AC-2
+// Trace: TC-143, FR-030-AC-2
 #[test]
 fn closure_declaration_distinguishes_pending_from_indeterminate() {
     let graph = formula(
@@ -159,7 +159,7 @@ fn closure_declaration_distinguishes_pending_from_indeterminate() {
     );
 }
 
-// Trace: TC-156; FR-033-AC-1
+// Trace: TC-156, FR-033-AC-1
 #[test]
 fn exact_trace_evidence_names_all_fair_completions_and_replayable_examples() {
     let graph = formula(
@@ -220,7 +220,7 @@ fn closed(start: u32, end: u32) -> TemporalInterval {
     TemporalInterval::Closed(Interval::new(start, end).unwrap())
 }
 
-// Trace: TC-145, TC-146, TC-150, TC-151; FR-031-AC-1, FR-032-AC-1
+// Trace: TC-145, TC-146, TC-150, TC-151, FR-031-AC-1, FR-032-AC-1
 #[test]
 fn future_fixed_points_and_lower_bounds_survive_loop_repetition() {
     let lasso = trace(
@@ -282,7 +282,7 @@ fn future_fixed_points_and_lower_bounds_survive_loop_repetition() {
     );
 }
 
-// Trace: TC-147, TC-148; FR-031-AC-2
+// Trace: TC-147, TC-148, FR-031-AC-2
 #[test]
 fn past_nodes_stabilize_later_than_the_trace_loop_entry() {
     let lasso = trace(&[ObservationValue::True], &[ObservationValue::False]);
@@ -322,7 +322,7 @@ fn past_nodes_stabilize_later_than_the_trace_loop_entry() {
     );
 }
 
-// Trace: TC-142, TC-143, TC-144; FR-030-AC-1 through FR-030-AC-3
+// Trace: TC-142, TC-143, TC-144, FR-030-AC-1 through FR-030-AC-3
 #[test]
 fn one_unknown_cell_uses_one_shared_completion_across_references_and_loops() {
     let lasso = trace(&[], &[ObservationValue::Missing]);
@@ -367,7 +367,7 @@ fn one_unknown_cell_uses_one_shared_completion_across_references_and_loops() {
     );
 }
 
-// Trace: TC-152, TC-153, TC-154; FR-032-AC-2 and FR-032-AC-3
+// Trace: TC-152, TC-153, TC-154, FR-032-AC-2 and FR-032-AC-3
 #[test]
 fn fairness_filters_completions_without_vacuous_proof() {
     let graph = formula(
@@ -405,7 +405,7 @@ fn fairness_filters_completions_without_vacuous_proof() {
     assert!(result.evidence.is_none());
 }
 
-// Trace: TC-089, TC-139, TC-140, TC-155, TC-158, TC-159; FR-028-AC-2, FR-029-AC-2, FR-033-AC-1, FR-033-AC-3, FR-034-AC-1
+// Trace: TC-089, TC-139, TC-140, TC-155, TC-158, TC-159, FR-028-AC-2, FR-029-AC-2, FR-033-AC-1, FR-033-AC-3, FR-034-AC-1
 #[test]
 fn model_and_identity_refusals_keep_their_scope() {
     let graph = formula(0, vec![node(K::True)]);
@@ -479,7 +479,7 @@ fn model_and_identity_refusals_keep_their_scope() {
     assert!(matches!(bad, Err(InfiniteError::IdentityMismatch)));
 }
 
-// Trace: TC-139, TC-159; FR-028-AC-1, FR-028-AC-2, FR-034-AC-1
+// Trace: TC-139, TC-159, FR-028-AC-1, FR-028-AC-2, FR-034-AC-1
 #[test]
 fn lasso_refuses_each_identity_axis_independently() {
     let graph = formula(0, vec![node(K::True)]);
@@ -506,7 +506,7 @@ fn lasso_refuses_each_identity_axis_independently() {
     }
 }
 
-// Trace: TC-152, TC-159; FR-032-AC-1, FR-034-AC-1
+// Trace: TC-152, TC-159, FR-032-AC-1, FR-034-AC-1
 #[test]
 fn lasso_refuses_fairness_from_a_different_graph() {
     let graph = formula(0, vec![node(K::True)]);
@@ -536,7 +536,7 @@ fn lasso_refuses_fairness_from_a_different_graph() {
     ));
 }
 
-// Trace: TC-139; FR-028-AC-1 and FR-028-AC-2
+// Trace: TC-139, FR-028-AC-1 and FR-028-AC-2
 #[test]
 fn deployment_registry_routes_one_provider_and_refuses_duplicate() {
     let graph = formula(0, vec![node(K::True)]);
@@ -582,7 +582,7 @@ fn deployment_registry_routes_one_provider_and_refuses_duplicate() {
     );
 }
 
-// Trace: TC-139, TC-140, TC-158; FR-028-AC-2, FR-029-AC-2, FR-033-AC-3
+// Trace: TC-139, TC-140, TC-158, FR-028-AC-2, FR-029-AC-2, FR-033-AC-3
 #[test]
 fn registered_detailed_route_preserves_reason_evidence_and_identity() {
     let graph = formula(
@@ -682,7 +682,7 @@ fn registered_detailed_route_preserves_reason_evidence_and_identity() {
     assert!(exhausted.evidence.is_none());
 }
 
-// Trace: TC-159; FR-034-AC-2 and FR-034-AC-3
+// Trace: TC-159, FR-034-AC-2 and FR-034-AC-3
 #[test]
 fn every_work_limit_is_inclusive_and_results_are_byte_stable() {
     let graph = formula(
@@ -808,7 +808,7 @@ fn every_work_limit_is_inclusive_and_results_are_byte_stable() {
     assert_eq!(extreme.identity.selected_position, u64::MAX);
 }
 
-// Trace: TC-139, TC-158, TC-159; FR-028-AC-2, FR-033-AC-3, FR-034-AC-2
+// Trace: TC-139, TC-158, TC-159, FR-028-AC-2, FR-033-AC-3, FR-034-AC-2
 #[test]
 fn expired_monotonic_deadline_settles_as_typed_resource_incomplete() {
     let graph = formula(0, vec![node(K::True)]);
@@ -882,7 +882,7 @@ fn expired_monotonic_deadline_settles_as_typed_resource_incomplete() {
     assert!(prefix_result.evidence.is_none());
 }
 
-// Trace: TC-089, TC-140, TC-156, TC-157; FR-029-AC-2, FR-033-AC-1, FR-033-AC-2
+// Trace: TC-089, TC-140, TC-156, TC-157, FR-029-AC-2, FR-033-AC-1, FR-033-AC-2
 #[test]
 fn finite_prefix_refutes_only_a_decisive_safety_violation() {
     let graph = formula(
@@ -939,7 +939,7 @@ fn finite_prefix_refutes_only_a_decisive_safety_violation() {
     assert!(unsettled.evidence.is_none());
 }
 
-// Trace: TC-157; FR-033-AC-2
+// Trace: TC-157, FR-033-AC-2
 #[test]
 fn finite_horizon_inner_future_requires_enough_prefix_positions() {
     let graph = formula(
@@ -1016,7 +1016,7 @@ fn finite_horizon_inner_future_requires_enough_prefix_positions() {
     );
 }
 
-// Trace: TC-139, TC-157; FR-028-AC-2, FR-033-AC-2
+// Trace: TC-139, TC-157, FR-028-AC-2, FR-033-AC-2
 #[test]
 fn registered_prefix_route_returns_only_a_bad_prefix_refutation() {
     let graph = formula(
