@@ -108,6 +108,54 @@
       "covers": ["fuzz:c2po_map"]
     },
     {
+      "id": "fuzz-evaluator-differential-live",
+      "technique": "fuzz",
+      "kind": "fuzz",
+      "command": ["cargo", "fuzz", "run", "evaluator_differential", "fuzz/corpus/evaluator_differential", "--", "-runs=20000", "-seed=230", "-rss_limit_mb=8192"],
+      "tools": ["cargo-fuzz"],
+      "determinism": "seeded",
+      "seed": "230",
+      "covers": ["fuzz:evaluator_differential"]
+    },
+    {
+      "id": "fuzz-wire-cli-decode-live",
+      "technique": "fuzz",
+      "kind": "fuzz",
+      "command": ["cargo", "fuzz", "run", "wire_cli_decode", "fuzz/corpus/wire_cli_decode", "--", "-runs=20000", "-seed=229", "-rss_limit_mb=8192"],
+      "tools": ["cargo-fuzz"],
+      "determinism": "seeded",
+      "seed": "229",
+      "covers": ["fuzz:wire_cli_decode"]
+    },
+    {
+      "id": "fuzz-history-intake-live",
+      "technique": "fuzz",
+      "kind": "fuzz",
+      "command": ["cargo", "fuzz", "run", "history_intake", "fuzz/corpus/history_intake", "--", "-runs=20000", "-seed=231", "-rss_limit_mb=8192"],
+      "tools": ["cargo-fuzz"],
+      "determinism": "seeded",
+      "seed": "231",
+      "covers": ["fuzz:history_intake"]
+    },
+    {
+      "id": "fuzz-build-and-audit",
+      "technique": "static",
+      "kind": "test",
+      "command": ["make", "fuzz-check"],
+      "tools": ["cargo-fuzz"],
+      "determinism": "exact",
+      "covers": ["make:fuzz-check"]
+    },
+    {
+      "id": "fuzz-corpus-replay",
+      "technique": "fuzz",
+      "kind": "fuzz",
+      "command": ["make", "fuzz-smoke"],
+      "tools": ["cargo-fuzz"],
+      "determinism": "exact",
+      "covers": ["make:fuzz-smoke"]
+    },
+    {
       "id": "kani-horizon-bound",
       "technique": "kani",
       "kind": "kani",
