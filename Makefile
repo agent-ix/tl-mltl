@@ -52,6 +52,8 @@ help:
 	@echo "  make sweep-full       - Nightly full small-scope sweep against tl-oracle (release, long)"
 	@echo "  make conformance      - Replay the shared corpus through the evaluator"
 	@echo "  make differential     - Replay the retained R2U2 exchange"
+	@echo "  make r2u2-past-differential - Live pinned R2U2 over the past grid (R2U2_ROOT)"
+	@echo "  make r2u2-past-replay - Recompute that comparison from recorded outputs"
 	@echo "  make cli-conformance  - Drive the built CLI over its declared requests"
 	@echo "  make campaign-inventory - Check the campaign member list is complete"
 	@echo "  make campaign-run     - Run all campaign members, write target/campaign/report.json"
@@ -123,6 +125,19 @@ differential:
 # The example drives the CLI binary, so the binary has to exist. It is built
 # here rather than located by the example, because an example that can build its
 # own subject can report a green run against a stale one.
+# Live past-time R2U2 differential (TL-217). Needs a built R2U2 checkout at
+# $(R2U2_ROOT) on the revision pinned in campaign/tool-versions.json. Without
+# one it writes the generated inputs and a not_run report and exits 2; it never
+# reports a pass. `r2u2-past-replay` recomputes the comparison from the recorded
+# outputs under target/r2u2 without running R2U2.
+.PHONY: r2u2-past-differential
+r2u2-past-differential:
+	$(CARGO) run --quiet --bin r2u2_live -- run --out target/r2u2
+
+.PHONY: r2u2-past-replay
+r2u2-past-replay:
+	$(CARGO) run --quiet --bin r2u2_live -- replay --out target/r2u2
+
 .PHONY: cli-conformance
 cli-conformance:
 	$(CARGO) build --quiet --bin tl-mltl
