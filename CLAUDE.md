@@ -12,6 +12,8 @@ make lint             # clippy with -D warnings
 make test             # cargo test
 make conformance      # replay the shared corpus through the evaluator
 make differential     # replay the retained R2U2 exchange
+make r2u2-past-differential # live pinned R2U2 over the past grid (R2U2_ROOT; exits 2 if absent)
+make r2u2-past-replay # recompute that comparison from recorded outputs
 make cli-conformance  # drive the built CLI over its declared requests
 make campaign-inventory # campaign member list covers every evidence target
 make campaign-run     # run all campaign members, write target/campaign/report.json
@@ -43,8 +45,10 @@ decision and must not be advanced automatically.
   `tl_syntax` surfaces only in a message, and `cli_conformance` distinguishes
   five CLI refusals that all exit 2. Both are cross-checked so a marker matching
   more than one case fails.
-- **Nothing executes R2U2 or C2PO.** The external exchange under
-  `corpus/r2u2-v4.2/` is retained; every claim is a replay against those bytes.
+- **`make ci` does not execute R2U2 or C2PO.** The external exchange under
+  `corpus/r2u2-v4.2/` is retained and `make differential` replays those bytes.
+  `make r2u2-past-differential` runs the pinned R2U2 (`campaign/tool-versions.json`)
+  when `R2U2_ROOT` points at a built checkout; it is local-only and not a ci gate.
 
 ## Campaign inventory rule
 
