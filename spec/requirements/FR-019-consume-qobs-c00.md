@@ -68,8 +68,8 @@ artifact.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-019-AC-1 | Given valid temporal owner views, dispatch produces bytes and resource usage identical to direct FR-018 request derivation under exact and one-over limits. | Test (TC-085) |
-| FR-019-AC-2 | Given the QObs repair-plan or closed-population-query contract selector, compatibility dispatch returns the corresponding typed unsupported contract with no value-bearing or artifact input/output. | Test (TC-085) |
+| FR-019-AC-1 | Given valid temporal owner views, dispatch produces bytes and resource usage identical to direct FR-018 request derivation under exact and one-over limits. | Withdrawn |
+| FR-019-AC-2 | Given the QObs repair-plan or closed-population-query contract selector, compatibility dispatch returns the corresponding typed unsupported contract with no value-bearing or artifact input/output. | Withdrawn |
 
 ## Dependencies
 
