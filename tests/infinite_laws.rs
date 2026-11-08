@@ -110,15 +110,8 @@ fn tree() -> impl Strategy<Value = T> {
     })
 }
 
-/// Closed intervals starting at zero: the fragment on which the finite and
-/// infinite profiles give `U` and `R` the same guard range (see
-/// `until_guard_range_differs_between_the_finite_and_infinite_profiles`).
-fn zero_iv() -> impl Strategy<Value = Iv> {
-    (0u32..4).prop_map(|b| Iv::Closed(0, b))
-}
-
 /// Bounded-future formulas only: the fragment the finite evaluator decides.
-/// `F` and `G` take any closed interval; `U` and `R` start at zero.
+/// `F`, `G`, `U` and `R` take any closed interval.
 fn bounded_tree() -> impl Strategy<Value = T> {
     leaf().prop_recursive(3, 12, 2, |inner| {
         prop_oneof![
@@ -127,8 +120,8 @@ fn bounded_tree() -> impl Strategy<Value = T> {
             (inner.clone(), inner.clone()).prop_map(|(x, y)| T::Or(bx(x), bx(y))),
             (closed_iv(), inner.clone()).prop_map(|(i, x)| T::F(i, bx(x))),
             (closed_iv(), inner.clone()).prop_map(|(i, x)| T::G(i, bx(x))),
-            (zero_iv(), inner.clone(), inner.clone()).prop_map(|(i, x, y)| T::U(i, bx(x), bx(y))),
-            (zero_iv(), inner.clone(), inner).prop_map(|(i, x, y)| T::R(i, bx(x), bx(y))),
+            (closed_iv(), inner.clone(), inner.clone()).prop_map(|(i, x, y)| T::U(i, bx(x), bx(y))),
+            (closed_iv(), inner.clone(), inner).prop_map(|(i, x, y)| T::R(i, bx(x), bx(y))),
         ]
     })
 }
@@ -477,21 +470,25 @@ fn a_bounded_formula_on_a_lasso_equals_the_finite_evaluator_on_an_unrolled_prefi
     );
 }
 
-/// FR-001 (finite) requires the left operand of `U[a,b]` on `[a,i)`; FR-031
-/// (infinite) requires it on every offset from zero, as QSpec FR-161 does. For
-/// `a > 0` the two profiles therefore disagree on the same word. The embedding
-/// law is restricted to `a = 0` for `U` and `R`; this test records the
-/// divergence so a later spec decision shows up as a test change.
+/// FR-001 (finite) and FR-031 (infinite) both put the left operand of
+/// `U[a,b]` on `[a,i)` before the witness offset `i`. With a lower bound above
+/// zero the guard therefore never reads the offsets below it, and the two
+/// profiles agree on the same word.
 // Trace: TC-149, FR-001-AC-1, FR-031-AC-3
 #[test]
-fn until_guard_range_differs_between_the_finite_and_infinite_profiles() {
-    let formula = T::U(Iv::Closed(1, 1), bx(T::P(0)), bx(not(T::P(0))));
+fn until_guard_range_is_the_same_in_the_finite_and_infinite_profiles() {
+    // p0 is false everywhere: the witness not-p0 holds at offset 1 and the
+    // guard p0 is false at offset 0, which lies below the lower bound 1.
     let (prefix, tail) = (vec![[F, F], [F, F]], vec![[F, F]]);
-    // p0 is false everywhere: the witness not-p0 holds at offset 1, and the
-    // guard p0 is false at offset 0.
-    let infinite = at(&build(&formula, &[]), &lasso(&prefix, &tail), 0);
+    let until = T::U(Iv::Closed(1, 1), bx(T::P(0)), bx(not(T::P(0))));
+    let infinite = at(&build(&until, &[]), &lasso(&prefix, &tail), 0);
+    assert_eq!(infinite.disposition, Disposition::Proved);
+    assert!(check_embedding(&until, &prefix, &tail, 0, 0).is_ok());
+    // The dual: not(p0 U[1,1] not-p0) fails the same way for R.
+    let release = T::R(Iv::Closed(1, 1), bx(not(T::P(0))), bx(T::P(0)));
+    let infinite = at(&build(&release, &[]), &lasso(&prefix, &tail), 0);
     assert_eq!(infinite.disposition, Disposition::Refuted);
-    assert!(check_embedding(&formula, &prefix, &tail, 0, 0).is_err());
+    assert!(check_embedding(&release, &prefix, &tail, 0, 0).is_ok());
 }
 
 // ------------------------------------------- law: prefix refutation soundness
