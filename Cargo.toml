@@ -30,7 +30,7 @@ tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.g
 [dev-dependencies]
 proptest = "=1.5.0"
 tempfile = "=3.10.1"
-tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "ac80fea386004b24c8a60521756d5a533f7098d3" }
+tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "3e6743a513f7d3ca1d8883769da3d4856bc1c268" }
 
 [profile.release]
 lto = "thin"
