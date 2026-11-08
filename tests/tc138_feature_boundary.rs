@@ -117,6 +117,18 @@ fn external_consumer_feature_tree_and_complete_bounded_bytes() {
     fs::create_dir(root.join("src")).unwrap();
     let manifest = root.join("Cargo.toml");
     let owner = serde_json::to_string(env!("CARGO_MANIFEST_DIR")).unwrap();
+    // The consumer must resolve the same tl-syntax source as tl-mltl, otherwise two
+    // incompatible `tl_syntax` crates enter the graph. Read the revision from this
+    // crate's manifest instead of copying it here.
+    let own_manifest =
+        fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml")).unwrap();
+    let syntax_rev = own_manifest
+        .lines()
+        .find(|line| line.trim_start().starts_with("tl-syntax"))
+        .and_then(|line| line.split("rev = \"").nth(1))
+        .and_then(|rest| rest.split('"').next())
+        .expect("Cargo.toml pins tl-syntax by rev")
+        .to_owned();
     fs::write(&manifest, format!(r#"[package]
 name = "tl13-boundary-consumer"
 version = "0.0.0"
@@ -127,7 +139,7 @@ infinite-trace = ["tl-mltl/infinite-trace"]
 
 [dependencies]
 tl-mltl = {{ path = {owner}, default-features = false }}
-tl-syntax = {{ version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", branch = "main", features = ["alloc", "serde"] }}
+tl-syntax = {{ version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "{syntax_rev}", features = ["alloc", "serde"] }}
 serde_json = "=1.0.151"
 "#)).unwrap();
     fs::write(root.join("src/main.rs"), CONSUMER).unwrap();
