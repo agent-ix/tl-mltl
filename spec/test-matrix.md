@@ -23,9 +23,9 @@ relationships:
 | FR-017 | FR-017-AC-1 through FR-017-AC-3 | TC-081 through TC-083 | ✅ covered |
 | FR-018 | FR-018-AC-1 through FR-018-AC-3 | TC-090 | ✅ implemented |
 | FR-019 | FR-019-AC-1, FR-019-AC-2 | TC-085 | ⛔ retired — superseded by quire-mltl FR-002 (TL-180); TL-179 removed TC-085's backing test with `wire::observation` |
-| FR-027 | FR-027-AC-1 through FR-027-AC-3 | TC-086, TC-138 | 🚧 planned |
-| FR-028 | FR-028-AC-1 through FR-028-AC-3 | TC-087, TC-138, TC-139 | 🚧 planned |
-| FR-029 | FR-029-AC-1 through FR-029-AC-3 | TC-088, TC-089, TC-140 | 🚧 planned |
+| FR-027 | FR-027-AC-1 through FR-027-AC-3 | TC-086, TC-138 | ✅ implemented |
+| FR-028 | FR-028-AC-1 through FR-028-AC-3 | TC-087, TC-138, TC-139 | ✅ implemented |
+| FR-029 | FR-029-AC-1 through FR-029-AC-3 | TC-088, TC-089, TC-140 | ✅ implemented |
 
 FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 [TM-004](infinite-trace-test-matrix.md), the accepted TL-13 provider matrix.
@@ -86,7 +86,7 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 | TC-085 | Bind QObs C00 and preserve temporal dispatch while refusing repair and query semantics | Integration | P0 | FR-019-AC-1, FR-019-AC-2 | ⛔ retired — FR-019 is superseded by quire-mltl FR-002 (TL-180); its test was removed with `tests/tc_084_temporal_owner_wire.rs` (TL-179) |
 | TC-086 | Compare existing bounded API and golden bytes in default and feature-enabled builds | Integration | P0 | FR-027-AC-1, FR-027-AC-3 | ✅ implemented |
 | TC-087 | Check feature-off capability absence and bounded result/CLI byte stability | Integration | P0 | FR-028-AC-1, FR-028-AC-3 | ✅ implemented |
-| TC-088 | Inspect Linear dependency order and TL-215 acceptance gate before implementation or qualification | Inspection | P1 | FR-029-AC-1, FR-029-AC-3 | 🚧 planned |
+| TC-088 | Inspect Linear dependency order and TL-215 acceptance gate before implementation or qualification | Inspection | P1 | FR-029-AC-1, FR-029-AC-3 | ✅ implemented |
 | TC-089 | Bind infinite evidence to the exact provider, TL profile, graph and clock identities | Integration | P0 | FR-029-AC-2 | ✅ implemented |
 | TC-090 | Confirm every retained TL-owned wire contract (`trace/v1`, `command/v1`, `position-history/v1`, `history-requirement/v1`, `past-evaluation/v1`) publishes immutable schema bytes/digest, strictly rejects malformed/noncanonical input under enforced `OwnerLimits`, and that removing the QObs-coupled request/result/mapping layer (TL-179) leaves existing future/past/CLI/legacy-mapping behavior unchanged | Inspection | P1 | FR-018-AC-1, FR-018-AC-2, FR-018-AC-3 | ✅ implemented |
 | TC-130 | Static inspector rejects each of `SHELL`, `.SHELLFLAGS`, `MAKEFLAGS`, `.ONESHELL:`, `.DEFAULT:`, `.IGNORE:`, `.SILENT:`, a `-`-prefixed recipe line, `\|\| true`/`\|\| :`, a stderr-to-`/dev/null` redirect, `$(eval`, a bare `;` command separator (including a quoted-value/trailing-comment MAKEFLAGS variation and a check-and-record chain), and a surface inside a recursively scanned `include`d file; a clean control and `for`/`while`/`if`/`case` control-flow semicolons are accepted without a false positive | Unit | P0 | NFR-006-AC-1 | ✅ implemented |
