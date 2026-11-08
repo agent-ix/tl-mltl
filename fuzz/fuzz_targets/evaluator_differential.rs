@@ -18,6 +18,9 @@ const MAX_NODES: usize = 32;
 const PROPOSITIONS: u32 = 3;
 const MAX_TRACE: usize = 12;
 const MAX_TREE: usize = 4096;
+// The oracle has no step bound; skip formulas whose naive evaluation cost
+// (nested interval widths multiply) would stall a fuzz execution.
+const MAX_WORK: u64 = 100_000;
 
 fn interval(u: &mut Unstructured<'_>) -> Option<Interval> {
     // Wider than the exhaustive V1 population (end <= 2): intervals reach 8.
@@ -113,6 +116,55 @@ fn atom(n: u32) -> O {
     O::Atom(serde_json::from_value(serde_json::json!(n)).expect("oracle proposition id"))
 }
 
+fn work_estimate(nodes: &[Node]) -> u64 {
+    let mut cost: Vec<u64> = Vec::with_capacity(nodes.len());
+    for node in nodes {
+        let at = |id: NodeId| cost[usize::try_from(id.0).unwrap()];
+        let width = |i: Interval| u64::from(i.end() - i.start()) + 1;
+        let value = match node.kind {
+            NodeKind::True | NodeKind::False | NodeKind::Proposition { .. } => 1,
+            NodeKind::Not { operand } | NodeKind::StrongPrevious { operand } => {
+                1u64.saturating_add(at(operand))
+            }
+            NodeKind::Future { interval, operand }
+            | NodeKind::Globally { interval, operand }
+            | NodeKind::Once { interval, operand }
+            | NodeKind::Historically { interval, operand } => {
+                1u64.saturating_add(width(interval).saturating_mul(at(operand)))
+            }
+            NodeKind::And { left, right }
+            | NodeKind::Or { left, right }
+            | NodeKind::Implies { left, right }
+            | NodeKind::Equivalent { left, right } => {
+                1u64.saturating_add(at(left)).saturating_add(at(right))
+            }
+            NodeKind::Until {
+                interval,
+                left,
+                right,
+            }
+            | NodeKind::Release {
+                interval,
+                left,
+                right,
+            }
+            | NodeKind::Since {
+                interval,
+                left,
+                right,
+            }
+            | NodeKind::Triggered {
+                interval,
+                left,
+                right,
+            } => 1u64
+                .saturating_add(width(interval).saturating_mul(at(left).saturating_add(at(right)))),
+        };
+        cost.push(value.min(MAX_WORK + 1));
+    }
+    cost.last().copied().unwrap_or(0)
+}
+
 fn tree_size(nodes: &[Node]) -> usize {
     let mut sizes: Vec<usize> = Vec::with_capacity(nodes.len());
     for node in nodes {
@@ -141,59 +193,50 @@ fn tree_size(nodes: &[Node]) -> usize {
     sizes.last().copied().unwrap_or(0)
 }
 
-// Independent oracle tree; no evaluator logic or production semantic
-// function is shared with the production side.
-fn oracle_tree(nodes: &[Node]) -> O {
-    let mut trees: Vec<O> = Vec::with_capacity(nodes.len());
-    for node in nodes {
-        let child = |id: NodeId| trees[usize::try_from(id.0).unwrap()].clone();
-        let span = |value: Interval| OI::Closed {
-            start: usize::try_from(value.start()).unwrap(),
-            end: usize::try_from(value.end()).unwrap(),
-        };
-        let b = Box::new;
-        let tree = match node.kind {
-            NodeKind::False => O::False,
-            NodeKind::True => O::True,
-            NodeKind::Proposition { proposition } => atom(proposition.0),
-            NodeKind::Not { operand } => O::Not(b(child(operand))),
-            NodeKind::And { left, right } => O::And(b(child(left)), b(child(right))),
-            NodeKind::Or { left, right } => O::Or(b(child(left)), b(child(right))),
-            NodeKind::Implies { left, right } => O::Implies(b(child(left)), b(child(right))),
-            NodeKind::Equivalent { left, right } => O::Equivalent(b(child(left)), b(child(right))),
-            NodeKind::Future { interval, operand } => O::Future(span(interval), b(child(operand))),
-            NodeKind::Globally { interval, operand } => {
-                O::Globally(span(interval), b(child(operand)))
-            }
-            NodeKind::Until {
-                interval,
-                left,
-                right,
-            } => O::Until(span(interval), b(child(left)), b(child(right))),
-            NodeKind::Release {
-                interval,
-                left,
-                right,
-            } => O::Release(span(interval), b(child(left)), b(child(right))),
-            NodeKind::Once { interval, operand } => O::Once(span(interval), b(child(operand))),
-            NodeKind::Historically { interval, operand } => {
-                O::Historically(span(interval), b(child(operand)))
-            }
-            NodeKind::StrongPrevious { operand } => O::StrongPrevious(b(child(operand))),
-            NodeKind::Since {
-                interval,
-                left,
-                right,
-            } => O::Since(span(interval), b(child(left)), b(child(right))),
-            NodeKind::Triggered {
-                interval,
-                left,
-                right,
-            } => O::Triggered(span(interval), b(child(left)), b(child(right))),
-        };
-        trees.push(tree);
+// Independent oracle tree, built from the root only so unreferenced nodes are
+// never expanded; no evaluator logic or production semantic function is shared
+// with the production side.
+fn oracle_tree(nodes: &[Node], id: NodeId) -> O {
+    let b = |id: NodeId| Box::new(oracle_tree(nodes, id));
+    let span = |value: Interval| OI::Closed {
+        start: usize::try_from(value.start()).unwrap(),
+        end: usize::try_from(value.end()).unwrap(),
+    };
+    match nodes[usize::try_from(id.0).unwrap()].kind {
+        NodeKind::False => O::False,
+        NodeKind::True => O::True,
+        NodeKind::Proposition { proposition } => atom(proposition.0),
+        NodeKind::Not { operand } => O::Not(b(operand)),
+        NodeKind::And { left, right } => O::And(b(left), b(right)),
+        NodeKind::Or { left, right } => O::Or(b(left), b(right)),
+        NodeKind::Implies { left, right } => O::Implies(b(left), b(right)),
+        NodeKind::Equivalent { left, right } => O::Equivalent(b(left), b(right)),
+        NodeKind::Future { interval, operand } => O::Future(span(interval), b(operand)),
+        NodeKind::Globally { interval, operand } => O::Globally(span(interval), b(operand)),
+        NodeKind::Until {
+            interval,
+            left,
+            right,
+        } => O::Until(span(interval), b(left), b(right)),
+        NodeKind::Release {
+            interval,
+            left,
+            right,
+        } => O::Release(span(interval), b(left), b(right)),
+        NodeKind::Once { interval, operand } => O::Once(span(interval), b(operand)),
+        NodeKind::Historically { interval, operand } => O::Historically(span(interval), b(operand)),
+        NodeKind::StrongPrevious { operand } => O::StrongPrevious(b(operand)),
+        NodeKind::Since {
+            interval,
+            left,
+            right,
+        } => O::Since(span(interval), b(left), b(right)),
+        NodeKind::Triggered {
+            interval,
+            left,
+            right,
+        } => O::Triggered(span(interval), b(left), b(right)),
     }
-    trees.pop().expect("at least one node")
 }
 
 // Trace: TC-001, FR-001-AC-1
@@ -205,7 +248,7 @@ fuzz_target!(|data: &[u8]| {
     let Some(nodes) = nodes(&mut u, past) else {
         return;
     };
-    if tree_size(&nodes) > MAX_TREE {
+    if tree_size(&nodes) > MAX_TREE || work_estimate(&nodes) > MAX_WORK {
         return;
     }
     let Ok(len) = u.int_in_range(1..=MAX_TRACE) else {
@@ -232,7 +275,7 @@ fuzz_target!(|data: &[u8]| {
     let Ok(formula) = Formula::new(profile, root, &nodes) else {
         return;
     };
-    let tree = oracle_tree(&nodes);
+    let tree = oracle_tree(&nodes, root);
     let cells: Vec<BTreeMap<_, bool>> = word
         .iter()
         .map(|present| {
