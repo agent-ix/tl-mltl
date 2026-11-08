@@ -316,8 +316,8 @@ fn seeded_faults_turn_the_corpus_red() {
             "fault `{name}` was not detected by the corpus"
         );
     }
-    // The two interval faults must also be caught by the oracle-modelled
-    // profiles alone, where the stored verdicts are independently confirmed.
+    // The interval and dual-operator faults must also be caught by the
+    // oracle-modelled profiles alone, where the stored verdicts are independently confirmed.
     for fault in [
         shrink_end as Fault,
         lower_start_down as Fault,

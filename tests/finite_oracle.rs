@@ -663,7 +663,8 @@ const DEPTH_TWO_FULL: Scope = Scope {
 
 /// Full: seeded depth-three formulas over every operator and every interval
 /// within `0..=4`, each against seeded two-proposition words up to length 6.
-/// Exhaustive depth three is not enumerable (see the ticket evidence).
+/// Exhaustive depth three is not enumerable (the depth-two count alone exceeds
+/// 10^8 at this width; see `exhaustive_populations_have_independently_computed_sizes`).
 const DEPTH_THREE_SAMPLED: Scope = Scope {
     name: "depth-three-sampled",
     seed: 0x544C_0227,
