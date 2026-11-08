@@ -16,6 +16,7 @@ use tl_syntax::{
     ValuationEntry,
 };
 
+#[allow(unused_imports)]
 pub use PartialValue::{Conflicting as C, False as F, Missing as M, True as Tr};
 
 /// A temporal interval: closed `[a,b]` or unbounded `[a,)`.

@@ -1397,6 +1397,41 @@ mod tests {
         }
     }
 
+    // Trace: TC-159, FR-034-AC-2
+    #[test]
+    fn a_valuation_set_without_a_loop_is_an_invalid_lasso() {
+        let graph = tl_syntax::InfiniteFormulaDocument::new(
+            tl_syntax::SemanticProfile::InfiniteTraceV1,
+            tl_syntax::InfiniteClock::EventPosition,
+            NodeId(0),
+            vec![tl_syntax::InfiniteNode::new(InfiniteNodeKind::True)],
+        )
+        .unwrap();
+        let rows = vec![vec![true]];
+        let evaluated = periodic::evaluate(
+            graph.formula(),
+            NodeId(0),
+            &rows,
+            rows.len(),
+            &BTreeMap::new(),
+            0,
+            &[],
+            EvaluationLimit::default(),
+        );
+        assert_eq!(evaluated, Err(InfiniteError::InvalidLasso));
+        let looped = periodic::evaluate(
+            graph.formula(),
+            NodeId(0),
+            &rows,
+            0,
+            &BTreeMap::new(),
+            0,
+            &[],
+            EvaluationLimit::default(),
+        );
+        assert_eq!(looped.map(|(truth, _, _)| truth), Ok(true));
+    }
+
     // Trace: TC-158, FR-033-AC-3
     #[test]
     fn provider_fault_and_resource_exhaustion_have_distinct_execution_axes() {
