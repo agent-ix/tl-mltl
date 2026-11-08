@@ -53,6 +53,9 @@ help:
 	@echo "  make conformance      - Replay the shared corpus through the evaluator"
 	@echo "  make differential     - Replay the retained R2U2 exchange"
 	@echo "  make cli-conformance  - Drive the built CLI over its declared requests"
+	@echo "  make campaign-inventory - Check the campaign member list is complete"
+	@echo "  make campaign-run     - Run all campaign members, write target/campaign/report.json"
+	@echo "  make campaign-replay REPORT=path - Source-bound replay of a retained report"
 	@echo "  make deny             - cargo deny check licenses and sources"
 	@echo "  make spec             - Validate specification and coverage with Quire"
 	@echo "  make msrv             - Check all targets and features with Rust 1.98.1"
@@ -145,6 +148,23 @@ deny:
 	$(CARGO) deny check sources
 	$(CI_GUARD) record deny
 
+# Campaign (TL-236). The member list is campaign/members.json; `inventory`
+# refuses an evidence-bearing Make target or fuzz target no member covers.
+# `campaign-run` writes target/campaign/report.json; `campaign-replay` reruns
+# REPORT against the exact source it names and writes a new attempt.
+.PHONY: campaign-inventory
+campaign-inventory:
+	$(CARGO) run --quiet --bin campaign -- inventory
+	$(CI_GUARD) record campaign-inventory
+
+.PHONY: campaign-run
+campaign-run:
+	$(CARGO) run --quiet --bin campaign -- run
+
+.PHONY: campaign-replay
+campaign-replay:
+	$(CARGO) run --quiet --bin campaign -- replay $(REPORT)
+
 .PHONY: spec
 spec:
 	$(QUIRE) validate --scope . 'spec/**/*.md'
@@ -167,7 +187,7 @@ rustdoc:
 
 .PHONY: ci
 ci: fmt-check lint kani-check test conformance differential cli-conformance \
-	deny spec msrv rustdoc
+	campaign-inventory deny spec msrv rustdoc
 
 # The assured entry point (NFR-006). Builds and runs the guard, which refuses
 # to invoke `make ci` at all if this file's execution controls or the calling

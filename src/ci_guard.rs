@@ -1214,6 +1214,7 @@ mod tests {
             "conformance",
             "differential",
             "cli-conformance",
+            "campaign-inventory",
             "deny",
             "spec",
             "msrv",
