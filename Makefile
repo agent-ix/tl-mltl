@@ -182,12 +182,33 @@ rustdoc:
 	$(CI_GUARD) record rustdoc
 
 # =============================================================================
+# Fuzzing
+# =============================================================================
+
+# fuzz-check compiles every cargo-fuzz target and audits the fuzz package's
+# dependency graph; it never starts a campaign. It needs a nightly toolchain
+# and cargo-fuzz.
+.PHONY: fuzz-check
+fuzz-check:
+	$(CARGO) +nightly fuzz build
+	cd fuzz && $(CARGO) deny check --config ../deny.toml
+	$(CI_GUARD) record fuzz-check
+
+# fuzz-smoke replays every checked-in corpus entry through its target once
+# (no mutation, no campaign). Longer campaigns are manual: see fuzz/README.md.
+.PHONY: fuzz-smoke
+fuzz-smoke:
+	@for target in $$($(CARGO) +nightly fuzz list); do \
+		$(CARGO) +nightly fuzz run $$target fuzz/corpus/$$target -- -runs=0 || exit 1; \
+	done
+
+# =============================================================================
 # Composite
 # =============================================================================
 
 .PHONY: ci
 ci: fmt-check lint kani-check test conformance differential cli-conformance \
-	campaign-inventory deny spec msrv rustdoc
+	campaign-inventory deny fuzz-check spec msrv rustdoc
 
 # The assured entry point (NFR-006). Builds and runs the guard, which refuses
 # to invoke `make ci` at all if this file's execution controls or the calling

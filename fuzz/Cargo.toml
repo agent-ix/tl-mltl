@@ -10,6 +10,9 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
+arbitrary = "1"
+serde_json = "=1.0.151"
+tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "9bf3994d4c67ee0a9a53dc31316404b9edf14df9" }
 sha2 = "=0.10.9"
 tl-mltl = { path = ".." }
 tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", branch = "main", default-features = false, features = ["alloc", "serde"] }
@@ -17,6 +20,27 @@ tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.g
 [[bin]]
 name = "c2po_map"
 path = "fuzz_targets/c2po_map.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "evaluator_differential"
+path = "fuzz_targets/evaluator_differential.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "wire_cli_decode"
+path = "fuzz_targets/wire_cli_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "history_intake"
+path = "fuzz_targets/history_intake.rs"
 test = false
 doc = false
 bench = false

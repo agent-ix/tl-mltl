@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "tl-mltl.command/v1",
+  "operation": "evaluate",
+  "formulaId": "cli-closed-formula-open-trace-v1",
+  "formula": {
+    "schema_version": "tl-syntax.formula/v1",
+    "semantic_profile": "mltl.closed-trace/v1",
+    "root": 0,
+    "nodes": [{"kind": "true"}]
+  },
+  "trace": {
+    "schemaVersion": "tl-mltl.trace/v1",
+    "traceId": "cli-open-trace-v1",
+    "closed": false,
+    "instants": [[]]
+  }
+}

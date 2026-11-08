@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "tl-mltl.command/v1",
+  "operation": "analyze",
+  "formulaId": "cli-unknown-formula-profile-v1",
+  "formula": {
+    "schema_version": "tl-syntax.formula/v1",
+    "semantic_profile": "mltl.online-prefix/v2",
+    "root": 0,
+    "nodes": [{"kind": "true"}]
+  },
+  "trace": null
+}
