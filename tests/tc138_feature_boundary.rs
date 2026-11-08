@@ -124,7 +124,10 @@ fn external_consumer_feature_tree_and_complete_bounded_bytes() {
         fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml")).unwrap();
     let syntax_rev = own_manifest
         .lines()
-        .find(|line| line.trim_start().starts_with("tl-syntax"))
+        .find(|line| {
+            line.trim_start().starts_with("tl-syntax =")
+                || line.trim_start().starts_with("tl-syntax=")
+        })
         .and_then(|line| line.split("rev = \"").nth(1))
         .and_then(|rest| rest.split('"').next())
         .expect("Cargo.toml pins tl-syntax by rev")
