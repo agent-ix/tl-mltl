@@ -13,6 +13,7 @@ make test             # cargo test
 make conformance      # replay the shared corpus through the evaluator
 make differential     # replay the retained R2U2 exchange
 make r2u2-past-differential # live pinned R2U2 over the past grid (R2U2_ROOT; exits 2 if absent)
+make r2u2-nightly     # past grid + exhaustive future suite against pinned R2U2 (local, R2U2_ROOT)
 make r2u2-past-replay # recompute that comparison from recorded outputs
 make cli-conformance  # drive the built CLI over its declared requests
 make campaign-inventory # campaign member list covers every evidence target
