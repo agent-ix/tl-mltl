@@ -302,11 +302,15 @@ fn sweep(
         let mutated = candidate(f);
         for word in &words {
             for at in 0..word.len() {
-                let _ = ledger.record(
+                let recorded = ledger.record(
                     id,
                     reference(profile, f, word, at),
                     production(profile, &mutated, word, at),
                 );
+                if recorded.is_err() {
+                    // The ledger keeps the first failure; later cases add nothing.
+                    return ledger.finish();
+                }
                 id += 1;
             }
         }
@@ -314,14 +318,22 @@ fn sweep(
     ledger.finish()
 }
 
-/// The full declared partition agrees with the oracle under both profiles.
+fn assert_agrees(profile: Profile) {
+    let summary = sweep(profile, Clone::clone).unwrap_or_else(|e| panic!("{profile:?}: {e:?}"));
+    assert!(summary.admitted > 0 && summary.refused > 0, "{profile:?}");
+    assert_eq!(summary.admitted + summary.refused, summary.declared);
+}
+
+/// The full declared partition agrees with the oracle under the closed future profile.
 #[test]
-fn production_agrees_with_oracle_over_complete_finite_partition() {
-    for profile in [Profile::ClosedFuture, Profile::OriginPast] {
-        let summary = sweep(profile, Clone::clone).unwrap_or_else(|e| panic!("{profile:?}: {e:?}"));
-        assert!(summary.admitted > 0 && summary.refused > 0, "{profile:?}");
-        assert_eq!(summary.admitted + summary.refused, summary.declared);
-    }
+fn closed_future_agrees_with_oracle_over_complete_finite_partition() {
+    assert_agrees(Profile::ClosedFuture);
+}
+
+/// The full declared partition agrees with the oracle under the origin-complete past profile.
+#[test]
+fn origin_past_agrees_with_oracle_over_complete_finite_partition() {
+    assert_agrees(Profile::OriginPast);
 }
 
 fn shrink_end(f: &O) -> O {
