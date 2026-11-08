@@ -156,13 +156,14 @@
       "note": "Register with a command once the Make target lands on main."
     },
     {
-      "id": "r2u2-live-differential",
+      "id": "r2u2-nightly",
       "technique": "differential",
       "kind": "differential",
-      "state": "planned",
-      "ticket": "TL-237",
+      "command": ["make", "r2u2-nightly"],
+      "tools": ["r2u2"],
       "determinism": "exact",
-      "note": "Live pinned R2U2 differential; needs a local R2U2 build."
+      "covers": ["make:r2u2-nightly"],
+      "note": "Past grid plus exhaustive future suite against the pinned R2U2; unavailable unless R2U2_ROOT is a pinned build."
     }
   ]
 }

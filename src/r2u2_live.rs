@@ -413,6 +413,9 @@ pub enum CaseStatus {
     OriginProfileDifference,
     /// R2U2 produced no verdict for a step.
     MissingTarget,
+    /// Reference is still pending where R2U2 has resolved (future suite):
+    /// documented profile difference, R2U2 treats the trace end as the signal end.
+    PendingResolvedByTarget,
     /// Disagrees outside the origin-exposed window.
     Unexplained,
 }
@@ -535,6 +538,8 @@ pub struct GroupRecord {
 pub struct Report {
     /// [`REPORT_SCHEMA`].
     pub schema_version: String,
+    /// `past` or `future`.
+    pub suite: String,
     /// `ran`, `replayed` or `tool_unavailable`.
     pub mode: String,
     /// Why R2U2 did not run.
@@ -694,7 +699,13 @@ pub fn run(repo: &Path, source: &Source<'_>, out: &Path) -> Result<Report, Strin
         let inputs = group_inputs(group, &admitted);
         let name = group.name();
         if let Some(rec) = &recorded {
-            verify_recorded_group(rec, &name, &inputs, &out.join("outputs").join(&name))?;
+            verify_recorded_group(
+                rec,
+                &name,
+                &inputs.spec,
+                &inputs.trace,
+                &out.join("outputs").join(&name),
+            )?;
         }
         let in_dir = out.join("inputs").join(&name);
         let out_dir = out.join("outputs").join(&name);
@@ -755,7 +766,7 @@ pub fn run(repo: &Path, source: &Source<'_>, out: &Path) -> Result<Report, Strin
 }
 
 /// The report a live run wrote under `out`; a replay is bound to it.
-fn read_recorded(out: &Path) -> Result<Report, String> {
+pub(crate) fn read_recorded(out: &Path) -> Result<Report, String> {
     let bytes = fs::read(out.join("report.json")).map_err(|e| {
         format!(
             "replay needs the recorded live report.json under {}: {e}",
@@ -774,10 +785,11 @@ fn read_recorded(out: &Path) -> Result<Report, String> {
 
 /// Refuse a replay whose regenerated inputs or recorded R2U2 output differ
 /// from what the live run recorded.
-fn verify_recorded_group(
+pub(crate) fn verify_recorded_group(
     rec: &Report,
     name: &str,
-    inputs: &GroupInputs,
+    spec: &str,
+    trace: &str,
     out_dir: &Path,
 ) -> Result<(), String> {
     let g = rec
@@ -785,8 +797,8 @@ fn verify_recorded_group(
         .iter()
         .find(|g| g.group == name)
         .ok_or_else(|| format!("recorded report has no group {name}"))?;
-    if g.spec_sha256 != sha256_hex(inputs.spec.as_bytes())
-        || g.trace_sha256 != sha256_hex(inputs.trace.as_bytes())
+    if g.spec_sha256 != sha256_hex(spec.as_bytes())
+        || g.trace_sha256 != sha256_hex(trace.as_bytes())
     {
         return Err(format!(
             "group {name}: the grid no longer generates the inputs the live run used"
@@ -803,7 +815,7 @@ fn verify_recorded_group(
     Ok(())
 }
 
-fn run_group(root: &Path, in_dir: &Path, out_dir: &Path) -> Result<String, String> {
+pub(crate) fn run_group(root: &Path, in_dir: &Path, out_dir: &Path) -> Result<String, String> {
     let abs = |p: &Path| fs::canonicalize(p).map_err(|e| e.to_string());
     let (spec, trace, bin) = (
         abs(&in_dir.join("spec.c2po"))?,
@@ -830,7 +842,7 @@ fn run_group(root: &Path, in_dir: &Path, out_dir: &Path) -> Result<String, Strin
     Ok(stdout)
 }
 
-fn finish(
+pub(crate) fn finish(
     pin: Pin,
     mode: &str,
     tool_detail: Option<String>,
@@ -871,6 +883,7 @@ fn finish(
     };
     Report {
         schema_version: REPORT_SCHEMA.to_owned(),
+        suite: "past".to_owned(),
         mode: mode.to_owned(),
         tool_detail,
         pin,

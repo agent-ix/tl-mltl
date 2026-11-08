@@ -12,6 +12,7 @@
 
 use std::{env, fs, path::PathBuf, process::ExitCode};
 
+use tl_mltl::r2u2_future::run_future;
 use tl_mltl::r2u2_live::{run, Report, Source};
 
 fn main() -> ExitCode {
@@ -25,20 +26,27 @@ fn main() -> ExitCode {
     let out = PathBuf::from(flag("--out").unwrap_or_else(|| "target/r2u2".to_owned()));
     let root = flag("--r2u2-root").or_else(|| env::var("R2U2_ROOT").ok());
     let repo = PathBuf::from(".");
+    let future = flag("--suite").as_deref() == Some("future");
+    let go = |source: &Source<'_>| {
+        if future {
+            run_future(&repo, source, &out)
+        } else {
+            run(&repo, source, &out)
+        }
+    };
     let report = match args.first().map(String::as_str) {
         Some("run") => match &root {
-            Some(r) => run(&repo, &Source::Live(&PathBuf::from(r)), &out),
-            None => run(
-                &repo,
-                &Source::None("no R2U2 checkout: pass --r2u2-root or set R2U2_ROOT".to_owned()),
-                &out,
-            ),
+            Some(r) => go(&Source::Live(&PathBuf::from(r))),
+            None => go(&Source::None(
+                "no R2U2 checkout: pass --r2u2-root or set R2U2_ROOT".to_owned(),
+            )),
         },
-        Some("replay") => run(&repo, &Source::Recorded, &out),
+        Some("replay") => go(&Source::Recorded),
         Some("probe") => return probe(&repo, root.as_deref()),
-        _ => {
-            Err("usage: r2u2_live <run [--r2u2-root DIR] | replay | probe> [--out DIR]".to_owned())
-        }
+        _ => Err(
+            "usage: r2u2_live <run [--r2u2-root DIR] | replay | probe> [--suite past|future] [--out DIR]"
+                .to_owned(),
+        ),
     };
     // A replay never replaces the live run's report it is bound to.
     let name = if args.first().map(String::as_str) == Some("replay") {
