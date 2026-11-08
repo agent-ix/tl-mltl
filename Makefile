@@ -198,9 +198,7 @@ fuzz-check:
 # (no mutation, no campaign). Longer campaigns are manual: see fuzz/README.md.
 .PHONY: fuzz-smoke
 fuzz-smoke:
-	@for target in $$($(CARGO) +nightly fuzz list); do \
-		$(CARGO) +nightly fuzz run $$target fuzz/corpus/$$target -- -runs=0 || exit 1; \
-	done
+	$(CARGO) +nightly fuzz list | xargs -I % $(CARGO) +nightly fuzz run % fuzz/corpus/% -- -runs=0
 
 # =============================================================================
 # Composite
