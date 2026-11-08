@@ -10,7 +10,7 @@ relationships:
 # MLTL V1 infinite-trace provider test matrix
 
 Implementation statuses below reflect traced tests observed passing under
-`make ci` with `--all-features` on tl-mltl `main` c2e7448 plus the TL-256
+`make ci` with `--all-features` on tl-mltl `main` plus the TL-256
 changes. Per-row test locations:
 
 | Rows | Evidence |
