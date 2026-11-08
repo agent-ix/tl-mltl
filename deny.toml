@@ -20,4 +20,5 @@ unknown-git = "deny"
 # Exact owner revision is pinned in Cargo.toml and Cargo.lock.
 allow-git = [
     "https://github.com/agent-ix/tl-syntax.git",
+    "https://github.com/agent-ix/tl-oracle.git",
 ]

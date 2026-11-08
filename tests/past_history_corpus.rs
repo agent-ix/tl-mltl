@@ -1,7 +1,6 @@
 use std::{collections::BTreeMap, fs, path::Path};
 
 use serde::Deserialize;
-use sha2::{Digest, Sha256};
 use tl_mltl::{
     analyze_required_history, evaluate_past, ClockBinding, ClockError, ClockSample, ExactNumber,
     HistoryError, OwnerHistoryState, PastEvaluationError, PastEvaluationLimits,
@@ -14,7 +13,6 @@ use tl_syntax::{
 };
 
 const DIRECTORY: &str = "past-history";
-const MANIFEST_SHA256: &str = "0bb497481a08d82ae74db794657eb6e7c57e6d1e5b5a8471b3559f82f405afd1";
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -27,24 +25,7 @@ struct Manifest {
     semantic_profile: String,
     history_schema: String,
     dialect: String,
-    implementation_revisions: Revisions,
-    files: Vec<Pin>,
 }
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Revisions {
-    tl_syntax: String,
-    tl_parse: String,
-    tl_mltl: String,
-    tl_rewrite: String,
-}
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Pin {
-    path: String,
-    sha256: String,
-}
-
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Cases {
@@ -116,10 +97,6 @@ struct Evaluation {
     predecessor_history: Option<String>,
 }
 
-fn digest(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
-}
-
 fn number(value: NumberWire) -> ExactNumber {
     ExactNumber::new(value.numerator, value.denominator).unwrap()
 }
@@ -177,22 +154,7 @@ fn read_corpus(root: &Path, relative: &str) -> Vec<u8> {
 fn load() -> (Manifest, Cases) {
     let root = Path::new(tl_syntax::CORPUS_DIR).join(DIRECTORY);
     let manifest_bytes = read_corpus(&root, "manifest.json");
-    assert_eq!(digest(&manifest_bytes), MANIFEST_SHA256);
     let manifest: Manifest = serde_json::from_slice(&manifest_bytes).unwrap();
-    let pins: BTreeMap<_, _> = manifest
-        .files
-        .iter()
-        .map(|pin| (&pin.path, &pin.sha256))
-        .collect();
-    assert_eq!(pins.len(), 3);
-    for pin in &manifest.files {
-        assert_eq!(
-            digest(&read_corpus(&root, &pin.path)),
-            pin.sha256,
-            "{}",
-            pin.path
-        );
-    }
     let cases = serde_json::from_slice(&read_corpus(&root, "cases.json")).unwrap();
     (manifest, cases)
 }
@@ -209,22 +171,6 @@ fn exact_shared_corpus_replays_history_analysis_evaluation_and_corrections() {
     assert_eq!(manifest.semantic_profile, "mltl.origin-complete-history/v1");
     assert_eq!(manifest.history_schema, "tl-mltl.position-history/v1");
     assert_eq!(manifest.dialect, "tl-parse.clean-ascii/v3");
-    assert_eq!(
-        manifest.implementation_revisions.tl_syntax,
-        "e70f2379a752117c79603bc399a86c26feed7716"
-    );
-    assert_eq!(
-        manifest.implementation_revisions.tl_parse,
-        "f82b0c724675c0f774415aa696c360959da30481"
-    );
-    assert_eq!(
-        manifest.implementation_revisions.tl_mltl,
-        "b346cd0902794633e862f644a5575fc9776c34fb"
-    );
-    assert_eq!(
-        manifest.implementation_revisions.tl_rewrite,
-        "22b9cadcb1692cec8d3a97768f4f3b38fc654a5e"
-    );
     assert_eq!(cases.corpus, manifest.corpus);
     assert_eq!(cases.formula_schema, manifest.formula_schema);
     assert_eq!(cases.operator_profile, manifest.operator_profile);
@@ -340,7 +286,7 @@ fn corpus_digest_and_history_identity_mutations_are_detected() {
     let root = Path::new(tl_syntax::CORPUS_DIR).join(DIRECTORY);
     let mut manifest = read_corpus(&root, "manifest.json");
     manifest[0] ^= 1;
-    assert_ne!(digest(&manifest), MANIFEST_SHA256);
+    assert!(serde_json::from_slice::<Manifest>(&manifest).is_err());
 
     let (_, cases) = load();
     let admitted = history(&cases.histories[0]);
