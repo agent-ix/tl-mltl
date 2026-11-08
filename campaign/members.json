@@ -177,6 +177,35 @@
       "covers": ["make:fuzz-smoke"]
     },
     {
+      "id": "fuzz-infinite-seeds",
+      "technique": "fuzz",
+      "kind": "fuzz",
+      "command": ["cargo", "test", "--features", "infinite-trace", "--test", "infinite_fuzz_seeds"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "covers": []
+    },
+    {
+      "id": "fuzz-lasso-differential-live",
+      "technique": "fuzz",
+      "kind": "fuzz",
+      "command": ["cargo", "fuzz", "run", "lasso_differential", "--", "-runs=20000", "-seed=20261108"],
+      "tools": ["cargo-fuzz"],
+      "determinism": "seeded",
+      "seed": "20261108",
+      "covers": ["fuzz:lasso_differential"]
+    },
+    {
+      "id": "fuzz-partial-valuation-monotone-live",
+      "technique": "fuzz",
+      "kind": "fuzz",
+      "command": ["cargo", "fuzz", "run", "partial_valuation_monotone", "--", "-runs=20000", "-seed=20261108"],
+      "tools": ["cargo-fuzz"],
+      "determinism": "seeded",
+      "seed": "20261108",
+      "covers": ["fuzz:partial_valuation_monotone"]
+    },
+    {
       "id": "kani-horizon-bound",
       "technique": "kani",
       "kind": "kani",
