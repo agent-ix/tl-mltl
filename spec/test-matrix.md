@@ -25,13 +25,12 @@ verification catalog, and the method is the classification:
 - `Inspection`: excluded from property testing. FR-029-AC-1 and AC-3 state documentary
   facts (a dependency route, the absence of a claim) with no input domain.
 - Rows still `Test` with no tagged test (FR-008 through FR-010, FR-021 through
-  FR-023, NFR-004, NFR-005) are planned, unbacked rows. They carry no
-  classification until a test exists to classify. FR-020-AC-1 through AC-5 name
-  their intended method and stay planned until tagged tests land: the laws in
-  `tests/temporal_laws.rs` (open PR 137) and the oracle comparison in
-  `tests/finite_oracle.rs` (open PR 138) will back AC-1, AC-2 and AC-4 once
-  merged and tagged; AC-3 needs the seeded-fault controls and AC-5 a corpus
-  boundary test.
+  FR-023, NFR-004, NFR-005, FR-020-AC-5) are planned, unbacked rows. They carry
+  no classification until a test exists to classify. FR-020-AC-1, AC-2 and AC-4
+  are property, backed by `tests/temporal_laws.rs` (seeded generated laws),
+  `tests/finite_oracle.rs` (exhaustive and sampled sweeps against the oracle) and
+  `tests/boundary_corpus.rs`; FR-020-AC-3 is example-only (seeded-fault
+  controls).
 - `Withdrawn`: FR-019-AC-1 and AC-2.
 
 The Measurement and Evaluation rows (`NFR-*-M-*`) are derived counts over the

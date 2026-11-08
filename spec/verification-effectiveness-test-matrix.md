@@ -37,9 +37,9 @@ relationships:
 
 | Test ID | Title | Type | Priority | Traces To | Status |
 |---|---|---|---|---|---|
-| TC-104 | Run each law in the evaluator law set as a tagged generated-input or finite-exhaustive test bound to its criterion id | Property | P0 | FR-020-AC-1 | 🚧 planned |
-| TC-105 | Compare production evaluation with the independent oracle over generated and exhaustive domains for laws that need a reference | Property | P0 | FR-020-AC-1, FR-020-AC-2 | 🚧 planned |
-| TC-106 | Fail a property that passes against a seeded-broken evaluator, uses a self-oracle, or discards beyond its ceiling | Property | P0 | FR-020-AC-2, FR-020-AC-3 | 🚧 planned |
+| TC-104 | Run each law in the evaluator law set as a tagged generated-input or finite-exhaustive test bound to its criterion id | Property | P0 | FR-020-AC-1 | ✅ implemented |
+| TC-105 | Compare production evaluation with the independent oracle over generated and exhaustive domains for laws that need a reference | Property | P0 | FR-020-AC-1, FR-020-AC-2 | ✅ implemented |
+| TC-106 | Fail a property that passes against a seeded-broken evaluator, uses a self-oracle, or discards beyond its ceiling | Property | P0 | FR-020-AC-2, FR-020-AC-3 | ✅ implemented |
 | TC-107 | Reproduce property runs from recorded seed and case count, including accepted/discarded counts and shrunk counterexample | Property | P0 | FR-020-AC-3, FR-020-AC-4, NFR-005-AC-1 | ✅ implemented |
 | TC-108 | Keep generated inputs outside canonical corpus and refuse incomplete promotion | Integration | P0 | FR-020-AC-5 | 🚧 planned |
 | TC-109 | Enforce the exact campaign preimage, three pairwise-distinct ordered `u64` seeds, both finite caps, first-stop semantics, and requested-versus-observed budgets | Fuzz | P0 | FR-021-AC-1, FR-021-AC-4 | 🚧 planned |

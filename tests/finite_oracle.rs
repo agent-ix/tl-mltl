@@ -683,19 +683,19 @@ const DEPTH_THREE_SAMPLED: Scope = Scope {
 
 const PROFILES: [Profile; 2] = [Profile::ClosedFuture, Profile::OriginPast];
 
-// Trace: TC-107
+// Trace: TC-105, FR-020-AC-1, FR-020-AC-2
 #[test]
 fn closed_future_agrees_with_oracle_over_complete_finite_partition() {
     assert_agrees(Profile::ClosedFuture, &DEPTH_ONE);
 }
 
-// Trace: TC-107
+// Trace: TC-105, FR-020-AC-1, FR-020-AC-2
 #[test]
 fn origin_past_agrees_with_oracle_over_complete_finite_partition() {
     assert_agrees(Profile::OriginPast, &DEPTH_ONE);
 }
 
-// Trace: TC-107
+// Trace: TC-105, FR-020-AC-1, FR-020-AC-2
 #[test]
 fn fast_depth_two_subset_agrees_with_oracle_closed_future() {
     let record = assert_agrees(Profile::ClosedFuture, &DEPTH_TWO_FAST);
@@ -705,7 +705,7 @@ fn fast_depth_two_subset_agrees_with_oracle_closed_future() {
     assert_eq!(record["declaredCases"], 15_811u64 * 34);
 }
 
-// Trace: TC-107
+// Trace: TC-105, FR-020-AC-1, FR-020-AC-2
 #[test]
 fn fast_depth_two_subset_agrees_with_oracle_origin_past() {
     let record = assert_agrees(Profile::OriginPast, &DEPTH_TWO_FAST_PAST);
@@ -715,7 +715,7 @@ fn fast_depth_two_subset_agrees_with_oracle_origin_past() {
 }
 
 /// The nightly full sweep; run by `make sweep-full` in release mode.
-// Trace: TC-107
+// Trace: TC-105, FR-020-AC-1, FR-020-AC-2
 #[test]
 #[ignore = "nightly full sweep: run `make sweep-full`"]
 fn full_small_scope_sweep_agrees_with_oracle() {
@@ -750,7 +750,7 @@ fn exhaustive_populations_have_independently_computed_sizes() {
     assert!(d2_wide_lower_bound > 100_000_000);
 }
 
-// Trace: TC-107
+// Trace: TC-107, FR-020-AC-4
 #[test]
 fn sampled_population_is_deterministic_for_its_seed() {
     let a = DEPTH_THREE_SAMPLED.formula_list();
@@ -814,7 +814,7 @@ fn committed_regression_fixtures_replay_clean() {
 /// Seeded production faults (interval off-by-one, swapped duals, lost
 /// negation) must each turn the comparison red in both profiles, at depth one
 /// and in the fast depth-two subset.
-// Trace: TC-107
+// Trace: TC-106, FR-020-AC-3
 #[test]
 fn seeded_production_faults_turn_the_comparison_red() {
     type Fault = fn(&O) -> O;

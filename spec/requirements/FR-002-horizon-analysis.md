@@ -27,7 +27,7 @@ formula without wrapping arithmetic.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-002-AC-1 | Static horizons match shared-corpus expectations and prefix decision deadlines. | integration-testing (TC-005, TC-008) |
+| FR-002-AC-1 | Static horizons match shared-corpus expectations and prefix decision deadlines. | property-based-testing (TC-005, TC-008) |
 | FR-002-AC-2 | Nested bounds use checked arithmetic and never wrap into a smaller claim. | unit-testing (TC-006) |
 | FR-002-AC-3 | Reports retain formula root, profile, corpus revision, and resource units. | unit-testing (TC-007) |
 

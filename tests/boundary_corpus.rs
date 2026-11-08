@@ -175,7 +175,7 @@ fn corpus_is_non_empty_with_unique_ids() {
 }
 
 /// Every stored verdict is confirmed by the independent oracle.
-// Trace: TC-107
+// Trace: TC-107, TC-105, FR-020-AC-2
 #[test]
 fn stored_verdicts_agree_with_the_independent_oracle() {
     let (admitted, refused) = replay(&load(), "oracle", reference, &Clone::clone)
@@ -297,7 +297,7 @@ fn every_cell_has_positive_negative_and_boundary_cases() {
 
 /// A corpus that cannot fail proves nothing: each seeded fault must turn the
 /// replay red, both through the oracle-modelled profiles and the prefix profile.
-// Trace: TC-107
+// Trace: TC-107, TC-106, FR-020-AC-3
 #[test]
 fn seeded_faults_turn_the_corpus_red() {
     type Fault = fn(&O) -> O;

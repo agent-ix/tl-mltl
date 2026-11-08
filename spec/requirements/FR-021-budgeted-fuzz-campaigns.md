@@ -22,8 +22,8 @@ coverage plateau as semantic proof.
 
 ## Inputs
 
-- Applicable FR-020 row whose authored method resolves through the catalog to
-  `evidence_kind: Fuzz`, or an accepted specification amendment selecting a
+- A parser or deserializer boundary whose authored verification method resolves
+  through the catalog to `evidence_kind: Fuzz`, or an accepted specification amendment selecting a
   byte-oriented or structured-input trust boundary.
 - Exact source, target binary, compiler, cargo-fuzz/libFuzzer, sanitizer,
   target-triple, feature/configuration, dictionary, and environment identities.
@@ -111,7 +111,7 @@ size is not conformance evidence.
 
 ## Dependencies
 
-Depends on an applicable FR-020 grounding and FR-009 generated/canonical
+Depends on FR-020 for the property laws that fuzzing complements, and on FR-009 generated/canonical
 lifecycle. The owner of the fuzzed entry point owns its Rust harness and domain
 producer; Quoin owns retention. A target requiring Java, Node, Electron, R2U2,
 C2PO, or another foreign runtime is unavailable, not silently substituted.

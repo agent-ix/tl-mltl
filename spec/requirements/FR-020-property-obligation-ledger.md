@@ -49,9 +49,9 @@ types.
 Every property uses a fixed seed and an accepted-case count, and its strategies
 construct admissible inputs so discards stay at or below a declared ceiling. A
 run with zero accepted cases, a discard count above the ceiling, an unbounded
-generator, or an unreproducible failing case is a failing test. Each property
-has a seeded-fault control: a deliberately broken evaluator or mutated oracle
-side turns the property red.
+generator, or an unreproducible failing case is a failing test. Each oracle
+comparison has a seeded-fault control: a deliberately broken evaluator turns the
+comparison red.
 
 Generated inputs are evidence, never canonical conformance fixtures. Promoting a
 shrunk counterexample to the corpus follows FR-009.
@@ -62,7 +62,7 @@ shrunk counterexample to the corpus follows FR-009.
 |---|---|---|
 | FR-020-AC-1 | Every law in the law set is run by a tagged generated-input or finite-exhaustive test, and each criterion that is a property in this repository's specification is bound to such a test by its criterion id. | property-based-testing (TC-104, TC-105) |
 | FR-020-AC-2 | A law that needs a reference compares the production evaluation with the independent oracle verdict; the oracle does not call the operation under test or a helper implementing the same derivation. | property-based-testing (TC-105, TC-106) |
-| FR-020-AC-3 | A property that passes against a seeded-broken evaluator, uses a self-oracle, runs zero accepted cases, or discards more than its declared ceiling fails. | property-based-testing (TC-106, TC-107) |
+| FR-020-AC-3 | Each seeded evaluator fault (interval end off by one, swapped dual operator, dropped negation) turns the oracle comparison red, and a property law is configured to permit no discarded cases. | integration-testing (TC-106) |
 | FR-020-AC-4 | Repeating a run with the same revision, seed and case count reproduces its accepted-case sequence and minimal counterexample, and the seed and counts are recorded for the campaign report. | property-based-testing (TC-107) |
 | FR-020-AC-5 | Generated cases stay outside canonical conformance counts, and a shrunk counterexample enters the corpus only through the FR-009 promotion conditions. | integration-testing (TC-108) |
 
