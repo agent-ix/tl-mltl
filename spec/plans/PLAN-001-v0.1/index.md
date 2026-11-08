@@ -8,7 +8,6 @@ description: "Contents of the tl-mltl v0.1 implementation plan bundle."
 ## Contents
 
 - [Plan overview](./plan.md)
-- [Update log](./log.md)
 - [Task-001: Specification and assurance foundation](./tasks/Task-001-foundation.md)
 - [Task-002: Reference semantics](./tasks/Task-002-reference-semantics.md)
 - [Task-003: Horizon and prefix behavior](./tasks/Task-003-horizon-prefix.md)

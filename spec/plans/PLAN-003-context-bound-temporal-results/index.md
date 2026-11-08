@@ -9,7 +9,6 @@ description: "Contents of the tl-mltl typed context implementation plan."
 ## Contents
 
 - [Plan overview](./plan.md)
-- [Update log](./log.md)
 - [Task-001: Specification and reviewed context contract](./tasks/Task-001-specification.md)
 - [Task-002: Shared dependencies and contextual wire forms](./tasks/Task-002-contextual-wire.md)
 - [Task-003: Context-bound evaluation and horizon](./tasks/Task-003-evaluation-horizon.md)
