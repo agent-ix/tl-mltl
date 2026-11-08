@@ -9,118 +9,65 @@ relationships:
     type: depends_on
 ---
 
-# FR-020: Ground a complete property-obligation ledger
+# FR-020: Run evaluator property laws against the independent oracle
 
 ## Description
 
-When an exact TL repository revision enters the effectiveness campaign, the
-campaign shall classify every criterion in its Quire property export and bind
-every applicable criterion to a finite generated or exhaustive domain, an
-independent oracle, a reproducible execution budget, and one owning Rust test.
+When tl-mltl's evaluators change, the repository shall check their laws as tagged
+generated-input tests with recorded seeds and accepted-case counts, comparing
+against the independent oracle wherever a law needs a reference.
 
 ## Inputs
 
-- Exact repository revision and Quire/Quoin/toolchain identities.
-- The complete `quire properties --json` criterion population, including row
-  id, statement hash, property shape, source path, and authored method.
-- Reviewed priority from every owning TestMatrix row that traces to the
-  criterion, plus the exact matrix digest and applicable semantic, operator,
-  interval, trace/history, clock, capture, resource, and refusal profiles.
+- The exact repository revision.
+- The law set: round-trip, idempotence, duality, monotonicity, lowering-equivalence
+  and verdict-preservation laws over the closed-future, prefix, past-history and
+  infinite-trace evaluators.
+- The independent oracle (`tl-oracle`) and its public canonical input and result
+  types.
 
 ## Outputs
 
-- An owner-native `<repository>.property-ledger/v1` record with every criterion
-  classified exactly once as `applicable`, `excluded`, or `blocked`; tl-mltl's
-  identity is `tl-mltl.property-ledger/v1`.
-- For each applicable criterion, an owner-native property-run record and exact
-  owning Rust test symbol.
-- A typed refusal for duplicate, omitted, stale, self-oracled, unbounded,
-  vacuous, or identity-incomplete entries.
+- Rust property tests tagged by criterion id, each running under a fixed seed and
+  a stated accepted-case count.
+- A run record per property: seed, requested and accepted cases, discarded cases,
+  and the minimal shrunk counterexample of any failure, kept as a regression
+  fixture.
 
 ## Behavior
 
-The ledger population is the complete Quire export, not only criteria that the
-property-shape classifier labels specific. `property_shaped`, `specific_shaped`,
-`example`, `universal`, and `unclassified` are observations, not verdicts.
+A law that has an independent reference compares the production evaluation with
+the oracle verdict. A law that does not (an algebraic identity such as a duality)
+compares two production evaluations of different formulas, so a defect in a bound
+or a duality case breaks the equality. A finite criterion that can be exhaustively
+enumerated is enumerated, and the run records the cardinality visited.
 
-An `applicable` row declares the generated or finite-exhaustive input domain,
-precondition, valid/invalid partitions, generator and shrinker identities,
-independent oracle or metamorphic relation, operation under test, accepted-case
-budget, discard ceiling, expected result/refusal classes, and limitation. An
-`excluded` row names a closed reason such as inspection-only, analysis-only,
-example-specific, or non-generative. A finite criterion that can be exhaustively
-enumerated remains applicable and binds its enumerator evidence. A
-`blocked` row names the unresolved requirement/profile/implementation revision
-and produces no coverage credit.
+The oracle shall not call the production operation under test or a helper that
+implements the same derivation. It may share public canonical input and result
+types.
 
-Every identity array below is compact JSON encoded as UTF-8 with no
-insignificant whitespace. String escaping follows JSON; identifier and enum
-tokens are closed ASCII values. `propertyRowSha256` is lowercase hexadecimal
-SHA-256 over the UTF-8 bytes of `tl-mltl.property-row/v1`, one zero byte, and
-this exact array:
+Every property uses a fixed seed and an accepted-case count, and its strategies
+construct admissible inputs so discards stay at or below a declared ceiling. A
+run with zero accepted cases, a discard count above the ceiling, an unbounded
+generator, or an unreproducible failing case is a failing test. Each property
+has a seeded-fault control: a deliberately broken evaluator or mutated oracle
+side turns the property red.
 
-```text
-[repository,sourceRevision,criterionId,statementSha256,operationId,semanticProfileId,domainPartitionSha256]
-```
-
-`domainPartitionSha256` is computed under domain
-`tl-mltl.property-domain/v1` over the compact JSON bytes of the closed domain,
-precondition, valid/invalid partitions, finite cardinality or generator,
-shrinker, and expected result/refusal classes. Classification and execution
-result are excluded from the row identity, so reclassifying a blocked or
-failing row cannot hide the same concern as a new row.
-
-Rows are sorted by the UTF-8 bytes of `propertyRowSha256`.
-`propertyLedgerSha256` is computed under domain
-`tl-mltl.property-ledger/v1` over the compact JSON array of
-`[predecessorLedgerSha256-or-null,rows]`, where each row is the closed ordered
-array of row identity, classification, reason/dependency, domain/profile,
-oracle/metamorphic relation, generator/enumerator, matrix priorities, ownership,
-and limitation fields. The digest is carried outside those hashed bytes. The
-ledger is append-only within one identity. Changing any covered value requires
-a reviewed successor ledger with predecessor digest and an explicit
-added/changed/removed census; a removed row remains a tombstone.
-
-Campaign priority uses the closed rank `P0 < P1 < P2 < P3`, where lower rank is
-more urgent, over the exact TestMatrix rows that trace to a criterion; ties
-retain every row identity sorted by UTF-8 id bytes. An unknown priority or a
-criterion with no reviewed matrix priority is blocked. Neither Quire's
-currently nullable `obligation.criticality` field nor a producer default may
-invent a priority.
-
-The independent oracle may share public canonical input and result types. The
-independent oracle shall not call the production operation under test, its evaluator/horizon/
-history/parser/formatter/rewrite/mapping helpers, or a helper implementing the
-same derivation. A metamorphic relation identifies both executions and explains
-why the relation is independent of the suspected fault. A mutation control
-must demonstrate that the oracle or relation detects at least one relevant
-seeded fault; a surviving control makes the row `suspect`, not passed.
-
-Each generated repetition records the exact seed, requested and accepted cases,
-discarded cases by reason, class histogram, first failure, minimal shrunk case,
-shrink termination, tool/configuration/environment identities, and start/end
-corpus digests when a corpus participates. Zero accepted cases, a discard count
-above the declared ceiling, an unbounded generator, or an unreproducible failing
-case is non-conclusive and cannot satisfy the row. Exhaustive runs record the
-declared finite cardinality and prove every member was visited exactly once.
-
-Property inputs are generated evidence, never canonical conformance fixtures.
-Promotion follows FR-009 and requires a minimal reproducer, independent expected
-result, complete provenance, review, and a successor manifest.
+Generated inputs are evidence, never canonical conformance fixtures. Promoting a
+shrunk counterexample to the corpus follows FR-009.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-020-AC-1 | Every criterion in each exact Quire export appears exactly once as applicable, excluded, or blocked under the specified row/domain preimages and ordered classification-covering ledger digest; omissions, duplicates, reorderings, stale statement hashes, unknown classifications/priorities, missing matrix priority, and unreviewed successor changes refuse while naming the row. | Test (TC-104, TC-105) |
-| FR-020-AC-2 | Every applicable row binds a finite domain, partitions, precondition, generator/exhaustive enumerator, shrink behavior, independent oracle or justified metamorphic relation, operation, Rust symbol, budgets, expected classes, and limitation. | Test (TC-105, TC-106) |
-| FR-020-AC-3 | Self-oracles, shared derivation helpers, vacuous preconditions, zero accepted cases, excessive discards, incomplete exhaustive visits, and seeded faults that the oracle misses remain suspect or non-conclusive and earn no property-coverage credit. | Test (TC-106, TC-107) |
-| FR-020-AC-4 | Repeating a generated run with the same revision, domain, configuration, seed, and environment reproduces its accepted/discarded class sequence and minimal counterexample, while different seeds remain separately identified. | Test (TC-107) |
-| FR-020-AC-5 | Generated cases remain outside canonical conformance counts, and promotion is refused unless every FR-009 identity, oracle, provenance, review, and successor-manifest condition is present. | Test (TC-108) |
+| FR-020-AC-1 | Every law in the law set is run by a tagged generated-input or finite-exhaustive test, and each criterion that is a property in this repository's specification is bound to such a test by its criterion id. | property-based-testing (TC-104, TC-105) |
+| FR-020-AC-2 | A law that needs a reference compares the production evaluation with the independent oracle verdict; the oracle does not call the operation under test or a helper implementing the same derivation. | property-based-testing (TC-105, TC-106) |
+| FR-020-AC-3 | A property that passes against a seeded-broken evaluator, uses a self-oracle, runs zero accepted cases, or discards more than its declared ceiling fails. | property-based-testing (TC-106, TC-107) |
+| FR-020-AC-4 | Repeating a run with the same revision, seed and case count reproduces its accepted-case sequence and minimal counterexample, and the seed and counts are recorded for the campaign report. | property-based-testing (TC-107) |
+| FR-020-AC-5 | Generated cases stay outside canonical conformance counts, and a shrunk counterexample enters the corpus only through the FR-009 promotion conditions. | integration-testing (TC-108) |
 
 ## Dependencies
 
-Depends on FR-008/FR-009 for class
-and canonical-fixture boundaries. Each repository owns its domain generators,
-oracles, and tests; tl-mltl owns only its own evaluator/horizon/mapping rows and
-the campaign-level contract.
+Depends on FR-008/FR-009 for class and canonical-fixture boundaries. Each repository
+owns its generators, oracles and tests; tl-mltl owns its evaluator, horizon and
+mapping laws.

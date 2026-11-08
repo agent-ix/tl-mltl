@@ -37,10 +37,10 @@ relationships:
 
 | Test ID | Title | Type | Priority | Traces To | Status |
 |---|---|---|---|---|---|
-| TC-104 | Census every exact Quire criterion once under the exact row/domain/ledger preimages and reject omitted, duplicate, reordered, stale, unknown, or invalid-priority rows | Integration | P0 | FR-020-AC-1 | 🚧 planned |
-| TC-105 | Round-trip applicable, excluded, and blocked property rows with complete finite domain, ownership, predecessor, and digest fields | Property | P0 | FR-020-AC-1, FR-020-AC-2 | 🚧 planned |
-| TC-106 | Reject self-oracles, shared derivations, vacuous partitions, and seeded faults missed by the claimed oracle | Integration | P0 | FR-020-AC-2, FR-020-AC-3 | 🚧 planned |
-| TC-107 | Reproduce generated and exhaustive property runs, including seed, accepted/discarded classes, failures, and shrinking | Property | P0 | FR-020-AC-3, FR-020-AC-4, NFR-005-AC-1 | ✅ implemented |
+| TC-104 | Run each law in the evaluator law set as a tagged generated-input or finite-exhaustive test bound to its criterion id | Property | P0 | FR-020-AC-1 | 🚧 planned |
+| TC-105 | Compare production evaluation with the independent oracle over generated and exhaustive domains for laws that need a reference | Property | P0 | FR-020-AC-1, FR-020-AC-2 | 🚧 planned |
+| TC-106 | Fail a property that passes against a seeded-broken evaluator, uses a self-oracle, or discards beyond its ceiling | Property | P0 | FR-020-AC-2, FR-020-AC-3 | 🚧 planned |
+| TC-107 | Reproduce property runs from recorded seed and case count, including accepted/discarded counts and shrunk counterexample | Property | P0 | FR-020-AC-3, FR-020-AC-4, NFR-005-AC-1 | ✅ implemented |
 | TC-108 | Keep generated inputs outside canonical corpus and refuse incomplete promotion | Integration | P0 | FR-020-AC-5 | 🚧 planned |
 | TC-109 | Enforce the exact campaign preimage, three pairwise-distinct ordered `u64` seeds, both finite caps, first-stop semantics, and requested-versus-observed budgets | Fuzz | P0 | FR-021-AC-1, FR-021-AC-4 | 🚧 planned |
 | TC-110 | Compute plateau only from cadence-valid exact feature sets at both final-window anchors under unchanged instrumentation; reject missing anchors and insufficient windows | Fuzz | P0 | FR-021-AC-1, FR-021-AC-2 | 🚧 planned |

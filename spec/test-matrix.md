@@ -22,15 +22,16 @@ verification catalog, and the method is the classification:
 - `unit-testing`, `integration-testing`, `fuzzing`: example-only. Fixed inputs
   with expected outputs, or a bounded fuzz run, assert the criterion; no tagged
   property test does.
-- `Inspection`: excluded from property testing. FR-018-AC-1 through AC-3 pin
-  retained owner-contract schema bytes and reader behavior, discharged by
-  inspection of the pinned contracts; FR-029-AC-1 and AC-3 state documentary
+- `Inspection`: excluded from property testing. FR-029-AC-1 and AC-3 state documentary
   facts (a dependency route, the absence of a claim) with no input domain.
-- Rows still `Test` with no tagged test (FR-008 through FR-010, FR-020 through
+- Rows still `Test` with no tagged test (FR-008 through FR-010, FR-021 through
   FR-023, NFR-004, NFR-005) are planned, unbacked rows. They carry no
-  classification until a test exists to classify; the property, fuzz, mutation
-  and Kani machinery they describe is campaign work, not a property of the
-  evaluator.
+  classification until a test exists to classify. FR-020-AC-1 through AC-5 name
+  their intended method and stay planned until tagged tests land: the laws in
+  `tests/temporal_laws.rs` (open PR 137) and the oracle comparison in
+  `tests/finite_oracle.rs` (open PR 138) will back AC-1, AC-2 and AC-4 once
+  merged and tagged; AC-3 needs the seeded-fault controls and AC-5 a corpus
+  boundary test.
 - `Withdrawn`: FR-019-AC-1 and AC-2.
 
 The Measurement and Evaluation rows (`NFR-*-M-*`) are derived counts over the
@@ -118,7 +119,7 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 | TC-087 | Check feature-off capability absence and bounded result/CLI byte stability | Integration | P0 | FR-028-AC-1, FR-028-AC-3 | ✅ implemented |
 | TC-088 | Inspect Linear dependency order and TL-215 acceptance gate before implementation or qualification | Inspection | P1 | FR-029-AC-1, FR-029-AC-3 | ✅ implemented |
 | TC-089 | Bind infinite evidence to the exact provider, TL profile, graph and clock identities | Integration | P0 | FR-029-AC-2 | ✅ implemented |
-| TC-090 | Confirm every retained TL-owned wire contract (`trace/v1`, `command/v1`, `position-history/v1`, `history-requirement/v1`, `past-evaluation/v1`) publishes immutable schema bytes/digest, strictly rejects malformed/noncanonical input under enforced `OwnerLimits`, and that removing the QObs-coupled request/result/mapping layer (TL-179) leaves existing future/past/CLI/legacy-mapping behavior unchanged | Inspection | P1 | FR-018-AC-1, FR-018-AC-2, FR-018-AC-3 | ✅ implemented |
+| TC-090 | Confirm every retained TL-owned wire contract (`trace/v1`, `command/v1`, `position-history/v1`, `history-requirement/v1`, `past-evaluation/v1`) publishes immutable schema bytes/digest, strictly rejects malformed/noncanonical input under enforced `OwnerLimits`, and that removing the QObs-coupled request/result/mapping layer (TL-179) leaves existing future/past/CLI/legacy-mapping behavior unchanged | Integration | P1 | FR-018-AC-1, FR-018-AC-2, FR-018-AC-3 | ✅ implemented |
 | TC-130 | Static inspector rejects each of `SHELL`, `.SHELLFLAGS`, `MAKEFLAGS`, `.ONESHELL:`, `.DEFAULT:`, `.IGNORE:`, `.SILENT:`, a `-`-prefixed recipe line, `\|\| true`/`\|\| :`, a stderr-to-`/dev/null` redirect, `$(eval`, a bare `;` command separator (including a quoted-value/trailing-comment MAKEFLAGS variation and a check-and-record chain), and a surface inside a recursively scanned `include`d file; a clean control and `for`/`while`/`if`/`case` control-flow semicolons are accepted without a false positive | Unit | P0 | NFR-006-AC-1 | ✅ implemented |
 | TC-131 | Entry point invoked with `MAKEFLAGS` set to an `-i`/`-k`/`-S`-equivalent value, including a bundled short-flag token in both `ik` and `-ik` form, in the environment is refused before Make starts; a clean environment is not; `\|\| true` is detected wherever it appears on a recipe line, including immediately before a trailing `;` and further commands | Unit | P0 | NFR-006-AC-2 | ✅ implemented |
 | TC-132 | Running each of the `ci` prerequisites individually against its real recipe writes exactly one completion record naming that gate and its exit status; a recipe forced to fail writes no record for that gate | Integration | P0 | NFR-006-AC-3 | ✅ implemented |
