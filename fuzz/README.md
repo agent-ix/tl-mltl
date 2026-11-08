@@ -27,3 +27,25 @@ memory toward RSS, so the default 2048 MB aborts runs with a small live heap.
 own `tl-syntax`, so proposition identities cross to it as integers.
 `tests/fuzz_seed_replay.rs` checks that the seeds reach accepting and refusing
 paths. Run records are in `spec/reviews/` and `spec/evidence/`.
+
+# TL-223 infinite-trace fuzz targets
+
+`lasso_differential` and `partial_valuation_monotone` decode any byte string
+into a formula over the whole infinite profile, up to two fairness premises, a
+partial lasso (at most eight missing or conflicting values) and a position. The
+bodies live in `support/infinite.rs`, so `tests/infinite_fuzz_seeds.rs` runs
+every committed seed under `cargo test` without cargo-fuzz.
+
+* `lasso_differential`: the provider must agree with the `tl-oracle`
+  successor-fixpoint procedure on disposition, admitted completions, witness
+  flags and reason, and the two `tl-oracle` procedures must agree with each
+  other.
+* `partial_valuation_monotone`: a conclusive verdict on a partial lasso must
+  survive refining its missing values (unless fairness then admits nothing),
+  and the refined result must match the reference.
+
+Run with `cargo +nightly fuzz run <target> <scratch-corpus> corpus/<target> --
+-seed=<n> -max_total_time=180`, passing a scratch directory first so generated
+inputs do not land in the committed seeds. The 12 seeds per target are six
+hand-built shapes and six from a fixed PRNG. The campaign record is
+`spec/reviews/SR-223-infinite-fuzz-and-mutation-pilot.md`.

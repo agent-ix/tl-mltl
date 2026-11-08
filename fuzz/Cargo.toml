@@ -12,10 +12,12 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4"
 arbitrary = "1"
 serde_json = "=1.0.151"
-tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "4b3034add7d46035f9193375fe2fe19957bebb5b" }
+tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "3e6743a513f7d3ca1d8883769da3d4856bc1c268" }
 sha2 = "=0.10.9"
-tl-mltl = { path = ".." }
-tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "af70b920fe8a39c28031b0084cc868012c47441f", default-features = false, features = ["alloc", "serde"] }
+tl-mltl = { path = "..", features = ["infinite-trace"] }
+serde_json = "=1.0.151"
+tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", rev = "ac80fea386004b24c8a60521756d5a533f7098d3" }
+tl-syntax = { version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.git", branch = "main", default-features = false, features = ["alloc", "serde"] }
 
 [[bin]]
 name = "c2po_map"
@@ -47,3 +49,17 @@ bench = false
 
 [workspace]
 members = ["."]
+
+[[bin]]
+name = "lasso_differential"
+path = "fuzz_targets/lasso_differential.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "partial_valuation_monotone"
+path = "fuzz_targets/partial_valuation_monotone.rs"
+test = false
+doc = false
+bench = false
