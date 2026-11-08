@@ -322,7 +322,7 @@ fn past_nodes_stabilize_later_than_the_trace_loop_entry() {
     );
 }
 
-// Trace: TC-142, TC-143, TC-144, FR-030-AC-1 through FR-030-AC-3
+// Trace: TC-142, TC-143, TC-144, FR-030-AC-1, FR-030-AC-2, FR-030-AC-3
 #[test]
 fn one_unknown_cell_uses_one_shared_completion_across_references_and_loops() {
     let lasso = trace(&[], &[ObservationValue::Missing]);
@@ -367,7 +367,7 @@ fn one_unknown_cell_uses_one_shared_completion_across_references_and_loops() {
     );
 }
 
-// Trace: TC-152, TC-153, TC-154, FR-032-AC-2 and FR-032-AC-3
+// Trace: TC-152, TC-153, TC-154, FR-032-AC-2, FR-032-AC-3
 #[test]
 fn fairness_filters_completions_without_vacuous_proof() {
     let graph = formula(
@@ -536,7 +536,7 @@ fn lasso_refuses_fairness_from_a_different_graph() {
     ));
 }
 
-// Trace: TC-139, FR-028-AC-1 and FR-028-AC-2
+// Trace: TC-139, FR-028-AC-1, FR-028-AC-2
 #[test]
 fn deployment_registry_routes_one_provider_and_refuses_duplicate() {
     let graph = formula(0, vec![node(K::True)]);
@@ -682,7 +682,7 @@ fn registered_detailed_route_preserves_reason_evidence_and_identity() {
     assert!(exhausted.evidence.is_none());
 }
 
-// Trace: TC-159, FR-034-AC-2 and FR-034-AC-3
+// Trace: TC-159, FR-034-AC-2, FR-034-AC-3
 #[test]
 fn every_work_limit_is_inclusive_and_results_are_byte_stable() {
     let graph = formula(

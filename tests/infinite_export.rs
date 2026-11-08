@@ -86,7 +86,7 @@ fn export(
     )
 }
 
-// Trace: TC-168, TC-169, TC-171, FR-040-AC-1 and FR-040-AC-3
+// Trace: TC-168, TC-169, TC-171, FR-040-AC-1, FR-040-AC-3
 #[test]
 fn exact_outer_safety_guard_exports_only_its_finite_horizon_body() {
     let past = graph(vec![
@@ -127,7 +127,7 @@ fn exact_outer_safety_guard_exports_only_its_finite_horizon_body() {
     assert_eq!(evidence.decision_horizon, 1);
 }
 
-// Trace: TC-172, TC-173, FR-041-AC-1 and FR-041-AC-2
+// Trace: TC-172, TC-173, FR-041-AC-1, FR-041-AC-2
 #[test]
 fn unsupported_shape_partial_observation_and_mixed_target_context_refuse() {
     let unbounded = graph(vec![
@@ -187,7 +187,7 @@ fn unsupported_shape_partial_observation_and_mixed_target_context_refuse() {
     );
 }
 
-// Trace: TC-172, TC-173, FR-041-AC-1 and FR-041-AC-2
+// Trace: TC-172, TC-173, FR-041-AC-1, FR-041-AC-2
 #[test]
 fn each_unbounded_future_family_has_a_distinct_typed_refusal() {
     let atom = node(K::Proposition {
@@ -258,7 +258,7 @@ fn each_unbounded_future_family_has_a_distinct_typed_refusal() {
     );
 }
 
-// Trace: TC-172, TC-173, FR-041-AC-1 and FR-041-AC-2
+// Trace: TC-172, TC-173, FR-041-AC-1, FR-041-AC-2
 #[test]
 fn nonempty_fairness_refuses_before_target_output_and_empty_fairness_is_neutral() {
     let safety = graph(vec![
@@ -443,7 +443,7 @@ fn safety_export_refuses_unbounded_past_inside_the_finite_body() {
     );
 }
 
-// Trace: TC-169, TC-170, FR-040-AC-1 and FR-040-AC-2
+// Trace: TC-169, TC-170, FR-040-AC-1, FR-040-AC-2
 #[test]
 fn target_violation_replays_at_its_exact_position_and_pass_remains_inconclusive() {
     let safety = graph(vec![
@@ -738,7 +738,7 @@ fn unsupported_signal_and_conflicting_observation_refuse_without_artifacts() {
     );
 }
 
-// Trace: TC-169, TC-170, FR-040-AC-1 and FR-040-AC-2
+// Trace: TC-169, TC-170, FR-040-AC-1, FR-040-AC-2
 #[test]
 fn bounded_future_violation_requires_the_whole_decision_horizon() {
     let safety = graph(vec![
@@ -787,7 +787,7 @@ fn bounded_future_violation_requires_the_whole_decision_horizon() {
     }
 }
 
-// Trace: TC-172, TC-173, FR-041-AC-1 and FR-041-AC-2
+// Trace: TC-172, TC-173, FR-041-AC-1, FR-041-AC-2
 #[test]
 fn tl216_origin_shape_partition_refuses_mixed_and_overdeep_past() {
     let mixed = graph(vec![
