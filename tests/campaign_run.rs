@@ -164,3 +164,26 @@ fn replay_reports_a_changed_result() {
     let (_, diffs) = replay(&report, dir.path(), again.path()).unwrap();
     assert_eq!(diffs.len(), 1, "{diffs:?}");
 }
+
+#[test]
+fn unparseable_evidence_fails_the_member() {
+    let bad = r#"{
+      "schemaVersion": "tl-mltl.campaign-members/v1",
+      "tools": [],
+      "members": [
+        {"id": "garbled", "technique": "t", "kind": "sweep",
+         "command": ["sh", "-c", "printf '{\"result\":\"agree\"}' > \"$EV/a.json\"; printf 'not json' > \"$EV/b.json\""],
+         "determinism": "exact", "evidence": {"env": "EV"}}
+      ]
+    }"#;
+    let dir = fixture(bad);
+    let out = tempfile::tempdir().unwrap();
+    let report = run_campaign(dir.path(), out.path(), &[]).unwrap();
+    assert_eq!(
+        report.members[0].status,
+        Status::Fail,
+        "{:?}",
+        report.members[0]
+    );
+    assert_eq!(report.aggregate, "reject");
+}

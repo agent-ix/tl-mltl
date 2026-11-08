@@ -12,7 +12,7 @@ use std::{
 };
 
 use tl_mltl::campaign::{
-    check_inventory, discover_fuzz_targets, parse_members, replay, run_campaign, Report,
+    check_inventory, discover_fuzz_targets, parse_members, replay, run_campaign, Report, Status,
 };
 
 fn main() -> ExitCode {
@@ -96,10 +96,17 @@ fn run(repo: &Path, args: &[String]) -> Result<(), String> {
     let (out, only) = split_out(args, "target/campaign");
     let report = run_campaign(repo, &out, &only)?;
     write_report(&report, &out, "report.json")?;
-    if report.aggregate == "reject" {
-        return Err("aggregate reject".to_owned());
+    // Only a fully passing run exits 0: an unavailable, planned or failed
+    // required member must never read as success to a caller.
+    let selected_ok = report
+        .members
+        .iter()
+        .all(|m| !m.required || m.status == Status::Pass);
+    if report.aggregate == "accept" || (report.aggregate == "partial" && selected_ok) {
+        Ok(())
+    } else {
+        Err(format!("aggregate {}", report.aggregate))
     }
-    Ok(())
 }
 
 fn replay_cmd(repo: &Path, args: &[String]) -> Result<(), String> {

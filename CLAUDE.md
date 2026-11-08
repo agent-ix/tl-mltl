@@ -46,6 +46,19 @@ decision and must not be advanced automatically.
 - **Nothing executes R2U2 or C2PO.** The external exchange under
   `corpus/r2u2-v4.2/` is retained; every claim is a replay against those bytes.
 
+## Campaign inventory rule
+
+`make campaign-inventory` is a `ci` prerequisite. It fails on any Make target
+whose name contains `fuzz`, `mutants`, `mutation`, `kani`, `cov`, `sweep`,
+`r2u2` or `differential`, and on any `fuzz/fuzz_targets/*.rs`, that no member of
+`campaign/members.json` lists under `covers` (`make:<target>` or
+`fuzz:<target>`). **A change that adds such a target must add or update its
+member in the same PR.** Several PRs adding targets concurrently each pass
+alone; whichever merges second fails the gate until it adds its own member, so
+rebase and rerun `make campaign-inventory` before merging. A planned member
+(`"state": "planned"`, with a ticket) reserves the id but does not cover a
+target, and is always non-pass in a campaign run.
+
 ## The Makefile is not a trust root
 
 Adding `.IGNORE:` to the `Makefile` makes recipes report success without running,

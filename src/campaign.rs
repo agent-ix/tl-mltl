@@ -316,6 +316,20 @@ pub struct EvidenceFile {
     pub result: Option<String>,
 }
 
+impl EvidenceFile {
+    fn unreadable(name: String, sha256: String) -> Self {
+        Self {
+            name,
+            sha256,
+            canonical_sha256: String::new(),
+            result: Some(UNREADABLE.to_owned()),
+        }
+    }
+}
+
+/// `result` recorded for an evidence file that could not be read as JSON.
+const UNREADABLE: &str = "unreadable";
+
 /// One member's retained result.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -396,8 +410,9 @@ pub fn verify_seal(report: &Report) -> bool {
     seal(&mut copy).is_ok() && copy.report_sha256 == report.report_sha256
 }
 
-/// Aggregate rule (a run over a subset of members is `partial`, never `accept`): any failed required member rejects; any non-pass required
-/// member otherwise leaves the run incomplete.
+/// Aggregate rule: any failed required member rejects; any non-pass required
+/// member otherwise leaves the run incomplete. A run over a subset of members
+/// is labelled `partial` by [`run_campaign`], never `accept`.
 pub fn aggregate(members: &[MemberResult]) -> &'static str {
     let req = || members.iter().filter(|m| m.required);
     if req().any(|m| m.status == Status::Fail) {
@@ -443,17 +458,26 @@ fn collect_evidence(dir: &Path, spec: &EvidenceSpec) -> Vec<EvidenceFile> {
         .flatten()
         .flatten()
         .filter(|e| e.path().extension().is_some_and(|x| x == "json"))
-        .filter_map(|e| {
-            let bytes = fs::read(e.path()).ok()?;
+        .map(|e| {
+            let name = e.file_name().to_string_lossy().into_owned();
+            // An unreadable or unparseable evidence file is kept and marked, so
+            // it fails the member instead of vanishing from the report.
+            let Ok(bytes) = fs::read(e.path()) else {
+                return EvidenceFile::unreadable(name, String::new());
+            };
+            let sha256 = sha256_hex(&bytes);
+            let Ok(canonical_sha256) = canonical_digest(&bytes, &spec.volatile_keys) else {
+                return EvidenceFile::unreadable(name, sha256);
+            };
             let result = serde_json::from_slice::<Value>(&bytes)
                 .ok()
                 .and_then(|v| v.get("result")?.as_str().map(str::to_owned));
-            Some(EvidenceFile {
-                name: e.file_name().to_string_lossy().into_owned(),
-                sha256: sha256_hex(&bytes),
-                canonical_sha256: canonical_digest(&bytes, &spec.volatile_keys).ok()?,
+            EvidenceFile {
+                name,
+                sha256,
+                canonical_sha256,
                 result,
-            })
+            }
         })
         .collect();
     files.sort_by(|a, b| a.name.cmp(&b.name));
