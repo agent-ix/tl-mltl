@@ -136,6 +136,21 @@ make guarded-ci       # every local gate, with the gate-set check
 
 Run `make guarded-ci` for the full set.
 
+### Nightly small-scope sweep
+
+`make test` runs a fast subset of the small-scope comparison against the
+independent `tl-oracle` (depth one over all leaves; depth two over one
+proposition). `make sweep-full` runs the full sweep in release mode: depth one
+with intervals up to `[0,4]` and traces up to length 6, depth two with intervals
+up to `[0,2]` and traces up to length 6 (both exhaustive), and a seeded
+depth-three sample (exhaustive depth three is not enumerable). Hosted CI is
+manual-only, so the nightly is a local run: execute `make sweep-full` on a
+schedule of your choosing (about 30 minutes on a laptop). Evidence JSON (tool
+versions, seed, case counts, admitted/refused split, runtime, and any minimised
+disagreement) is written to `$TL_MLTL_EVIDENCE_DIR`, default
+`target/tmp/small-scope-evidence`. A disagreement is reported as a minimised
+regression fixture to commit under `tests/fixtures/small-scope-regressions/`.
+
 ## Contributing
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CLA.md](CLA.md). The change history is in
