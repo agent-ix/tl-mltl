@@ -138,13 +138,32 @@ fn one_flipped_verdict_is_an_unexplained_disagreement() {
 #[test]
 fn a_silent_target_where_the_reference_is_conclusive_is_missing() {
     let mut s = simulated(None);
-    let k = s.keys().find(|k| !s[*k].is_empty()).unwrap().clone();
-    // Drop the final tuple: a later tuple would cover an earlier position
-    // (R2U2 aggregates ranges), so only the last one leaves a position silent.
-    let lines: Vec<&str> = s[&k].lines().collect();
-    let rest: String = lines[..lines.len() - 1]
+    // Drop the final tuple of a formula whose last two verdicts differ: a later
+    // tuple would cover an earlier position (R2U2 aggregates ranges), and a
+    // comparison that padded the tail with the previous verdict would not
+    // notice the silence if the two verdicts were equal.
+    let formula = |l: &str| l.split_once(':').unwrap().0.to_owned();
+    let verdict = |l: &str| l.chars().last().unwrap();
+    let (k, drop) = s
         .iter()
-        .map(|l| format!("{l}\n"))
+        .find_map(|(k, text)| {
+            let lines: Vec<&str> = text.lines().collect();
+            (1..lines.len())
+                .find(|&i| {
+                    formula(lines[i]) == formula(lines[i - 1])
+                        && verdict(lines[i]) != verdict(lines[i - 1])
+                        && lines
+                            .get(i + 1)
+                            .map_or(true, |n| formula(n) != formula(lines[i]))
+                })
+                .map(|i| (k.clone(), i))
+        })
+        .unwrap();
+    let rest: String = s[&k]
+        .lines()
+        .enumerate()
+        .filter(|(i, _)| *i != drop)
+        .map(|(_, l)| format!("{l}\n"))
         .collect();
     s.insert(k, rest);
     let r = replay(&s);

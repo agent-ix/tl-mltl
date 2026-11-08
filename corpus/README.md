@@ -32,7 +32,11 @@ grid, `future/` the TL-237 exhaustive future suite. Each holds the generated
 `spec.c2po` and `trace.csv`, R2U2's raw `r2u2.stdout`, and `report.json` with the
 tool identities and input/output digests; `replay-report.json` is the source-bound
 recomputation. `tests/r2u2_live.rs` replays both without running R2U2.
-Past: 42 agree, 1791 refused at export (`TargetOriginShapeUnverified` 1683,
-`TargetOriginIntervalMismatch` 108), 0 mismatches. Future: 1536 of 1536 case rows agree.
+Past: of 1833 grid cases only 42 (about 2%) are admitted to R2U2, and those 42
+agree at every step; the other 1791 (about 98%) are refused at export
+(`TargetOriginShapeUnverified` 1683, `TargetOriginIntervalMismatch` 108) and
+say nothing about R2U2's behaviour. A refusal is never counted as an agreement,
+so past-time parity is evidenced for those 42 cases only. Future: 1536 of 1536
+case rows agree.
 R2U2 prints one tuple per range of equal truth (aggregation), so the future
 comparison expands each tuple over the positions it covers.
