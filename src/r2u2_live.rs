@@ -3,7 +3,7 @@
 //! The grid is every past operator, nested to depth 1-3, with four interval
 //! kinds and three trace classes. Each case is evaluated by this crate's own
 //! origin-complete past evaluator and exported through
-//! [`map_past_to_c2po`](crate::map_past_to_c2po). A case the exporter refuses is
+//! [`map_past_to_c2po`]. A case the exporter refuses is
 //! a typed `unsupported` cell. The admitted cases are written as C2PO specs,
 //! compiled and run by a real R2U2 checkout, and compared per step.
 //!
