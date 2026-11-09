@@ -24,7 +24,9 @@ const PROOF_SOURCES: [(&str, &str); 3] = [
 ];
 
 fn read(relative: &str) -> String {
-    fs::read_to_string(Path::new(ROOT).join(relative)).unwrap()
+    let path = Path::new(ROOT).join(relative);
+    fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("cannot read {relative} ({}): {error}", path.display()))
 }
 
 /// The harness names and their doc comments found in `source`.
@@ -142,6 +144,8 @@ fn combinator_harness_name_and_doc_say_the_evaluator_entry_is_stubbed() {
     assert!(doc.contains("no-panic") && doc.contains("typed-error"));
 }
 
+// Partly backs FR-023-AC-2: the gate reports one generic failure; it does not
+// give unwinding failure, timeout or unsupported construct separate statuses.
 // Trace: TC-120, FR-023-AC-2
 #[test]
 fn gate_runs_each_listed_harness_exactly_and_every_proof_is_covered() {
@@ -181,6 +185,9 @@ fn fn_body(source: &str, name: &str) -> String {
     rest[..end].to_string()
 }
 
+// Partly backs FR-023-AC-4: it checks the manifest, lockfile and cfg(kani)
+// confinement only; MSRV divergence detection and Java, Node or Electron
+// dependencies are not checked here.
 // Trace: TC-123, FR-023-AC-4
 #[test]
 fn no_verifier_dependency_in_the_manifest_and_cfg_kani_is_confined() {
@@ -206,7 +213,7 @@ fn no_verifier_dependency_in_the_manifest_and_cfg_kani_is_confined() {
     for entry in walk(&Path::new(ROOT).join("src")) {
         let relative = entry.strip_prefix(ROOT).unwrap().trim_start_matches('/');
         let text = fs::read_to_string(&entry).unwrap();
-        if text.contains("cfg(kani)")
+        if mentions_kani_cfg(&text)
             && !relative.ends_with("ci_guard.rs")
             && !relative.contains("/kani_")
         {
@@ -229,4 +236,61 @@ fn walk(dir: &Path) -> Vec<String> {
         }
     }
     out
+}
+
+/// True when a `cfg` or `cfg_attr` attribute in `text` names `kani` as a token,
+/// in any form: `cfg(kani)`, `cfg(all(kani, ..))`, `cfg(any(.., kani))`,
+/// `cfg(not(kani))` or `cfg_attr(kani, ..)`.
+fn mentions_kani_cfg(text: &str) -> bool {
+    let mut rest = text;
+    while let Some(start) = rest.find('#') {
+        let attribute = &rest[start..];
+        if !(attribute.starts_with("#[") || attribute.starts_with("#![")) {
+            rest = &attribute[1..];
+            continue;
+        }
+        let end = attribute.find(']').map_or(attribute.len(), |end| end + 1);
+        let body = &attribute[..end];
+        let names: Vec<&str> = body
+            .split(|c: char| !(c.is_alphanumeric() || c == '_'))
+            .filter(|token| !token.is_empty())
+            .collect();
+        let is_cfg = names.iter().any(|t| *t == "cfg" || *t == "cfg_attr");
+        if is_cfg && names.contains(&"kani") {
+            return true;
+        }
+        rest = &attribute[1..];
+    }
+    false
+}
+
+// Trace: TC-123, FR-023-AC-4
+#[test]
+fn kani_cfg_detection_catches_every_attribute_form() {
+    for form in [
+        "#[cfg(kani)]",
+        "#![cfg(kani)]",
+        "#[cfg(all(kani, test))]",
+        "#[cfg(any(test, kani))]",
+        "#[cfg(not(kani))]",
+        "#[cfg_attr(kani, derive(Debug))]",
+        "#[cfg(all(not(miri),\n  kani))]",
+    ] {
+        assert!(mentions_kani_cfg(form), "missed {form}");
+    }
+    for form in [
+        "#[cfg(test)]",
+        "#[derive(Debug)]\nstruct Kanidog;",
+        "// cfg(kani) in a comment is not an attribute",
+        "let kani = 1;",
+    ] {
+        assert!(!mentions_kani_cfg(form), "false hit on {form}");
+    }
+}
+
+// Trace: TC-120, FR-023-AC-1
+#[test]
+#[should_panic(expected = "cannot read src/no/such/file.rs")]
+fn unreadable_proof_source_path_fails_with_a_clear_message() {
+    read("src/no/such/file.rs");
 }

@@ -159,8 +159,8 @@ impl<'a, 'b> Evaluator<'a, 'b> {
 }
 
 /// Proves (compositional, no-panic and typed-error only, with `Evaluator::at`
-/// stubbed to return an arbitrary verdict or a typed error): every operator combinator (`not` is inline in
-/// `at`; `and`, `or`, `implies`, `equivalent`, `future`, `globally`, `until`
+/// stubbed to return an arbitrary verdict or a typed error): every operator
+/// combinator (`not` is inline in `at`; `and`, `or`, `implies`, `equivalent`, `future`, `globally`, `until`
 /// and its `Release` negation) returns `Ok` or a typed error and never panics
 /// or overflows, for every verdict time over the full `u64` range, every
 /// operand pair, and every interval over the full `u32` range. The proof sets
