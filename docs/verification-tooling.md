@@ -65,9 +65,10 @@ unwinding assertions are on.
 | `evaluator_combinators_with_stubbed_at_never_panic` | no-panic and typed errors only, with `Evaluator::at` stubbed: every combinator (and, or, implies, equivalent, future, globally, until, release) returns `Ok` or a typed error and does not panic, for every `u64` verdict time and every interval; wider intervals take the span-limit error. The stub returns an arbitrary verdict, so no verdict is proved correct and `at` itself is not covered; the cover checks show reachability, not correctness |
 | `closing_prefix_atomic_verdict_is_stable` | an open-prefix proposition lookup is decided exactly when `time < len` and a decided answer is unchanged by appending an instant |
 | `preflight_never_panics_on_short_input` | the wire lexer `preflight` for ASCII input of 0 to 4 bytes, both byte ceilings, depth ceiling 1 |
+| `lexer_never_panics_on_any_short_bytes` | the lexical scan `lex_usage` for every byte value (non-ASCII and invalid UTF-8 included) over 0 to 16 bytes, every depth ceiling up to the owner maximum and every string and field ceiling; the container stack is a fixed-capacity array because a heap `Vec` stack alone exhausted the memory budget |
 | `identity_scanners_never_panic_on_short_input` | `scan_string` and `scan_value` for any input of 0 to 16 bytes and any start offset |
 
 Limits of the proofs, recorded in SR-232 with the measurements behind them: whole-formula evaluator
 no-panic is not proved (replaced by the compositional proof); wire decode is not proved to the
-requested 64 bytes, and `serde_json` is not modelled; closing-prefix is proved at the atomic level only.
+requested 64 bytes (the lexer to 16, `preflight` as a whole to 4 ASCII bytes), and `serde_json` is not modelled; closing-prefix is proved at the atomic level only.
 `node_lookahead` was extracted from `lookahead` (behavior unchanged) so the arithmetic can be proved.

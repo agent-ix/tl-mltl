@@ -543,13 +543,53 @@ enum Container {
     Array { expects_value: bool },
 }
 
+/// Deepest container nesting the lexer tracks: one past the owner depth
+/// ceiling, so the push that crosses the ceiling is still observed and refused.
+const STACK_CAPACITY: usize = OWNER_MAX.max_depth + 1;
+
+/// Fixed-capacity container stack. A fixed array instead of a `Vec` keeps the
+/// lexer free of heap growth, which the bounded proofs cannot afford.
+struct ContainerStack {
+    items: [Container; STACK_CAPACITY],
+    len: usize,
+}
+
+impl ContainerStack {
+    const fn new() -> Self {
+        Self {
+            items: [Container::Object; STACK_CAPACITY],
+            len: 0,
+        }
+    }
+
+    /// Pushes `container`; false when the stack is at capacity.
+    fn push(&mut self, container: Container) -> bool {
+        match self.items.get_mut(self.len) {
+            Some(slot) => {
+                *slot = container;
+                self.len += 1;
+                true
+            }
+            None => false,
+        }
+    }
+
+    fn pop(&mut self) {
+        self.len = self.len.saturating_sub(1);
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [Container] {
+        &mut self.items[..self.len]
+    }
+}
+
 fn preflight(bytes: &[u8], limits: OwnerLimits, input: bool) -> Result<OwnerUsage, OwnerReadError> {
     let byte_limit = if input {
         limits.max_input_bytes
     } else {
         limits.max_output_bytes
     };
-    let mut usage = OwnerUsage {
+    let usage = OwnerUsage {
         wire_bytes: bytes.len(),
         ..OwnerUsage::default()
     };
@@ -562,8 +602,18 @@ fn preflight(bytes: &[u8], limits: OwnerLimits, input: bool) -> Result<OwnerUsag
     }
     std::str::from_utf8(bytes)
         .map_err(|_| OwnerReadError::new(OwnerReadErrorCode::InvalidUtf8, "document", usage))?;
+    lex_usage(bytes, limits)
+}
 
-    let mut stack = Vec::new();
+/// The lexical scan of `preflight`, split out so it can be proved without the
+/// standard library's UTF-8 validation: it measures depth, string length and
+/// visited fields over any byte sequence and refuses the first limit passed.
+fn lex_usage(bytes: &[u8], limits: OwnerLimits) -> Result<OwnerUsage, OwnerReadError> {
+    let mut usage = OwnerUsage {
+        wire_bytes: bytes.len(),
+        ..OwnerUsage::default()
+    };
+    let mut stack = ContainerStack::new();
     let mut index = 0usize;
     while index < bytes.len() {
         let byte = bytes[index];
@@ -572,43 +622,46 @@ fn preflight(bytes: &[u8], limits: OwnerLimits, input: bool) -> Result<OwnerUsag
             continue;
         }
         if !matches!(byte, b',' | b']') {
-            count_array_value(&mut stack, &mut usage);
+            count_array_value(stack.as_mut_slice(), &mut usage);
         }
         match byte {
-            b'{' => stack.push(Container::Object),
-            b'[' => stack.push(Container::Array {
-                expects_value: true,
-            }),
-            b'}' | b']' => {
-                stack.pop();
+            b'{' | b'[' => {
+                let container = if byte == b'{' {
+                    Container::Object
+                } else {
+                    Container::Array {
+                        expects_value: true,
+                    }
+                };
+                // Capacity is one past the owner depth ceiling and callers pass
+                // limits clamped to it, so a full stack is always a depth
+                // refusal.
+                if !stack.push(container) {
+                    return Err(OwnerReadError::new(
+                        OwnerReadErrorCode::ResourceIncomplete,
+                        "depth",
+                        usage,
+                    ));
+                }
             }
+            b'}' | b']' => stack.pop(),
             b':' => {
                 usage.visited_fields = usage.visited_fields.saturating_add(1);
             }
             b',' => {
-                if let Some(Container::Array { expects_value }) = stack.last_mut() {
+                if let Some(Container::Array { expects_value }) = stack.as_mut_slice().last_mut() {
                     *expects_value = true;
                 }
             }
             b'"' => {
                 let start = index + 1;
-                index += 1;
-                let mut escaped = false;
-                while index < bytes.len() {
-                    match (bytes[index], escaped) {
-                        (_, true) => escaped = false,
-                        (b'\\', false) => escaped = true,
-                        (b'"', false) => break,
-                        _ => {}
-                    }
-                    index += 1;
-                }
+                index = string_end(bytes, start);
                 let encoded = index.saturating_sub(start);
                 usage.string_bytes = usage.string_bytes.max(encoded);
             }
             _ => {}
         }
-        usage.depth = usage.depth.max(stack.len());
+        usage.depth = usage.depth.max(stack.len);
         if usage.depth > limits.max_depth {
             return Err(OwnerReadError::new(
                 OwnerReadErrorCode::ResourceIncomplete,
@@ -633,6 +686,23 @@ fn preflight(bytes: &[u8], limits: OwnerLimits, input: bool) -> Result<OwnerUsag
         index += 1;
     }
     Ok(usage)
+}
+
+/// Index of the closing quote of the string whose first content byte is at
+/// `start`, or `bytes.len()` when the string is unterminated.
+fn string_end(bytes: &[u8], start: usize) -> usize {
+    let mut index = start;
+    let mut escaped = false;
+    while index < bytes.len() {
+        match (bytes[index], escaped) {
+            (_, true) => escaped = false,
+            (b'\\', false) => escaped = true,
+            (b'"', false) => break,
+            _ => {}
+        }
+        index += 1;
+    }
+    index
 }
 
 fn count_array_value(stack: &mut [Container], usage: &mut OwnerUsage) {
