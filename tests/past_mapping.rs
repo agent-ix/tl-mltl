@@ -217,7 +217,10 @@ fn zero_window_lowerings_preserve_source_verdicts_at_origin() {
         &dual_nodes,
     )
     .unwrap();
-    for pattern in 0..64_u8 {
+    // Under Miri the 64 observation patterns are sampled (every 9th, so 0..=63
+    // still spans all three positions' bits); the native run covers all 64.
+    let pattern_step = if cfg!(miri) { 9 } else { 1 };
+    for pattern in (0..64_u8).step_by(pattern_step) {
         let observations = (0..3_u64)
             .map(|position| {
                 let propositions = [PropositionId(0), PropositionId(1)]
