@@ -63,6 +63,7 @@ help:
 	@echo "  make spec             - Validate specification and coverage with Quire"
 	@echo "  make msrv             - Check all targets and features with Rust 1.98.1"
 	@echo "  make rustdoc          - Build warning-free public documentation"
+	@echo "  make miri             - Unit and property suites under Miri (pinned nightly)"
 	@echo "  make build            - Release build"
 	@echo "  make clean            - cargo clean"
 	@echo "  make ci               - All CI gates locally, unguarded (see Makefile header)"
@@ -207,6 +208,29 @@ rustdoc:
 	$(CI_GUARD) record rustdoc
 
 # =============================================================================
+# Undefined-behavior check
+# =============================================================================
+
+# Miri needs a nightly toolchain, so it pins its own here instead of using
+# rust-toolchain.toml. -Zmiri-disable-isolation lets the suites read the
+# repository's corpus files; PROPTEST_DISABLE_FAILURE_PERSISTENCE stops proptest
+# writing regression files; the property suites reduce their own case counts
+# under Miri. MIRI_TESTS names the integration suites that run under Miri.
+# Excluded (NFR-001-AC-5): suites that start processes or read external tools
+# (ci_guard, campaign_run, cli, r2u2_live), the exhaustive corpus, oracle and
+# infinite-trace replays, and past_mapping, whose
+# zero_window_lowerings_preserve_source_verdicts_at_origin takes over 40 minutes.
+MIRI_TOOLCHAIN ?= nightly-2026-08-21
+MIRI_TESTS ?= limit_register error_variants property past_history reference interop \
+	contextual tc_090_owner_wire_contracts miri_gate
+
+.PHONY: miri
+miri:
+	MIRIFLAGS="-Zmiri-disable-isolation" PROPTEST_DISABLE_FAILURE_PERSISTENCE=true \
+		rustup run $(MIRI_TOOLCHAIN) cargo miri test --all-features --lib $(addprefix --test ,$(MIRI_TESTS))
+	$(CI_GUARD) record miri
+
+# =============================================================================
 # Fuzzing
 # =============================================================================
 
@@ -231,7 +255,7 @@ fuzz-smoke:
 
 .PHONY: ci
 ci: fmt-check lint kani-check test conformance differential cli-conformance \
-	campaign-inventory deny fuzz-check spec msrv rustdoc
+	campaign-inventory deny fuzz-check spec msrv rustdoc miri
 
 # The assured entry point (NFR-006). Builds and runs the guard, which refuses
 # to invoke `make ci` at all if this file's execution controls or the calling

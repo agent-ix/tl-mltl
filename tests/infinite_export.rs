@@ -1285,3 +1285,40 @@ fn temporal_nesting_cross_product_classifies_target_context() {
     }
     assert_eq!(checked, 114);
 }
+
+// Trace: TC-176, NFR-001-AC-4
+#[test]
+fn export_refuses_a_proposition_the_catalog_does_not_bind() {
+    let formula = graph(vec![
+        node(K::Proposition {
+            proposition: PropositionId(0),
+        }),
+        node(K::Globally {
+            interval: open(),
+            operand: NodeId(0),
+        }),
+    ]);
+    let observations = rows(PartialValue::True);
+    let graph_id = formula.content_identity().unwrap();
+    let request = PrefixRequest {
+        formula: &formula,
+        graph_id: &graph_id,
+        proposition_map_id: "map",
+        propositions: &[PropositionId(0)],
+        observations: &observations,
+        limit: EvaluationLimit::default(),
+    };
+    let unbound = SignalCatalogDocument::new(
+        vec![OwnedSignalDeclaration::new(
+            SignalId(1),
+            "ready".to_owned(),
+            SignalDomain::Boolean,
+        )],
+        vec![],
+    )
+    .unwrap();
+    assert_eq!(
+        export_safety_monitor(&request, None, &unbound, &contract(), 100),
+        Err(SafetyExportError::Catalog)
+    );
+}

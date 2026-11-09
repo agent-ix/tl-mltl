@@ -167,6 +167,10 @@ fn evaluates_until_release_and_closed_boundaries() {
 
 // Trace: TC-002, FR-001-AC-1
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "exhaustive window enumeration; the native run is the oracle check"
+)]
 fn temporal_lower_bound_windows_match_an_independent_exhaustive_oracle() {
     for start in 0..=3 {
         for end in start..=3 {

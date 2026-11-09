@@ -3,6 +3,29 @@
 All notable user-visible changes to `tl-mltl` are recorded here. The crate is
 distributed as a git source release (`publish = false`); versions are git tags.
 
+## Unreleased
+
+- **Removed error variants that no input can produce (breaking, pre-release).**
+  `OwnerReadErrorCode::{ContractMismatch, IdentityMismatch, EvaluationRefused}`
+  (never constructed anywhere),
+  `MappingError::{InvalidCatalog, InvalidNodeReference, UnsupportedPastNode}`,
+  `PastMappingError::{InvalidCatalog, InvalidNode, UnsupportedNode}`,
+  `ContextualBindingError::InvalidCatalog`, `HorizonError::{InvalidNodeReference,
+  UnsupportedPastNode}`, `EvaluationError::{Horizon, InvalidNodeReference,
+  UnsupportedPastNode}`, `HistoryError::IdentityEncoding`,
+  `HistoryRequirementError::{InvalidNodeReference, FutureNodeUnsupported}`,
+  `PastResultValidationError::IdentityEncoding` and
+  `PastEvaluationError::{History, InvalidNodeReference, FutureNodeUnsupported,
+  PositionArithmeticOverflow, HistoryPositionAbsent, Result}`. A validated
+  formula or catalog already excludes each of them.
+- **`make miri` runs the unit and property suites under Miri** and is a `ci`
+  gate. `analyze_horizon_with_context` now returns
+  `ContextualHorizonError::Horizon(HorizonError::UnsupportedProfile)` for an
+  unsupported profile, where it used to return `ContextualHorizonError::Identity`.
+- `evaluate_past` no longer re-validates the freshly built report with an error
+  path; it keeps a `debug_assert!` that the report validates, so a release build
+  skips that check.
+
 ## 0.3.0
 
 Part of the first coordinated release of the MLTL crates (`tl-syntax`,

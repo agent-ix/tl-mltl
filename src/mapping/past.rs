@@ -65,8 +65,6 @@ impl TargetOriginContract {
 pub enum PastMappingError {
     /// A different TL profile was selected.
     UnsupportedProfile,
-    /// A future-time operator was encountered in the past-profile graph.
-    UnsupportedNode(NodeId),
     /// The target-origin contract is absent or malformed.
     MissingOriginEvidence,
     /// The target or evidence differs from the reviewed origin partition.
@@ -82,12 +80,8 @@ pub enum PastMappingError {
     },
     /// The formula's signal catalog does not bind every proposition.
     Binding(ContextualBindingError),
-    /// A catalog document failed validation.
-    InvalidCatalog(String),
     /// A signal name has no exact C2PO identifier representation.
     UnsupportedSignal(PropositionId),
-    /// A node reference was absent in a supposedly validated graph.
-    InvalidNode(NodeId),
     /// Work exceeded the configured renderer budget.
     ResourceIncomplete,
     /// A canonical identity could not be constructed.
@@ -153,11 +147,8 @@ impl Renderer<'_, '_> {
         if self.visits > self.limit {
             return Err(PastMappingError::ResourceIncomplete);
         }
-        let kind = usize::try_from(node.0)
-            .ok()
-            .and_then(|index| self.formula.nodes().get(index))
-            .map(|node| node.kind)
-            .ok_or(PastMappingError::InvalidNode(node))?;
+        // `Formula::new` guarantees every referenced node exists.
+        let kind = self.formula.nodes()[node.0 as usize].kind;
         let rendered = match kind {
             NodeKind::False => "false".to_owned(),
             NodeKind::True => "true".to_owned(),
@@ -222,7 +213,7 @@ impl Renderer<'_, '_> {
             | NodeKind::Globally { .. }
             | NodeKind::Until { .. }
             | NodeKind::Release { .. } => {
-                return Err(PastMappingError::UnsupportedNode(node));
+                unreachable!("the origin-complete profile rejects future operators")
             }
         };
         Ok(rendered)
@@ -313,10 +304,8 @@ impl OriginShapeGuard {
             depth: 0,
         };
         for child in children.into_iter().flatten() {
-            let child = usize::try_from(child.0)
-                .ok()
-                .and_then(|at| self.states.get(at))
-                .ok_or(PastMappingError::InvalidNode(child))?;
+            // `Formula::new` guarantees operands precede their users.
+            let child = &self.states[child.0 as usize];
             state.depth = state.depth.max(child.depth);
             state.mixed |= child.mixed;
             if let Some(signature) = child.signature {
@@ -398,7 +387,9 @@ fn validate_origin_shape(formula: Formula<'_>) -> Result<(), PastMappingError> {
             NodeKind::Future { .. }
             | NodeKind::Globally { .. }
             | NodeKind::Until { .. }
-            | NodeKind::Release { .. } => return Err(PastMappingError::UnsupportedNode(id)),
+            | NodeKind::Release { .. } => {
+                unreachable!("the origin-complete profile rejects future operators")
+            }
         };
         guard.push(id, children, temporal)?;
     }
@@ -431,7 +422,7 @@ pub fn map_past_to_c2po(
     bind_formula(formula, catalog_document).map_err(PastMappingError::Binding)?;
     let catalog = catalog_document
         .validate()
-        .map_err(|error| PastMappingError::InvalidCatalog(error.to_string()))?;
+        .expect("a constructed catalog document validates");
     let expression = Renderer {
         formula,
         catalog,

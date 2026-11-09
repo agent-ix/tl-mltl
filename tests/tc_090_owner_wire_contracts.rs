@@ -85,12 +85,10 @@ fn trace_reader_accepts_only_canonical_bytes_and_refuses_with_typed_errors() {
     ));
 
     let wrong_contract = text.replace("tl-mltl.trace/v1", "tl-mltl.trace/v2");
-    assert!(matches!(
+    assert_eq!(
         refused(wrong_contract.as_bytes()),
         OwnerReadErrorCode::InvalidJson
-            | OwnerReadErrorCode::ContractMismatch
-            | OwnerReadErrorCode::NonCanonical
-    ));
+    );
 
     assert_eq!(refused(&[0xff, 0xfe]), OwnerReadErrorCode::InvalidUtf8);
 

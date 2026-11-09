@@ -155,18 +155,12 @@ pub enum OwnerReadErrorCode {
     NonCanonical,
     /// A resource ceiling was exceeded.
     ResourceIncomplete,
-    /// The selected contract or schema is wrong.
-    ContractMismatch,
     /// An independently supplied owner input does not match.
     ExpectedMismatch,
-    /// A document identity or digest is stale.
-    IdentityMismatch,
     /// A profile, topology, state, or lineage combination is invalid.
     InvalidCombination,
     /// Canonical encoding failed.
     Encoding,
-    /// Evaluation refused the selected input.
-    EvaluationRefused,
 }
 
 impl OwnerReadErrorCode {
@@ -178,12 +172,9 @@ impl OwnerReadErrorCode {
             Self::InvalidJson => "TL-OWNER-INVALID-JSON",
             Self::NonCanonical => "TL-OWNER-NONCANONICAL",
             Self::ResourceIncomplete => "TL-OWNER-RESOURCE-INCOMPLETE",
-            Self::ContractMismatch => "TL-OWNER-CONTRACT-MISMATCH",
             Self::ExpectedMismatch => "TL-OWNER-EXPECTED-MISMATCH",
-            Self::IdentityMismatch => "TL-OWNER-IDENTITY-MISMATCH",
             Self::InvalidCombination => "TL-OWNER-INVALID-COMBINATION",
             Self::Encoding => "TL-OWNER-ENCODING",
-            Self::EvaluationRefused => "TL-OWNER-EVALUATION-REFUSED",
         }
     }
 }

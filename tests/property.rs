@@ -84,7 +84,8 @@ fn closed_oracle(kind: u8, start: u32, end: u32, bits: &[bool]) -> TruthValue {
 
 proptest! {
     #![proptest_config(ProptestConfig {
-        cases: 512,
+        // Miri interprets every case; the native run keeps the full count.
+        cases: if cfg!(miri) { 4 } else { 512 },
         ..ProptestConfig::default()
     })]
 

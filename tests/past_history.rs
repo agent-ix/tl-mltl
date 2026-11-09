@@ -177,7 +177,7 @@ fn binary_nodes(kind: impl FnOnce(NodeId, NodeId) -> NodeKind) -> Vec<Node> {
 }
 
 proptest! {
-    #![proptest_config(ProptestConfig { cases: 192, ..ProptestConfig::default() })]
+    #![proptest_config(ProptestConfig { cases: if cfg!(miri) { 4 } else { 192 }, ..ProptestConfig::default() })]
 
     // Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
     #[test]
@@ -396,24 +396,28 @@ fn history_admission_refuses_every_completeness_and_identity_dimension() {
             current: PropositionId(1),
         })
     );
-    let too_many_propositions = (0..=100_000)
-        .map(PropositionId)
-        .collect::<Vec<PropositionId>>();
-    assert_eq!(
-        PositionHistoryDocument::new(
-            "h",
-            1,
-            0,
-            0,
-            clock.clone(),
-            vec![PositionObservation::new(0, too_many_propositions, None)],
-        ),
-        Err(HistoryError::PropositionLimitExceeded {
-            position: 0,
-            actual: 100_001,
-            limit: 100_000,
-        })
-    );
+    // Miri lowers the ceiling; `past::limit_register` asserts it on both runs.
+    #[cfg(not(miri))]
+    {
+        let too_many_propositions = (0..=100_000)
+            .map(PropositionId)
+            .collect::<Vec<PropositionId>>();
+        assert_eq!(
+            PositionHistoryDocument::new(
+                "h",
+                1,
+                0,
+                0,
+                clock.clone(),
+                vec![PositionObservation::new(0, too_many_propositions, None)],
+            ),
+            Err(HistoryError::PropositionLimitExceeded {
+                position: 0,
+                actual: 100_001,
+                limit: 100_000,
+            })
+        );
+    }
     assert_eq!(
         PositionHistoryDocument::new("h", 0, 0, 0, clock.clone(), vec![row(0)]),
         Err(HistoryError::RevisionZero)

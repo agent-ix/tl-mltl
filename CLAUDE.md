@@ -23,6 +23,7 @@ make deny             # cargo deny check licenses and sources
 make spec             # validate specs and strict coverage
 make msrv             # check all targets and features with Rust 1.98.1
 make rustdoc          # build warning-free public docs
+make miri             # unit and property suites under Miri (pinned nightly, MIRI_TOOLCHAIN)
 make ci               # complete local gate, unguarded (see Makefile header)
 make guarded-ci       # the assured entry point; run this, not 'make ci'
 ```

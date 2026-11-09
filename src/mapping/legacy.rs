@@ -166,8 +166,6 @@ deserialize_contextual_record!(ContextualMappingManifest {
 pub enum MappingError {
     /// The shared catalog does not bind the formula.
     Binding(ContextualBindingError),
-    /// The caller-supplied catalog document no longer validates.
-    InvalidCatalog(String),
     /// The deterministic identity could not be constructed or serialized.
     Identity(String),
     /// R2U2/C2PO mapping is defined only for online-prefix semantics.
@@ -175,10 +173,6 @@ pub enum MappingError {
         /// Actual profile.
         actual: &'static str,
     },
-    /// A validated formula exposed an impossible node reference.
-    InvalidNodeReference(NodeId),
-    /// The future-profile mapping adapter was given a past-time operator.
-    UnsupportedPastNode(NodeId),
     /// Formula expansion exceeded the configured node budget.
     WorkLimitExceeded {
         /// Configured node budget.
@@ -202,24 +196,11 @@ impl fmt::Display for MappingError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Binding(error) => error.fmt(formatter),
-            Self::InvalidCatalog(error) => write!(formatter, "invalid signal catalog: {error}"),
             Self::Identity(error) => write!(formatter, "contextual identity failed: {error}"),
             Self::UnsupportedProfile { actual } => write!(
                 formatter,
                 "R2U2/C2PO mapping requires {}, found {actual}",
                 SemanticProfile::OnlinePrefixV1.as_str()
-            ),
-            Self::InvalidNodeReference(node) => {
-                write!(
-                    formatter,
-                    "invalid validated-formula node reference {}",
-                    node.0
-                )
-            }
-            Self::UnsupportedPastNode(node) => write!(
-                formatter,
-                "R2U2/C2PO mapping does not support the past-time operator at node {}",
-                node.0
             ),
             Self::WorkLimitExceeded { limit } => {
                 write!(formatter, "mapping exceeded work limit {limit}")
@@ -264,11 +245,8 @@ impl Renderer<'_, '_> {
             .ok_or(MappingError::RecursionDepthExceeded {
                 limit: MAX_RECURSION_DEPTH,
             })?;
-        let kind = usize::try_from(node.0)
-            .ok()
-            .and_then(|index| self.formula.nodes().get(index))
-            .map(|value| value.kind)
-            .ok_or(MappingError::InvalidNodeReference(node))?;
+        // `Formula::new` guarantees every referenced node exists.
+        let kind = self.formula.nodes()[node.0 as usize].kind;
         match kind {
             NodeKind::False => Ok("false".to_owned()),
             NodeKind::True => Ok("true".to_owned()),
@@ -318,7 +296,9 @@ impl Renderer<'_, '_> {
             | NodeKind::Historically { .. }
             | NodeKind::StrongPrevious { .. }
             | NodeKind::Since { .. }
-            | NodeKind::Triggered { .. } => Err(MappingError::UnsupportedPastNode(node)),
+            | NodeKind::Triggered { .. } => {
+                unreachable!("the online-prefix profile rejects past operators")
+            }
         }
     }
 
@@ -326,9 +306,10 @@ impl Renderer<'_, '_> {
         let Some(catalog) = self.catalog else {
             return Ok(format!("p{}", proposition.0));
         };
+        // The contextual entry point binds every proposition before rendering.
         let signal = catalog
             .signal_for_proposition(proposition)
-            .ok_or(MappingError::InvalidNodeReference(NodeId(proposition.0)))?;
+            .expect("bind_formula resolved every proposition");
         let name = signal.name();
         if !is_c2po_identifier(name) {
             return Err(MappingError::UnsupportedSignalName {
@@ -422,7 +403,7 @@ pub(crate) fn render_contextual_expression(
     bind_formula(formula, catalog_document).map_err(MappingError::Binding)?;
     let catalog = catalog_document
         .validate()
-        .map_err(|error| MappingError::InvalidCatalog(error.to_string()))?;
+        .expect("a constructed catalog document validates");
     let mut renderer = Renderer {
         formula,
         catalog: Some(catalog),
@@ -550,7 +531,7 @@ pub fn map_to_c2po_with_context(
         source_revision: source.revision,
         source_state: source.state.as_str().to_owned(),
         signal_catalog_sha256: catalog_sha256(signal_catalog)
-            .map_err(|error| MappingError::InvalidCatalog(error.to_string()))?,
+            .expect("a constructed catalog document serializes to JSON"),
         requirement_context: requirement_context.cloned(),
         request_sha256,
         result_sha256: String::new(),

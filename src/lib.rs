@@ -96,3 +96,121 @@ pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";
 /// downstream crates (such as a future `quire-mltl`) that cannot invoke
 /// `env!` for a value only this crate's build script sets.
 pub const TL_MLTL_SOURCE_REVISION: &str = env!("TL_MLTL_SOURCE_REVISION");
+
+#[cfg(test)]
+mod limit_register {
+    //! NFR-001 Limit Register rows whose limits have no public input.
+
+    use tl_syntax::{Formula, Node, NodeId, NodeKind, PropositionId, SemanticProfile};
+
+    use crate::{
+        evaluate_closed_at, map_to_c2po, ClockBinding, EvaluationError, EvaluationLimits,
+        MappingError, MappingSourceIdentity, MappingSourceState, PastEvaluationError,
+        PastEvaluationLimits, PastEvaluationRelationInput, PositionHistoryDocument,
+        PositionObservation, MAX_RECURSION_DEPTH,
+    };
+
+    /// A proposition under `depth` negations; its deepest node is at `depth`.
+    fn negations(depth: u32) -> Vec<Node> {
+        let mut nodes = vec![Node::new(NodeKind::Proposition {
+            proposition: PropositionId(0),
+        })];
+        for index in 0..depth {
+            nodes.push(Node::new(NodeKind::Not {
+                operand: NodeId(index),
+            }));
+        }
+        nodes
+    }
+
+    fn formula(profile: SemanticProfile, nodes: &[Node]) -> Formula<'_> {
+        Formula::new(
+            profile,
+            NodeId(u32::try_from(nodes.len() - 1).unwrap()),
+            nodes,
+        )
+        .unwrap()
+    }
+
+    // Trace: TC-175, NFR-001-AC-3
+    #[test]
+    fn recursion_ceiling_accepts_the_ceiling_and_refuses_one_past_in_every_evaluator() {
+        // Debug frames at the ceiling exceed the default test-thread stack.
+        std::thread::Builder::new()
+            .stack_size(256 * 1024 * 1024)
+            .spawn(recursion_ceiling_in_every_evaluator)
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    fn recursion_ceiling_in_every_evaluator() {
+        let ceiling = MAX_RECURSION_DEPTH;
+        assert_eq!(ceiling, 512);
+        let at = negations(ceiling);
+        let past = negations(ceiling + 1);
+
+        let trace = vec![vec![PropositionId(0)]];
+        let eval = |nodes: &[Node]| {
+            evaluate_closed_at(
+                formula(SemanticProfile::ClosedTraceV1, nodes),
+                "f",
+                &trace,
+                "t",
+                0,
+                EvaluationLimits::default(),
+            )
+        };
+        eval(&at).unwrap();
+        assert_eq!(
+            eval(&past),
+            Err(EvaluationError::RecursionDepthExceeded { limit: ceiling })
+        );
+
+        let history = PositionHistoryDocument::new(
+            "h",
+            1,
+            0,
+            0,
+            Some(ClockBinding::EventPosition),
+            vec![PositionObservation::new(0, vec![PropositionId(0)], None)],
+        )
+        .unwrap();
+        let past_eval = |nodes: &[Node]| {
+            crate::evaluate_past(
+                formula(SemanticProfile::OriginCompleteHistoryV1, nodes),
+                "f",
+                &history,
+                0,
+                "m",
+                1,
+                PastEvaluationRelationInput::Original,
+                PastEvaluationLimits::default(),
+            )
+        };
+        past_eval(&at).unwrap();
+        assert_eq!(
+            past_eval(&past).unwrap_err(),
+            PastEvaluationError::RecursionDepthExceeded { limit: ceiling }
+        );
+
+        let map = |nodes: &[Node]| {
+            map_to_c2po(
+                formula(SemanticProfile::OnlinePrefixV1, nodes),
+                "f",
+                b"{}",
+                MappingSourceIdentity {
+                    revision: "r".to_owned(),
+                    state: MappingSourceState::Clean,
+                },
+                None,
+                u64::MAX,
+            )
+        };
+        map(&at).unwrap();
+        assert_eq!(
+            map(&past).unwrap_err(),
+            MappingError::RecursionDepthExceeded { limit: ceiling }
+        );
+    }
+}

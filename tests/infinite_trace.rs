@@ -682,7 +682,7 @@ fn registered_detailed_route_preserves_reason_evidence_and_identity() {
     assert!(exhausted.evidence.is_none());
 }
 
-// Trace: TC-159, FR-034-AC-2, FR-034-AC-3
+// Trace: TC-159, TC-175, FR-034-AC-2, FR-034-AC-3, NFR-001-AC-3
 #[test]
 fn every_work_limit_is_inclusive_and_results_are_byte_stable() {
     let graph = formula(
