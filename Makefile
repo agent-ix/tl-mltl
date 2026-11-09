@@ -268,12 +268,12 @@ rustdoc:
 # writing regression files; the property suites reduce their own case counts
 # under Miri. MIRI_TESTS names the integration suites that run under Miri.
 # Excluded (NFR-001-AC-5): suites that start processes or read external tools
-# (ci_guard, campaign_run, cli, r2u2_live), the exhaustive corpus, oracle and
-# infinite-trace replays, and past_mapping, whose
-# zero_window_lowerings_preserve_source_verdicts_at_origin takes over 40 minutes.
+# (ci_guard, campaign_run, cli, r2u2_live), and the exhaustive corpus, oracle and
+# infinite-trace replays. past_mapping and infinite_laws run with a sampled
+# pattern set and two proptest cases under cfg!(miri) in the tests themselves.
 MIRI_TOOLCHAIN ?= nightly-2026-08-21
 MIRI_TESTS ?= limit_register error_variants property past_history reference interop \
-	contextual tc_090_owner_wire_contracts miri_gate past_readers
+	contextual tc_090_owner_wire_contracts miri_gate past_readers past_mapping infinite_laws
 
 .PHONY: miri
 miri:
