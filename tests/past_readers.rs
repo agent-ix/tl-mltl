@@ -173,6 +173,7 @@ fn requirement_reader_refuses_wrong_schema_and_stale_identity() {
         (OwnerReadErrorCode::InvalidJson, "document")
     );
     let other_contract = body.replace("history-requirement/v1", "past-evaluation/v1");
+    assert_ne!(other_contract, body);
     assert_eq!(
         refused(other_contract.as_bytes()),
         (OwnerReadErrorCode::InvalidJson, "document")
@@ -257,6 +258,15 @@ fn requirement_ceilings_are_enforced_on_read_and_derive() {
         max_input_bytes: canonical.len() - 1,
         ..OwnerLimits::default()
     };
+    assert!(requirement::read(
+        &canonical,
+        &report,
+        OwnerLimits {
+            max_input_bytes: canonical.len(),
+            ..OwnerLimits::default()
+        }
+    )
+    .is_ok());
     assert_eq!(
         code_of(requirement::read(&canonical, &report, input)),
         (OwnerReadErrorCode::ResourceIncomplete, "inputBytes")
@@ -265,6 +275,14 @@ fn requirement_ceilings_are_enforced_on_read_and_derive() {
         max_output_bytes: canonical.len() - 1,
         ..OwnerLimits::default()
     };
+    assert!(requirement::derive(
+        &report,
+        OwnerLimits {
+            max_output_bytes: canonical.len(),
+            ..OwnerLimits::default()
+        }
+    )
+    .is_ok());
     assert_eq!(
         code_of(requirement::derive(&report, output)),
         (OwnerReadErrorCode::ResourceIncomplete, "outputBytes")
@@ -478,6 +496,15 @@ fn result_ceilings_are_enforced_per_dimension_and_inclusively() {
         max_input_bytes: canonical.len() - 1,
         ..OwnerLimits::default()
     };
+    assert!(result::read(
+        &canonical,
+        &report,
+        OwnerLimits {
+            max_input_bytes: canonical.len(),
+            ..OwnerLimits::default()
+        }
+    )
+    .is_ok());
     assert_eq!(
         code_of(result::read(&canonical, &report, input)),
         (OwnerReadErrorCode::ResourceIncomplete, "inputBytes")
@@ -486,6 +513,14 @@ fn result_ceilings_are_enforced_per_dimension_and_inclusively() {
         max_output_bytes: canonical.len() - 1,
         ..OwnerLimits::default()
     };
+    assert!(result::derive(
+        &report,
+        OwnerLimits {
+            max_output_bytes: canonical.len(),
+            ..OwnerLimits::default()
+        }
+    )
+    .is_ok());
     assert_eq!(
         code_of(result::derive(&report, output)),
         (OwnerReadErrorCode::ResourceIncomplete, "outputBytes")
