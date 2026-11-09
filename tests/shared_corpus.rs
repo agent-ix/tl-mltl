@@ -25,7 +25,7 @@ fn corpus_root() -> PathBuf {
     PathBuf::from(tl_syntax::CORPUS_DIR)
 }
 
-// Trace: TC-005, FR-002-AC-1
+// Trace: TC-005, TC-098, FR-002-AC-1, FR-009-AC-2
 #[test]
 fn shared_corpus_horizons_and_closed_verdicts_match() {
     let root = corpus_root();

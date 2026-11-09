@@ -92,9 +92,10 @@ Release gate: the full local gate (`make guarded-ci`) does not pass. It fails
 only in its `spec` gate, whose strict coverage check (`quire coverage
 --strict`) reports 122 rows with no backing test; every other gate passes. Each
 of those rows belongs to work this release does not claim:
-- the M4 corpus campaign (FR-008..010, NFR-004, TC-091..103)
+- the M4 corpus campaign (FR-008..010, NFR-004, TC-092..101, TC-103; TC-091
+  and TC-102 are retired)
 - the M5 verification-effectiveness campaign (FR-020..024, NFR-005,
-  TC-104..129)
+  TC-104..129 except the retired TC-119, TC-124, TC-128)
 - infinite-trace and liveness (FR-027..029, TC-086..089)
 - FR-019, superseded by quire-mltl FR-002 and kept only as a historical record
   (TC-085)

@@ -107,7 +107,7 @@ fn mapping_digests_and_tool_identity_detect_substitution() {
     assert_eq!(original.input_sha256.len(), 64);
 }
 
-// Trace: TC-015, FR-005-AC-2, StR-001-VC-2
+// Trace: TC-015, TC-100, FR-005-AC-2, FR-010-AC-1, StR-001-VC-2
 #[test]
 fn differential_comparison_separates_agreement_mismatch_and_nonconclusive() {
     let nodes = future_nodes();

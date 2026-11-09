@@ -152,7 +152,7 @@ fn since_and_triggered_zero_windows_lower_without_target_past_operators() {
     assert_eq!(trigger.expression, "(!(!q))");
 }
 
-// Trace: TC-161, FR-038-AC-1
+// Trace: TC-161, TC-093, FR-038-AC-1, FR-010-AC-4
 #[test]
 fn zero_window_lowerings_preserve_source_verdicts_at_origin() {
     let interval = interval(0, 0);
