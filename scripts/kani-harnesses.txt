@@ -2,7 +2,11 @@ future::horizon::kani_proofs::horizon_bound_addition_matches_checked_add
 future::evaluate::kani_proofs::horizon_temporal_lookahead_is_exact_or_typed_overflow
 future::evaluate::kani_proofs::evaluator_temporal_endpoints_full_range
 future::evaluate::kani_proofs::evaluator_combinators_with_stubbed_at_never_panic
+future::evaluate::kani_proofs::evaluator_dispatch_with_stubbed_operators_never_panics
 future::evaluate::kani_proofs::closing_prefix_atomic_verdict_is_stable
+future::evaluate::kani_proofs::closing_prefix_boolean_operator_lemma
+future::evaluate::kani_proofs::closing_prefix_window_operator_lemma
+future::evaluate::kani_proofs::closing_prefix_until_release_lemma
 wire::common::kani_proofs::preflight_never_panics_on_short_input
 wire::common::kani_proofs::lexer_never_panics_on_any_short_bytes
 wire::common::kani_proofs::identity_scanners_never_panic_on_short_input
