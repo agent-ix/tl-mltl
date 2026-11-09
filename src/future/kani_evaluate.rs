@@ -518,12 +518,8 @@ fn closing_prefix_lemma(
 /// verdict of each operand at each time be given by a table, once for a prefix
 /// and once for the same prefix extended by one instant, constrained so every
 /// operand verdict decided on the prefix is unchanged on the extension
-/// (`Pending` may become decided). Then for `and`, `or`, `implies`,
-/// `equivalent`, `future`, `globally`, `until` and the `Release` negation (the
-/// proof is split in three harnesses by operator family; the doc applies to each),
-/// over a symbolic verdict time (the full `u64` range, including the overflow
-/// edge) and every interval with end at most 2: a decided `Ok` verdict on the
-/// prefix equals the verdict on the extension.
+/// (`Pending` may become decided). Then for `and`, `or`, `implies` and `equivalent`, over a symbolic verdict time (the full `u64` range, including the overflow
+/// edge): a decided `Ok` verdict on the prefix equals the verdict on the extension.
 ///
 /// Together with the atomic proof `closing_prefix_atomic_verdict_is_stable`
 /// (leaf case) this is the induction step of "a decided open-prefix verdict is
@@ -547,7 +543,7 @@ fn closing_prefix_boolean_operator_lemma() {
     let (left, right) = (NodeId(0), NodeId(1));
     // One choice shared by both evaluations of the lemma.
     let which: u8 = kani::any();
-    closing_prefix_lemma(|evaluator, time, interval| match which % 4 {
+    closing_prefix_lemma(|evaluator, time, _interval| match which % 4 {
         0 => evaluator.and(left, right, time, 1),
         1 => evaluator.or(left, right, time, 1),
         2 => evaluator.implies(left, right, time, 1),
@@ -559,12 +555,8 @@ fn closing_prefix_boolean_operator_lemma() {
 /// verdict of each operand at each time be given by a table, once for a prefix
 /// and once for the same prefix extended by one instant, constrained so every
 /// operand verdict decided on the prefix is unchanged on the extension
-/// (`Pending` may become decided). Then for `and`, `or`, `implies`,
-/// `equivalent`, `future`, `globally`, `until` and the `Release` negation (the
-/// proof is split in three harnesses by operator family; the doc applies to each),
-/// over a symbolic verdict time (the full `u64` range, including the overflow
-/// edge) and every interval with end at most 2: a decided `Ok` verdict on the
-/// prefix equals the verdict on the extension.
+/// (`Pending` may become decided). Then for `future` and `globally`, over a symbolic verdict time (the full `u64` range, including the overflow
+/// edge) and every interval with end at most 2: a decided `Ok` verdict on the prefix equals the verdict on the extension.
 ///
 /// Together with the atomic proof `closing_prefix_atomic_verdict_is_stable`
 /// (leaf case) this is the induction step of "a decided open-prefix verdict is
@@ -601,12 +593,8 @@ fn closing_prefix_window_operator_lemma() {
 /// verdict of each operand at each time be given by a table, once for a prefix
 /// and once for the same prefix extended by one instant, constrained so every
 /// operand verdict decided on the prefix is unchanged on the extension
-/// (`Pending` may become decided). Then for `and`, `or`, `implies`,
-/// `equivalent`, `future`, `globally`, `until` and the `Release` negation (the
-/// proof is split in three harnesses by operator family; the doc applies to each),
-/// over a symbolic verdict time (the full `u64` range, including the overflow
-/// edge) and every interval with end at most 2: a decided `Ok` verdict on the
-/// prefix equals the verdict on the extension.
+/// (`Pending` may become decided). Then for `until` and its `Release` negation, over a symbolic verdict time (the full `u64` range, including the overflow
+/// edge) and every interval with end at most 2: a decided `Ok` verdict on the prefix equals the verdict on the extension.
 ///
 /// Together with the atomic proof `closing_prefix_atomic_verdict_is_stable`
 /// (leaf case) this is the induction step of "a decided open-prefix verdict is
