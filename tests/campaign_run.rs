@@ -192,3 +192,101 @@ fn unparseable_evidence_fails_the_member() {
     );
     assert_eq!(report.aggregate, "reject");
 }
+
+fn fuzz_fixture(state: &str, stop: &str) -> tempfile::TempDir {
+    let record = format!(
+        r#"{{"schemaVersion":"tl-mltl.fuzz-run-record/v1","runs":[{{"target":"t","seed":7,
+        "requestedSeconds":9,"observedSeconds":9,"plateauWindowSeconds":3,"executions":11,
+        "coverageEdges":2,"coverageFeatures":4,"corpusEntries":5,"state":"{state}",
+        "stopReason":"{stop}","crashes":[]}}]}}"#
+    );
+    let members = r#"{"schemaVersion": "tl-mltl.campaign-members/v1", "tools": [], "members": [
+        {"id": "f", "technique": "fuzz", "kind": "fuzz",
+         "command": ["sh", "-c", "cp rec.json \"$EV/r.json\""],
+         "determinism": "seeded", "seed": "7", "evidence": {"env": "EV"}}]}"#;
+    let dir = fixture(members);
+    fs::write(dir.path().join("rec.json"), record).unwrap();
+    git(dir.path(), &["add", "."]);
+    git(dir.path(), &["commit", "-q", "-m", "rec"]);
+    dir
+}
+
+// Trace: TC-121
+#[test]
+fn fuzz_run_records_are_bound_into_the_report_and_replay_compares_them() {
+    let dir = fuzz_fixture("completed", "growth_observed");
+    let out = tempfile::tempdir().unwrap();
+    let report = run_campaign(dir.path(), out.path(), &[]).unwrap();
+    assert_eq!(report.members[0].status, Status::Pass);
+    let run = &report.members[0].fuzz_runs[0];
+    assert_eq!((run.seed, run.executions, run.coverage_edges), (7, 11, 2));
+    assert_eq!(run.observed_seconds, 9);
+    assert!(verify_seal(&report));
+
+    let again = tempfile::tempdir().unwrap();
+    let (_, diffs) = replay(&report, dir.path(), again.path()).unwrap();
+    assert!(diffs.is_empty(), "{diffs:?}");
+
+    // A retained report whose run seed was edited no longer matches its seal.
+    let mut forged = report.clone();
+    forged.members[0].fuzz_runs[0].seed = 8;
+    assert!(!verify_seal(&forged));
+    // A rerun that ends in a different state is reported as a difference.
+    let mut was_cancelled = report.clone();
+    was_cancelled.members[0].fuzz_runs[0].state = tl_mltl::fuzz_record::RunState::Cancelled;
+    // The retained seal is irrelevant to the comparison: tamper, then reseal.
+    tl_mltl::campaign::seal(&mut was_cancelled).unwrap();
+    let (_, diffs) = replay(&was_cancelled, dir.path(), again.path()).unwrap();
+    assert!(!diffs.is_empty());
+}
+
+#[test]
+fn a_fuzz_run_that_did_not_complete_fails_the_member() {
+    let dir = fuzz_fixture("timeout", "abnormal");
+    let out = tempfile::tempdir().unwrap();
+    let report = run_campaign(dir.path(), out.path(), &[]).unwrap();
+    assert_eq!(report.members[0].status, Status::Fail);
+    assert_eq!(aggregate(&report.members), "reject");
+}
+
+#[test]
+fn a_malformed_fuzz_record_fails_the_member() {
+    let dir = fuzz_fixture("crash", "abnormal");
+    let out = tempfile::tempdir().unwrap();
+    let report = run_campaign(dir.path(), out.path(), &[]).unwrap();
+    assert_eq!(report.members[0].status, Status::Fail);
+    assert!(report.members[0].fuzz_runs.is_empty());
+}
+
+fn fuzz_member(command: &str) -> tempfile::TempDir {
+    let members = format!(
+        r#"{{"schemaVersion": "tl-mltl.campaign-members/v1", "tools": [], "members": [
+        {{"id": "f", "technique": "fuzz", "kind": "fuzz",
+         "command": ["sh", "-c", {command:?}],
+         "determinism": "seeded", "seed": "7", "evidence": {{"env": "EV"}}}}]}}"#
+    );
+    fixture(&members)
+}
+
+#[test]
+fn fuzz_evidence_with_a_wrong_schema_no_record_or_unreadable_file_fails() {
+    let run = |dir: tempfile::TempDir| {
+        let out = tempfile::tempdir().unwrap();
+        run_campaign(dir.path(), out.path(), &[])
+            .unwrap()
+            .members
+            .remove(0)
+    };
+    let wrong = run(fuzz_member(
+        r#"printf '{"schemaVersion":"tl-mltl.fuzz-run-record/v0","runs":[]}' > "$EV/r.json""#,
+    ));
+    assert_eq!(wrong.status, Status::Fail);
+    assert!(wrong.detail.unwrap().contains("Schema"));
+    let none = run(fuzz_member(r#"printf '{"result":"agree"}' > "$EV/r.json""#));
+    assert_eq!(none.status, Status::Fail);
+    let empty = run(fuzz_member("true"));
+    assert_eq!(empty.status, Status::Fail);
+    // A directory named *.json cannot be read as a file.
+    let unreadable = run(fuzz_member(r#"mkdir "$EV/r.json""#));
+    assert_eq!(unreadable.status, Status::Fail);
+}

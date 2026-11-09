@@ -184,3 +184,34 @@ fn the_claim_detector_separates_claims_from_negations() {
     assert_eq!(key_tokens("generatedAt"), ["generated", "at"]);
     assert!(!key_tokens("generatedAt").iter().any(|t| t == "rate"));
 }
+
+// Trace: TC-122, FR-021-AC-5
+#[test]
+fn a_report_with_fuzz_runs_keeps_its_non_claims_and_carries_no_verdict_key() {
+    let members = r#"{"schemaVersion": "tl-mltl.campaign-members/v1", "tools": [], "members": [
+        {"id": "f", "technique": "fuzz", "kind": "fuzz",
+         "command": ["sh", "-c", "printf '%s' '{\"schemaVersion\":\"tl-mltl.fuzz-run-record/v1\",\"runs\":[{\"target\":\"t\",\"seed\":7,\"requestedSeconds\":9,\"observedSeconds\":9,\"plateauWindowSeconds\":3,\"executions\":11,\"coverageEdges\":2,\"coverageFeatures\":4,\"corpusEntries\":5,\"state\":\"completed\",\"stopReason\":\"plateau\",\"crashes\":[]}]}' > \"$EV/r.json\""],
+         "determinism": "seeded", "seed": "7", "evidence": {"env": "EV"}}]}"#;
+    let report = report_for(members);
+    assert_eq!(report.members[0].fuzz_runs.len(), 1);
+    assert_eq!(report.non_claims, standard_non_claims());
+    let mut keys = Vec::new();
+    collect_keys(&serde_json::to_value(&report).unwrap(), &mut keys);
+    assert!(keys.iter().any(|k| k == "fuzzRuns"));
+    for key in &keys {
+        for token in key_tokens(key) {
+            assert!(
+                ![
+                    "verdict",
+                    "safe",
+                    "correct",
+                    "certified",
+                    "qualified",
+                    "release"
+                ]
+                .contains(&token.as_str()),
+                "verdict-like key {key}"
+            );
+        }
+    }
+}

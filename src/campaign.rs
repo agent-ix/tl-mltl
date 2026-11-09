@@ -29,6 +29,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
+use crate::fuzz_record::{parse_record, RunRecord, RunState};
+
 /// Schema of the members file.
 pub const MEMBERS_SCHEMA: &str = "tl-mltl.campaign-members/v1";
 /// Schema of a campaign report.
@@ -360,6 +362,10 @@ pub struct MemberResult {
     pub evidence: Vec<EvidenceFile>,
     /// Elapsed milliseconds; never compared on replay.
     pub elapsed_ms: u64,
+    /// Per-run fuzz observations (seed, duration, executions, coverage,
+    /// crashes) read from the member's fuzz run record.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fuzz_runs: Vec<RunRecord>,
 }
 
 /// Source identity a report is bound to.
@@ -499,6 +505,7 @@ fn blank(m: &Member, status: Status, detail: String) -> MemberResult {
         tools: BTreeMap::new(),
         evidence: Vec::new(),
         elapsed_ms: 0,
+        fuzz_runs: Vec::new(),
     }
 }
 
@@ -567,6 +574,7 @@ pub fn run_member(
         (Some(d), Some(spec)) => collect_evidence(d, spec),
         _ => Vec::new(),
     };
+    let (fuzz_runs, fuzz_problem) = read_fuzz_runs(m, ev_dir.as_deref(), &evidence);
     let disagree = evidence
         .iter()
         .find(|e| e.result.as_deref().is_some_and(|r| r != "agree"));
@@ -577,6 +585,8 @@ pub fn run_member(
             Status::Fail,
             Some(format!("evidence {} result {:?}", e.name, e.result)),
         )
+    } else if let Some(problem) = fuzz_problem {
+        (Status::Fail, Some(problem))
     } else if m.evidence.is_some() && evidence.is_empty() {
         (
             Status::Fail,
@@ -592,8 +602,42 @@ pub fn run_member(
         tools: used,
         evidence,
         elapsed_ms,
+        fuzz_runs,
         ..blank(m, Status::Pass, String::new())
     }
+}
+
+/// Read the fuzz run records among a member's evidence files. A record that
+/// does not parse strictly, or a run that did not complete, fails the member.
+fn read_fuzz_runs(
+    m: &Member,
+    dir: Option<&Path>,
+    evidence: &[EvidenceFile],
+) -> (Vec<RunRecord>, Option<String>) {
+    let mut runs = Vec::new();
+    let Some(dir) = dir.filter(|_| m.kind == "fuzz") else {
+        return (runs, None);
+    };
+    // Every evidence file of a fuzz member is a run record: a wrong schema or
+    // an unreadable file is an error, and a member with no record fails.
+    for file in evidence {
+        let text = match fs::read(dir.join(&file.name)) {
+            Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
+            Err(e) => return (Vec::new(), Some(format!("evidence {}: {e}", file.name))),
+        };
+        match parse_record(&text) {
+            Ok(record) => runs.extend(record.runs),
+            Err(e) => return (Vec::new(), Some(format!("evidence {}: {e}", file.name))),
+        }
+    }
+    if runs.is_empty() {
+        return (runs, Some("fuzz member wrote no run record".to_owned()));
+    }
+    let problem = runs
+        .iter()
+        .find(|r| r.state != RunState::Completed)
+        .map(|r| format!("fuzz run {} seed {}: {:?}", r.target, r.seed, r.state));
+    (runs, problem)
 }
 
 /// Bind a report to the checkout at `repo`.
@@ -724,6 +768,18 @@ pub fn compare_member(old: &MemberResult, new: &MemberResult) -> Vec<String> {
     }
     if old.seed != new.seed {
         d.push(format!("{}: seed {:?} -> {:?}", old.id, old.seed, new.seed));
+    }
+    let key = |m: &MemberResult| -> Vec<(String, u64, RunState)> {
+        m.fuzz_runs
+            .iter()
+            .map(|r| (r.target.clone(), r.seed, r.state))
+            .collect()
+    };
+    if key(old) != key(new) {
+        d.push(format!(
+            "{}: fuzz run targets, seeds or states differ",
+            old.id
+        ));
     }
     if old.determinism == Determinism::Exact {
         let key = |m: &MemberResult| -> Vec<(String, String)> {

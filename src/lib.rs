@@ -33,6 +33,7 @@ pub mod clock;
 mod context;
 mod differential;
 pub mod future;
+pub mod fuzz_record;
 #[cfg(feature = "infinite-trace")]
 pub mod infinite;
 pub mod mapping;
