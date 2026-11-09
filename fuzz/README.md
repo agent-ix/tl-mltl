@@ -49,3 +49,26 @@ Run with `cargo +nightly fuzz run <target> <scratch-corpus> corpus/<target> --
 inputs do not land in the committed seeds. The 12 seeds per target are six
 hand-built shapes and six from a fixed PRNG. The campaign record is
 `spec/reviews/SR-223-infinite-fuzz-and-mutation-pilot.md`.
+
+# TL-29 fuzz baseline (FR-021)
+
+`fuzz/run_campaign.py OUT_DIR` runs every target under seeds 101, 102 and 103
+with a 900 s budget and a trailing 300 s no-new-feature plateau stop, each run
+from an empty scratch corpus plus the checked-in seeds as read-only input, and
+writes `runs.json`. It is a stopgap: first-party gating logic belongs in Rust
+(tracked by TL-370), so the script gets no further features.
+
+The 2026-11-08 record is `fuzz/evidence/2026-11-08/campaign-900s.json` (18
+runs, no crash, timeout or out-of-memory). No run reached a plateau; every run
+ended at the budget. For the five targets with regular progress output, features
+were still appearing within the last window (growth observed). For
+`evaluator_differential` the growth label and last-new-feature time are
+unverified (`budget_growth_unverified`, null): its low execution rate left
+libFuzzer's block-buffered stderr empty until flush. The driver checks the
+plateau condition only when a stderr line arrives, so a quiet stretch cannot
+trigger it; that applies to any low-output target.
+
+The grown corpora are generated inputs and are not committed; they were kept
+locally, not retained, and re-running the driver with the recorded seeds and
+budget reproduces them. A no-crash result is a bounded observation, not a
+correctness claim.
