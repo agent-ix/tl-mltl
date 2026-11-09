@@ -120,11 +120,6 @@ fn name_check_fails_for_a_renamed_or_missing_harness() {
 #[test]
 fn every_harness_states_its_bounds_and_non_claims() {
     for (name, doc) in all_found() {
-        if name.ends_with("::horizon_bound_addition_matches_checked_add") {
-            // The pre-existing proof states its non-claim in a `//` comment.
-            assert!(doc.contains("does not claim"), "{name}: no non-claim");
-            continue;
-        }
         assert!(doc.contains("Proves"), "{name}: doc lacks 'Proves'");
         assert!(
             doc.contains("Does not claim") || doc.contains("Does not prove"),

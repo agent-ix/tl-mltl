@@ -336,26 +336,53 @@ fn kani_proof_records_are_bound_into_the_report_and_replay_compares_them() {
 // Trace: TC-121, FR-023-AC-3
 #[test]
 fn a_proof_that_did_not_verify_fails_the_member_under_its_own_name() {
-    for outcome in ["unwinding_failed", "timeout", "unsupported_construct"] {
+    let all = [
+        ("assertion_failed", "AssertionFailed"),
+        ("unwinding_failed", "UnwindingFailed"),
+        ("timeout", "Timeout"),
+        ("unsupported_construct", "UnsupportedConstruct"),
+        ("out_of_memory", "OutOfMemory"),
+        ("vacuous_cover", "VacuousCover"),
+        ("tool_error", "ToolError"),
+    ];
+    for (outcome, wanted) in all {
+        // `vacuous_cover` requires an unsatisfied cover; the rest need none.
+        let satisfied = if outcome == "vacuous_cover" { 1 } else { 0 };
         let cmd = format!(
             "cat > \"$EV/p.json\" <<'X'\n{}\nX",
-            kani_record_json(outcome, 0)
+            kani_record_json(outcome, satisfied)
         );
         let out = tempfile::tempdir().unwrap();
         let report = run_campaign(kani_member(&cmd).path(), out.path(), &[]).unwrap();
         let member = &report.members[0];
-        assert_eq!(member.status, Status::Fail);
-        let wanted = match outcome {
-            "unwinding_failed" => "UnwindingFailed",
-            "timeout" => "Timeout",
-            _ => "UnsupportedConstruct",
-        };
+        assert_eq!(member.status, Status::Fail, "{outcome}");
         assert!(
             member.detail.as_deref().unwrap().contains(wanted),
-            "{:?}",
+            "{outcome}: {:?}",
             member.detail
         );
     }
+}
+
+// Trace: TC-121, FR-023-AC-3
+#[test]
+fn a_listed_harness_without_a_record_fails_the_member() {
+    let dir = kani_member(&format!(
+        "cat > \"$EV/p.json\" <<'X'\n{}\nX",
+        kani_record_json("verified", 2)
+    ));
+    let list = dir.path().join("scripts");
+    fs::create_dir_all(&list).unwrap();
+    fs::write(list.join("kani-harnesses.txt"), "m::h\nm::other\n").unwrap();
+    let out = tempfile::tempdir().unwrap();
+    let report = run_campaign(dir.path(), out.path(), &[]).unwrap();
+    let member = &report.members[0];
+    assert_eq!(member.status, Status::Fail);
+    assert!(member.detail.as_deref().unwrap().contains("m::other"));
+    fs::write(list.join("kani-harnesses.txt"), "m::h\n").unwrap();
+    let out = tempfile::tempdir().unwrap();
+    let report = run_campaign(dir.path(), out.path(), &[]).unwrap();
+    assert_eq!(report.members[0].status, Status::Pass);
 }
 
 #[test]

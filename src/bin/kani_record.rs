@@ -2,7 +2,8 @@
 //!
 //! Called by `scripts/kani-gate.sh` after each harness run. `EXIT` is the
 //! `cargo kani` exit code (`none` when killed) and `SOURCE` the file holding
-//! the harness. Setting `TL_MLTL_KANI_TIMED_OUT=1` records a timeout.
+//! the harness. Setting `TL_MLTL_KANI_TIMED_OUT=1` records a timeout; a timed-out
+//! run is never recorded as verified, even if its exit code and log say success.
 
 use std::{
     env, fs,

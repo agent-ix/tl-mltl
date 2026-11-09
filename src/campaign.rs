@@ -581,7 +581,7 @@ pub fn run_member(
         _ => Vec::new(),
     };
     let (fuzz_runs, fuzz_problem) = read_fuzz_runs(m, ev_dir.as_deref(), &evidence);
-    let (kani_proofs, kani_problem) = read_kani_proofs(m, ev_dir.as_deref(), &evidence);
+    let (kani_proofs, kani_problem) = read_kani_proofs(repo, m, ev_dir.as_deref(), &evidence);
     let fuzz_problem = fuzz_problem.or(kani_problem);
     let disagree = evidence
         .iter()
@@ -653,6 +653,7 @@ fn read_fuzz_runs(
 /// does not parse strictly, or a proof that did not verify, fails the member;
 /// each non-verified outcome keeps its own name in the failure detail.
 fn read_kani_proofs(
+    repo: &Path,
     m: &Member,
     dir: Option<&Path>,
     evidence: &[EvidenceFile],
@@ -674,11 +675,30 @@ fn read_kani_proofs(
     if proofs.is_empty() {
         return (proofs, Some("kani member wrote no proof record".to_owned()));
     }
+    if let Some(missing) = expected_harnesses(repo)
+        .into_iter()
+        .find(|h| !proofs.iter().any(|p| &p.harness == h))
+    {
+        return (proofs, Some(format!("kani proof {missing}: no record")));
+    }
     let problem = proofs
         .iter()
         .find(|p| p.outcome != ProofOutcome::Verified)
         .map(|p| format!("kani proof {}: {:?}", p.harness, p.outcome));
     (proofs, problem)
+}
+
+/// Harness names the member must have a record for: the lines of
+/// `scripts/kani-harnesses.txt` in `repo`. A repository without the list
+/// requires none.
+fn expected_harnesses(repo: &Path) -> Vec<String> {
+    fs::read_to_string(repo.join("scripts/kani-harnesses.txt"))
+        .unwrap_or_default()
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(str::to_owned)
+        .collect()
 }
 
 /// Bind a report to the checkout at `repo`.

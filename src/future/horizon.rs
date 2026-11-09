@@ -181,8 +181,12 @@ mod kani_proofs {
 
     use super::{add_bound, HorizonError};
 
-    // This is intentionally the arithmetic primitive used by horizon traversal;
-    // it does not claim a proof of arbitrary formula traversal.
+    /// Proves: for every `u32` bound and `u64` operand value, `add_bound` equals
+    /// `checked_add` or the typed `ArithmeticOverflow`.
+    ///
+    /// This is intentionally the arithmetic primitive used by horizon traversal.
+    /// Does not claim a proof of arbitrary formula traversal. The cover checks
+    /// show the success and overflow outcomes are reachable.
     #[kani::proof]
     #[kani::unwind(4)]
     fn horizon_bound_addition_matches_checked_add() {

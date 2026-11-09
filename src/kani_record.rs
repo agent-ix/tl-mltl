@@ -119,6 +119,9 @@ fn check_proof(proof: &ProofRecord) -> Result<(), KaniRecordError> {
     if proof.harness.is_empty() || proof.kani_version.is_empty() || proof.cbmc_version.is_empty() {
         return bad("empty harness or tool version");
     }
+    if proof.bounds.trim().is_empty() {
+        return bad("empty bounds: the harness doc comment states none");
+    }
     if proof.covers_satisfied > proof.covers_total {
         return bad("more covers satisfied than exist");
     }
@@ -157,14 +160,25 @@ pub fn parse_covers(log: &str) -> Option<(u32, u32)> {
     })
 }
 
+/// True when a `Failed Checks:` line names something other than an unwinding
+/// assertion.
+fn has_property_failure(log: &str) -> bool {
+    log.lines().any(|line| {
+        line.trim_start().starts_with("Failed Checks:") && !line.contains("unwinding assertion")
+    })
+}
+
 /// Classify a finished `cargo kani` run from its exit code and log.
 /// `timed_out` is true when the gate stopped the run at its time budget.
 ///
-/// The classes are checked in a fixed order: a timeout, then a successful
+/// The classes are checked in a fixed order: a timeout (a timed-out run is
+/// never `verified`, whatever its exit code or log), then a successful
 /// verification (a vacuous cover is its own state because Kani exits 0 for
-/// it), then a failed one (incomplete unwinding, an unsupported construct,
-/// otherwise a property failure), then memory exhaustion; anything else is a
-/// tool error.
+/// it), then a failed one, then memory exhaustion; anything else is a tool
+/// error. For a failed verification a genuine property failure wins over
+/// incomplete unwinding: a log with both a failed assertion and an unwinding
+/// assertion is `assertion_failed`, because the counterexample is real whatever
+/// the unwind bound. Then an unsupported construct, then unwinding failure.
 pub fn classify_proof(exit_code: Option<i32>, log: &str, timed_out: bool) -> ProofOutcome {
     if timed_out {
         return ProofOutcome::Timeout;
@@ -176,10 +190,12 @@ pub fn classify_proof(exit_code: Option<i32>, log: &str, timed_out: bool) -> Pro
         };
     }
     if log.contains("VERIFICATION:- FAILED") {
-        return if log.contains("unwinding assertion") {
-            ProofOutcome::UnwindingFailed
+        return if has_property_failure(log) {
+            ProofOutcome::AssertionFailed
         } else if log.contains("is not currently supported by Kani") {
             ProofOutcome::UnsupportedConstruct
+        } else if log.contains("unwinding assertion") {
+            ProofOutcome::UnwindingFailed
         } else {
             ProofOutcome::AssertionFailed
         };
@@ -290,6 +306,53 @@ mod tests {
         .unwrap()
     }
 
+    // Trace: TC-121, FR-023-AC-3
+    #[test]
+    fn built_records_keep_each_outcome_and_reject_an_empty_bounds_text() {
+        let logs: [(&str, Option<i32>, bool, ProofOutcome); 6] = [
+            (OK, Some(0), false, ProofOutcome::Verified),
+            (
+                "** 1 of 2 cover properties satisfied\nVERIFICATION:- SUCCESSFUL",
+                Some(0),
+                false,
+                ProofOutcome::VacuousCover,
+            ),
+            (
+                "Failed Checks: assertion failed\nVERIFICATION:- FAILED",
+                Some(1),
+                false,
+                ProofOutcome::AssertionFailed,
+            ),
+            (
+                "Failed Checks: unwinding assertion loop 0\nVERIFICATION:- FAILED",
+                Some(1),
+                false,
+                ProofOutcome::UnwindingFailed,
+            ),
+            ("", Some(137), false, ProofOutcome::OutOfMemory),
+            (OK, Some(0), true, ProofOutcome::Timeout),
+        ];
+        for (log, code, timed_out, want) in logs {
+            let run = ProofRun {
+                harness: "m::h",
+                exit_code: code,
+                log,
+                timed_out,
+                kani_version: "Kani 0.68.0",
+                cbmc_version: "6.11.0",
+                elapsed_seconds: 1,
+                bounds: "Proves x.",
+            };
+            assert_eq!(build_record(&run).outcome, want, "{log:?}");
+        }
+        let mut empty = proof(ProofOutcome::Verified, 3, 3);
+        empty.bounds = "  ".into();
+        assert_eq!(
+            parse_record(&text(&empty)).unwrap_err().code,
+            KaniRecordErrorCode::Inconsistent
+        );
+    }
+
     // Partly backs FR-023-AC-2: the classifier names each state; the gate
     // script does not enforce a time budget, so a timeout is only recorded
     // when a caller sets TL_MLTL_KANI_TIMED_OUT.
@@ -298,6 +361,8 @@ mod tests {
         let classify = |code, log, timed| classify_proof(code, log, timed);
         assert_eq!(classify(Some(0), OK, false), ProofOutcome::Verified);
         assert_eq!(classify(None, OK, true), ProofOutcome::Timeout);
+        // A timed-out run is never verified, even with an exit-0 successful log.
+        assert_eq!(classify(Some(0), OK, true), ProofOutcome::Timeout);
         assert_eq!(
             classify(
                 Some(0),
@@ -330,6 +395,15 @@ mod tests {
             classify(
                 Some(1),
                 "Failed Checks: assertion failed\nVERIFICATION:- FAILED",
+                false
+            ),
+            ProofOutcome::AssertionFailed
+        );
+        // A genuine assertion failure wins over an unwinding failure in one log.
+        assert_eq!(
+            classify(
+                Some(1),
+                "Failed Checks: unwinding assertion loop 0\nFailed Checks: assertion failed: x\nVERIFICATION:- FAILED",
                 false
             ),
             ProofOutcome::AssertionFailed
@@ -408,6 +482,11 @@ mod tests {
         };
         let record = build_record(&run);
         assert_eq!(record.outcome, ProofOutcome::Verified);
+        assert_eq!(record.kani_version, "Kani 0.68.0");
+        assert_eq!(record.cbmc_version, "6.11.0");
+        assert_eq!(record.bounds, "Proves x.");
+        assert_eq!(record.harness, "m::h");
+        assert_eq!(record.elapsed_seconds, 5);
         assert_eq!((record.covers_satisfied, record.covers_total), (3, 3));
         assert!(record
             .reproduce
