@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "tl-mltl.command/v1",
+  "operation": "evaluate",
+  "formulaId": "cli-root-outside-table",
+  "formula": {
+    "schema_version": "tl-syntax.formula/v1",
+    "semantic_profile": "mltl.closed-trace/v1",
+    "root": 5,
+    "nodes": [{"kind": "true"}]
+  },
+  "trace": null
+}

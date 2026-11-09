@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "tl-mltl.command/v1",
+  "operation": "evaluate",
+  "formulaId": "cli-origin-complete-profile",
+  "formula": {
+    "schema_version": "tl-syntax.formula/v1",
+    "semantic_profile": "mltl.origin-complete-history/v1",
+    "root": 0,
+    "nodes": [{"kind": "true"}]
+  },
+  "trace": {
+    "schemaVersion": "tl-mltl.trace/v1",
+    "traceId": "cli-contract-trace-v1",
+    "closed": false,
+    "instants": [[]]
+  }
+}
