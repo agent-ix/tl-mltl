@@ -116,7 +116,7 @@ fn run_stdin_bytes(bytes: &[u8]) -> std::process::Output {
 }
 
 /// A refusal writes nothing to stdout and one `tl-mltl: ` line to stderr.
-fn assert_refused(output: &std::process::Output, message_prefix: &str) {
+fn assert_refused_prefix(output: &std::process::Output, message_prefix: &str) {
     assert_eq!(output.status.code(), Some(2));
     assert!(output.stdout.is_empty(), "refusal wrote to stdout");
     let stderr = String::from_utf8(output.stderr.clone()).unwrap();
@@ -125,6 +125,17 @@ fn assert_refused(output: &std::process::Output, message_prefix: &str) {
         "unexpected stderr: {stderr:?}"
     );
     assert_eq!(stderr.lines().count(), 1, "{stderr:?}");
+}
+
+/// Like `assert_refused_prefix` for platform-independent text: the whole
+/// stderr is exactly `tl-mltl: <message>\n`.
+fn assert_refused(output: &std::process::Output, message: &str) {
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty(), "refusal wrote to stdout");
+    assert_eq!(
+        String::from_utf8(output.stderr.clone()).unwrap(),
+        format!("tl-mltl: {message}\n")
+    );
 }
 
 const USAGE: &str = "usage: tl-mltl REQUEST.json (or - for stdin)\n";
@@ -151,16 +162,19 @@ fn cli_usage_errors_exit_two_with_the_usage_line() {
 
 // Trace: TC-014, FR-005-AC-1
 #[test]
-fn cli_unreadable_file_is_refused_naming_the_path() {
+fn cli_missing_file_is_refused_naming_the_path() {
     let missing = run_args(&["tests/fixtures/cli-contract/does-not-exist.json"]);
-    assert_refused(
+    assert_refused_prefix(
         &missing,
         "read tests/fixtures/cli-contract/does-not-exist.json: ",
     );
+}
 
-    // A directory exists but cannot be read as a request file.
+// Trace: TC-014, FR-005-AC-1
+#[test]
+fn cli_directory_as_request_path_is_refused_naming_the_path() {
     let directory = run_args(&[CONTRACT]);
-    assert_refused(&directory, &format!("read {CONTRACT}: "));
+    assert_refused_prefix(&directory, &format!("read {CONTRACT}: "));
 }
 
 // Trace: TC-014, FR-005-AC-1
@@ -173,15 +187,18 @@ fn cli_unreadable_stdin_is_refused_as_a_stdin_read_error() {
         .stdin(Stdio::from(directory))
         .output()
         .unwrap();
-    assert_refused(&output, "read stdin: ");
+    assert_refused_prefix(&output, "read stdin: ");
 }
 
-// Trace: TC-014, FR-005-AC-1, NFR-002-AC-1
+// Trace: TC-014, FR-005-AC-1
 #[test]
 fn cli_non_utf8_and_malformed_stdin_are_refused_at_parse() {
     // Invalid UTF-8 inside a JSON string.
     let non_utf8 = run_stdin_bytes(b"{\"schemaVersion\":\"\xff\"}");
-    assert_refused(&non_utf8, "parse request: invalid unicode code point");
+    assert_refused(
+        &non_utf8,
+        "parse request: invalid unicode code point at line 1 column 20",
+    );
 
     // Bytes that are not JSON at all.
     let garbage = run_stdin_bytes(b"\xff\xfe");
@@ -189,7 +206,10 @@ fn cli_non_utf8_and_malformed_stdin_are_refused_at_parse() {
 
     // Empty stdin.
     let empty = run_stdin_bytes(b"");
-    assert_refused(&empty, "parse request: EOF while parsing a value");
+    assert_refused(
+        &empty,
+        "parse request: EOF while parsing a value at line 1 column 0",
+    );
 }
 
 // Trace: TC-014, FR-005-AC-1
@@ -209,18 +229,18 @@ fn cli_evaluates_an_online_prefix_formula_over_an_open_prefix() {
 // Trace: TC-014, FR-005-AC-1, NFR-002-AC-1
 #[test]
 fn cli_refuses_profiles_the_v1_wire_does_not_admit() {
-    // Origin-complete and infinite-trace formulas never reach evaluation:
+    // Origin-complete and infinite-trace formulas never reach evaluation (the
+    // matching run() arms are exhaustiveness-only):
     // the v1 formula document refuses them while the request is parsed.
     let origin = run_args(&[&format!("{CONTRACT}/cli-origin-complete-profile.json")]);
     assert_refused(
         &origin,
         "parse request: formula-v1 does not admit semantic profile \
-         mltl.origin-complete-history/v1",
+         mltl.origin-complete-history/v1 at line 10 column 3",
     );
     let infinite = run_args(&[&format!("{CONTRACT}/cli-infinite-trace-profile.json")]);
-    assert_refused(
-        &infinite,
-        "parse request: infinite-trace profile requires tl-syntax.formula-unbounded/v1",
+    assert_refused(&infinite,
+        "parse request: infinite-trace profile requires tl-syntax.formula-unbounded/v1 at line 10 column 3",
     );
 }
 
@@ -230,7 +250,7 @@ fn cli_refuses_an_invalid_formula_and_an_unmappable_profile() {
     let root = run_args(&[&format!("{CONTRACT}/cli-root-outside-table.json")]);
     assert_refused(
         &root,
-        "parse request: formula root 5 is outside node table of length 1",
+        "parse request: formula root 5 is outside node table of length 1 at line 10 column 3",
     );
     let mapping = run_args(&[&format!("{CONTRACT}/cli-map-closed-profile.json")]);
     assert_refused(
@@ -240,31 +260,26 @@ fn cli_refuses_an_invalid_formula_and_an_unmappable_profile() {
     );
 }
 
-// Trace: TC-014, FR-005-AC-1, FR-003-AC-2, NFR-002-AC-1
+// Trace: TC-014, FR-005-AC-1, NFR-002-AC-1
 #[test]
 fn cli_refuses_each_declared_request_with_its_stable_message() {
-    let cases = [
-        (
-            "evaluate-without-trace.json",
-            "evaluate operation requires trace",
-        ),
-        (
-            "closed-formula-open-trace.json",
-            "closed-trace formula requires a closed trace document",
-        ),
-        ("unknown-command-schema.json", "`tl-mltl.command/v2`"),
-        ("unknown-formula-profile.json", "`mltl.online-prefix/v2`"),
-        (
-            "unknown-request-field.json",
-            "unknown field `verdictOverride`",
-        ),
-    ];
-    for (file, marker) in cases {
+    let manifest: Value =
+        serde_json::from_slice(&std::fs::read(format!("{REQUESTS}/manifest.json")).unwrap())
+            .unwrap();
+    let mut refused = 0;
+    for case in manifest["cases"].as_array().unwrap() {
+        if case["expectedExit"] != 2 {
+            continue;
+        }
+        let file = case["request"].as_str().unwrap();
+        let marker = case["stderrMarker"].as_str().unwrap();
         let output = run_args(&[&format!("{REQUESTS}/{file}")]);
         assert_eq!(output.status.code(), Some(2), "{file}");
         assert!(output.stdout.is_empty(), "{file}");
         let stderr = String::from_utf8(output.stderr).unwrap();
         assert!(stderr.starts_with("tl-mltl: "), "{file}: {stderr:?}");
         assert!(stderr.contains(marker), "{file}: {stderr:?}");
+        refused += 1;
     }
+    assert_eq!(refused, 5);
 }
