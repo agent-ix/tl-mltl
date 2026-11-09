@@ -257,7 +257,7 @@ rustdoc:
 # zero_window_lowerings_preserve_source_verdicts_at_origin takes over 40 minutes.
 MIRI_TOOLCHAIN ?= nightly-2026-08-21
 MIRI_TESTS ?= limit_register error_variants property past_history reference interop \
-	contextual tc_090_owner_wire_contracts miri_gate
+	contextual tc_090_owner_wire_contracts miri_gate past_readers
 
 .PHONY: miri
 miri:
