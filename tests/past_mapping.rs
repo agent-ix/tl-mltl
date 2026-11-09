@@ -588,10 +588,6 @@ fn past_mapping_refuses_an_unbound_proposition() {
 // given a canonical graph identity.
 // Trace: TC-176, NFR-001-AC-4
 #[test]
-#[cfg_attr(
-    miri,
-    ignore = "identifies a chain one past the 4,096-node depth ceiling"
-)]
 fn past_mapping_refuses_an_unidentifiable_graph() {
     let origin = contract(&[PastOperatorKind::Once]);
     let mut deep = vec![p()];

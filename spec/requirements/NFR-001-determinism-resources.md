@@ -18,9 +18,7 @@ suite shall produce every variant of every public error enumeration at least onc
 ## Scope
 
 All public library functions, CLI records, mapping manifests, context identities
-and digests, and retained differential artifacts are in scope. The crate depends on `std`
-(`std::error::Error`, `std::io`, `std::time::Instant`) and makes no `no_std`
-claim (FR-027, ADR-003); a `no_std` build is out of scope for this requirement.
+and digests, and retained differential artifacts are in scope.
 
 ## Rationale
 
@@ -49,7 +47,7 @@ under Miri on a pinned nightly to show the absence of undefined behavior.
 | NFR-001-AC-2 | Overflow and work-limit exhaustion are explicit errors with no partial success claim. | unit-testing (TC-004, TC-006) |
 | NFR-001-AC-3 | Each limit in the Limit Register below is tested on both sides: a value equal to the limit is accepted; a value one past the limit is refused with the typed error that names that limit. The native run is never skipped. For a fixed ceiling (the recursion ceiling, the owner-wire maxima, the past size constants) it uses the production value; for a limit the caller supplies (`EvaluationLimits`, `PastEvaluationLimits`, infinite `EvaluationLimit`, the mapping work limit) it sets the limit to the exact requirement of the input. The Miri run (NFR-001-AC-5) runs the same code path with a lowered limit only for the heavy limits named in the Limit Register's Miri column. | unit-testing (TC-175) |
 | NFR-001-AC-4 | Every variant of every public error and error-code enumeration is produced by at least one test that asserts the variant itself, not its message; a variant that no reachable input can produce is removed from the enumeration in the same change instead of being left untested. The one exception is `ContextualBindingError::Refused`, which preserves a refusal of the non-exhaustive upstream `FormulaBindingError`; it is produced only when tl-syntax adds a second binding refusal. | unit-testing (TC-176) |
-| NFR-001-AC-5 | The unit and property suites complete under Miri, on the pinned nightly named in the Makefile, with no undefined-behavior report, using the recorded flags and reduced property case counts. Heavy limits run under Miri with a caller-lowered limit where the API takes one, and with a named `cfg(miri)` constant otherwise, exactly as the Limit Register states. | unit-testing (TC-177) |
+| NFR-001-AC-5 | The unit and property suites complete under Miri, on the pinned nightly named in the Makefile, with no undefined-behavior report, using the recorded flags and reduced property case counts. Heavy limits run under Miri with a caller-lowered limit where the API takes one, and with a named `cfg(miri)` constant otherwise, exactly as the Limit Register states. Because of those `cfg(miri)` constants in `src/past/mod.rs`, Miri does not exercise the production values of `MAX_HISTORY_POSITIONS` and `MAX_PROPOSITIONS_PER_POSITION`; the native run does, and this is an accepted risk. Miri runs the library tests and the integration suites named in `MIRI_TESTS` in the Makefile. Every other integration suite is excluded: `ci_guard`, `campaign_run`, `cli` and `r2u2_live` start processes or read external tools; the corpus, oracle and infinite-trace suites are exhaustive replays that were not run under Miri; `past_mapping` is excluded because `zero_window_lowerings_preserve_source_verdicts_at_origin` takes over 40 minutes under Miri. Four tests inside listed suites are skipped under Miri for size: the 100,000-node contextual formula (`contextual`), the exhaustive window oracle (`reference`), the unidentifiable-formula table (`error_variants`) and the 100,000-proposition block (`past_history`, covered by the lowered constant). | unit-testing (TC-177) |
 
 ## Limit Register
 
@@ -97,7 +95,9 @@ caller value above it, which is clamped and refused by the clamped limit's error
 The owner-wire rows marked caller-lowered run natively at the production
 `OWNER_MAX` value, and under Miri at a lower value passed through `OwnerLimits`
 for the same code path. The infinite-trace limits are asserted by the existing
-inclusive-boundary tests, which carry the TC-175 trace tag.
+inclusive-boundary tests in `tests/infinite_trace.rs` and
+`tests/infinite_matrix_rows.rs`, which carry the TC-175 trace tag; those suites
+are not run under Miri (see NFR-001-AC-5).
 
 ## Dependencies
 

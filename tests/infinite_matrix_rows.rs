@@ -905,7 +905,7 @@ fn witness_and_counterexample_details_replay_against_the_full_admitted_loop() {
     assert!(replayed > 300, "{replayed}");
 }
 
-// Trace: TC-158; FR-033-AC-3
+// Trace: TC-158, TC-175; FR-033-AC-3, NFR-001-AC-3
 #[test]
 fn unsupported_and_both_failed_dispositions_keep_exact_axes_through_the_public_routes() {
     let mut g = Graph::new();
