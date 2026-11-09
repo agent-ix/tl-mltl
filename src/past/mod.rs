@@ -25,8 +25,18 @@ pub const PAST_EVALUATOR_V1: &str = "tl-mltl.past-evaluator/v1";
 
 const MAX_IDENTITY_BYTES: usize = 256;
 const MAX_UNIT_BYTES: usize = 128;
+/// Production wire ceiling on history positions.
+#[cfg(not(miri))]
 const MAX_HISTORY_POSITIONS: usize = 1_000_000;
+/// Lowered under Miri so the at-limit and over-limit tests stay tractable.
+#[cfg(miri)]
+const MAX_HISTORY_POSITIONS: usize = 1_000;
+/// Production wire ceiling on propositions at one position.
+#[cfg(not(miri))]
 const MAX_PROPOSITIONS_PER_POSITION: usize = 100_000;
+/// Lowered under Miri so the at-limit and over-limit tests stay tractable.
+#[cfg(miri)]
+const MAX_PROPOSITIONS_PER_POSITION: usize = 1_000;
 const HARD_MAX_PAST_STEPS: u64 = 4_000_000;
 const HARD_MAX_TEMPORAL_SPAN: u64 = 100_000;
 
@@ -666,8 +676,6 @@ pub enum HistoryError {
     PositionLimitExceeded { actual: usize, limit: usize },
     /// Declared digest does not match the immutable history bytes.
     StaleDigest { expected: String, actual: String },
-    /// Canonical history serialization failed.
-    IdentityEncoding,
 }
 
 impl fmt::Display for HistoryError {
@@ -735,7 +743,6 @@ impl fmt::Display for HistoryError {
                 write!(formatter, "history position count {actual} exceeds {limit}")
             }
             Self::StaleDigest { .. } => formatter.write_str("history digest is stale"),
-            Self::IdentityEncoding => formatter.write_str("history identity encoding failed"),
         }
     }
 }
@@ -951,7 +958,7 @@ impl PositionHistoryDocument {
             clock: &'a ClockBinding,
             observations: &'a [PositionObservation],
         }
-        domain_sha256(
+        Ok(domain_sha256(
             "tl-mltl.position-history/v1",
             &DigestView {
                 schema_version: self.schema_version,
@@ -963,7 +970,7 @@ impl PositionHistoryDocument {
                 observations: &self.observations,
             },
         )
-        .map_err(|_| HistoryError::IdentityEncoding)
+        .expect("a history digest view serializes to JSON"))
     }
 
     /// Stable history identity.
@@ -1152,10 +1159,6 @@ pub enum HistoryRequirementError {
         expected: &'static str,
         actual: &'static str,
     },
-    /// A future node appeared in a past analysis.
-    FutureNodeUnsupported { node: NodeId },
-    /// A validated formula exposed a missing predecessor.
-    InvalidNodeReference { node: NodeId },
     /// Reverse-offset arithmetic overflowed.
     ArithmeticOverflow { node: NodeId },
     /// Caller formula identity is absent or over the fixed bound.
@@ -1172,16 +1175,6 @@ impl fmt::Display for HistoryRequirementError {
                     formatter,
                     "expected semantic profile {expected}, found {actual}"
                 )
-            }
-            Self::FutureNodeUnsupported { node } => {
-                write!(
-                    formatter,
-                    "future node {} is unsupported by past analysis",
-                    node.0
-                )
-            }
-            Self::InvalidNodeReference { node } => {
-                write!(formatter, "invalid formula node reference {}", node.0)
             }
             Self::ArithmeticOverflow { node } => {
                 write!(
@@ -1203,18 +1196,22 @@ impl std::error::Error for HistoryRequirementError {}
 fn formula_sha256(formula: Formula<'_>) -> Result<String, HistoryRequirementError> {
     let document = FormulaDocument::from_formula_v2(formula)
         .map_err(|_| HistoryRequirementError::FormulaIdentityEncoding)?;
-    domain_sha256("tl-mltl.past-formula/v1", &document.semantic_view())
-        .map_err(|_| HistoryRequirementError::FormulaIdentityEncoding)
+    Ok(
+        domain_sha256("tl-mltl.past-formula/v1", &document.semantic_view())
+            .expect("a semantic formula view serializes to JSON"),
+    )
 }
 
-fn prior_required(values: &[u64], node: NodeId) -> Result<u64, HistoryRequirementError> {
-    values
-        .get(
-            usize::try_from(node.0)
-                .map_err(|_| HistoryRequirementError::InvalidNodeReference { node })?,
-        )
-        .copied()
-        .ok_or(HistoryRequirementError::InvalidNodeReference { node })
+/// Value of an operand node. `Formula::new` guarantees every operand precedes
+/// its user, so the value was pushed before this lookup.
+fn prior_required(values: &[u64], node: NodeId) -> u64 {
+    values[node.0 as usize]
+}
+
+fn add_required(node: NodeId, bound: u64, child: u64) -> Result<u64, HistoryRequirementError> {
+    bound
+        .checked_add(child)
+        .ok_or(HistoryRequirementError::ArithmeticOverflow { node })
 }
 
 /// Computes the maximum reverse offset required by a validated past formula.
@@ -1234,28 +1231,27 @@ pub fn analyze_required_history(
     }
     let mut values = Vec::with_capacity(formula.nodes().len());
     for (index, node) in formula.nodes().iter().enumerate() {
-        let node_id = NodeId(u32::try_from(index).map_err(|_| {
-            HistoryRequirementError::InvalidNodeReference {
-                node: formula.root(),
-            }
-        })?);
+        // `Formula::new` bounds the node table by the 32-bit identity space.
+        let node_id = NodeId(index as u32);
         let value = match node.kind {
             NodeKind::False | NodeKind::True | NodeKind::Proposition { .. } => 0,
-            NodeKind::Not { operand } => prior_required(&values, operand)?,
+            NodeKind::Not { operand } => prior_required(&values, operand),
             NodeKind::And { left, right }
             | NodeKind::Or { left, right }
             | NodeKind::Implies { left, right }
             | NodeKind::Equivalent { left, right } => {
-                prior_required(&values, left)?.max(prior_required(&values, right)?)
+                prior_required(&values, left).max(prior_required(&values, right))
             }
             NodeKind::Once { interval, operand } | NodeKind::Historically { interval, operand } => {
-                u64::from(interval.end())
-                    .checked_add(prior_required(&values, operand)?)
-                    .ok_or(HistoryRequirementError::ArithmeticOverflow { node: node_id })?
+                add_required(
+                    node_id,
+                    u64::from(interval.end()),
+                    prior_required(&values, operand),
+                )?
             }
-            NodeKind::StrongPrevious { operand } => 1_u64
-                .checked_add(prior_required(&values, operand)?)
-                .ok_or(HistoryRequirementError::ArithmeticOverflow { node: node_id })?,
+            NodeKind::StrongPrevious { operand } => {
+                add_required(node_id, 1, prior_required(&values, operand))?
+            }
             NodeKind::Since {
                 interval,
                 left,
@@ -1265,14 +1261,16 @@ pub fn analyze_required_history(
                 interval,
                 left,
                 right,
-            } => u64::from(interval.end())
-                .checked_add(prior_required(&values, left)?.max(prior_required(&values, right)?))
-                .ok_or(HistoryRequirementError::ArithmeticOverflow { node: node_id })?,
+            } => add_required(
+                node_id,
+                u64::from(interval.end()),
+                prior_required(&values, left).max(prior_required(&values, right)),
+            )?,
             NodeKind::Future { .. }
             | NodeKind::Globally { .. }
             | NodeKind::Until { .. }
             | NodeKind::Release { .. } => {
-                return Err(HistoryRequirementError::FutureNodeUnsupported { node: node_id });
+                unreachable!("the origin-complete profile rejects future operators")
             }
         };
         values.push(value);
@@ -1284,7 +1282,7 @@ pub fn analyze_required_history(
         formula_root: formula.root().0,
         operator_profile: PAST_OPERATORS_V1.to_owned(),
         semantic_profile: SemanticProfile::OriginCompleteHistoryV1,
-        required_positions: prior_required(&values, formula.root())?,
+        required_positions: prior_required(&values, formula.root()),
         unit: "positions".to_owned(),
     })
 }
@@ -1578,8 +1576,6 @@ pub enum PastResultValidationError {
     SelfPredecessor,
     /// Result digest is stale.
     StaleResultDigest,
-    /// Canonical result serialization failed.
-    IdentityEncoding,
 }
 
 impl fmt::Display for PastResultValidationError {
@@ -1727,7 +1723,7 @@ impl PastEvaluationReport {
                 }
             }
         }
-        if past_result_sha256(self)? != self.result_sha256 {
+        if past_result_sha256(self) != self.result_sha256 {
             return Err(PastResultValidationError::StaleResultDigest);
         }
         Ok(())
@@ -1783,15 +1779,13 @@ fn is_sha256(value: &str) -> bool {
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
-fn past_result_sha256(report: &PastEvaluationReport) -> Result<String, PastResultValidationError> {
-    let mut value =
-        serde_json::to_value(report).map_err(|_| PastResultValidationError::IdentityEncoding)?;
+fn past_result_sha256(report: &PastEvaluationReport) -> String {
+    let mut value = serde_json::to_value(report).expect("a past report serializes to JSON");
     value
         .as_object_mut()
-        .ok_or(PastResultValidationError::IdentityEncoding)?
+        .expect("a past report serializes to a JSON object")
         .remove("resultSha256");
-    domain_sha256("tl-mltl.past-evaluation/v1", &value)
-        .map_err(|_| PastResultValidationError::IdentityEncoding)
+    domain_sha256("tl-mltl.past-evaluation/v1", &value).expect("a JSON value serializes to JSON")
 }
 
 /// Anchored past-evaluation refusal; no variant carries a fallback verdict.
@@ -1799,8 +1793,6 @@ fn past_result_sha256(report: &PastEvaluationReport) -> Result<String, PastResul
 pub enum PastEvaluationError {
     /// An owner-produced non-value was preserved.
     OwnerStatePreserved { state: OwnerHistoryState },
-    /// Position history was invalid or incomplete.
-    History(HistoryError),
     /// Formula is not the origin-complete past profile.
     Requirement(HistoryRequirementError),
     /// Anchor is not in the complete history.
@@ -1813,14 +1805,6 @@ pub enum PastEvaluationError {
     StepLimitExceeded { limit: u64 },
     /// Recursive evaluation exceeded its depth limit.
     RecursionDepthExceeded { limit: u32 },
-    /// A validated formula exposed a missing node.
-    InvalidNodeReference { node: NodeId },
-    /// A future node was presented to the past evaluator.
-    FutureNodeUnsupported { node: NodeId },
-    /// Signed reverse-position arithmetic overflowed.
-    PositionArithmeticOverflow,
-    /// A non-pre-origin position was absent despite history admission.
-    HistoryPositionAbsent { position: u64 },
     /// Formula or proposition-map identity is invalid.
     InvalidIdentity { field: &'static str },
     /// Result revision is zero or does not exceed its direct predecessor.
@@ -1831,8 +1815,6 @@ pub enum PastEvaluationError {
     CorrectionContextMismatch { field: &'static str },
     /// Correction does not advance the immutable history revision.
     HistoryRevisionNotAdvanced,
-    /// Result identity could not be encoded or validated.
-    Result(PastResultValidationError),
 }
 
 impl fmt::Display for PastEvaluationError {
@@ -1891,21 +1873,14 @@ impl PastEvaluator<'_, '_> {
         Ok(())
     }
 
-    fn node(&self, node: NodeId) -> Result<NodeKind, PastEvaluationError> {
-        let index = usize::try_from(node.0)
-            .map_err(|_| PastEvaluationError::InvalidNodeReference { node })?;
-        self.formula
-            .nodes()
-            .get(index)
-            .map(|value| value.kind)
-            .ok_or(PastEvaluationError::InvalidNodeReference { node })
+    /// `Formula::new` guarantees every referenced node exists.
+    fn node(&self, node: NodeId) -> NodeKind {
+        self.formula.nodes()[node.0 as usize].kind
     }
 
     fn endpoints(&self, start: u32, end: u32) -> Result<(u64, u64), PastEvaluationError> {
-        let cardinality = u64::from(end)
-            .checked_sub(u64::from(start))
-            .and_then(|value| value.checked_add(1))
-            .ok_or(PastEvaluationError::PositionArithmeticOverflow)?;
+        // `Interval` guarantees `start <= end`, so this cannot wrap in `u64`.
+        let cardinality = u64::from(end) - u64::from(start) + 1;
         if cardinality > self.limits.max_temporal_span {
             return Err(PastEvaluationError::TemporalSpanExceeded {
                 requested: cardinality,
@@ -1928,7 +1903,7 @@ impl PastEvaluator<'_, '_> {
                 .ok_or(PastEvaluationError::RecursionDepthExceeded {
                     limit: self.limits.max_recursion_depth,
                 })?;
-        match self.node(node)? {
+        match self.node(node) {
             NodeKind::False => Ok(false),
             NodeKind::True => Ok(true),
             NodeKind::Proposition { proposition } => self.proposition(position, proposition),
@@ -1953,7 +1928,7 @@ impl PastEvaluator<'_, '_> {
                 let (start, end) = self.endpoints(interval.start(), interval.end())?;
                 for offset in start..=end {
                     self.consume_temporal()?;
-                    if self.at(operand, reverse(position, offset)?, child_depth)? {
+                    if self.at(operand, reverse(position, offset), child_depth)? {
                         return Ok(true);
                     }
                 }
@@ -1963,7 +1938,7 @@ impl PastEvaluator<'_, '_> {
                 let (start, end) = self.endpoints(interval.start(), interval.end())?;
                 for offset in start..=end {
                     self.consume_temporal()?;
-                    if !self.at(operand, reverse(position, offset)?, child_depth)? {
+                    if !self.at(operand, reverse(position, offset), child_depth)? {
                         return Ok(false);
                     }
                 }
@@ -1972,7 +1947,7 @@ impl PastEvaluator<'_, '_> {
             NodeKind::StrongPrevious { operand } => {
                 self.endpoints(1, 1)?;
                 self.consume_temporal()?;
-                self.at(operand, reverse(position, 1)?, child_depth)
+                self.at(operand, reverse(position, 1), child_depth)
             }
             NodeKind::Since {
                 interval,
@@ -2003,7 +1978,9 @@ impl PastEvaluator<'_, '_> {
             NodeKind::Future { .. }
             | NodeKind::Globally { .. }
             | NodeKind::Until { .. }
-            | NodeKind::Release { .. } => Err(PastEvaluationError::FutureNodeUnsupported { node }),
+            | NodeKind::Release { .. } => {
+                unreachable!("the origin-complete profile rejects future operators")
+            }
         }
     }
 
@@ -2021,7 +1998,7 @@ impl PastEvaluator<'_, '_> {
         let (start, end) = self.endpoints(start, end)?;
         for witness in start..=end {
             self.consume_temporal()?;
-            let mut candidate = self.at(right, reverse(position, witness)?, child_depth)?;
+            let mut candidate = self.at(right, reverse(position, witness), child_depth)?;
             if negate_operands {
                 candidate = !candidate;
             }
@@ -2030,7 +2007,7 @@ impl PastEvaluator<'_, '_> {
                 if !candidate {
                     break;
                 }
-                let mut value = self.at(left, reverse(position, offset)?, child_depth)?;
+                let mut value = self.at(left, reverse(position, offset), child_depth)?;
                 if negate_operands {
                     value = !value;
                 }
@@ -2051,15 +2028,9 @@ impl PastEvaluator<'_, '_> {
         if position < 0 {
             return Ok(false);
         }
-        let position =
-            u64::try_from(position).map_err(|_| PastEvaluationError::PositionArithmeticOverflow)?;
-        let index = usize::try_from(position)
-            .map_err(|_| PastEvaluationError::HistoryPositionAbsent { position })?;
-        let observation = self
-            .history
-            .observations
-            .get(index)
-            .ok_or(PastEvaluationError::HistoryPositionAbsent { position })?;
+        // Positions only move backwards from an anchor that admission bounded by
+        // the complete history, so a non-negative position is an observation.
+        let observation = &self.history.observations[position as usize];
         Ok(observation
             .true_propositions
             .binary_search(&proposition)
@@ -2067,10 +2038,10 @@ impl PastEvaluator<'_, '_> {
     }
 }
 
-fn reverse(position: i128, offset: u64) -> Result<i128, PastEvaluationError> {
-    position
-        .checked_sub(i128::from(offset))
-        .ok_or(PastEvaluationError::PositionArithmeticOverflow)
+/// A `u64` offset from an `i128` position cannot overflow: positions start at a
+/// `u64` anchor and recursion depth is bounded.
+fn reverse(position: i128, offset: u64) -> i128 {
+    position - i128::from(offset)
 }
 
 fn validate_result_identity(value: &str, field: &'static str) -> Result<(), PastEvaluationError> {
@@ -2245,7 +2216,6 @@ fn evaluate_past_inner<'history>(
             return Err(PastEvaluationError::OwnerStatePreserved { state });
         }
     };
-    history.validate().map_err(PastEvaluationError::History)?;
     observed.input_positions = history.observations.len();
     if anchor > history.through_position {
         return Err(PastEvaluationError::AnchorOutOfRange {
@@ -2312,10 +2282,11 @@ fn evaluate_past_inner<'history>(
         semantic_profile: SemanticProfile::OriginCompleteHistoryV1,
         history: PositionHistoryReference::from(history),
         anchor,
+        // Admission guarantees a clock binding.
         clock: history
             .clock
             .clone()
-            .ok_or(PastEvaluationError::History(HistoryError::MissingClock))?,
+            .expect("an admitted history has a clock"),
         proposition_map_id,
         evaluator_identity: PastEvaluatorIdentity::V1,
         evaluator_revision: env!("TL_MLTL_SOURCE_REVISION").to_owned(),
@@ -2326,7 +2297,129 @@ fn evaluate_past_inner<'history>(
         finality: PastResultFinality::Final,
         relation,
     };
-    report.result_sha256 = past_result_sha256(&report).map_err(PastEvaluationError::Result)?;
-    report.validate().map_err(PastEvaluationError::Result)?;
+    report.result_sha256 = past_result_sha256(&report);
+    debug_assert!(
+        report.validate().is_ok(),
+        "a freshly evaluated report validates"
+    );
     Ok(report)
+}
+
+#[cfg(test)]
+mod limit_register {
+    //! NFR-001 Limit Register rows for the private past size constants.
+
+    use super::*;
+
+    fn history(
+        id: &str,
+        observations: Vec<PositionObservation>,
+    ) -> Result<PositionHistoryDocument, HistoryError> {
+        let through = u64::try_from(observations.len()).unwrap().saturating_sub(1);
+        PositionHistoryDocument::new(
+            id,
+            1,
+            0,
+            through,
+            Some(ClockBinding::EventPosition),
+            observations,
+        )
+    }
+
+    fn empty_positions(count: usize) -> Vec<PositionObservation> {
+        (0..count)
+            .map(|position| {
+                PositionObservation::new(u64::try_from(position).unwrap(), vec![], None)
+            })
+            .collect()
+    }
+
+    // Trace: TC-175, NFR-001-AC-3
+    #[test]
+    fn identity_bytes_limit_accepts_the_limit_and_refuses_one_past() {
+        history(&"a".repeat(MAX_IDENTITY_BYTES), empty_positions(1)).unwrap();
+        assert_eq!(
+            history(&"a".repeat(MAX_IDENTITY_BYTES + 1), empty_positions(1)).unwrap_err(),
+            HistoryError::HistoryIdentityTooLong {
+                actual: MAX_IDENTITY_BYTES + 1,
+                limit: MAX_IDENTITY_BYTES
+            }
+        );
+    }
+
+    // Trace: TC-175, NFR-001-AC-3
+    #[test]
+    fn unit_bytes_limit_accepts_the_limit_and_refuses_one_past() {
+        validate_unit(&"u".repeat(MAX_UNIT_BYTES)).unwrap();
+        assert_eq!(
+            validate_unit(&"u".repeat(MAX_UNIT_BYTES + 1)),
+            Err(ClockError::UnitTooLong {
+                actual: MAX_UNIT_BYTES + 1,
+                limit: MAX_UNIT_BYTES
+            })
+        );
+    }
+
+    // Trace: TC-175, NFR-001-AC-3
+    #[test]
+    fn history_position_limit_accepts_the_limit_and_refuses_one_past() {
+        history("h", empty_positions(MAX_HISTORY_POSITIONS)).unwrap();
+        assert_eq!(
+            history("h", empty_positions(MAX_HISTORY_POSITIONS + 1)).unwrap_err(),
+            HistoryError::PositionLimitExceeded {
+                actual: MAX_HISTORY_POSITIONS + 1,
+                limit: MAX_HISTORY_POSITIONS
+            }
+        );
+    }
+
+    // Trace: TC-175, NFR-001-AC-3
+    #[test]
+    fn proposition_limit_accepts_the_limit_and_refuses_one_past() {
+        let at_position = |count: usize| {
+            let propositions = (0..count).map(|id| PropositionId(u32::try_from(id).unwrap()));
+            history(
+                "h",
+                vec![PositionObservation::new(0, propositions.collect(), None)],
+            )
+        };
+        at_position(MAX_PROPOSITIONS_PER_POSITION).unwrap();
+        assert_eq!(
+            at_position(MAX_PROPOSITIONS_PER_POSITION + 1).unwrap_err(),
+            HistoryError::PropositionLimitExceeded {
+                position: 0,
+                actual: MAX_PROPOSITIONS_PER_POSITION + 1,
+                limit: MAX_PROPOSITIONS_PER_POSITION
+            }
+        );
+    }
+
+    // Trace: TC-176, NFR-001-AC-4
+    #[test]
+    fn required_history_arithmetic_is_checked() {
+        assert_eq!(add_required(NodeId(3), 1, 2), Ok(3));
+        assert_eq!(
+            add_required(NodeId(3), u64::MAX, 1),
+            Err(HistoryRequirementError::ArithmeticOverflow { node: NodeId(3) })
+        );
+    }
+
+    // Trace: TC-175, NFR-001-AC-3
+    #[test]
+    fn hard_maxima_admit_themselves_and_clamp_anything_above() {
+        let at = PastEvaluationLimits {
+            max_steps: HARD_MAX_PAST_STEPS,
+            max_temporal_span: HARD_MAX_TEMPORAL_SPAN,
+            max_recursion_depth: MAX_RECURSION_DEPTH,
+            max_input_positions: MAX_HISTORY_POSITIONS,
+        };
+        assert_eq!(at.clamped(), at);
+        let past = PastEvaluationLimits {
+            max_steps: HARD_MAX_PAST_STEPS + 1,
+            max_temporal_span: HARD_MAX_TEMPORAL_SPAN + 1,
+            max_recursion_depth: MAX_RECURSION_DEPTH + 1,
+            max_input_positions: MAX_HISTORY_POSITIONS + 1,
+        };
+        assert_eq!(past.clamped(), at);
+    }
 }

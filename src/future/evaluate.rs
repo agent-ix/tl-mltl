@@ -12,7 +12,7 @@ use crate::{
         bind_formula, catalog_sha256, contextual_formula_request_sha256, contextual_result_sha256,
     },
     horizon::lookahead,
-    ContextualBindingError, HorizonError, MAX_RECURSION_DEPTH,
+    ContextualBindingError, MAX_RECURSION_DEPTH,
 };
 
 /// Three-valued result for closed and open-prefix evaluation.
@@ -247,12 +247,6 @@ pub enum EvaluationError {
         /// Fixed nesting boundary.
         limit: u32,
     },
-    /// A horizon calculation failed.
-    Horizon(HorizonError),
-    /// A validated formula exposed an impossible node reference.
-    InvalidNodeReference(NodeId),
-    /// The future-profile evaluator was given a past-time operator.
-    UnsupportedPastNode(NodeId),
 }
 
 impl fmt::Display for EvaluationError {
@@ -287,30 +281,11 @@ impl fmt::Display for EvaluationError {
                     "evaluation exceeded recursion-depth limit {limit}"
                 )
             }
-            Self::Horizon(error) => error.fmt(formatter),
-            Self::InvalidNodeReference(node) => {
-                write!(
-                    formatter,
-                    "invalid validated-formula node reference {}",
-                    node.0
-                )
-            }
-            Self::UnsupportedPastNode(node) => write!(
-                formatter,
-                "future-profile evaluation does not support the past-time operator at node {}",
-                node.0
-            ),
         }
     }
 }
 
 impl std::error::Error for EvaluationError {}
-
-impl From<HorizonError> for EvaluationError {
-    fn from(value: HorizonError) -> Self {
-        Self::Horizon(value)
-    }
-}
 
 struct Evaluator<'formula, 'trace> {
     formula: Formula<'formula>,
@@ -344,12 +319,9 @@ impl Evaluator<'_, '_> {
         Ok(())
     }
 
-    fn node(&self, node: NodeId) -> Result<NodeKind, EvaluationError> {
-        usize::try_from(node.0)
-            .ok()
-            .and_then(|index| self.formula.nodes().get(index))
-            .map(|value| value.kind)
-            .ok_or(EvaluationError::InvalidNodeReference(node))
+    /// `Formula::new` guarantees every referenced node exists.
+    fn node(&self, node: NodeId) -> NodeKind {
+        self.formula.nodes()[node.0 as usize].kind
     }
 
     fn temporal_endpoints(&self, start: u32, end: u32) -> Result<(u64, u64), EvaluationError> {
@@ -376,7 +348,7 @@ impl Evaluator<'_, '_> {
             .ok_or(EvaluationError::RecursionDepthExceeded {
                 limit: self.limits.max_recursion_depth,
             })?;
-        match self.node(node)? {
+        match self.node(node) {
             NodeKind::False => Ok(TruthValue::False),
             NodeKind::True => Ok(TruthValue::True),
             NodeKind::Proposition { proposition } => self.proposition(time, proposition),
@@ -423,7 +395,9 @@ impl Evaluator<'_, '_> {
             | NodeKind::Historically { .. }
             | NodeKind::StrongPrevious { .. }
             | NodeKind::Since { .. }
-            | NodeKind::Triggered { .. } => Err(EvaluationError::UnsupportedPastNode(node)),
+            | NodeKind::Triggered { .. } => {
+                unreachable!("closed and prefix profiles reject past operators")
+            }
         }
     }
 
@@ -642,7 +616,13 @@ fn evaluate_with_stats(
     }
     let horizon = match lookahead(formula) {
         Ok(horizon) => horizon,
-        Err(error) => return (Err(error.into()), EvaluationStats::default()),
+        // `lookahead` fails only when a horizon bound passes `u64`.
+        Err(_) => {
+            return (
+                Err(EvaluationError::TimeOverflow),
+                EvaluationStats::default(),
+            )
+        }
     };
     let trace_length = match u64::try_from(trace.len()) {
         Ok(length) => length,

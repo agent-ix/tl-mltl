@@ -145,16 +145,6 @@ pub enum HorizonError {
         /// Node at which the calculation failed.
         node: NodeId,
     },
-    /// A validated formula exposed an impossible node reference.
-    InvalidNodeReference {
-        /// Referenced node.
-        node: NodeId,
-    },
-    /// Future-horizon analysis was given a past-time operator.
-    UnsupportedPastNode {
-        /// Rejected node.
-        node: NodeId,
-    },
 }
 
 impl fmt::Display for HorizonError {
@@ -167,30 +157,16 @@ impl fmt::Display for HorizonError {
             Self::ArithmeticOverflow { node } => {
                 write!(formatter, "horizon arithmetic overflow at node {}", node.0)
             }
-            Self::InvalidNodeReference { node } => {
-                write!(
-                    formatter,
-                    "invalid validated-formula node reference {}",
-                    node.0
-                )
-            }
-            Self::UnsupportedPastNode { node } => write!(
-                formatter,
-                "future-horizon analysis does not support the past-time operator at node {}",
-                node.0
-            ),
         }
     }
 }
 
 impl std::error::Error for HorizonError {}
 
-fn prior(values: &[u64], node: NodeId) -> Result<u64, HorizonError> {
-    usize::try_from(node.0)
-        .ok()
-        .and_then(|index| values.get(index))
-        .copied()
-        .ok_or(HorizonError::InvalidNodeReference { node })
+/// Value of an operand node. `Formula::new` guarantees every operand precedes
+/// its user, so the value was pushed before this lookup.
+fn prior(values: &[u64], node: NodeId) -> u64 {
+    values[node.0 as usize]
 }
 
 fn add_bound(node: NodeId, bound: u32, child: u64) -> Result<u64, HorizonError> {
@@ -224,23 +200,19 @@ mod kani_proofs {
 pub(crate) fn lookahead(formula: Formula<'_>) -> Result<u64, HorizonError> {
     let mut values = Vec::with_capacity(formula.nodes().len());
     for (index, node) in formula.nodes().iter().enumerate() {
-        let node_id =
-            NodeId(
-                u32::try_from(index).map_err(|_| HorizonError::InvalidNodeReference {
-                    node: formula.root(),
-                })?,
-            );
+        // `Formula::new` bounds the node table by the 32-bit identity space.
+        let node_id = NodeId(index as u32);
         let value = match node.kind {
             NodeKind::False | NodeKind::True | NodeKind::Proposition { .. } => 0,
-            NodeKind::Not { operand } => prior(&values, operand)?,
+            NodeKind::Not { operand } => prior(&values, operand),
             NodeKind::And { left, right }
             | NodeKind::Or { left, right }
             | NodeKind::Implies { left, right }
             | NodeKind::Equivalent { left, right } => {
-                prior(&values, left)?.max(prior(&values, right)?)
+                prior(&values, left).max(prior(&values, right))
             }
             NodeKind::Future { interval, operand } | NodeKind::Globally { interval, operand } => {
-                add_bound(node_id, interval.end(), prior(&values, operand)?)?
+                add_bound(node_id, interval.end(), prior(&values, operand))?
             }
             NodeKind::Until {
                 interval,
@@ -254,20 +226,20 @@ pub(crate) fn lookahead(formula: Formula<'_>) -> Result<u64, HorizonError> {
             } => add_bound(
                 node_id,
                 interval.end(),
-                prior(&values, left)?.max(prior(&values, right)?),
+                prior(&values, left).max(prior(&values, right)),
             )?,
+            // The profile guard admits only profiles whose `Formula::new`
+            // rejects past-time operators.
             NodeKind::Once { .. }
             | NodeKind::Historically { .. }
             | NodeKind::StrongPrevious { .. }
             | NodeKind::Since { .. }
-            | NodeKind::Triggered { .. } => {
-                return Err(HorizonError::UnsupportedPastNode { node: node_id });
-            }
+            | NodeKind::Triggered { .. } => unreachable!("future profiles reject past operators"),
         };
         values.push(value);
     }
 
-    prior(&values, formula.root())
+    Ok(prior(&values, formula.root()))
 }
 
 /// Computes lookahead, propagation delay, and buffer size with checked arithmetic.
@@ -314,6 +286,9 @@ pub fn analyze_horizon_with_context(
 ) -> Result<ContextualHorizonReport, ContextualHorizonError> {
     bind_formula(formula, signal_catalog).map_err(ContextualHorizonError::Binding)?;
     let formula_id = formula_id.into();
+    // Refuse an unsupported profile by name before deriving any identity.
+    let report =
+        analyze_horizon(formula, formula_id.clone()).map_err(ContextualHorizonError::Horizon)?;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     struct Request<'a> {
@@ -332,8 +307,6 @@ pub fn analyze_horizon_with_context(
         requirement_context,
     )
     .map_err(ContextualHorizonError::Identity)?;
-    let report =
-        analyze_horizon(formula, formula_id.clone()).map_err(ContextualHorizonError::Horizon)?;
     let mut contextual = ContextualHorizonReport {
         schema_version: ContextualHorizonSchemaVersion::V2,
         source_revision: env!("TL_MLTL_SOURCE_REVISION").to_owned(),
@@ -366,8 +339,19 @@ mod tests {
     };
 
     use super::{
-        analyze_horizon_with_context, ContextualHorizonReport, ContextualHorizonSchemaVersion,
+        add_bound, analyze_horizon_with_context, ContextualHorizonReport,
+        ContextualHorizonSchemaVersion, HorizonError,
     };
+
+    // Trace: TC-176, NFR-001-AC-4
+    #[test]
+    fn horizon_bound_addition_is_checked() {
+        assert_eq!(add_bound(NodeId(1), 2, 3), Ok(5));
+        assert_eq!(
+            add_bound(NodeId(1), 1, u64::MAX),
+            Err(HorizonError::ArithmeticOverflow { node: NodeId(1) })
+        );
+    }
 
     // Trace: TC-025, TC-029, FR-007-AC-1, FR-007-AC-5
     #[test]

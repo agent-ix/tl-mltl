@@ -49,6 +49,8 @@ fn run<S: Strategy>(name: &str, strategy: S, test: impl Fn(S::Value) -> Result<(
         .iter()
         .find(|row| row.0 == name)
         .expect("property is recorded in CAMPAIGN");
+    // Miri interprets every case; the native run keeps the recorded count.
+    let cases = if cfg!(miri) { cases.min(4) } else { cases };
     let config = Config {
         cases,
         failure_persistence: None,

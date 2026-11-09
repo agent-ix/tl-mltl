@@ -71,7 +71,7 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 
 | Non-Functional Req | Verification Method | Evidence/Test Cases | Status |
 |---|---|---|---|
-| NFR-001 | deterministic, digest, resource-limit, limit-edge, error-variant, and Miri tests | TC-003, TC-004, TC-006, TC-013, TC-025, TC-028, TC-029, TC-034, TC-175, TC-176, TC-177 | 🚧 partial — TC-175 through TC-177 planned |
+| NFR-001 | deterministic, digest, resource-limit, limit-edge, error-variant, and Miri tests | TC-003, TC-004, TC-006, TC-013, TC-025, TC-028, TC-029, TC-034, TC-175, TC-176, TC-177 | ✅ covered |
 | NFR-002 | schema-negative tests and contextual identity checks | TC-012, TC-014, TC-016, TC-025, TC-028, TC-031, TC-034, TC-035, TC-082 | ✅ covered |
 | NFR-006 | static Makefile/environment inspection, per-gate completion records, and declared/executed reconciliation | TC-130 through TC-137 | ✅ implemented |
 
@@ -126,6 +126,6 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 | TC-135 | The entry point run against a `.IGNORE:`-prepended copy of the real Makefile, a skeleton Makefile with every recipe replaced by a failing stub, and a recipe line joining a failing check and the completion-record call with a bare `;`, each exits non-zero with a named violation — the direct reproduction of the tracked measurement in TL-65/`agent-ix/tl-mltl#14` | Integration | P0 | NFR-006-AC-6 | ✅ implemented |
 | TC-136 | The entry point run against an unmodified fixture Makefile with a clean environment and every gate passing, including ordinary shell control-flow semicolons, exits zero with no violation reported | Integration | P0 | NFR-006-AC-7 | ✅ implemented |
 | TC-137 | Inspect README, CLAUDE.md, and `.github/workflows/*.yml` for every reference to running the full local gate set; each names the entry point (`make guarded-ci`), not a bare `make ci` | Integration | P1 | NFR-006-AC-8 | ✅ implemented |
-| TC-175 | For every limit in the NFR-001 Limit Register, a value equal to the limit is accepted and a value one past it is refused with the typed error named in the register; the native run uses the production value, private and `pub(crate)` limits are tested in their defining module | Unit | P0 | NFR-001-AC-3 | 🚧 planned |
-| TC-176 | Produce every variant of every public error and error-code enumeration by at least one test that matches the variant; a variant no reachable input produces is removed in the same change | Unit | P0 | NFR-001-AC-4 | 🚧 planned |
-| TC-177 | Run the unit and property suites under Miri on the pinned nightly named in the Makefile with the recorded flags and reduced property case counts, heavy limits lowered as the Limit Register states, and observe no undefined-behavior report | Unit | P0 | NFR-001-AC-5 | 🚧 planned |
+| TC-175 | For every limit in the NFR-001 Limit Register, a value equal to the limit is accepted and a value one past it is refused with the typed error named in the register; the native run uses the production value, private and `pub(crate)` limits are tested in their defining module | Unit | P0 | NFR-001-AC-3 | ✅ implemented |
+| TC-176 | Produce every variant of every public error and error-code enumeration by at least one test that matches the variant; a variant no reachable input produces is removed in the same change | Unit | P0 | NFR-001-AC-4 | ✅ implemented |
+| TC-177 | Run the unit and property suites under Miri on the pinned nightly named in the Makefile with the recorded flags and reduced property case counts, heavy limits lowered as the Limit Register states, and observe no undefined-behavior report | Unit | P0 | NFR-001-AC-5 | ✅ implemented |

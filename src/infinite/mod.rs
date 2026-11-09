@@ -1432,6 +1432,49 @@ mod tests {
         assert_eq!(looped.map(|(truth, _, _)| truth), Ok(true));
     }
 
+    // Trace: TC-176, NFR-001-AC-4
+    #[test]
+    fn an_exhausted_work_limit_is_resource_incomplete() {
+        let graph = tl_syntax::InfiniteFormulaDocument::new(
+            tl_syntax::SemanticProfile::InfiniteTraceV1,
+            tl_syntax::InfiniteClock::EventPosition,
+            NodeId(0),
+            vec![tl_syntax::InfiniteNode::new(InfiniteNodeKind::True)],
+        )
+        .unwrap();
+        let rows = vec![vec![true]];
+        let evaluated = periodic::evaluate(
+            graph.formula(),
+            NodeId(0),
+            &rows,
+            0,
+            &BTreeMap::new(),
+            0,
+            &[],
+            EvaluationLimit {
+                max_steps: 0,
+                ..EvaluationLimit::default()
+            },
+        );
+        assert_eq!(evaluated, Err(InfiniteError::ResourceIncomplete));
+    }
+
+    // Trace: TC-176, NFR-001-AC-4
+    #[test]
+    fn a_graph_outside_the_safety_fragment_is_an_invalid_formula() {
+        let graph = tl_syntax::InfiniteFormulaDocument::new(
+            tl_syntax::SemanticProfile::InfiniteTraceV1,
+            tl_syntax::InfiniteClock::EventPosition,
+            NodeId(0),
+            vec![tl_syntax::InfiniteNode::new(InfiniteNodeKind::True)],
+        )
+        .unwrap();
+        assert_eq!(
+            finite_horizons(graph.formula()),
+            Err(InfiniteError::InvalidFormula)
+        );
+    }
+
     // Trace: TC-158, FR-033-AC-3
     #[test]
     fn provider_fault_and_resource_exhaustion_have_distinct_execution_axes() {

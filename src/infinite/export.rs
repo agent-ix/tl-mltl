@@ -210,7 +210,6 @@ fn validate_target_origin_shape(formula: InfiniteFormula<'_>) -> Result<(), Safe
             .push(id, node.kind.operands(), temporal)
             .map_err(|error| match error {
                 PastMappingError::ResourceIncomplete => SafetyExportError::ResourceIncomplete,
-                PastMappingError::InvalidNode(_) => SafetyExportError::UnsupportedShape,
                 other => SafetyExportError::TargetOrigin(other),
             })?;
     }

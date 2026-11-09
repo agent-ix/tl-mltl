@@ -57,8 +57,6 @@ impl<'de> serde::Deserialize<'de> for RequiredContext {
 /// A contextual operation could not establish a complete formula binding.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ContextualBindingError {
-    /// The caller-supplied catalog document no longer validates.
-    InvalidCatalog(String),
     /// A formula proposition has no direct binding in the supplied catalog.
     MissingProposition { proposition: PropositionId },
     /// A future shared binding refusal was preserved as a fail-closed result.
@@ -68,7 +66,6 @@ pub enum ContextualBindingError {
 impl core::fmt::Display for ContextualBindingError {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Self::InvalidCatalog(detail) => write!(formatter, "invalid signal catalog: {detail}"),
             Self::MissingProposition { proposition } => {
                 write!(
                     formatter,
@@ -90,7 +87,7 @@ pub(crate) fn bind_formula(
 ) -> Result<(), ContextualBindingError> {
     let catalog = catalog_document
         .validate()
-        .map_err(|error| ContextualBindingError::InvalidCatalog(error.to_string()))?;
+        .expect("a constructed catalog document validates");
     match catalog.bind_formula(formula) {
         Ok(_) => Ok(()),
         Err(FormulaBindingError::MissingPropositionBinding { proposition }) => {

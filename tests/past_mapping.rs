@@ -568,3 +568,40 @@ fn past_mapping_refuses_signal_names_with_no_target_identifier() {
         Err(PastMappingError::UnsupportedSignal(PropositionId(0)))
     );
 }
+
+// Trace: TC-176, NFR-001-AC-4
+#[test]
+fn past_mapping_refuses_an_unbound_proposition() {
+    let origin = contract(&[PastOperatorKind::Once]);
+    let unbound = vec![Node::new(NodeKind::Proposition {
+        proposition: PropositionId(9),
+    })];
+    assert_eq!(
+        render(&unbound, &origin).unwrap_err(),
+        PastMappingError::Binding(tl_mltl::ContextualBindingError::MissingProposition {
+            proposition: PropositionId(9)
+        })
+    );
+}
+
+// A negation chain deeper than the formula-document depth ceiling cannot be
+// given a canonical graph identity.
+// Trace: TC-176, NFR-001-AC-4
+#[test]
+#[cfg_attr(
+    miri,
+    ignore = "identifies a chain one past the 4,096-node depth ceiling"
+)]
+fn past_mapping_refuses_an_unidentifiable_graph() {
+    let origin = contract(&[PastOperatorKind::Once]);
+    let mut deep = vec![p()];
+    for index in 0..=tl_syntax::MAX_FORMULA_DOCUMENT_DEPTH {
+        deep.push(Node::new(NodeKind::Not {
+            operand: NodeId(u32::try_from(index).unwrap()),
+        }));
+    }
+    assert!(matches!(
+        render(&deep, &origin).unwrap_err(),
+        PastMappingError::Identity(_)
+    ));
+}

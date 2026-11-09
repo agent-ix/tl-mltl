@@ -458,6 +458,7 @@ fn diagnostic_formula_spans_do_not_change_contextual_identities() {
 
 // Trace: TC-035, FR-007-AC-9, NFR-002-AC-1
 #[test]
+#[cfg_attr(miri, ignore = "builds a node table one past the 100,000-node ceiling")]
 fn oversized_borrowed_formula_is_a_contextual_identity_error() {
     let node_count = MAX_FORMULA_DOCUMENT_NODES + 1;
     let nodes = vec![Node::new(NodeKind::True); node_count];
