@@ -48,6 +48,7 @@ help:
 	@echo "  make fmt-check        - Verify formatting (CI gate)"
 	@echo "  make lint             - Clippy with -D warnings"
 	@echo "  make test             - cargo test"
+	@echo "  make test-features    - cargo test under default and infinite-trace features"
 	@echo "  make sweep-full       - Nightly full small-scope sweep against tl-oracle (release, long)"
 	@echo "  make kani-check       - Verify every bounded Kani proof (docs/verification-tooling.md)"
 	@echo "  make mutants          - Full cargo-mutants run + kill-rate thresholds (hours, weekly)"
@@ -102,6 +103,18 @@ kani-check:
 test:
 	$(CARGO) test --all-targets --all-features
 	$(CI_GUARD) record test
+
+# Feature matrix for the test suites: default (no features) and infinite-trace.
+# `test` above covers --all-features, which is the infinite-trace build; both are
+# run here so a feature-gated test file or API cannot silently stop compiling or
+# passing standalone. Named `test-features` (no campaign-inventory keywords).
+.PHONY: test-features
+test-features:
+	$(CARGO) test --locked --all-targets
+	$(CARGO) test --locked --all-targets --features infinite-trace
+	$(CARGO) test --locked --doc
+	$(CARGO) test --locked --doc --features infinite-trace
+	$(CI_GUARD) record test-features
 
 # =============================================================================
 # MLTL domain
@@ -289,7 +302,7 @@ fuzz-smoke:
 # =============================================================================
 
 .PHONY: ci
-ci: fmt-check lint kani-check test conformance differential cli-conformance \
+ci: fmt-check lint kani-check test test-features conformance differential cli-conformance \
 	campaign-inventory deny fuzz-check spec msrv rustdoc miri
 
 # The assured entry point (NFR-006). Builds and runs the guard, which refuses
