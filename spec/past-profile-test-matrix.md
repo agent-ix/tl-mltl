@@ -13,7 +13,7 @@ relationships:
 
 | Functional Req | Acceptance Criteria | Test Cases | Status |
 |---|---|---|---|
-| FR-042 | FR-042-AC-1 through FR-042-AC-9 | TC-178 through TC-186 | 🚧 TC-184 planned; others implemented |
+| FR-042 | FR-042-AC-1 through FR-042-AC-9 | TC-178 through TC-186 | ✅ implemented |
 
 ## Test Case Summary
 
@@ -25,6 +25,6 @@ relationships:
 | TC-181 | Evaluate Y against O[1,1] for propositions, constants and Boolean nests at every anchor | Property | P0 | FR-042-AC-4 | ✅ implemented |
 | TC-182 | Refuse each history completeness, ordering, digest, revision, identity and anchor dimension with a distinct error | Unit | P0 | FR-042-AC-5 | ✅ implemented |
 | TC-183 | Compute required history by the recursive equations, span-independent, and refuse a non-past formula | Unit | P0 | FR-042-AC-6 | ✅ implemented |
-| TC-184 | Refuse required-history `u64` overflow from nested maximal intervals | Unit | P0 | FR-042-AC-7 | 🚧 planned |
+| TC-184 | Refuse required-history `u64` overflow at the checked-addition boundary | Unit | P0 | FR-042-AC-7 | ✅ implemented |
 | TC-185 | Admit both clocks exactly; refuse overflow, malformed, non-positive, unsupported, and mismatched bindings; preserve owner non-values | Unit | P0 | FR-042-AC-8 | ✅ implemented |
 | TC-186 | Refuse each evaluation resource limit with its typed error and no verdict | Unit | P0 | FR-042-AC-9 | ✅ implemented |

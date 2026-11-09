@@ -19,19 +19,16 @@ tl-syntax FR-012-AC-3 and AC-4. No applicable AssuranceProfile exists in this
 repository, so no profile governs this review. The base checklist passes: ids
 are unique and follow the repository scheme (FR-042, TC-178 through TC-186,
 TM-006), criteria are atomic and concrete, and no hash, digest, or pin is
-introduced. Eight of nine criteria are backed by tagged tests; FR-042-AC-7
-(checked `u64` overflow in required-history analysis) has no test that asserts
-it and stays planned.
+introduced. Every criterion is backed by a tagged test.
 
 ## Findings
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-6121 | medium | FR-042-AC-7 has no honest test: the required-history test checks the equations but never drives the addition past `u64::MAX`; TC-184 is planned and strict coverage reports the row unbacked until a test is added. | spec/requirements/FR-042-past-profile-evaluation.md, spec/past-profile-test-matrix.md |
+| FND-6121 | low | FR-042-AC-7 cannot be driven through `analyze_required_history`: overflow needs about 2^32 nested nodes at `u32::MAX`, past the node-table bound. The test asserts the shared checked addition at its boundary in a unit test beside it, and mutation to a wrapping add fails it. | src/past/mod.rs, spec/past-profile-test-matrix.md |
 | FND-6122 | low | FR-042-AC-9 is verified at the refusal level; no test observes that an over-limit interval is refused before iteration, only that the typed error is returned. The criterion is worded to the observable refusal. | tests/past_history.rs |
 | FND-6123 | low | tl-syntax still holds the withdrawn rows and its owner-evidence table says TL-378 adds the tags; it should repoint to FR-042 after this lands. | spec/requirements/FR-042-past-profile-evaluation.md |
 
 ## Checklist result
 
-`quire validate` passes. Strict coverage: 15 unbacked rows before, 17 after
-(FR-042-AC-7 and TC-184, both owned by the planned test ticket).
+`quire validate` passes. Strict coverage: 15 unbacked rows before and 15 after; every FR-042 row is backed.
