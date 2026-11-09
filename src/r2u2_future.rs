@@ -21,7 +21,7 @@ use tl_syntax::{Formula, Interval, Node, NodeId, NodeKind, PropositionId, Semant
 use crate::campaign::sha256_hex;
 use crate::r2u2_live::{
     check_tool, expand_aggregated, finish, parse_r2u2_stdout, read_pin, read_recorded, run_group,
-    verify_recorded_group, CaseRow, CaseStatus, GroupRecord, Report, Source,
+    verify_recorded_group, CaseRow, CaseStatus, GroupRecord, Report, Source, FUTURE_REPORT_SCHEMA,
 };
 use crate::{
     evaluate_prefix_at, map_to_c2po, EvaluationLimits, MappingSourceIdentity, MappingSourceState,
@@ -319,5 +319,6 @@ pub fn run_future(repo: &Path, source: &Source<'_>, out: &Path) -> Result<Report
     }
     let mut report = finish(pin, mode, detail, observed, records, rows);
     report.suite = "future".to_owned();
+    report.schema_version = FUTURE_REPORT_SCHEMA.to_owned();
     Ok(report)
 }

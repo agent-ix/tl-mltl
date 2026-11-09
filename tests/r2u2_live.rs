@@ -307,6 +307,7 @@ fn committed_live_r2u2_evidence_replays_to_the_recorded_summary() {
     copy_dir(&root.join("past"), past.path());
     let r = run(Path::new(REPO), &Source::Recorded, past.path()).unwrap();
     assert_eq!(r.outcome, "pass");
+    assert_eq!(r.schema_version, "tl-mltl.r2u2-past-differential/v1");
     assert_eq!(r.summary.get("agree"), Some(&42));
     assert_eq!(r.summary.get("unsupported"), Some(&1791));
     let future = tempfile::tempdir().unwrap();
@@ -314,6 +315,7 @@ fn committed_live_r2u2_evidence_replays_to_the_recorded_summary() {
     let r = tl_mltl::r2u2_future::run_future(Path::new(REPO), &Source::Recorded, future.path())
         .unwrap();
     assert_eq!(r.outcome, "pass");
+    assert_eq!(r.schema_version, "tl-mltl.r2u2-future-differential/v1");
     assert_eq!(r.summary.get("agree"), Some(&1536));
     assert_eq!(r.summary.len(), 1);
 }

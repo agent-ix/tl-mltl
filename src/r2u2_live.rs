@@ -31,8 +31,10 @@ use crate::{
     PositionObservation, TargetOriginContract,
 };
 
-/// Schema of the differential report.
+/// Schema of the past-suite differential report.
 pub const REPORT_SCHEMA: &str = "tl-mltl.r2u2-past-differential/v1";
+/// Schema of the future-suite differential report.
+pub const FUTURE_REPORT_SCHEMA: &str = "tl-mltl.r2u2-future-differential/v1";
 /// Steps in every generated trace.
 pub const TRACE_LEN: u64 = 8;
 
@@ -558,7 +560,7 @@ pub struct GroupRecord {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Report {
-    /// [`REPORT_SCHEMA`].
+    /// [`REPORT_SCHEMA`] for the past suite, [`FUTURE_REPORT_SCHEMA`] for the future suite.
     pub schema_version: String,
     /// `past` or `future`.
     pub suite: String,

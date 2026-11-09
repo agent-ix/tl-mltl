@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "tl-mltl.r2u2-past-differential/v1",
+  "schemaVersion": "tl-mltl.r2u2-future-differential/v1",
   "suite": "future",
   "mode": "replayed",
   "toolDetail": null,
