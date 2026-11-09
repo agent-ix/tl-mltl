@@ -48,8 +48,12 @@ help:
 	@echo "  make fmt-check        - Verify formatting (CI gate)"
 	@echo "  make lint             - Clippy with -D warnings"
 	@echo "  make test             - cargo test"
-	@echo "  make kani-check       - Verify the bounded Kani horizon proof"
 	@echo "  make sweep-full       - Nightly full small-scope sweep against tl-oracle (release, long)"
+	@echo "  make kani-check       - Verify every bounded Kani proof (docs/verification-tooling.md)"
+	@echo "  make mutants          - Full cargo-mutants run + kill-rate thresholds (hours, weekly)"
+	@echo "  make mutants-diff     - cargo-mutants on the diff against origin/main + gate"
+	@echo "  make coverage         - llvm-cov line/function/region coverage (stable) with floor"
+	@echo "  make coverage-branch  - llvm-cov line + branch coverage (nightly)"
 	@echo "  make conformance      - Replay the shared corpus through the evaluator"
 	@echo "  make differential     - Replay the retained R2U2 exchange"
 	@echo "  make r2u2-past-differential - Live pinned R2U2 over the past grid (R2U2_ROOT)"
@@ -94,6 +98,7 @@ kani-check:
 	$(CARGO) kani --lib \
 		--harness future::horizon::kani_proofs::horizon_bound_addition_matches_checked_add \
 		--exact --unwind 4 --output-format terse
+	$(CARGO) kani --lib -Z stubbing --output-format terse
 	$(CI_GUARD) record kani-check
 
 .PHONY: test
@@ -163,6 +168,39 @@ build:
 .PHONY: clean
 clean:
 	$(CARGO) clean
+
+# =============================================================================
+# Verification effectiveness (TL-231, TL-234). Heavy, so deliberately outside
+# `make ci`; see docs/verification-tooling.md for budgets and measured numbers.
+# =============================================================================
+
+MUTANTS_OUT ?= target/mutants
+MUTANTS_JOBS ?= 4
+MUTANTS_BASE ?= origin/main
+COVERAGE_MIN_LINES ?= 80
+COVERAGE_IGNORE = '(ci_guard|kani_)'
+
+# The wrapper accepts cargo-mutants' "survivors found" status and judges the
+# result against mutation-thresholds.toml (see scripts/run_mutants.py).
+.PHONY: mutants
+mutants:
+	$(PYTHON) scripts/run_mutants.py --source-env --jobs $(MUTANTS_JOBS) $(MUTANTS_OUT)
+
+.PHONY: mutants-diff
+mutants-diff:
+	$(PYTHON) scripts/run_mutants.py --source-env --jobs $(MUTANTS_JOBS) --diff-base $(MUTANTS_BASE) $(MUTANTS_OUT)
+
+.PHONY: coverage
+coverage:
+	$(CARGO) llvm-cov --all-features --summary-only \
+		--ignore-filename-regex $(COVERAGE_IGNORE) \
+		--fail-under-lines $(COVERAGE_MIN_LINES)
+
+.PHONY: coverage-branch
+coverage-branch:
+	$(CARGO) +nightly llvm-cov --all-features --branch --summary-only \
+		--ignore-filename-regex $(COVERAGE_IGNORE) \
+		--fail-under-lines $(COVERAGE_MIN_LINES)
 
 # =============================================================================
 # Supply chain & safety

@@ -184,6 +184,7 @@ mod kani_proofs {
     // This is intentionally the arithmetic primitive used by horizon traversal;
     // it does not claim a proof of arbitrary formula traversal.
     #[kani::proof]
+    #[kani::unwind(4)]
     fn horizon_bound_addition_matches_checked_add() {
         let bound: u32 = kani::any();
         let child: u64 = kani::any();
@@ -194,6 +195,47 @@ mod kani_proofs {
     }
 }
 
+/// Lookahead of one node given the already-computed values of its operands.
+pub(crate) fn node_lookahead(
+    node_id: NodeId,
+    kind: NodeKind,
+    values: &[u64],
+) -> Result<u64, HorizonError> {
+    let value = match kind {
+        NodeKind::False | NodeKind::True | NodeKind::Proposition { .. } => 0,
+        NodeKind::Not { operand } => prior(values, operand),
+        NodeKind::And { left, right }
+        | NodeKind::Or { left, right }
+        | NodeKind::Implies { left, right }
+        | NodeKind::Equivalent { left, right } => prior(values, left).max(prior(values, right)),
+        NodeKind::Future { interval, operand } | NodeKind::Globally { interval, operand } => {
+            add_bound(node_id, interval.end(), prior(values, operand))?
+        }
+        NodeKind::Until {
+            interval,
+            left,
+            right,
+        }
+        | NodeKind::Release {
+            interval,
+            left,
+            right,
+        } => add_bound(
+            node_id,
+            interval.end(),
+            prior(values, left).max(prior(values, right)),
+        )?,
+        // The profile guard admits only profiles whose `Formula::new`
+        // rejects past-time operators.
+        NodeKind::Once { .. }
+        | NodeKind::Historically { .. }
+        | NodeKind::StrongPrevious { .. }
+        | NodeKind::Since { .. }
+        | NodeKind::Triggered { .. } => unreachable!("future profiles reject past operators"),
+    };
+    Ok(value)
+}
+
 /// Computes lookahead, propagation delay, and buffer size with checked arithmetic.
 ///
 /// Implements: FR-002
@@ -202,40 +244,7 @@ pub(crate) fn lookahead(formula: Formula<'_>) -> Result<u64, HorizonError> {
     for (index, node) in formula.nodes().iter().enumerate() {
         // `Formula::new` bounds the node table by the 32-bit identity space.
         let node_id = NodeId(index as u32);
-        let value = match node.kind {
-            NodeKind::False | NodeKind::True | NodeKind::Proposition { .. } => 0,
-            NodeKind::Not { operand } => prior(&values, operand),
-            NodeKind::And { left, right }
-            | NodeKind::Or { left, right }
-            | NodeKind::Implies { left, right }
-            | NodeKind::Equivalent { left, right } => {
-                prior(&values, left).max(prior(&values, right))
-            }
-            NodeKind::Future { interval, operand } | NodeKind::Globally { interval, operand } => {
-                add_bound(node_id, interval.end(), prior(&values, operand))?
-            }
-            NodeKind::Until {
-                interval,
-                left,
-                right,
-            }
-            | NodeKind::Release {
-                interval,
-                left,
-                right,
-            } => add_bound(
-                node_id,
-                interval.end(),
-                prior(&values, left).max(prior(&values, right)),
-            )?,
-            // The profile guard admits only profiles whose `Formula::new`
-            // rejects past-time operators.
-            NodeKind::Once { .. }
-            | NodeKind::Historically { .. }
-            | NodeKind::StrongPrevious { .. }
-            | NodeKind::Since { .. }
-            | NodeKind::Triggered { .. } => unreachable!("future profiles reject past operators"),
-        };
+        let value = node_lookahead(node_id, node.kind, &values)?;
         values.push(value);
     }
 
