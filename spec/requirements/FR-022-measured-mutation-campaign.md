@@ -1,6 +1,6 @@
 ---
 id: FR-022
-title: "Measure a deterministic Rust mutation campaign"
+title: "Measure the mutation kill rate against thresholds"
 type: FR
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-003
@@ -11,125 +11,73 @@ relationships:
     type: depends_on
 ---
 
-# FR-022: Measure a deterministic Rust mutation campaign
+# FR-022: Measure the mutation kill rate against thresholds
 
 ## Description
 
-When an exact green TL candidate enters the mutation pilot, its owning
-repository shall freeze the complete discovered mutant population and a
-deterministic selected population before execution and shall retain every
-mutant outcome and reviewed survivor disposition.
+When the mutation campaign runs, tl-mltl shall run cargo-mutants only against a green
+baseline, compute the kill rate, compare it with the declared thresholds, and list
+every surviving mutant with a reason.
 
 ## Inputs
 
-- Exact source revision, locked dependencies, compiler/toolchain, mutation tool
-  and configuration, baseline command/result, and timeout/resource limits.
-- Exact Quire `implements` exports for the selected requirements plus the
-  exact TestMatrix priorities of the test cases that trace to them.
-- Closed mutation operator, path, generated-population, exclusion, and
-  deterministic selection rules.
+- The source revision, locked dependencies, compiler, and cargo-mutants version
+  and configuration.
+- The module scope: the evaluator core (evaluation, horizon, and interval
+  arithmetic) and the crate as a whole, excluding CI-plumbing modules
+  (`ci_guard`, `campaign`) because their tests do not exercise MLTL logic.
+- The test selection that runs against each mutant.
 
 ## Outputs
 
-- An owner-native mutation-campaign record containing the discovered, excluded,
-  selected, unselected, and executed populations; tl-mltl uses
-  `tl-mltl.mutation-campaign/v1`.
-- Stable mutant identities, isolated execution results, conclusive score when
-  permitted, and one disposition for every missed or timed-out mutant.
-- Typed refusal when the baseline is not green or the population, isolation,
-  restoration, identity, or result state is incomplete.
+- A campaign record with the tool version, the mutant counts by outcome, the kill
+  rate for the evaluator core and for the crate, and the survivor list.
+- A pass or a failure of the threshold gate.
+- A typed refusal when the baseline is not green.
 
 ## Behavior
 
-A mutant path obeys FR-009's `/`-only exact UTF-8 path rules.
-`mutantSha256` is lowercase hexadecimal SHA-256 over the UTF-8 bytes of
-`tl-mltl.mutant/v1`, one zero byte, and the compact JSON array
-`[repository,candidateRevision,path,originalSourceSha256,byteStart,byteEnd,originalClass,mutationOperator,replacementSha256,toolConfigurationSha256]`.
-Offsets are checked `u64` UTF-8 byte offsets into the exact original source and
-the half-open span must be in bounds and align with the tool's retained token or
-AST record.
+The campaign refuses to run, and emits no kill rate, unless the unmutated test
+suite passes at the same revision with the same test selection. A baseline that
+passes only intermittently is treated as not green.
 
-Discovery completes before selection. Rows are ordered by the closed matrix
-rank `P0 < P1 < P2 < P3`, then mutation-operator ASCII bytes, then
-`mutantSha256` bytes. Exclusions use a closed reviewed reason set and never
-erase a discovered identity. If a declared hard cap prevents full execution,
-selection takes the first rows in that order; all unselected mutants remain
-listed and outside the score. `mutantPopulationSha256` is computed under domain
-`tl-mltl.mutant-population/v1` over the compact JSON array of
-`[candidateRevision,toolConfigurationSha256,discoveredRows]`, with each row
-carrying its identity, priority sources, exclusion/selection state, and reason.
-The digest is carried outside the hashed bytes.
+Each mutant is run alone against the same test selection under a finite timeout.
+Outcomes are `caught`, `missed`, `timeout`, `unviable`, and tool error, and they
+are reported separately. A mutant that does not compile (`unviable`) exercised no
+test and is outside the rate. A timeout counts against the rate, conservatively,
+because the suite did not demonstrate that it noticed the change. The kill rate
+is `caught / (caught + missed + timeout)`, and the record prints it beside the
+raw counts.
 
-The exact baseline command must pass three consecutive no-mutant controls before
-any mutant runs. Stability means the same enumerated test-identity set and the
-same pass/skip/fail outcome for each test; elapsed time and console spelling are
-retained but are not equality inputs. Each selected mutant executes alone in a
-clean isolated tree against the same locked test selection and finite timeout.
-The selected order is divided into consecutive batches of 20, with the final
-batch possibly shorter. A no-mutant control runs immediately before and after
-each batch. If either control differs, every result in that batch becomes
-`suspect`, is excluded from scoring, and must be rerun after the instability is
-resolved. After every run, the source digest and repository status must match
-the candidate before another mutant starts. A restoration or enumeration
-failure aborts the campaign and prevents a score.
+The thresholds are:
 
-Execution states are `caught`, `missed`, `timeout`, `unviable`, `tool_error`,
-`not_run`, and `cancelled`. Exclusion is a population state, not an execution
-outcome. Timeout remains separately visible but contributes conservatively to
-the shared mutation-score denominator; unviable contributes to neither side
-because it exercised no test. The shared killed fraction is published only when
-every selected mutant has an execution state and the viable denominator is
-nonzero; it is `caught / (caught + missed + timeout)`, adjacent to every raw
-population and exclusion. No adjusted score or target threshold is inferred
-from the first pilot.
+| Scope | Minimum kill rate |
+|---|---|
+| evaluator core (evaluation, horizon, interval arithmetic) | 95% |
+| the crate as a whole | 85% |
 
-The observed collection and score are immutable; a disposition cannot rewrite
-an outcome, denominator, or historical ratio. A raw `missed` or `timeout`
-outcome may enter the FR-023 candidate census before its final disposition;
-FR-023 does not depend on an `equivalent_within_declared_bound` disposition that
-only its proof could justify. Every missed or timed-out mutant ultimately
-receives exactly one reviewed disposition:
-`test_gap` with a requirement-tagged regression ticket, `spec_gap` returning to
-the specification cycle, `equivalent_within_declared_bound` with exact bounded
-proof and reviewer,
-`duplicate_of` another survivor, `tool_defect` with an upstream issue, or
-`accepted_risk` with owner, rationale, expiry, and affected requirement. A
-`duplicate_of` target must be a distinct survivor in the same population and
-the directed duplicate graph must be acyclic and terminate at a non-duplicate
-disposition. `accepted_risk.expiry` is an RFC 3339 UTC instant and an expired
-record is unresolved. A machine guess cannot mark a mutant equivalent.
-Survivors are prioritized by the same closed matrix rank and identity order; a
-ratio never hides the queue.
+A kill rate below either threshold fails the gate. On a pull request the run is
+limited to the mutants in changed code (`cargo mutants --in-diff`) so a change
+cannot add untested logic; a weekly run covers every mutant.
+
+Every missed or timed-out mutant appears in the survivor list with a reason, one
+of: a new test that kills it, equivalent with a one-line reason recorded in the
+configuration, or routed to a Kani harness under FR-023 with the harness named. A
+survivor without a reason keeps the campaign open. A kill rate is a measurement of
+the test suite, not a claim about the correctness of the code it did not reach.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-022-AC-1 | Discovery records every mutant under the specified path, span, identity, ordering, and population-digest rules before selection; exclusions and cap-driven unselected rows remain visible, and repeating discovery at the same revision/configuration produces the same ordered populations. | Test (TC-113, TC-114) |
-| FR-022-AC-2 | A failed or inconsistent three-run baseline/control, concurrent mutants, changed test selection, timeout ambiguity, dirty restoration, missing source identity, or partial enumeration aborts or makes the affected batch suspect and cannot produce a score. | Test (TC-114, TC-115) |
-| FR-022-AC-3 | Caught, missed, timeout, unviable, tool-error, not-run, and cancelled outcomes round-trip separately; the shared score uses caught over caught plus missed plus timeout only for a complete nonzero viable population and retains all adjacent counts. | Test (TC-115, TC-116) |
-| FR-022-AC-4 | Every raw missed or timed-out mutant can enter the proof-candidate census without a circular final disposition and ultimately receives exactly one reviewed closed-set disposition with its required ticket/proof/owner/expiry evidence; duplicate chains are acyclic and expired risks are unresolved. | Test (TC-116, TC-117) |
-| FR-022-AC-5 | Seeded mutant controls demonstrate that population, execution-state, score-denominator, isolation, restoration, and survivor-routing checks fail red while an unmutated control stays green. | Test (TC-118) |
+| FR-022-AC-1 | The campaign mutates the evaluator core and the crate as a whole, and excludes the CI-plumbing modules by a stated configuration, so plumbing tests do not inflate the rate. | Test (TC-113) |
+| FR-022-AC-2 | A baseline that fails or is unstable refuses the campaign and emits no kill rate. | Test (TC-114) |
+| FR-022-AC-3 | Caught, missed, timeout, unviable, and tool-error outcomes are reported separately, and the kill rate is caught over caught plus missed plus timeout, printed beside every raw count. | Test (TC-115, TC-116) |
+| FR-022-AC-4 | A kill rate below 95% for the evaluator core or below 85% for the crate fails the gate, and a deliberately weakened test selection is detected by the gate. | Test (TC-116, TC-118) |
+| FR-022-AC-5 | Every surviving mutant is listed with exactly one reason (a killing test, equivalence with a stated reason, or a named Kani harness), and a survivor without a reason fails the check. | Test (TC-117) |
 
 ## Dependencies
 
-Depends on FR-009 path/retention rules and the FR-020 property laws
-as the baseline suite under test. FR-021 is a conditional input
-only for a mutation selection justified by a fuzz result; a repository with no
-applicable Fuzz-kind boundary records that exclusion rather than fabricating
-fuzz evidence. Each source repository owns its mutation producer and
-remediation tickets. Quire's current criterion facts do not export an
-authoritative production-symbol relation through the property records. It
-exports that relation separately, as the non-coverage `implements` relation
-`agent-ix/quire-rs#171` delivered.
-
-The relation is a *precondition to be asserted, not a property to be assumed*.
-An empty relation is the state a mutation selection would silently inherit.
-
-Before selection, therefore, the owning repository shall assert — in an
-executable control, not in prose — that the relation is non-empty and complete
-for every applicable requirement in the mutation population at its exact
-revision and exact tool identity, and shall demonstrate that completing it does
-not change the backed-evidence total. A TL producer shall consume the export
-rather than invent a private mapping, and an empty or partial export is a typed
-refusal rather than an empty population to proceed from.
+Depends on the FR-020 property laws as the baseline suite under test, and on FR-023
+for survivors that tests cannot reach. Each source repository owns its own
+mutation configuration and remediation.

@@ -1,6 +1,6 @@
 ---
 id: FR-023
-title: "Constrain and retain bounded Kani claims"
+title: "State and guard bounded Kani claims"
 type: FR
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-003
@@ -9,116 +9,80 @@ relationships:
     type: depends_on
 ---
 
-# FR-023: Constrain and retain bounded Kani claims
+# FR-023: State and guard bounded Kani claims
 
 ## Description
 
-When a reviewed TL obligation is selected for Kani, its owning repository shall
-bind the proof result to one exact harness, candidate, domain, assumptions,
-bounds, unwinding checks, verifier/solver configuration, and claim statement
-and refuse any broader interpretation.
+When a Kani harness is added, tl-mltl shall state in the harness the bounds it covers
+and what it does not claim, shall fail a harness that is vacuous or whose
+unwinding is incomplete, and shall add no Kani dependency to production code.
 
 ## Inputs
 
-- Selection rationale for a criterion with an FR-020 property-law gap:
-  `property_gap`, `fuzz_plateau`, `fuzz_counterexample`,
-  `mutation_survivor`, or `reviewed_bounded_arithmetic`.
-- Exact candidate, harness path/symbol/digest, Kani/Rust/solver versions,
-  command arguments, target/configuration, assumptions, stubs, symbolic types,
-  loop/recursion/unwind/object limits, timeout, and memory cap.
-- Exact proposition to prove and its explicit non-claims.
+- The harness list and the proposition each harness proves.
+- The Kani version and the unwind setting for each harness.
+- The property gaps, fuzz counterexamples, and mutation survivors that motivated
+  a harness.
 
 ## Outputs
 
-- An owner-native proof-candidate ledger and bounded-proof record; tl-mltl uses
-  `tl-mltl.proof-candidate-ledger/v1` and `tl-mltl.bounded-proof/v1`.
-- A result status `proved_within_bounds`, `counterexample`,
-  `unwind_incomplete`, `solver_unknown`, `vacuous`, `timed_out`, `unsupported`,
-  `tool_error`, or `not_run`.
-- Assertion, cover/vacuity, unwind, and unsupported-feature outcomes plus a
-  reproducible counterexample when one exists.
-- A typed refusal for missing identity, implicit bounds, unchecked unwind,
-  contradictory assumptions, semantic forks, or claim widening.
+- For each harness, an outcome of `proved_within_bounds`, `counterexample`,
+  `unwind_incomplete`, `vacuous`, `timed_out`, `tool_error`, or `not_run`, with the
+  Kani version.
+- A reproducible counterexample when one exists.
 
 ## Behavior
 
-The finite candidate-source registry contains every row explicitly selected
-from an FR-020 property-law gap, FR-021 plateau/counterexample, raw FR-022
-missed/timeout outcome, or reviewed bounded-arithmetic proposition. The registry
-binds the exact source-record digest and selection review; a matrix priority by
-itself cannot add a row. Every registry row appears exactly once as
-`applicable`, `excluded`, or `blocked`.
+The harness list is:
 
-`proofCandidateSha256` is lowercase hexadecimal SHA-256 over the UTF-8 bytes of
-`tl-mltl.proof-candidate/v1`, one zero byte, and the compact JSON array
-`[repository,sourceRevision,requirementId,statementSha256,subjectSymbols,selectionRationale,sourceRecordSha256-or-null,propositionSha256]`.
-`subjectSymbols` is sorted by UTF-8 fully-qualified Rust path. The proposition
-digest covers exact claim and non-claim text, finite symbolic types/domains,
-assumptions, stubs, and declared bounds under domain
-`tl-mltl.proof-proposition/v1`.
+| Harness | Proves, within its stated bounds |
+|---|---|
+| bound addition | the horizon bound addition equals checked addition over the full `u32` bound and `u64` child range (the existing `horizon_bound_addition_matches_checked_add`) |
+| interval arithmetic | no overflow or wrap in bound, shift, and horizon computations over the full integer range |
+| evaluator no-panic | evaluation of every formula up to depth 2 over every trace up to length 4 terminates without panicking |
+| wire decode no-panic | any input up to 64 bytes decodes or returns a typed error |
+| closing prefix | once the prefix reaches the horizon, the verdict does not change |
 
-Candidate rows are sorted by the UTF-8 bytes of `proofCandidateSha256`.
-`proofCandidateLedgerSha256` is computed under domain
-`tl-mltl.proof-candidate-ledger/v1` over the compact JSON array of
-`[predecessorLedgerSha256-or-null,rows]`, where each closed ordered row contains
-the candidate identity, classification, reason/dependency, proposition,
-non-claims, bounds, and ownership fields. The digest is carried outside the
-hashed bytes. Reclassification or removal requires a reviewed successor ledger
-and tombstone; changing any covered fact creates a new successor digest.
+Each harness carries a doc comment that names its bounds and its non-claims. For
+example, the evaluator harness states that it covers depth at most 2 and says
+nothing about semantic correctness. A proof of a private arithmetic primitive does
+not prove arbitrary horizon traversal, a harness over atomic formulas does not
+prove nested formulas, and a finite bound does not prove unbounded MLTL.
 
-`proved_within_bounds` requires successful verification of every claimed
-assertion, enabled unwind checks, no unwinding failure, no unsupported construct
-on the proof path, and evidence that the assumptions admit at least one case in
-every declared partition. An assumption is part of the claim and names the
-excluded population. A timeout, solver unknown, missing cover result, disabled
-unwind check, partial harness, or unsupported operation retains its distinct
-named status, never proof.
+A harness counts as proved only when every assertion holds, unwinding is complete,
+and the cover checks show the interesting paths are reachable. An assumption
+that admits no case leaves the proof vacuous, and a vacuous proof is a failure.
+A harness over code with no loop or recursion may omit an unwind bound only when
+the reachable code is shown to have none; an unused unwind option does not count
+as a check. A timeout, unwinding failure, missing cover result, or unsupported
+construct keeps its own status and is never proof.
 
-A harness classified as loop- and recursion-free records `unwind_check:
-not_applicable` only after retaining an exact subject and reachable-call-graph
-loop/recursion census. Supplying an inert numeric unwind option is not an unwind
-check and cannot satisfy this condition.
+The local gate runs every listed harness by its exact name, so a renamed or
+removed harness fails the gate rather than silently dropping out. CBMC's internal
+property counts are diagnostics and not a proof count.
 
-The claim text repeats the exact finite types/cardinalities, formula/trace or
-arithmetic structure, loop/recursion and unwind bounds, assumptions, operation,
-and output property. A proof of a private checked-addition primitive does not
-prove arbitrary horizon traversal; an atomic evaluator harness does not prove
-nested formulas; a finite formula/trace bound does not prove unbounded MLTL.
+Only the proof module and the visibility needed to call an existing subject may
+be gated under `cfg(kani)`. The subject function body compiled for verification
+is identical to the production body, and no Kani, Loom, Verus, or concolic-execution
+library appears in the production dependency tree. Ordinary stable and MSRV builds
+reject a stray verifier-only configuration.
 
-Only the proof module and visibility needed to call an existing subject may be
-gated under `cfg(kani)`; the subject function body compiled for verification
-must be identical to the ordinary production body.
-
-Verifier-only code shall not
-add a proof-only subject primitive, alternate production semantic branch,
-changed ordinary-build result, or Kani runtime dependency.
-
-Ordinary stable/MSRV builds shall reject accidental verifier-only configuration
-drift. Loom remains inapplicable to the non-concurrent core. Verus and concolic
-execution require separate reviewed architecture decisions.
-
-CBMC internal assertion/property counts are diagnostics, not proof counts or a
-coverage denominator. The unit of evidence is one exact candidate-ledger row,
-harness, claim, and declared finite model.
-
-The closed-unmerged tl-mltl PR #35 and its historical runs are feasibility
-inputs only. No record may cite them as evidence for current main; a successor
-harness must rerun at its exact landed candidate and retain a new result.
+The campaign report records the Kani version, each harness's bounds, and its
+outcome. A survivor routed here from FR-022 names the harness that closes it.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-023-AC-1 | Every row in the finite candidate-source registry is classified exactly once under the specified candidate/proposition preimages; the ordered ledger digest covers classifications, reasons, dependencies, propositions, non-claims, bounds, and predecessor digest; and every proof record round-trips exact candidate, harness, proposition, non-claims, toolchain/solver/configuration, symbolic domains, assumptions, stubs, resource limits, loop/recursion/unwind bounds or a retained exact not-applicable census, checks, outcomes, and artifact digests. | Test (TC-119, TC-121) |
-| FR-023-AC-2 | A proved-within-bounds result is possible only when every assertion, applicable unwind check, supported-path check, and partition cover succeeds; loop-free unwind is not-applicable only after an exact retained census; timeout, unknown, vacuity, partial execution, disabled checks, and inert unwind flags remain non-conclusive, and CBMC internal property counts never become proof counts. | Test (TC-119, TC-120) |
-| FR-023-AC-3 | Mutating any bound, assumption, harness digest, candidate, solver/configuration, claim scope, or outcome invalidates the record or makes the owning gate red, while a counterexample remains reproducible. | Test (TC-120, TC-121) |
-| FR-023-AC-4 | Verifier-only code changes only proof-module/visibility reachability over an identical subject body, ordinary/MSRV controls detect any divergence, and no Kani, Loom, Verus, concolic, Java, Node, or Electron runtime enters production. | Test (TC-123) |
-| FR-023-AC-5 | Historical #35 evidence is classified closed-unmerged and cannot satisfy a current obligation; only a new exact-candidate run may support a bounded claim. | Test (TC-124) |
+| FR-023-AC-1 | Every harness in the list carries a doc comment stating its bounds and non-claims, and the local gate runs each by its exact name, so a harness missing from the run or from the list fails the gate. | Test (TC-120) |
+| FR-023-AC-2 | A harness is proved only when every assertion holds, unwinding is complete, and its cover checks are reachable; a vacuous proof, unwinding failure, timeout, or unsupported construct is a failure with its own status. | Test (TC-120) |
+| FR-023-AC-3 | The campaign report records the Kani version and each harness's bounds and outcome, and a counterexample is reproducible from the recorded harness. | Test (TC-120, TC-121) |
+| FR-023-AC-4 | Verifier-only code changes only proof-module and visibility reachability over an identical subject body, ordinary and MSRV builds detect any divergence, and no Kani, Loom, Verus, concolic, Java, Node, or Electron dependency enters production. | Test (TC-123) |
+| FR-023-AC-5 | Withdrawn: rejection of historical closed-unmerged proof artifacts as current evidence. | Withdrawn |
 
 ## Dependencies
 
-Depends on the FR-020 property laws and a reviewed selection rationale. Mutation- or
-fuzz-driven selections conditionally depend on the exact FR-021/FR-022 result;
-reviewed bounded-arithmetic selections do not. Kani is
-the selected initial bounded-proof tool, not a source-language, runtime, or
+Depends on the FR-020 property laws and on a stated reason for each harness.
+Fuzz- and mutation-driven harnesses depend on the FR-021 and FR-022 results.
+Kani is the selected bounded-proof tool, not a source-language, runtime, or
 universal verification dependency.

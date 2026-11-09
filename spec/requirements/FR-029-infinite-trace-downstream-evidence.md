@@ -48,9 +48,9 @@ does not itself grant a source release or native parity decision.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-029-AC-1 | The dependency route names TL-207, STD-13, TL-210, TL-211, TL-212, TL-215, TL-13 and TL-7 with one owner and predecessor per step. | Inspection (TC-088) |
+| FR-029-AC-1 | Withdrawn: the dependency route is a completed planning record, tracked in the issue tracker. | Withdrawn |
 | FR-029-AC-2 | Every infinite result names the exact module feature, provider revision, TL profile, graph, clock and subject scope; bounded results are not reattributed. | integration-testing (TC-089, TC-140) |
-| FR-029-AC-3 | No infinite implementation or qualification claim is advanced before syntax and combined-review acceptance gates; a missing provider settles `unsupported`. | Inspection (TC-088) |
+| FR-029-AC-3 | Withdrawn: the claim-ordering gate is an obsolete process gate; a missing provider settling `unsupported` is verified under FR-028-AC-1. | Withdrawn |
 
 ## Dependencies
 

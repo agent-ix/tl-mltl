@@ -1,6 +1,6 @@
 ---
 id: FR-010
-title: "Record explicit interoperability and loss dispositions"
+title: "Report agree, disagree, or not-comparable for monitor interoperability"
 type: FR
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-002
@@ -15,95 +15,69 @@ relationships:
     type: depends_on
 ---
 
-# FR-010: Record explicit interoperability and loss dispositions
+# FR-010: Report agree, disagree, or not-comparable for monitor interoperability
 
 ## Description
 
-When a corpus case crosses a target-mapping or external-observation boundary,
-the campaign shall retain separate semantic-loss, target-availability, and
-comparison states and shall never promote target acceptance into equivalence or
-qualification.
+When a corpus case is mapped to an external monitor or compared with a retained
+external observation, tl-mltl shall report agreement, disagreement, or
+not-comparable with a reason, and shall never turn target acceptance, a refusal,
+or a missing result into agreement or qualification.
 
 ## Inputs
 
-- Exact source formula/profile/context and FR-009 fixture identity.
-- Versioned Rust mapping profile, target language/version, and emitted bytes or
-  typed mapping refusal.
-- Optional retained external observation with exact tool/configuration/input/
-  output identity and execution provenance.
+- The source formula, profile, and context, and the case's fixture identity.
+- The Rust mapping and its emitted bytes, or the typed mapping refusal.
+- Optionally a retained external observation with the tool identity and version,
+  the formula and trace identities, and its status and value.
 
 ## Outputs
 
-- Per-obligation loss state: `preserved`, `conditional`, `unrepresented`, or
-  `refused`, with reason and source span/identity.
-- Target availability: `available`, `unavailable`, or `unsupported`.
-- Optional comparison: `agreement`, `mismatch`, or `non_conclusive`, never a
-  Boolean qualification result.
+- One comparison outcome: `agreement`, `mismatch` (disagree), or `non_conclusive`
+  (not comparable), with a deterministic reason.
+- For a mapping that cannot be emitted, a typed refusal with the reason.
 
 ## Behavior
 
-The three state axes describe independent facts but their serialized
-combinations are closed:
+A comparison is `agreement` only when the observation is conclusive and its truth
+value and verdict time equal the reference's. It is `mismatch` when both are
+conclusive and differ. It is `non_conclusive` when the observation is pending,
+unsupported, a tool error, malformed, or has no comparable verdict, and the
+record keeps the cause. The contextual form also reports identity mismatch when
+the formula, trace, signal catalog, or caller context in the observation differs
+from the reference's, and emits no comparison in that case.
 
-| Loss | Availability | Comparison | Valid meaning |
-|---|---|---|---|
-| `preserved` or `conditional` | `available` | absent | exact mapping and observation exist; comparison was not requested |
-| `preserved` or `conditional` | `available` | `agreement`, `mismatch`, or `non_conclusive` | exact mapping and observation were compared |
-| any loss state | `unavailable` or `unsupported` | absent | no admitted external observation exists |
-| `unrepresented` or `refused` | `available` | absent | an independently retained observation exists, but no comparable emitted mapping exists |
+A formula the mapping cannot represent is refused at export with a typed reason
+and emits no target bytes. A refusal is not agreement and says nothing about the
+target: the live past-time evidence records how many cases were admitted to the
+tool and how many were refused, and claims agreement for the admitted cases
+only.
 
-Every other combination refuses. `conditional` also requires a nonempty closed
-condition list; `unrepresented` and `refused` require a typed reason and emit no
-target bytes. `preserved` describes a reviewed mapping, not target execution.
-`available` says an exact observation exists, not that it agrees. `agreement`
-applies only to matching exact identities and exercised values, not the target
-language, tool, monitor, source profile, or unexercised cells. Unsupported and
-unavailable are retained rather than dropped from the population.
+The retained 4.2/C2PO 4.1 exchange is an exact eight-case observation, and the
+live R2U2 evidence is bounded to its recorded cases and tool identities.
+Agreement covers those exercised cases, not the target language, the monitor,
+the source profile, or unexercised cells.
 
-The target catalog is:
+Build, test, CI, and qualification paths do not execute Java, Node, Electron,
+C2PO, R2U2, or another foreign runtime; they replay retained output. A manually
+produced observation is contextual evidence and does not discharge mapping
+correctness. Mapping correctness is checked against the canonical TL semantics,
+the exact Rust emitter output, and an independent expected result. Parser
+acceptance is at most an observation and never a semantic oracle.
 
-| Target | Mapping role | External-observation rule |
-|---|---|---|
-| C2PO/R2U2 | `tl-mltl` Rust-emitted monitor/mapping target for reviewed profile subsets | the retained 4.2/C2PO 4.1 exchange remains an exact eight-case observation only; new execution is unavailable unless separately authorized |
-
-The catalog is closed to targets `tl-mltl` itself emits. A target emitted by an
-agent-ix/Quire repository is not a row here: under ADR-002 its dispositions are
-`quire-mltl`'s, and naming one is an `unsupported` target/profile combination in
-this catalog.
-
-An external observation is admitted only when its exact executable or source
-revision, configuration, input, raw output, invocation environment, license,
-contributor, and artifact digests are present and mutually consistent. Unknown
-fields or enums, missing required identity, digest mismatch, stale context, and
-profile/clock/history mismatch are typed admission refusals and emit no
-comparison. An admitted exact run whose raw output records tool failure,
-partial output, ambiguous aggregation, or no comparable verdict is
-`available` with `non_conclusive` comparison and a typed reason. No authorized
-or retained run is `unavailable`; a target/profile combination outside the
-catalog is `unsupported`. None can be rewritten as agreement.
-
-Build, test, CI, and qualification paths do not execute an external monitor or
-foreign runtime. A manually supplied observation remains contextual evidence;
-it does not discharge mapping correctness. Mapping correctness is verified from
-the canonical TL semantics, exact Rust emitter, loss report, and independent
-expected output. Parser acceptance is at most an observation and never a
-semantic oracle.
-
-The canonical `tl-syntax` formula graph is the source authority for every case
-in this catalog. A disposition cannot be derived from, or fall back to, a
-source language this repository does not own.
+A target emitted by an agent-ix/Quire repository is not a row here: under
+ADR-002 its dispositions are `quire-mltl`'s.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-010-AC-1 | Every target case retains independent loss, availability, and comparison axes; every combination in the closed validity table round-trips, every other combination refuses, conditional/refusal reasons are required, and no non-conclusive/unsupported/unavailable state becomes Boolean success. | Test (TC-100, TC-101) |
-| FR-010-AC-2 | C2PO/R2U2 claims remain bounded to the exact retained cases and identities, a target outside the closed catalog is `unsupported` rather than admitted, and no build, test, CI, or qualification path executes Java, Node, Electron, C2PO, or R2U2. | Test (TC-100, TC-102) |
-| FR-010-AC-3 | Each admitted external observation binds exact tool/source/configuration/input/raw-output/environment/license/contributor digests; malformed, missing, stale, digest-mismatched, or profile-incompatible inputs refuse before comparison, while admitted partial, failed, aggregation-ambiguous, or verdict-absent output is available but non-conclusive. | Test (TC-100) |
-| FR-010-AC-4 | Rust mapping correctness is tested against canonical TL semantics, exact expected output, and complete loss reports without using parser acceptance or external execution as a semantic oracle. | Test (TC-093, TC-100) |
+| FR-010-AC-1 | Every comparison reports agreement, disagreement, or not-comparable with a reason, and a pending, unsupported, tool-error, malformed, or verdict-absent observation is never reported as agreement. | Test (TC-100, TC-101) |
+| FR-010-AC-2 | Claims stay bounded to the retained cases and tool identities, a mapping refusal is never counted as agreement, and no build, test, CI, or qualification path executes Java, Node, Electron, C2PO, or R2U2. | Test (TC-100) |
+| FR-010-AC-3 | An observation whose tool identity, formula, trace, signal catalog, or context does not match the reference is refused before comparison, and a conclusive observation that disagrees is reported as disagreement. | Test (TC-100) |
+| FR-010-AC-4 | Rust mapping correctness is tested against the canonical TL semantics, exact expected output, and typed refusal reasons without using parser acceptance or external execution as a semantic oracle. | Test (TC-093, TC-100) |
 
 ## Dependencies
 
-Depends on FR-004/FR-005 mapping and comparison semantics, FR-007 contextual
-identity, and FR-009 fixture identity. Future-derived and past rows depend on
-accepted tl-syntax #37/#38 and their routed evaluator/adapter implementations.
+Depends on FR-004 and FR-005 for mapping and comparison semantics, FR-007 for
+contextual identity, and FR-009 for fixture identity.

@@ -1,6 +1,6 @@
 ---
 id: FR-020
-title: "Ground a complete property-obligation ledger"
+title: "Run evaluator property laws against the independent oracle"
 type: FR
 relationships:
   - target: ix://agent-ix/tl-mltl/MRS-003
@@ -53,8 +53,9 @@ generator, or an unreproducible failing case is a failing test. Each oracle
 comparison has a seeded-fault control: a deliberately broken evaluator turns the
 comparison red.
 
-Generated inputs are evidence, never canonical conformance fixtures. Promoting a
-shrunk counterexample to the corpus follows FR-009.
+Generated inputs are evidence, never canonical conformance fixtures. A
+minimised counterexample is committed as a regression fixture under the FR-009
+promotion conditions.
 
 ## Acceptance Criteria
 
@@ -64,7 +65,7 @@ shrunk counterexample to the corpus follows FR-009.
 | FR-020-AC-2 | A law that needs a reference compares the production evaluation with the independent oracle verdict; the oracle does not call the operation under test or a helper implementing the same derivation. | property-based-testing (TC-105, TC-106) |
 | FR-020-AC-3 | Each seeded evaluator fault (interval end off by one, swapped dual operator, dropped negation) turns the oracle comparison red, and a property law is configured to permit no discarded cases. | integration-testing (TC-106) |
 | FR-020-AC-4 | Repeating a run with the same revision, seed and case count reproduces its accepted-case sequence and minimal counterexample, and the seed and counts are recorded for the campaign report. | property-based-testing (TC-107) |
-| FR-020-AC-5 | Generated cases stay outside canonical conformance counts, and a shrunk counterexample enters the corpus only through the FR-009 promotion conditions. | integration-testing (TC-108) |
+| FR-020-AC-5 | Generated cases stay outside canonical conformance counts, and a shrunk or minimised counterexample is committed as a regression fixture that replays clean against an oracle-confirmed expected result. | integration-testing (TC-108) |
 
 ## Dependencies
 
