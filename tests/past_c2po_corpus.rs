@@ -121,7 +121,7 @@ fn formula(case: &Case) -> Vec<Node> {
     }
 }
 
-// Trace: TC-160, TC-161, TC-164, TC-165, TC-174, FR-038-AC-1, FR-038-AC-2, FR-038-AC-3, FR-039-AC-1
+// Trace: TC-100, TC-160, TC-161, TC-164, TC-165, TC-174, FR-038-AC-1, FR-038-AC-2, FR-038-AC-3, FR-039-AC-1
 #[test]
 fn past_corpus_compares_each_source_step_with_one_retained_target_run() {
     let manifest: Manifest = serde_json::from_slice(MANIFEST).unwrap();

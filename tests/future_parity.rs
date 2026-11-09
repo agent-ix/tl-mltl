@@ -507,7 +507,7 @@ fn disagreements(kind: Derived, lowering: Lowering, traces: &[Vec<Vec<Propositio
     disagreements
 }
 
-// Trace: TC-076, FR-016-AC-1
+// Trace: TC-076, TC-096, FR-016-AC-1
 #[test]
 fn lowered_wm_matches_direct_closed_semantics_over_boundary_windows_and_traces() {
     let traces = all_traces(5);
@@ -1094,7 +1094,7 @@ const fn canonical_vocabulary(kind: NodeKind) -> &'static str {
     }
 }
 
-// Trace: TC-080, FR-016-AC-6
+// Trace: TC-080, TC-096, FR-016-AC-6, FR-008-AC-4
 #[test]
 fn evaluator_has_no_derived_future_branch() {
     for kind in KINDS {

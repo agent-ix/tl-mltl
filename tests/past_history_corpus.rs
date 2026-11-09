@@ -159,7 +159,7 @@ fn load() -> (Manifest, Cases) {
     (manifest, cases)
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Trace: TC-098, FR-009-AC-2
 #[test]
 fn exact_shared_corpus_replays_history_analysis_evaluation_and_corrections() {
     let (manifest, cases) = load();
@@ -280,7 +280,7 @@ fn exact_shared_corpus_replays_history_analysis_evaluation_and_corrections() {
     }
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Trace: TC-098
 #[test]
 fn corpus_digest_and_history_identity_mutations_are_detected() {
     let root = Path::new(tl_syntax::CORPUS_DIR).join(DIRECTORY);
@@ -295,7 +295,7 @@ fn corpus_digest_and_history_identity_mutations_are_detected() {
     assert!(serde_json::from_value::<PositionHistoryDocument>(value).is_err());
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Trace: TC-095, FR-008-AC-3
 #[test]
 fn every_shared_refusal_case_exercises_its_native_boundary() {
     let (_, cases) = load();

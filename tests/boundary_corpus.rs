@@ -175,7 +175,7 @@ fn corpus_is_non_empty_with_unique_ids() {
 }
 
 /// Every stored verdict is confirmed by the independent oracle.
-// Trace: TC-107, TC-105, FR-020-AC-2
+// Trace: TC-107, TC-105, TC-093, TC-097, FR-020-AC-2, FR-008-AC-2
 #[test]
 fn stored_verdicts_agree_with_the_independent_oracle() {
     let (admitted, refused) = replay(&load(), "oracle", reference, &Clone::clone)
@@ -184,7 +184,7 @@ fn stored_verdicts_agree_with_the_independent_oracle() {
 }
 
 /// Every stored verdict is confirmed by the production evaluators.
-// Trace: TC-107
+// Trace: TC-107, TC-093, FR-008-AC-2
 #[test]
 fn stored_verdicts_agree_with_production() {
     let (admitted, refused) = replay(&load(), "production", production, &Clone::clone)
@@ -194,7 +194,7 @@ fn stored_verdicts_agree_with_production() {
 
 /// Pending, early-witness, early-counterexample and closed-prefix transitions
 /// at each future operator and interval-boundary class.
-// Trace: TC-094
+// Trace: TC-094, FR-008-AC-3
 #[test]
 fn online_prefix_progress_matches_the_stored_verdicts() {
     let cases = load();
@@ -232,6 +232,7 @@ const SHAPES: [&str; 4] = ["point-zero", "from-zero", "point", "interior"];
 
 /// No operator x interval-shape cell is left without its three cases, and
 /// every named edge condition and extreme appears.
+// Trace: TC-092, TC-097, FR-008-AC-1, FR-008-AC-4
 #[test]
 fn every_cell_has_positive_negative_and_boundary_cases() {
     let cases = load();
@@ -297,7 +298,7 @@ fn every_cell_has_positive_negative_and_boundary_cases() {
 
 /// A corpus that cannot fail proves nothing: each seeded fault must turn the
 /// replay red, both through the oracle-modelled profiles and the prefix profile.
-// Trace: TC-107, TC-106, FR-020-AC-3
+// Trace: TC-107, TC-106, TC-101, FR-020-AC-3, FR-008-AC-5
 #[test]
 fn seeded_faults_turn_the_corpus_red() {
     type Fault = fn(&O) -> O;

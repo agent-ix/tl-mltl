@@ -69,7 +69,7 @@ fn time_indexed_verdicts(stdout: &str) -> BTreeMap<(u32, u64), bool> {
         .collect()
 }
 
-// Trace: TC-015, FR-005-AC-2, StR-001-VC-2
+// Trace: TC-015, TC-100, FR-005-AC-2, StR-001-VC-2
 #[test]
 fn retained_r2u2_run_agrees_for_supported_cases() {
     let root = root();
@@ -128,7 +128,7 @@ fn retained_r2u2_run_agrees_for_supported_cases() {
     }
 }
 
-// Trace: TC-013, TC-015, TC-016, FR-004-AC-3, FR-005-AC-2, FR-005-AC-3, NFR-002-AC-2
+// Trace: TC-013, TC-015, TC-016, TC-100, TC-103, NFR-004-AC-3, FR-004-AC-3, FR-005-AC-2, FR-005-AC-3, NFR-002-AC-2
 #[test]
 fn retained_external_inputs_and_nonconclusive_cases_are_complete() {
     let root = root();
