@@ -71,7 +71,8 @@ identified external records without running their producer.
 FR-001 owns reference evaluation, FR-002 owns horizon/resource analysis,
 FR-003 owns prefix semantics, FR-004 owns monitor mapping, and FR-005 owns CLI
 and differential reports. FR-007 owns typed context propagation. FR-016 owns direct-versus-lowered W/M parity
-controls and adds no derived evaluator semantics. FR-017 owns W/M
+controls and adds no derived evaluator semantics. FR-042 owns past-profile
+evaluation over origin-complete history. FR-017 owns W/M
 canonical-graph interoperability and target loss evidence. FR-027 owns the
 infinite-trace crate boundary, FR-028 owns liveness-backend registration
 routing, and FR-029 owns infinite-trace downstream evidence and dependency

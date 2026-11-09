@@ -2422,4 +2422,21 @@ mod limit_register {
         };
         assert_eq!(past.clamped(), at);
     }
+
+    // A formula cannot reach the overflow through `analyze_required_history`: it needs
+    // about 2^32 nested nodes at `u32::MAX` each, past the node-table bound. The checked
+    // addition every temporal node uses is therefore asserted directly at its boundary.
+    // Trace: TC-184, FR-042-AC-7
+    #[test]
+    fn required_history_addition_refuses_u64_overflow() {
+        assert_eq!(add_required(NodeId(3), u64::MAX - 1, 1), Ok(u64::MAX));
+        assert_eq!(
+            add_required(NodeId(3), u64::MAX, 1),
+            Err(HistoryRequirementError::ArithmeticOverflow { node: NodeId(3) })
+        );
+        assert_eq!(
+            add_required(NodeId(4), 1, u64::MAX),
+            Err(HistoryRequirementError::ArithmeticOverflow { node: NodeId(4) })
+        );
+    }
 }
