@@ -17,7 +17,14 @@ use serde_json::Value;
 
 fn git(dir: &Path, args: &[&str]) {
     let ok = Command::new("git")
-        .args(["-c", "user.name=t", "-c", "user.email=t@example.invalid"])
+        .args([
+            "-c",
+            "user.name=t",
+            "-c",
+            "user.email=t@example.invalid",
+            "-c",
+            "commit.gpgsign=false",
+        ])
         .args(args)
         .current_dir(dir)
         .status()
@@ -173,6 +180,10 @@ fn r2u2_live_without_a_checkout_writes_a_not_run_report_and_exits_two() {
         assert!(text(&output.stdout).contains("outcome=not_run"), "{suite}");
         let retained = report(&out.path().join("report.json"));
         assert_eq!(retained["suite"], suite);
+        assert_eq!(
+            retained["schemaVersion"],
+            format!("tl-mltl.r2u2-{suite}-differential/v1")
+        );
         assert_eq!(retained["mode"], "tool_unavailable");
         assert_eq!(retained["outcome"], "not_run");
         for key in ["pin", "observed", "summary", "cases", "nonClaims"] {
