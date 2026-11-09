@@ -57,5 +57,7 @@ A generated disagreement becomes a regression fixture only as a record with:
 - provenance: the generator that found it, the generated input it came from, and
   `"minimised": true`.
 
-A record missing any part, or whose expected verdict differs from the oracle's,
-is refused.
+This rule is a test-time contract checked by
+`tests/generated_inputs_not_conformance.rs`, which refuses a record missing any
+part or whose expected verdict differs from the oracle's. No product code
+ingests regression fixtures yet, and no promoted fixture is committed.

@@ -14,7 +14,6 @@ use std::{
 };
 
 use serde_json::{json, Value};
-use tl_mltl::campaign::sha256_hex;
 use tl_oracle::population::CaseResult;
 
 #[path = "support/finite_harness.rs"]
@@ -108,7 +107,7 @@ fn generated_references(manifest: &Value) -> Vec<String> {
         .collect()
 }
 
-// Trace: TC-108, FR-020-AC-5, TC-099, FR-009-AC-4
+// Trace: TC-108, FR-020-AC-5, FR-009-AC-4
 #[test]
 fn no_corpus_manifest_names_a_generated_input() {
     let manifests = manifests();
@@ -124,7 +123,7 @@ fn no_corpus_manifest_names_a_generated_input() {
     }
 }
 
-// Trace: TC-108, FR-020-AC-5, TC-099, FR-009-AC-4
+// Trace: TC-108, FR-020-AC-5, FR-009-AC-4
 #[test]
 fn no_generated_input_is_a_byte_copy_of_a_canonical_corpus_file() {
     let generated = generated_files();
@@ -134,17 +133,17 @@ fn no_generated_input_is_a_byte_copy_of_a_canonical_corpus_file() {
             .any(|p| p.starts_with(repo().join("fuzz/corpus"))),
         "the committed fuzz seeds must be found"
     );
-    let mut canonical = BTreeSet::new();
+    let mut canonical: Vec<Vec<u8>> = Vec::new();
     for root in [PathBuf::from(tl_syntax::CORPUS_DIR), repo().join("corpus")] {
         for file in all_files(&root) {
-            canonical.insert(sha256_hex(&fs::read(&file).unwrap()));
+            canonical.push(fs::read(&file).unwrap());
         }
     }
     assert!(!canonical.is_empty());
     for file in generated {
-        let digest = sha256_hex(&fs::read(&file).unwrap());
+        let bytes = fs::read(&file).unwrap();
         assert!(
-            !canonical.contains(&digest),
+            !canonical.contains(&bytes),
             "{} is a byte copy of a canonical corpus file",
             file.display()
         );
@@ -245,12 +244,12 @@ fn candidate() -> Value {
     })
 }
 
-// Trace: TC-108, FR-020-AC-5, TC-099, FR-009-AC-4
+// Trace: TC-108, FR-020-AC-5, FR-009-AC-4
 #[test]
 fn promotion_requires_reproducer_oracle_verdict_and_provenance() {
     check_promotion(&candidate()).expect("a complete record is admitted");
 
-    for key in ["formula", "trace", "at", "expected", "provenance"] {
+    for key in ["id", "formula", "trace", "at", "expected", "provenance"] {
         let mut r = candidate();
         r.as_object_mut().unwrap().remove(key);
         assert!(check_promotion(&r).is_err(), "missing `{key}` was admitted");
@@ -266,6 +265,13 @@ fn promotion_requires_reproducer_oracle_verdict_and_provenance() {
     let mut blank = candidate();
     blank["provenance"]["found_by"] = json!("  ");
     assert!(check_promotion(&blank).is_err());
+
+    let mut unminimised = candidate();
+    unminimised["provenance"]["minimised"] = json!(false);
+    assert!(check_promotion(&unminimised).is_err());
+    let mut anonymous = candidate();
+    anonymous.as_object_mut().unwrap().remove("id");
+    assert!(check_promotion(&anonymous).is_err());
 
     // The expected verdict must be the oracle's, not the code under test's.
     let mut wrong = candidate();
