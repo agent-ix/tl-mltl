@@ -165,7 +165,8 @@ fn libfuzzer_outcomes_classify_into_distinct_states() {
         RunState::OutOfMemory
     );
     assert_eq!(classify_run(Some(0), "done", false), RunState::Completed);
-    assert_eq!(classify_run(Some(130), "", true), RunState::Completed);
+    assert_eq!(classify_run(Some(72), "", true), RunState::Completed);
+    assert_eq!(classify_run(Some(72), "", false), RunState::Cancelled);
     assert_eq!(classify_run(Some(130), "", false), RunState::Cancelled);
     assert_eq!(
         classify_run(Some(1), "no such binary", false),
@@ -209,6 +210,11 @@ fn plateau_is_a_pure_decision_over_recorded_progress() {
     let late = [s(10, 5), s(600, 5), s(900, 5)];
     assert_eq!(
         decide_stop(&late, 900, 300).unwrap(),
+        StopDecision::Plateau { last_growth_s: 10 }
+    );
+    // Plateau and budget at the same sample: the plateau wins.
+    assert_eq!(
+        decide_stop(&[s(10, 5), s(900, 5)], 900, 300).unwrap(),
         StopDecision::Plateau { last_growth_s: 10 }
     );
     // A plateau needs a full window since the start, however flat the start is.

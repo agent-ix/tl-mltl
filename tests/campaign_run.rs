@@ -257,3 +257,36 @@ fn a_malformed_fuzz_record_fails_the_member() {
     assert_eq!(report.members[0].status, Status::Fail);
     assert!(report.members[0].fuzz_runs.is_empty());
 }
+
+fn fuzz_member(command: &str) -> tempfile::TempDir {
+    let members = format!(
+        r#"{{"schemaVersion": "tl-mltl.campaign-members/v1", "tools": [], "members": [
+        {{"id": "f", "technique": "fuzz", "kind": "fuzz",
+         "command": ["sh", "-c", {command:?}],
+         "determinism": "seeded", "seed": "7", "evidence": {{"env": "EV"}}}}]}}"#
+    );
+    fixture(&members)
+}
+
+#[test]
+fn fuzz_evidence_with_a_wrong_schema_no_record_or_unreadable_file_fails() {
+    let run = |dir: tempfile::TempDir| {
+        let out = tempfile::tempdir().unwrap();
+        run_campaign(dir.path(), out.path(), &[])
+            .unwrap()
+            .members
+            .remove(0)
+    };
+    let wrong = run(fuzz_member(
+        r#"printf '{"schemaVersion":"tl-mltl.fuzz-run-record/v0","runs":[]}' > "$EV/r.json""#,
+    ));
+    assert_eq!(wrong.status, Status::Fail);
+    assert!(wrong.detail.unwrap().contains("Schema"));
+    let none = run(fuzz_member(r#"printf '{"result":"agree"}' > "$EV/r.json""#));
+    assert_eq!(none.status, Status::Fail);
+    let empty = run(fuzz_member("true"));
+    assert_eq!(empty.status, Status::Fail);
+    // A directory named *.json cannot be read as a file.
+    let unreadable = run(fuzz_member(r#"mkdir "$EV/r.json""#));
+    assert_eq!(unreadable.status, Status::Fail);
+}

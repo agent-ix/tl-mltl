@@ -189,14 +189,11 @@ pub fn parse_record(text: &str) -> Result<FuzzRecord, RecordError> {
     Ok(record)
 }
 
-/// True when the text carries this record's schema marker, so a reader knows
-/// to apply [`parse_record`] rather than treat the JSON as other evidence.
-pub fn is_record(text: &[u8]) -> bool {
-    serde_json::from_slice::<serde_json::Value>(text)
-        .ok()
-        .and_then(|v| v.get("schemaVersion")?.as_str().map(str::to_owned))
-        .is_some_and(|s| s == FUZZ_RECORD_SCHEMA)
-}
+/// libFuzzer's exit code on SIGINT (`InterruptExitCode` in FuzzerLoop.cpp).
+const INTERRUPT_EXIT: i32 = 72;
+/// Exit code a shell reports for a SIGINT-killed child (128 + 2); only seen
+/// when the driver runs libFuzzer through a shell.
+const SHELL_SIGINT_EXIT: i32 = 130;
 
 /// Classify a finished libFuzzer process. `stopped_by_plateau` is true when the
 /// driver itself sent the interrupt.
@@ -210,8 +207,10 @@ pub fn classify_run(exit_code: Option<i32>, log: &str, stopped_by_plateau: bool)
     } else {
         match exit_code {
             Some(0) => RunState::Completed,
-            Some(130) | None if stopped_by_plateau => RunState::Completed,
-            Some(130) => RunState::Cancelled,
+            Some(INTERRUPT_EXIT | SHELL_SIGINT_EXIT) | None if stopped_by_plateau => {
+                RunState::Completed
+            }
+            Some(INTERRUPT_EXIT | SHELL_SIGINT_EXIT) => RunState::Cancelled,
             _ => RunState::ToolError,
         }
     }

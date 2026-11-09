@@ -29,7 +29,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use crate::fuzz_record::{is_record, parse_record, RunRecord, RunState};
+use crate::fuzz_record::{parse_record, RunRecord, RunState};
 
 /// Schema of the members file.
 pub const MEMBERS_SCHEMA: &str = "tl-mltl.campaign-members/v1";
@@ -574,7 +574,7 @@ pub fn run_member(
         (Some(d), Some(spec)) => collect_evidence(d, spec),
         _ => Vec::new(),
     };
-    let (fuzz_runs, fuzz_problem) = read_fuzz_runs(ev_dir.as_deref(), &evidence);
+    let (fuzz_runs, fuzz_problem) = read_fuzz_runs(m, ev_dir.as_deref(), &evidence);
     let disagree = evidence
         .iter()
         .find(|e| e.result.as_deref().is_some_and(|r| r != "agree"));
@@ -610,24 +610,28 @@ pub fn run_member(
 /// Read the fuzz run records among a member's evidence files. A record that
 /// does not parse strictly, or a run that did not complete, fails the member.
 fn read_fuzz_runs(
+    m: &Member,
     dir: Option<&Path>,
     evidence: &[EvidenceFile],
 ) -> (Vec<RunRecord>, Option<String>) {
     let mut runs = Vec::new();
-    let Some(dir) = dir else {
+    let Some(dir) = dir.filter(|_| m.kind == "fuzz") else {
         return (runs, None);
     };
+    // Every evidence file of a fuzz member is a run record: a wrong schema or
+    // an unreadable file is an error, and a member with no record fails.
     for file in evidence {
-        let Ok(bytes) = fs::read(dir.join(&file.name)) else {
-            continue;
+        let text = match fs::read(dir.join(&file.name)) {
+            Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
+            Err(e) => return (Vec::new(), Some(format!("evidence {}: {e}", file.name))),
         };
-        if !is_record(&bytes) {
-            continue;
-        }
-        match parse_record(&String::from_utf8_lossy(&bytes)) {
+        match parse_record(&text) {
             Ok(record) => runs.extend(record.runs),
             Err(e) => return (Vec::new(), Some(format!("evidence {}: {e}", file.name))),
         }
+    }
+    if runs.is_empty() {
+        return (runs, Some("fuzz member wrote no run record".to_owned()));
     }
     let problem = runs
         .iter()
