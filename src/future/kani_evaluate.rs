@@ -163,16 +163,17 @@ impl<'a, 'b> Evaluator<'a, 'b> {
 /// `at`; `and`, `or`, `implies`, `equivalent`, `future`, `globally`, `until`
 /// and its `Release` negation) returns `Ok` or a typed error and never panics
 /// or overflows, for every verdict time over the full `u64` range, every
-/// operand pair, and every interval whose span is at most 3 (the span limit
-/// used by the proof). Time overflow (`time + offset > u64::MAX`) is reported
+/// operand pair, and every interval over the full `u32` range (the proof sets the
+/// span limit to 3, so wider intervals take the typed span-limit error). Time overflow (`time + offset > u64::MAX`) is reported
 /// as `EvaluationError::TimeOverflow`, never wrapped.
 ///
 /// Does not claim: that the recursion in `at` itself terminates or is
 /// panic-free for any formula shape (a direct depth-1 proof of `at` exhausted
 /// 12 GB of CBMC memory and was abandoned; recursion is bounded at run time by
 /// `max_recursion_depth` and `max_node_evaluations`, tested elsewhere), or the
-/// correctness of any verdict. The cover checks show the success path and the
-/// time-overflow refusal are both reachable.
+/// correctness of any verdict: the stub returns an arbitrary verdict, so this is
+/// a no-panic and typed-error proof only. The cover checks show reachability of
+/// the success path and the time-overflow refusal, not correctness.
 #[kani::proof]
 #[kani::stub(Evaluator::at, Evaluator::stub_at)]
 #[kani::unwind(6)]

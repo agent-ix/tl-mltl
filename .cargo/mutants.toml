@@ -22,6 +22,6 @@ timeout_multiplier = 3.0
 
 # Equivalent mutants (one-line reason each).
 exclude_re = [
-    # Verifier-only code under cfg(kani): never compiled by cargo test, so no test can observe a mutation of it.
-    "kani_proofs",
+    # The inline cfg(kani) harness in horizon.rs is never compiled by cargo test, so no test can observe a mutation of it.
+    "replace kani_proofs::horizon_bound_addition_matches_checked_add with",
 ]

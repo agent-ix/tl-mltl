@@ -91,13 +91,10 @@ lint:
 	$(CARGO) clippy --all-targets --all-features -- -D warnings
 	$(CI_GUARD) record lint
 
-# The proof is verifier-only and does not run in `cargo test`; keep its exact
-# harness name in a local CI gate so a renamed private primitive cannot rot it.
+# The proofs are verifier-only and do not run in `cargo test`; `cargo kani --lib`
+# runs every harness, so a renamed one cannot rot.
 .PHONY: kani-check
 kani-check:
-	$(CARGO) kani --lib \
-		--harness future::horizon::kani_proofs::horizon_bound_addition_matches_checked_add \
-		--exact --unwind 4 --output-format terse
 	$(CARGO) kani --lib -Z stubbing --output-format terse
 	$(CI_GUARD) record kani-check
 
