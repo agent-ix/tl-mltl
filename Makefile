@@ -93,10 +93,13 @@ lint:
 	$(CI_GUARD) record lint
 
 # The proofs are verifier-only and do not run in `cargo test`; `cargo kani --lib`
-# runs every harness, so a renamed one cannot rot.
+# runs every harness; the gate instead runs each name in scripts/kani-harnesses.txt
+# with --exact, and tests/kani_harnesses.rs fails when that list and the
+# #[kani::proof] functions disagree, so a renamed or missing one fails.
 .PHONY: kani-check
 kani-check:
-	$(CARGO) kani --lib -Z stubbing --output-format terse
+	$(CARGO) test --test kani_harnesses
+	xargs -n1 scripts/kani-gate.sh < scripts/kani-harnesses.txt
 	$(CI_GUARD) record kani-check
 
 .PHONY: test

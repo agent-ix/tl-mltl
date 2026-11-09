@@ -191,7 +191,10 @@ mod kani_proofs {
         let expected = child
             .checked_add(u64::from(bound))
             .ok_or(HorizonError::ArithmeticOverflow { node: NodeId(0) });
-        assert_eq!(add_bound(NodeId(0), bound, child), expected);
+        let actual = add_bound(NodeId(0), bound, child);
+        kani::cover!(actual.is_ok() && bound > 0, "non-trivial sum reachable");
+        kani::cover!(actual.is_err(), "overflow refusal reachable");
+        assert_eq!(actual, expected);
     }
 }
 

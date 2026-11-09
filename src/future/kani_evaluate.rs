@@ -158,13 +158,14 @@ impl<'a, 'b> Evaluator<'a, 'b> {
     }
 }
 
-/// Proves (compositional, with `Evaluator::at` stubbed to return an arbitrary
-/// verdict or a typed error): every operator combinator (`not` is inline in
-/// `at`; `and`, `or`, `implies`, `equivalent`, `future`, `globally`, `until`
+/// Proves (compositional, no-panic and typed-error only, with `Evaluator::at`
+/// stubbed to return an arbitrary verdict or a typed error): every operator
+/// combinator (`not` is inline in `at`; `and`, `or`, `implies`, `equivalent`, `future`, `globally`, `until`
 /// and its `Release` negation) returns `Ok` or a typed error and never panics
 /// or overflows, for every verdict time over the full `u64` range, every
-/// operand pair, and every interval over the full `u32` range (the proof sets the
-/// span limit to 3, so wider intervals take the typed span-limit error). Time overflow (`time + offset > u64::MAX`) is reported
+/// operand pair, and every interval over the full `u32` range. The proof sets
+/// the span limit to 3; wider intervals are not excluded, they take the typed
+/// span-limit error. Time overflow (`time + offset > u64::MAX`) is reported
 /// as `EvaluationError::TimeOverflow`, never wrapped.
 ///
 /// Does not claim: that the recursion in `at` itself terminates or is
@@ -177,7 +178,7 @@ impl<'a, 'b> Evaluator<'a, 'b> {
 #[kani::proof]
 #[kani::stub(Evaluator::at, Evaluator::stub_at)]
 #[kani::unwind(6)]
-fn evaluator_combinators_never_panic() {
+fn evaluator_combinators_with_stubbed_at_never_panic() {
     let nodes = [Node::new(NodeKind::True)];
     let formula = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(0), &nodes).unwrap();
     let trace: &[Vec<PropositionId>] = &[];

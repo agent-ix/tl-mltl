@@ -51,7 +51,7 @@ the two. It is a floor, not a target. Coverage reports exclude CI-plumbing code 
 
 ## Kani proofs (TL-232)
 
-`make kani-check` runs every harness with `cargo kani --lib -Z stubbing`; `-Z stubbing` is an unstable
+`make kani-check` first runs `cargo test --test kani_harnesses`, which fails when `scripts/kani-harnesses.txt` and the `#[kani::proof]` functions disagree by name or a harness lacks a stated non-claim or a cover check. It then runs each listed harness through `scripts/kani-gate.sh` with `cargo kani --lib -Z stubbing --harness NAME --exact`; the script fails on any harness that is not verified or has an unsatisfied cover property (Kani itself exits 0 in that case). `-Z stubbing` is an unstable
 Kani feature used only by the combinator proof. It is part of `make ci`. Tool versions are inputs
 (Kani Rust Verifier 0.68.0, CBMC 6.11.0). Each harness doc comment states the bounds it covers and
 what it does not claim; `kani::cover!` checks show the paths are reachable, so no proof is vacuous, and
@@ -62,7 +62,7 @@ unwinding assertions are on.
 | `horizon_bound_addition_matches_checked_add` (existing) | the bound addition equals `checked_add` for all `u32` bounds and `u64` operands |
 | `horizon_temporal_lookahead_is_exact_or_typed_overflow` | `node_lookahead` returns the exact sum or the typed overflow for every temporal operator, full `u32` interval, full `u64` operand values |
 | `evaluator_temporal_endpoints_full_range` | the evaluator span computation never overflows, for every `start <= end` over `u32` and every span limit |
-| `evaluator_combinators_never_panic` | with `Evaluator::at` stubbed, every combinator (and, or, implies, equivalent, future, globally, until, release) returns `Ok` or a typed error and does not panic, for every `u64` verdict time and every interval; wider intervals take the span-limit error. The stub returns an arbitrary verdict, so this proves no-panic and typed errors only, not that any verdict is correct; the cover checks show reachability, not correctness |
+| `evaluator_combinators_with_stubbed_at_never_panic` | no-panic and typed errors only, with `Evaluator::at` stubbed: every combinator (and, or, implies, equivalent, future, globally, until, release) returns `Ok` or a typed error and does not panic, for every `u64` verdict time and every interval; wider intervals take the span-limit error. The stub returns an arbitrary verdict, so no verdict is proved correct and `at` itself is not covered; the cover checks show reachability, not correctness |
 | `closing_prefix_atomic_verdict_is_stable` | an open-prefix proposition lookup is decided exactly when `time < len` and a decided answer is unchanged by appending an instant |
 | `preflight_never_panics_on_short_input` | the wire lexer `preflight` for ASCII input of 0 to 4 bytes, both byte ceilings, depth ceiling 1 |
 | `identity_scanners_never_panic_on_short_input` | `scan_string` and `scan_value` for any input of 0 to 16 bytes and any start offset |
