@@ -51,7 +51,7 @@ the two. It is a floor, not a target. Coverage reports exclude CI-plumbing code 
 
 ## Kani proofs (TL-232)
 
-`make kani-check` first runs `cargo test --test kani_harnesses`, which fails when `scripts/kani-harnesses.txt` and the `#[kani::proof]` functions disagree by name or a harness lacks a stated non-claim or a cover check. It then runs each listed harness through `scripts/kani-gate.sh` with `cargo kani --lib -Z stubbing --harness NAME --exact`; the script fails on any harness that is not verified or has an unsatisfied cover property (Kani itself exits 0 in that case). `-Z stubbing` is an unstable
+`make kani-check` first runs `cargo test --test kani_harnesses`, which fails when `scripts/kani-harnesses.txt` and the `#[kani::proof]` functions disagree by name or a harness lacks a stated non-claim or a cover check. It then runs each listed harness through `scripts/kani-gate.sh` with `cargo kani --lib -Z stubbing --harness NAME --exact`; the script fails on any harness that is not verified or has an unsatisfied cover property (Kani itself exits 0 in that case). When `TL_MLTL_EVIDENCE_DIR` is set (a `make campaign-run` of the `kani-horizon-bound` member), the script also writes a per-proof record with a distinct outcome state, the Kani and CBMC versions, cover counts, the harness bounds and the command that reproduces the run; the campaign report carries them as `kaniProofs`. `-Z stubbing` is an unstable
 Kani feature used only by the combinator proof. It is part of `make ci`. Tool versions are inputs
 (Kani Rust Verifier 0.68.0, CBMC 6.11.0). Each harness doc comment states the bounds it covers and
 what it does not claim; `kani::cover!` checks show the paths are reachable, so no proof is vacuous, and

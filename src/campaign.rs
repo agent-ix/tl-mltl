@@ -30,6 +30,7 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use crate::fuzz_record::{parse_record, RunRecord, RunState};
+use crate::kani_record::{self, ProofOutcome, ProofRecord};
 
 /// Schema of the members file.
 pub const MEMBERS_SCHEMA: &str = "tl-mltl.campaign-members/v1";
@@ -366,6 +367,10 @@ pub struct MemberResult {
     /// crashes) read from the member's fuzz run record.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub fuzz_runs: Vec<RunRecord>,
+    /// Per-proof outcomes (harness, outcome, Kani and CBMC versions, covers,
+    /// bounds) read from the member's Kani proof records.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub kani_proofs: Vec<ProofRecord>,
 }
 
 /// Source identity a report is bound to.
@@ -506,6 +511,7 @@ fn blank(m: &Member, status: Status, detail: String) -> MemberResult {
         evidence: Vec::new(),
         elapsed_ms: 0,
         fuzz_runs: Vec::new(),
+        kani_proofs: Vec::new(),
     }
 }
 
@@ -575,6 +581,8 @@ pub fn run_member(
         _ => Vec::new(),
     };
     let (fuzz_runs, fuzz_problem) = read_fuzz_runs(m, ev_dir.as_deref(), &evidence);
+    let (kani_proofs, kani_problem) = read_kani_proofs(repo, m, ev_dir.as_deref(), &evidence);
+    let fuzz_problem = fuzz_problem.or(kani_problem);
     let disagree = evidence
         .iter()
         .find(|e| e.result.as_deref().is_some_and(|r| r != "agree"));
@@ -603,6 +611,7 @@ pub fn run_member(
         evidence,
         elapsed_ms,
         fuzz_runs,
+        kani_proofs,
         ..blank(m, Status::Pass, String::new())
     }
 }
@@ -638,6 +647,58 @@ fn read_fuzz_runs(
         .find(|r| r.state != RunState::Completed)
         .map(|r| format!("fuzz run {} seed {}: {:?}", r.target, r.seed, r.state));
     (runs, problem)
+}
+
+/// Read the Kani proof records among a member's evidence files. A record that
+/// does not parse strictly, or a proof that did not verify, fails the member;
+/// each non-verified outcome keeps its own name in the failure detail.
+fn read_kani_proofs(
+    repo: &Path,
+    m: &Member,
+    dir: Option<&Path>,
+    evidence: &[EvidenceFile],
+) -> (Vec<ProofRecord>, Option<String>) {
+    let mut proofs = Vec::new();
+    let Some(dir) = dir.filter(|_| m.kind == "kani") else {
+        return (proofs, None);
+    };
+    for file in evidence {
+        let text = match fs::read(dir.join(&file.name)) {
+            Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
+            Err(e) => return (Vec::new(), Some(format!("evidence {}: {e}", file.name))),
+        };
+        match kani_record::parse_record(&text) {
+            Ok(record) => proofs.extend(record.proofs),
+            Err(e) => return (Vec::new(), Some(format!("evidence {}: {e}", file.name))),
+        }
+    }
+    if proofs.is_empty() {
+        return (proofs, Some("kani member wrote no proof record".to_owned()));
+    }
+    if let Some(missing) = expected_harnesses(repo)
+        .into_iter()
+        .find(|h| !proofs.iter().any(|p| &p.harness == h))
+    {
+        return (proofs, Some(format!("kani proof {missing}: no record")));
+    }
+    let problem = proofs
+        .iter()
+        .find(|p| p.outcome != ProofOutcome::Verified)
+        .map(|p| format!("kani proof {}: {:?}", p.harness, p.outcome));
+    (proofs, problem)
+}
+
+/// Harness names the member must have a record for: the lines of
+/// `scripts/kani-harnesses.txt` in `repo`. A repository without the list
+/// requires none.
+fn expected_harnesses(repo: &Path) -> Vec<String> {
+    fs::read_to_string(repo.join("scripts/kani-harnesses.txt"))
+        .unwrap_or_default()
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(str::to_owned)
+        .collect()
 }
 
 /// Bind a report to the checkout at `repo`.
@@ -778,6 +839,25 @@ pub fn compare_member(old: &MemberResult, new: &MemberResult) -> Vec<String> {
     if key(old) != key(new) {
         d.push(format!(
             "{}: fuzz run targets, seeds or states differ",
+            old.id
+        ));
+    }
+    let proofs = |m: &MemberResult| -> Vec<(String, ProofOutcome, String, String)> {
+        m.kani_proofs
+            .iter()
+            .map(|p| {
+                (
+                    p.harness.clone(),
+                    p.outcome,
+                    p.kani_version.clone(),
+                    p.cbmc_version.clone(),
+                )
+            })
+            .collect()
+    };
+    if proofs(old) != proofs(new) {
+        d.push(format!(
+            "{}: kani proof harnesses, outcomes or tool versions differ",
             old.id
         ));
     }
