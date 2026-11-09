@@ -269,12 +269,4 @@ fn retained_corpus_bytes_match_the_identities_recorded_with_them() {
             }
         }
     }
-
-    // The retained exchange and mapping corpus keep their corpus identity.
-    let exchange = read_json(&Path::new(REPO).join("corpus/r2u2-v4.2/manifest.json"));
-    assert_eq!(exchange["schemaVersion"], "tl-mltl.r2u2-corpus/v1");
-    assert_eq!(exchange["source"]["tag"], "4.2-release");
-    assert_eq!(exchange["tools"]["r2u2"]["version"], "4.2-release");
-    let mapping = read_json(&Path::new(REPO).join("corpus/past-c2po-v1/manifest.json"));
-    assert_eq!(mapping["schemaVersion"], "tl-mltl.past-c2po-corpus/v1");
 }

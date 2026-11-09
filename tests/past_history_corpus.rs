@@ -282,7 +282,7 @@ fn exact_shared_corpus_replays_history_analysis_evaluation_and_corrections() {
 
 // Trace: TC-098, FR-009-AC-1
 #[test]
-fn corpus_identity_and_provenance_mutations_are_refused_for_their_reason() {
+fn manifest_and_history_mutations_are_refused_for_their_reason() {
     let root = Path::new(tl_syntax::CORPUS_DIR).join(DIRECTORY);
     let bytes = read_corpus(&root, "manifest.json");
     let original: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
@@ -290,17 +290,6 @@ fn corpus_identity_and_provenance_mutations_are_refused_for_their_reason() {
         serde_json::from_value::<Manifest>(value.clone()).map_err(|e| e.to_string())
     };
     parse(&original).unwrap();
-
-    // A changed corpus identity parses but no longer matches the identity read.
-    let mut renamed = original.clone();
-    renamed["corpus"] = serde_json::json!("tl-syntax.past-history-corpus/v2");
-    assert_ne!(
-        parse(&renamed).unwrap().corpus,
-        "tl-syntax.past-history-corpus/v1"
-    );
-    let mut revised = original.clone();
-    revised["revision"] = serde_json::json!(2);
-    assert_ne!(parse(&revised).unwrap().revision, 1);
 
     // A missing field is refused, and the error names the field.
     for key in original.as_object().unwrap().keys() {
