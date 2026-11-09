@@ -40,3 +40,22 @@ so past-time parity is evidenced for those 42 cases only. Future: 1536 of 1536
 case rows agree.
 R2U2 prints one tuple per range of equal truth (aggregation), so the future
 comparison expands each tuple over the positions it covers.
+
+## Promotion of generated counterexamples
+
+Generated inputs are never conformance cases. Fuzz seeds and artifacts
+(`fuzz/corpus`, `fuzz/artifacts`) and proptest persistence files
+(`proptest-regressions`) are not named by any corpus manifest, are not byte
+copies of a canonical corpus file, and are not part of any conformance total
+(`tests/generated_inputs_not_conformance.rs`).
+
+A generated disagreement becomes a regression fixture only as a record with:
+
+- a minimised reproducer: profile, formula, trace and position;
+- an expected verdict confirmed by the independent `tl-oracle`, never taken from
+  the evaluator that disagreed;
+- provenance: the generator that found it, the generated input it came from, and
+  `"minimised": true`.
+
+A record missing any part, or whose expected verdict differs from the oracle's,
+is refused.
