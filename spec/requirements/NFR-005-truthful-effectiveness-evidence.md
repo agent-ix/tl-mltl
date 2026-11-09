@@ -18,56 +18,51 @@ relationships:
 
 ## Statement
 
-The verification-effectiveness campaign shall reproduce each declared finite
-population and result from exact identities while preserving exclusions,
-non-conclusive states, limitations, and human authority.
+The verification-effectiveness campaign shall reproduce each result from a recorded
+source and tool versions while reporting every non-passing state and limitation,
+and shall leave release and qualification decisions to humans.
 
 ## Scope
 
-Applies to every MRS-003 run, campaign, proof, summary, and retained
-artifact. It constrains evidence
-claims and does not alter temporal semantics.
+Applies to every property run, fuzz run, mutation run, Kani proof, and campaign
+report in MRS-003. It constrains evidence claims and does not alter temporal
+semantics.
 
 ## Rationale
 
-Generated testing is easy to overstate: a count can hide an empty valid domain,
-a fuzz plateau can hide changed instrumentation, a mutation score can omit
-survivors or timeouts, and a bounded proof can hide assumptions or unwind
-failures. Complete populations and immutable identities make those failures
-reviewable.
+Generated testing is easy to overstate: a count can hide an empty domain, a fuzz
+plateau can hide a changed build, a kill rate can omit survivors and timeouts, and
+a bounded proof can hide its assumptions or an unfinished unwind. Recorded seeds,
+raw counts, and stated bounds make those failures reviewable.
 
 ## Measurement and Evaluation
 
 | Metric | Target | Threshold | Method |
 |---|---|---|---|
-| Quire criteria classified exactly once | complete exported population | 100% | Test |
-| Property-law tests with a recorded seed, case count and discriminating oracle | every FR-020 property law | 100% | Test |
-| Fuzz repetitions missing finite budgets, seeds, snapshots, stop reason, or retained corpus/crash identity | 0 | 0 | Test |
-| Selected mutants missing identity, execution state, or missed/timeout disposition | 0 | 0 | Test |
-| Bounded-proof claims missing assumptions, bounds, unwind/cover results, toolchain, or non-claims | 0 | 0 | Test |
-| Domain/shared states collapsed or excluded from reported populations | 0 | 0 | Test |
-| Current claims backed only by closed-unmerged or stale evidence | 0 | 0 | Test |
-| New first-party non-Rust producer, validator, adapter, or audit path | 0 | 0 | Test |
+| Property-law tests with a recorded seed, case count, and discriminating oracle | every FR-020 law | 100% | Test |
+| Fuzz runs missing a seed, budget, stop reason, or coverage record | 0 | 0 | Test |
+| Surviving mutants without a listed reason | 0 | 0 | Test |
+| Kani harnesses missing stated bounds or non-claims | 0 | 0 | Test |
+| Campaign members reported as pass when not run, unavailable, or planned | 0 | 0 | Test |
 | Automated source-release, qualification, certification, or monitor decisions | 0 | 0 | Test |
 
 ## Verification
 
-Rust validators enumerate each finite population and verify schema, identity,
-path, resource, state, and claim invariants. Mutation probes remove or
-change one denominator, oracle, budget, stop, survivor, bound, assumption,
-unwind, status, or artifact identity at a time and require the owning control to
-name the defect. Quire reports static coverage. Independent review evaluates limitations and claim scope; only the
-named human authority decides release.
+Rust tests check the recorded seeds and counts, the campaign report, and the
+inventory of evidence-bearing make targets and fuzz targets. Seeded faults and
+weakened test selections confirm the controls can fail. Independent review
+evaluates limitations and claim scope, and only the named human authority decides
+release.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |---|---|---|
-| NFR-005-AC-1 | Repeating a deterministic census or replay with identical source, requirement, domain/population, seed, toolchain, configuration, environment, and artifact identities produces byte-identical ordered records; stochastic observations retain every repetition separately. | Test (TC-107, TC-114, TC-121, TC-127) |
-| NFR-005-AC-2 | Deleting, duplicating, reclassifying, restamping, collapsing, or substituting any criterion, run, mutant, proof, outcome, bound, assumption, artifact, plan, build profile, limitation, or dependency makes its owning gate red and names the affected identity. | Test (TC-118, TC-120, TC-127, TC-128) |
-| NFR-005-AC-3 | Every report states its exact finite population, exclusions, environment, result states, retention identity, and limitations before ratios and makes no automated release, qualification, certification, source-language, or monitor claim. | Test (TC-122) |
+| NFR-005-AC-1 | Repeating a deterministic run at the same source, seed, toolchain, and configuration reproduces its results, a replay of a retained campaign report refuses a moved or dirty source, and stochastic runs keep every repetition separately. | Test (TC-107, TC-114, TC-121, TC-127) |
+| NFR-005-AC-2 | A dropped campaign member, an unregistered evidence target, a collapsed non-pass state, a weakened test selection, or a seeded fault makes its owning check fail and names what changed. | Test (TC-118, TC-120, TC-127) |
+| NFR-005-AC-3 | Every report states its populations, seeds, tool versions, result states, and limitations before any ratio, and makes no automated release, qualification, certification, or monitor claim. | Test (TC-122) |
 
 ## Dependencies
 
-Constrains FR-020 through FR-023 and relies on the MRS-002 corpus lifecycle
-and applicable human authority.
+Constrains FR-020 through FR-023 and relies on the MRS-002 corpus boundary between
+generated and canonical inputs.

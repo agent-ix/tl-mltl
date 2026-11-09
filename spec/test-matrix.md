@@ -22,8 +22,7 @@ verification catalog, and the method is the classification:
 - `unit-testing`, `integration-testing`, `fuzzing`: example-only. Fixed inputs
   with expected outputs, or a bounded fuzz run, assert the criterion; no tagged
   property test does.
-- `Inspection`: excluded from property testing. FR-029-AC-1 and AC-3 state documentary
-  facts (a dependency route, the absence of a claim) with no input domain.
+- `Inspection`: excluded from property testing. No active criterion uses it.
 - Rows still `Test` with no tagged test (FR-008 through FR-010, FR-021 through
   FR-023, NFR-004, NFR-005, FR-020-AC-5) are planned, unbacked rows. They carry
   no classification until a test exists to classify. FR-020-AC-1, AC-2 and AC-4
@@ -31,7 +30,7 @@ verification catalog, and the method is the classification:
   `tests/finite_oracle.rs` (exhaustive and sampled sweeps against the oracle) and
   `tests/boundary_corpus.rs`; FR-020-AC-3 is example-only (seeded-fault
   controls).
-- `Withdrawn`: FR-019-AC-1 and AC-2.
+- `Withdrawn`: FR-019-AC-1 and AC-2, FR-009-AC-6, FR-023-AC-5, and FR-029-AC-1 and AC-3.
 
 The Measurement and Evaluation rows (`NFR-*-M-*`) are derived counts over the
 criteria above and carry no classification of their own. Unit and property
@@ -55,7 +54,7 @@ until tagged.
 | FR-019 | FR-019-AC-1, FR-019-AC-2 | TC-085 | ⛔ retired — superseded by quire-mltl FR-002 (TL-180); TL-179 removed TC-085's backing test with `wire::observation` |
 | FR-027 | FR-027-AC-1 through FR-027-AC-3 | TC-086, TC-138 | ✅ implemented |
 | FR-028 | FR-028-AC-1 through FR-028-AC-3 | TC-087, TC-138, TC-139 | ✅ implemented |
-| FR-029 | FR-029-AC-1 through FR-029-AC-3 | TC-088, TC-089, TC-140 | ✅ implemented |
+| FR-029 | FR-029-AC-2 (FR-029-AC-1 and FR-029-AC-3 withdrawn) | TC-089, TC-140 | ✅ implemented |
 
 FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 [TM-004](infinite-trace-test-matrix.md), the accepted TL-13 provider matrix.
@@ -116,7 +115,7 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 | TC-085 | Bind QObs C00 and preserve temporal dispatch while refusing repair and query semantics | Integration | P0 | FR-019-AC-1, FR-019-AC-2 | ⛔ retired — FR-019 is superseded by quire-mltl FR-002 (TL-180); its test was removed with `tests/tc_084_temporal_owner_wire.rs` (TL-179) |
 | TC-086 | Compare existing bounded API and golden bytes in default and feature-enabled builds | Integration | P0 | FR-027-AC-1, FR-027-AC-3 | ✅ implemented |
 | TC-087 | Check feature-off capability absence and bounded result/CLI byte stability | Integration | P0 | FR-028-AC-1, FR-028-AC-3 | ✅ implemented |
-| TC-088 | Inspect Linear dependency order and TL-215 acceptance gate before implementation or qualification | Inspection | P1 | FR-029-AC-1, FR-029-AC-3 | ✅ implemented |
+| TC-088 | Inspect Linear dependency order and TL-215 acceptance gate before implementation or qualification | Inspection | P1 | FR-029-AC-1, FR-029-AC-3 | ⛔ retired — obsolete process gate: the dependency route it inspected is complete, and the feature-off `unsupported` behavior is covered by FR-028 (TC-087) |
 | TC-089 | Bind infinite evidence to the exact provider, TL profile, graph and clock identities | Integration | P0 | FR-029-AC-2 | ✅ implemented |
 | TC-090 | Confirm every retained TL-owned wire contract (`trace/v1`, `command/v1`, `position-history/v1`, `history-requirement/v1`, `past-evaluation/v1`) publishes immutable schema bytes/digest, strictly rejects malformed/noncanonical input under enforced `OwnerLimits`, and that removing the QObs-coupled request/result/mapping layer (TL-179) leaves existing future/past/CLI/legacy-mapping behavior unchanged | Integration | P1 | FR-018-AC-1, FR-018-AC-2, FR-018-AC-3 | ✅ implemented |
 | TC-130 | Static inspector rejects each of `SHELL`, `.SHELLFLAGS`, `MAKEFLAGS`, `.ONESHELL:`, `.DEFAULT:`, `.IGNORE:`, `.SILENT:`, a `-`-prefixed recipe line, `\|\| true`/`\|\| :`, a stderr-to-`/dev/null` redirect, `$(eval`, a bare `;` command separator (including a quoted-value/trailing-comment MAKEFLAGS variation and a check-and-record chain), and a surface inside a recursively scanned `include`d file; a clean control and `for`/`while`/`if`/`case` control-flow semicolons are accepted without a false positive | Unit | P0 | NFR-006-AC-1 | ✅ implemented |

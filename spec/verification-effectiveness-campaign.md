@@ -7,39 +7,40 @@ relationships:
     type: depends_on
   - target: ix://agent-ix/tl-mltl/MRS-002
     type: depends_on
-  - target: ix://agent-ix/tl-mltl/issues/39
-    type: references
 ---
 
 # MLTL verification-effectiveness and bounded-proof campaign
 
 ## Purpose
 
-This specification defines how the TL ecosystem measures property-domain
-coverage, retained fuzz campaigns, mutation effectiveness, and bounded Kani
-proofs without converting test counts, elapsed fuzz time, mutation ratios, or
-one bounded proof into claims about unbounded semantic correctness.
+This specification defines how the TL ecosystem measures how well its tests catch
+defects: property laws checked against an independent oracle, fuzz runs, a
+mutation kill rate, and bounded Kani proofs. It does not convert test counts, fuzz
+time, a kill rate, or one bounded proof into a claim of unbounded semantic
+correctness.
 
 The TL crates are Rust representations, parsers, rewriters, reference
-evaluators, and mapping infrastructure. This campaign measures those
-components; it does not create a TL authoring language or qualify an external
-monitor. Every obligation here is TL-internal: the campaign has no
-cross-repository producer dependency, consistent with the TL-175 ruling that
-each TL-* crate stays independent of the agent-ix/Quire ecosystem.
+evaluators, and mapping infrastructure. This campaign measures those components;
+it creates no authoring language and qualifies no external monitor. Every
+obligation here is TL-internal, consistent with the TL-175 ruling that each TL-*
+crate stays independent of the agent-ix/Quire ecosystem.
 
 ## Scope
 
 ### In scope
 
-- A closed criterion-to-property census grounded from exact Quire exports.
-- Reproducible generated and exhaustive property runs with independent oracles,
-  explicit domains, seeds, discard counts, shrinking, and limitations.
-- Budgeted cargo-fuzz campaigns with retained starting/final corpora, crashes,
-  coverage observations, stopping reasons, and a bounded plateau diagnostic.
-- A deterministic Rust mutation-testing pilot with a pre-run population,
-  conclusive and non-conclusive states, and reviewed survivor dispositions.
-- Narrow Kani proof claims that bind exact harnesses, assumptions, bounds,
-  unwind checks, solver/toolchain identities, outcomes, and counterexamples.
+- Property laws and exhaustive small-scope sweeps over the evaluators, each
+  with a recorded seed or enumerated domain, compared with the independent
+  oracle, and with seeded-fault controls.
+- Fuzz targets at byte-oriented and structured-input boundaries, each run under
+  several seeds with a fixed budget and a plateau stop, with every crash turned
+  into a regression test.
+- A cargo-mutants kill rate with thresholds, a rule that the unmutated baseline
+  is green, and a listed reason for every surviving mutant.
+- Kani harnesses that state their bounds and non-claims, guard against vacuous
+  proofs, and add no runtime dependency.
+- One campaign report that records tool versions, seeds, and outcomes per
+  member, and replays against the recorded source.
 
 ### Out of scope
 
@@ -50,66 +51,39 @@ each TL-* crate stays independent of the agent-ix/Quire ecosystem.
 - Effectiveness measurement of the native-correspondence bridge, which
   `quire-mltl` owns under
   [ADR-002](./decisions/ADR-002-native-correspondence-lives-in-quire-mltl.md).
-- Treating a property count, fuzz duration, plateau, no-crash result, mutation
-  score, or bounded proof as source release, qualification, certification, or
-  human approval.
-- Loom for the non-concurrent semantic core, or adopting Verus, concolic
-  execution, a foreign runtime, or a repository-local assurance framework.
+- Treating a property count, fuzz duration, plateau, no-crash result, kill rate,
+  or bounded proof as source release, qualification, certification, or human
+  approval.
+- Loom for the non-concurrent semantic core, Verus, concolic execution, a foreign
+  runtime, or a repository-local assurance framework.
 - Executing R2U2, C2PO, FRET/Electron, Java, Node, or another foreign runtime in
   a production or qualification path.
 
 ## Requirements architecture
 
-[FR-020](./requirements/FR-020-property-obligation-ledger.md) owns the evaluator property laws, their seeds and case counts, and the independent-oracle comparison.
-[FR-021](./requirements/FR-021-budgeted-fuzz-campaigns.md) owns fuzz campaign
-budgets, stopping, plateau, and crash handling.
-[FR-022](./requirements/FR-022-measured-mutation-campaign.md) owns mutation
-population identity, execution states, scores, and survivor disposition.
-[FR-023](./requirements/FR-023-bounded-kani-claims.md) owns bounded Kani claim
-semantics. [NFR-005](./requirements/NFR-005-truthful-effectiveness-evidence.md)
-constrains reproducibility, retention, and claim language, and TM-003 assigns
-planned evidence.
+[FR-020](./requirements/FR-020-property-obligation-ledger.md) owns the evaluator
+property laws, their seeds, and the independent-oracle comparison.
+[FR-021](./requirements/FR-021-budgeted-fuzz-campaigns.md) owns fuzz targets,
+seeds, budgets, the plateau stop, and crash handling.
+[FR-022](./requirements/FR-022-measured-mutation-campaign.md) owns the mutation
+kill rate, thresholds, and survivor reasons.
+[FR-023](./requirements/FR-023-bounded-kani-claims.md) owns the Kani harness
+list and what a bounded proof may claim.
+[NFR-005](./requirements/NFR-005-truthful-effectiveness-evidence.md) constrains
+reproducibility and claim language, and TM-003 assigns evidence.
 
-## Admission and dependency order
+## How the techniques relate
 
-Specification and review may proceed while parent work is pending.
+Property laws and sweeps are the baseline suite. Fuzzing covers inputs the
+laws do not generate, and each crash it finds becomes a committed regression
+test. Mutation testing measures whether that suite would notice a defect, and a
+survivor is either killed by a new test, recorded as equivalent with a reason, or
+routed to a Kani proof. Kani checks all inputs within stated bounds for the
+arithmetic and panic-freedom properties a runtime monitor depends on. Generated
+inputs stay outside the canonical corpus unless promoted under FR-009. A bounded
+proof of a primitive is never widened to its caller or to the evaluator as a
+whole.
 
-No campaign implementation begins until MRS-002 and its PLAN-007 bundle are
-independently accepted and landed and MRS-003 itself is human-accepted at an
-exact reviewed revision. Past/history obligations remain blocked on tl-syntax
-#38 plus its routed evaluator support. That is the campaign's only external
-resume condition, and it is TL-internal. A blocked row earns no coverage or
-effectiveness credit.
-
-Implementation follows this order:
-
-1. Each owning repository runs its FR-020 property laws as tagged
-   generated-input tests with recorded seeds and case counts, using Quoin
-   `spec-correctness` to ground criteria; the already merged tl-mltl property
-   test is a baseline, not the full law set.
-2. Owners run FR-021 only at reviewed byte-oriented or structured-input fuzz
-   boundaries selected from the evidence catalog. Generated inputs remain
-   outside the canonical MRS-002 corpus unless promoted under FR-009.
-3. Owners may run FR-022 against an exact stable-green baseline and immutable
-   selected mutant population, in parallel with applicable fuzz campaigns, then
-   route every missed or timed-out mutant by reviewed priority.
-4. Owners select FR-023 harnesses from property gaps, retained fuzz
-   plateaus/counterexamples, mutation dispositions, or an exact reviewed
-   bounded-arithmetic proposition. Matrix priority orders admitted candidates
-   but is not by itself a Kani-candidate trigger. A primitive proof cannot be
-   widened to its caller or to the evaluator as a whole.
-
-Sibling implementation remains tracked by tl-syntax #26, tl-parse #25, and
-tl-rewrite #27. Historical tl-mltl #31 supplies the landed property baseline and
-bounded-Kani feasibility result but explicitly excluded immediate fuzzing and
-mutation; it is not repurposed as the M5 implementation ticket. PLAN-008 is
-mirrored by tl-mltl #58, #56, #60, #61, #59, #57, and #62 in task order. Every
-new ticket remains blocked until the exact specification and predecessor gates
-recorded by the plan are satisfied. Any changed semantics discovered by those
-tickets returns to `/specify` and `/spec-review` before implementation.
-
-Each repository owns and versions its own native result schemas. Identities in
-this MRS use `tl-mltl.*` only for tl-mltl examples; sibling repositories use
-their own namespaces while preserving the common required fields. This campaign
-does not make tl-mltl the owner of a cross-repository runtime, schema package,
-or evidence framework.
+Any changed semantics discovered while running these techniques returns to
+`/specify` and `/spec-review` before implementation. Each repository versions
+its own result files.

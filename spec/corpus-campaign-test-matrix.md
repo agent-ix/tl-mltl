@@ -13,40 +13,40 @@ relationships:
 
 | Functional Req | Acceptance Criteria | Test Cases | Status |
 |---|---|---|---|
-| FR-008 | FR-008-AC-1 through FR-008-AC-5 | TC-091 through TC-097, TC-099, TC-101 | 🚧 planned |
-| FR-009 | FR-009-AC-1 through FR-009-AC-6 | TC-098, TC-099, TC-101, TC-102 | 🚧 planned |
-| FR-010 | FR-010-AC-1 through FR-010-AC-4 | TC-093, TC-100, TC-102 | 🚧 planned |
+| FR-008 | FR-008-AC-1 through FR-008-AC-5 | TC-092 through TC-097, TC-099, TC-101 | 🚧 planned |
+| FR-009 | FR-009-AC-1 through FR-009-AC-5 (FR-009-AC-6 withdrawn) | TC-098, TC-099, TC-101 | 🚧 planned |
+| FR-010 | FR-010-AC-1 through FR-010-AC-4 | TC-093, TC-100, TC-101 | 🚧 planned |
 
 ## Non-Functional Requirement Coverage
 
 | Non-Functional Req | Verification Method | Evidence/Test Cases | Status |
 |---|---|---|---|
-| NFR-004 | deterministic census/replay, mutation, and claim-boundary checks | TC-099 through TC-103 | 🚧 planned |
+| NFR-004 | deterministic replay, seeded faults, and report checks | TC-099 through TC-101, TC-103 | 🚧 planned |
 
 ## Coverage-family allocation
 
-| Family | Positive/boundary | Negative/refusal | Identity/retention | Conditional gate |
-|---|---|---|---|---|
-| current Boolean/future v1 | TC-093, TC-094 | TC-095 | TC-098, TC-099 | none after M0 |
-| W/M canonical lowering | TC-096 | TC-101 | TC-098 | landed #37/#42, parse #32, rewrite #36, evaluator #49/#50 |
-| past/history O/H/S/T | TC-097 | TC-095, TC-101 | TC-098 | accepted tl-syntax #38 plus evaluator implementation |
-| target mapping/observation | TC-100 | TC-100, TC-102 | TC-098, TC-099 | exact target mapping profile |
-| generated campaigns | reported by TC-103 | promotion refusal TC-099 | separate population TC-099 | never canonical without promotion |
+| Family | Positive/boundary | Negative/refusal | Provenance |
+|---|---|---|---|
+| closed-trace and online-prefix | TC-092, TC-093, TC-094 | TC-095 | TC-098, TC-099 |
+| past-history | TC-097 | TC-095 | TC-098 |
+| derived W/M | verified by FR-016 (TC-076 through TC-080) | TC-096 | TC-098 |
+| target mapping and observation | TC-100 | TC-100 | TC-098, TC-099 |
+| generated populations | reported by TC-103 | promotion refusal TC-099 | TC-099 |
 
 ## Test Case Summary
 
 | Test ID | Title | Type | Priority | Traces To | Status |
 |---|---|---|---|---|---|
-| TC-091 | Strictly round-trip the closed campaign, dimension, and coverage-cell schemas, exact tuple/set digest preimages, and refuse duplicate, omitted, unknown, reordered, or contradictory entries | Integration | P0 | FR-008-AC-1 | 🚧 planned |
-| TC-092 | Enumerate every reviewed cell-obligation tuple exactly once, require every dimension class, pin the ordered set digest, and mutation-test each census status | Property | P0 | FR-008-AC-1, FR-008-AC-2 | 🚧 planned |
-| TC-093 | Replay every applicable current-profile semantic cell against stored independent Rust-oracle or reviewed boundary-proof results | Property | P0 | FR-008-AC-2, FR-008-AC-3, FR-008-AC-5, FR-010-AC-4 | 🚧 planned |
+| TC-091 | Round-trip the campaign, dimension, and coverage-cell schemas under exact tuple and set digest preimages | Integration | P0 | FR-008-AC-1 | ⛔ retired — schema and digest ceremony around the cell list; the cell list is plain data checked by TC-092 |
+| TC-092 | Check that every profile, operator, and interval-shape cell has a positive, a negative, and a boundary case, that every named edge condition is exercised, and that a missing case fails naming the cell | Integration | P0 | FR-008-AC-1, FR-008-AC-2 | 🚧 planned |
+| TC-093 | Replay every stored expected result against the independent oracle and production, and check mapping output against canonical semantics | Property | P0 | FR-008-AC-2, FR-008-AC-3, FR-008-AC-5, FR-010-AC-4 | 🚧 planned |
 | TC-094 | Exercise empty/singleton/short/exact/long and early/late witness/counterexample closed-prefix progress transitions at every interval boundary class | Property | P0 | FR-008-AC-3 | ✅ implemented |
-| TC-095 | Refuse malformed, profile-incompatible, missing-history, stale-context, and resource-over-limit cells at their declared stage and reason | Integration | P0 | FR-008-AC-3 | 🚧 planned |
-| TC-096 | Compare W/M internal source fixtures with exact canonical graphs and prove no second evaluator branch or semantic-cell population exists | Integration | P0 | FR-008-AC-4 | 🚧 planned |
-| TC-097 | Admit past/history cells only after their exact tl-syntax profile and routed evaluator revisions land, then bind anchor/history/capture/clock and superseding-result states | Integration | P0 | FR-008-AC-4 | 🚧 planned |
-| TC-098 | Strictly round-trip every v1 fixture family; verify one owner plus exact consumer revision, manifest digest, license, provenance, oracle, and limitation fields; and exercise every path and `tl-mltl.corpus-limits/v1` boundary | Integration | P0 | FR-009-AC-1, FR-009-AC-2, FR-009-AC-6 | 🚧 planned |
-| TC-099 | Detect canonical mutation/removal/restamping, unsafe/digest-mismatched artifacts, and generated-input promotion without a minimal reproducer, independent oracle, provenance, review, and successor digest | Integration | P0 | FR-008-AC-5, FR-009-AC-1, FR-009-AC-3, FR-009-AC-4, FR-009-AC-5, FR-009-AC-6, NFR-004-AC-2 | 🚧 planned |
-| TC-100 | Round-trip every allowed loss/availability/comparison combination, refuse every disallowed combination, preserve each admission refusal and non-conclusive cause, and verify target claims without executing a foreign runtime | Integration | P0 | FR-010-AC-1, FR-010-AC-2, FR-010-AC-3, FR-010-AC-4, NFR-004-AC-3 | 🚧 planned |
-| TC-101 | Mutate profile/operator/status/oracle/denominator identities and prove every incompatible, stale, self-oracled, or silently removed cell turns its owning gate red | Integration | P0 | FR-008-AC-4, FR-009-AC-3, NFR-004-AC-1, NFR-004-AC-2 | 🚧 planned |
-| TC-102 | Validate PLAN-007 and its linked GitHub tickets for one owner, explicit consumers, evidence method, predecessors, external resume conditions, and Rust-only executable dependencies; reject a missing/stale route, foreign runtime, or local evidence/retention framework | Integration | P0 | FR-009-AC-2, FR-009-AC-5, FR-010-AC-2 | 🚧 planned |
-| TC-103 | Reproduce byte-identical ordered census/replay records and report raw applicable, excluded, blocked, covered, generated, unsupported, unavailable, and non-conclusive populations | Integration | P0 | NFR-004-AC-1, NFR-004-AC-2, NFR-004-AC-3 | 🚧 planned |
+| TC-095 | Refuse malformed, profile-incompatible, missing-history, stale-context, and resource-over-limit cases with their stored typed refusal | Integration | P0 | FR-008-AC-3 | 🚧 planned |
+| TC-096 | Check that derived W/M operators add no evaluator branch or case population and that their verdicts equal the lowered primitive graph | Integration | P0 | FR-008-AC-4 | 🚧 planned |
+| TC-097 | Check that every past operator has positive, negative, and boundary cases under the origin-complete-history profile, confirmed by the oracle | Integration | P0 | FR-008-AC-4 | 🚧 planned |
+| TC-098 | Replay each fixture family from its owner, verify its recorded identity and provenance, and refuse a record with a missing or unknown field | Integration | P0 | FR-009-AC-1, FR-009-AC-2 | 🚧 planned |
+| TC-099 | Detect a changed expected result, removed case, and a generated input presented as canonical, and accept a generated disagreement only as a minimised oracle-confirmed reproducer | Integration | P0 | FR-008-AC-5, FR-009-AC-1, FR-009-AC-3, FR-009-AC-4, FR-009-AC-5, NFR-004-AC-2 | 🚧 planned |
+| TC-100 | Report agreement, disagreement, or not-comparable with a reason for every comparison, refuse mismatched observations before comparison, bound claims to the retained cases, and replay without executing a foreign runtime | Integration | P0 | FR-010-AC-1, FR-010-AC-2, FR-010-AC-3, FR-010-AC-4, NFR-004-AC-3 | 🚧 planned |
+| TC-101 | Apply seeded evaluator and stored-result faults and prove each turns its owning check red | Integration | P0 | FR-008-AC-5, FR-009-AC-3, FR-010-AC-1, NFR-004-AC-1, NFR-004-AC-2 | 🚧 planned |
+| TC-102 | Validate the PLAN-007 routing bundle and its linked tickets for owners, consumers, predecessors, and resume conditions | Integration | P0 | FR-009-AC-2 | ⛔ retired — obsolete planning gate; ownership is stated in FR-009 and ticket routing lives in the tracker |
+| TC-103 | Reproduce the campaign report at the same commit and report admitted, refused, unsupported, unavailable, and not-comparable counts separately | Integration | P0 | NFR-004-AC-1, NFR-004-AC-2, NFR-004-AC-3 | 🚧 planned |

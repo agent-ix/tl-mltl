@@ -16,22 +16,22 @@ relationships:
 | FR-020 | FR-020-AC-1 through FR-020-AC-5 | TC-104 through TC-108 | 🚧 planned |
 | FR-021 | FR-021-AC-1 through FR-021-AC-5 | TC-109 through TC-112, TC-121, TC-122 | 🚧 planned |
 | FR-022 | FR-022-AC-1 through FR-022-AC-5 | TC-113 through TC-118 | 🚧 planned |
-| FR-023 | FR-023-AC-1 through FR-023-AC-5 | TC-119 through TC-121, TC-123, TC-124 | 🚧 planned |
+| FR-023 | FR-023-AC-1 through FR-023-AC-4 (FR-023-AC-5 withdrawn) | TC-120, TC-121, TC-123 | 🚧 planned |
 
 ## Non-Functional Requirement Coverage
 
 | Non-Functional Req | Verification Method | Evidence/Test Cases | Status |
 |---|---|---|---|
-| NFR-005 | deterministic census/replay, fault seeding, mutation, and claim-boundary checks | TC-107, TC-114, TC-118, TC-120 through TC-122, TC-127, TC-128 | 🚧 planned |
+| NFR-005 | seeded faults, weakened test selections, and campaign report replay | TC-107, TC-114, TC-118, TC-120 through TC-122, TC-127 | 🚧 planned |
 
-## Cross-repository allocation and gates
+## Allocation
 
-| Repository | Owned campaign surface | Admission gate |
-|---|---|---|
-| tl-syntax | formula/profile/schema property and mutation work under #26 | accepted MRS-003 plus landed applicable syntax profiles |
-| tl-parse | parse/format/span properties and input-boundary fuzz work under #25 | accepted MRS-003 plus exact parser dialect/profile |
-| tl-rewrite | equivalence/counterexample properties and reviewed fuzz decision under #27 | accepted MRS-003 plus exact evaluator oracle/profile |
-| tl-mltl | evaluator/horizon/history/mapping properties, mutation, and bounded Kani under #31 | accepted MRS-003 plus landed MRS-002 applicable cells |
+| Repository | Owned campaign surface |
+|---|---|
+| tl-syntax | formula, profile, and schema property, fuzz, and mutation work |
+| tl-parse | parse, format, and span properties and input-boundary fuzz work |
+| tl-rewrite | equivalence and counterexample properties and fuzz work |
+| tl-mltl | evaluator, horizon, history, and mapping properties, fuzz targets, mutation, and Kani harnesses |
 
 ## Test Case Summary
 
@@ -41,22 +41,22 @@ relationships:
 | TC-105 | Compare production evaluation with the independent oracle over generated and exhaustive domains for laws that need a reference | Property | P0 | FR-020-AC-1, FR-020-AC-2 | ✅ implemented |
 | TC-106 | Fail a property that passes against a seeded-broken evaluator, uses a self-oracle, or discards beyond its ceiling | Property | P0 | FR-020-AC-2, FR-020-AC-3 | ✅ implemented |
 | TC-107 | Reproduce property runs from recorded seed and case count, including accepted/discarded counts and shrunk counterexample | Property | P0 | FR-020-AC-3, FR-020-AC-4, NFR-005-AC-1 | ✅ implemented |
-| TC-108 | Keep generated inputs outside canonical corpus and refuse incomplete promotion | Integration | P0 | FR-020-AC-5 | 🚧 planned |
-| TC-109 | Enforce the exact campaign preimage, three pairwise-distinct ordered `u64` seeds, both finite caps, first-stop semantics, and requested-versus-observed budgets | Fuzz | P0 | FR-021-AC-1, FR-021-AC-4 | 🚧 planned |
-| TC-110 | Compute plateau only from cadence-valid exact feature sets at both final-window anchors under unchanged instrumentation; reject missing anchors and insufficient windows | Fuzz | P0 | FR-021-AC-1, FR-021-AC-2 | 🚧 planned |
-| TC-111 | Preserve fuzz growth, plateau, crash, timeout, resource, cancellation, tool, instrumentation, and not-run states | Integration | P0 | FR-021-AC-2, FR-021-AC-3 | 🚧 planned |
-| TC-112 | Retain and independently replay exact fuzz corpora and crashes, refusing missing or stale identities | Integration | P0 | FR-021-AC-3, FR-021-AC-4 | 🚧 planned |
-| TC-113 | Deterministically discover and bind every mutant under the exact path/span/identity, closed-priority ordering, and population digest before exclusion and selection | Integration | P0 | FR-022-AC-1 | 🚧 planned |
-| TC-114 | Reproduce selected/unselected/excluded populations and refuse failed, inconsistent, drifting, or partial controls | Integration | P0 | FR-022-AC-1, FR-022-AC-2, NFR-005-AC-1 | 🚧 planned |
-| TC-115 | Isolate each mutant, interleave controls, enforce timeout and clean restoration, and keep every execution state distinct | Integration | P0 | FR-022-AC-2, FR-022-AC-3 | 🚧 planned |
-| TC-116 | Emit the shared score only for a complete nonzero viable denominator and retain every raw count | Integration | P0 | FR-022-AC-3, FR-022-AC-4 | 🚧 planned |
-| TC-117 | Route raw missed/timeout outcomes into proof review without a circular final disposition, then require exactly one reviewed outcome with acyclic duplicates and unexpired risk evidence | Inspection | P0 | FR-022-AC-4 | 🚧 planned |
-| TC-118 | Seed faults in population, status, denominator, isolation, restoration, and survivor controls and require red | Integration | P0 | FR-022-AC-5, NFR-005-AC-2 | 🚧 planned |
-| TC-119 | Census the finite proof-candidate registry under exact candidate/proposition/ledger preimages and admit proved-within-bounds only after every required check succeeds | Analysis | P0 | FR-023-AC-1, FR-023-AC-2 | 🚧 planned |
-| TC-120 | Mutate assumptions, bounds, cover/unwind checks, outcome, and claim scope and require invalidation or red | Integration | P0 | FR-023-AC-2, FR-023-AC-3, NFR-005-AC-2 | 🚧 planned |
-| TC-121 | Bind every campaign source, tool, environment, configuration, artifact, limitation, and retention identity | Integration | P0 | FR-021-AC-4, FR-023-AC-1, FR-023-AC-3, NFR-005-AC-1 | 🚧 planned |
-| TC-122 | Refuse every count, ratio, plateau, no-crash, proof, or aggregate that widens into an automated authority claim | Integration | P0 | FR-021-AC-5, NFR-005-AC-3 | 🚧 planned |
-| TC-123 | Prove verifier-only code cannot change ordinary/MSRV behavior or introduce a production/runtime dependency | Integration | P0 | FR-023-AC-4 | 🚧 planned |
-| TC-124 | Reject closed-unmerged #35 artifacts as current proof evidence and accept only an exact-candidate successor run | Integration | P0 | FR-023-AC-5 | 🚧 planned |
-| TC-127 | Round-trip all domain/shared states and mutation-test stale, partial, collapsed, substituted, and digest-bad records | Integration | P0 | NFR-005-AC-1, NFR-005-AC-2 | 🚧 planned |
-| TC-128 | Exercise every FR-009 path, digest, count, length, size, depth, checked-arithmetic, and unknown-limit boundary before artifact decoding or allocation | Integration | P0 | NFR-005-AC-2 | 🚧 planned |
+| TC-108 | Keep generated inputs outside the canonical corpus and commit a minimised counterexample as a regression fixture that replays clean | Integration | P0 | FR-020-AC-5 | 🚧 planned |
+| TC-109 | Run every fuzz target under at least three distinct recorded seeds with a fixed budget and record target, seed, duration, executions, and coverage | Fuzz | P0 | FR-021-AC-1, FR-021-AC-4 | 🚧 planned |
+| TC-110 | Stop a run at the first of budget, crash, or plateau over the stated window, and record a run still growing at the budget as growth observed | Fuzz | P0 | FR-021-AC-2 | 🚧 planned |
+| TC-111 | Record crash, timeout, out-of-memory, tool error, resource refusal, cancellation, and not-run outcomes as distinct states | Integration | P0 | FR-021-AC-2, FR-021-AC-3 | 🚧 planned |
+| TC-112 | Replay every committed crash input and checked-in seed under `cargo test`, reaching accepting and refusing paths | Integration | P0 | FR-021-AC-3, FR-021-AC-4 | 🚧 planned |
+| TC-113 | Mutate the evaluator core and the crate as a whole and exclude the CI-plumbing modules by configuration | Integration | P0 | FR-022-AC-1 | 🚧 planned |
+| TC-114 | Refuse the mutation campaign and emit no kill rate when the unmutated baseline fails or is unstable | Integration | P0 | FR-022-AC-2, NFR-005-AC-1 | 🚧 planned |
+| TC-115 | Report caught, missed, timeout, unviable, and tool-error outcomes separately | Integration | P0 | FR-022-AC-3 | 🚧 planned |
+| TC-116 | Compute the kill rate as caught over caught plus missed plus timeout beside the raw counts and fail below 95% for the evaluator core or 85% for the crate | Integration | P0 | FR-022-AC-3, FR-022-AC-4 | 🚧 planned |
+| TC-117 | List every surviving mutant with exactly one reason (killing test, stated equivalence, or named Kani harness) and fail a survivor without one | Integration | P0 | FR-022-AC-5 | 🚧 planned |
+| TC-118 | Weaken the test selection and require the threshold gate to fail while the unweakened selection passes | Integration | P0 | FR-022-AC-4, NFR-005-AC-2 | 🚧 planned |
+| TC-119 | Census the finite proof-candidate registry under candidate, proposition, and ledger digest preimages | Analysis | P0 | FR-023-AC-1 | ⛔ retired — proof-candidate ledger and digest ceremony; the harness list and its bounds are checked by TC-120 |
+| TC-120 | Check that each Kani harness states its bounds and non-claims, that the gate runs every listed harness by exact name, and that a vacuous proof, incomplete unwinding, or timeout fails | Integration | P0 | FR-023-AC-1, FR-023-AC-2, FR-023-AC-3, NFR-005-AC-2 | 🚧 planned |
+| TC-121 | Record source revision, tool versions, seeds, and per-member outcome in the campaign report, and refuse a replay against a moved or dirty source | Integration | P0 | FR-021-AC-4, FR-023-AC-3, NFR-005-AC-1 | 🚧 planned |
+| TC-122 | Refuse every count, ratio, plateau, no-crash result, proof, or aggregate that widens into an automated authority claim | Integration | P0 | FR-021-AC-5, NFR-005-AC-3 | 🚧 planned |
+| TC-123 | Prove verifier-only code cannot change ordinary or MSRV behavior or add a production dependency on Kani or another verifier | Integration | P0 | FR-023-AC-4 | 🚧 planned |
+| TC-124 | Reject closed-unmerged #35 artifacts as current proof evidence and accept only an exact-candidate successor run | Integration | P0 | FR-023-AC-5 | ⛔ retired — obsolete process gate for a closed PR's artifacts; a harness result is current only when run at the candidate revision, which the campaign report already records |
+| TC-127 | Report not-run, unavailable, and planned campaign members as non-pass and refuse an unregistered evidence target | Integration | P0 | NFR-005-AC-1, NFR-005-AC-2 | 🚧 planned |
+| TC-128 | Exercise path, digest, count, length, size, depth, checked-arithmetic, and unknown-limit boundaries of a corpus manifest loader | Integration | P0 | NFR-005-AC-2 | ⛔ retired — loader resource profile from the withdrawn FR-009-AC-6; no corpus manifest loader exists |

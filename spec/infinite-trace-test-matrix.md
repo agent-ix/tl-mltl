@@ -16,7 +16,7 @@ changes. Per-row test locations:
 | Rows | Evidence |
 |---|---|
 | TC-086, TC-087, TC-138 | `tests/tc138_feature_boundary.rs` |
-| TC-088 | Linear inspection: TL-207, STD-13, TL-210, TL-211, TL-212, TL-215 and TL-13 are Done; TL-7 (qualification consumer) is Backlog, so no qualification claim precedes its gates |
+| TC-088 | Retired: the Linear dependency-order inspection was an obsolete process gate (see TM-001) |
 | TC-089, TC-139, TC-140, TC-155, TC-157, TC-159 | `tests/infinite_trace.rs` |
 | TC-141, TC-145, TC-147, TC-148, TC-151 | `tests/infinite_oracle.rs` (independent `tl-oracle`) |
 | TC-142, TC-143, TC-144 | `tests/infinite_matrix_rows.rs` (brute-force completions, monotonicity, identity refusals) and `tests/infinite_trace.rs` |
@@ -37,7 +37,7 @@ changes. Per-row test locations:
 |---|---|---|---|
 | FR-027 | FR-027-AC-1 through FR-027-AC-3 | TC-086, TC-138 | ✅ implemented |
 | FR-028 | FR-028-AC-1 through FR-028-AC-3 | TC-087, TC-138, TC-139 | ✅ implemented |
-| FR-029 | FR-029-AC-1 through FR-029-AC-3 | TC-088, TC-089, TC-140 | ✅ implemented |
+| FR-029 | FR-029-AC-2 (FR-029-AC-1 and FR-029-AC-3 withdrawn) | TC-089, TC-140 | ✅ implemented |
 | FR-030 | FR-030-AC-1 through FR-030-AC-3 | TC-141 through TC-144 | ✅ implemented |
 | FR-031 | FR-031-AC-1 through FR-031-AC-3 | TC-145 through TC-149 | ✅ implemented |
 | FR-032 | FR-032-AC-1 through FR-032-AC-3 | TC-150 through TC-154 | ✅ implemented |
