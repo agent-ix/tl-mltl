@@ -41,6 +41,56 @@
       "covers": ["make:test"]
     },
     {
+      "id": "limit-register-unit",
+      "technique": "tests",
+      "kind": "test",
+      "command": ["cargo", "test", "--lib", "--all-features", "limit_register"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "covers": [],
+      "note": "TL-233 limit coverage: the in-module limit_register tests in src/lib.rs and src/past/mod.rs; each limit accepts the limit and refuses one past it."
+    },
+    {
+      "id": "limit-register-integration",
+      "technique": "tests",
+      "kind": "test",
+      "command": ["cargo", "test", "--all-features", "--test", "limit_register"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "covers": [],
+      "note": "TL-233 limit coverage: tests/limit_register.rs, the public-API limit register tests."
+    },
+    {
+      "id": "error-variants",
+      "technique": "tests",
+      "kind": "test",
+      "command": ["cargo", "test", "--all-features", "--test", "error_variants", "--test", "past_readers"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "covers": [],
+      "note": "TL-233 error-variant coverage: tests/error_variants.rs (error variants) and tests/past_readers.rs (reader refusals and ceilings)."
+    },
+    {
+      "id": "miri",
+      "technique": "static",
+      "kind": "test",
+      "command": ["make", "miri"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "covers": ["make:miri"],
+      "note": "TL-233 undefined-behavior check: library tests and the MIRI_TESTS suites (including limit_register, error_variants, past_readers) under the pinned nightly Miri. Long, tens of minutes."
+    },
+    {
+      "id": "test-features",
+      "technique": "tests",
+      "kind": "test",
+      "command": ["make", "test-features"],
+      "tools": ["cargo"],
+      "determinism": "exact",
+      "covers": ["make:test-features"],
+      "note": "TL-233 feature matrix: all targets and doctests under default features and infinite-trace."
+    },
+    {
       "id": "reference-conformance",
       "technique": "conformance",
       "kind": "test",
