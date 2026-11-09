@@ -262,6 +262,7 @@
       "command": ["make", "kani-check"],
       "tools": ["cargo-kani"],
       "determinism": "exact",
+      "evidence": {"env": "TL_MLTL_EVIDENCE_DIR", "volatileKeys": ["elapsedSeconds"]},
       "covers": ["make:kani-check"]
     },
     {

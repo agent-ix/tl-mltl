@@ -6,8 +6,8 @@ use std::path::Path;
 use std::process::Command;
 
 use tl_mltl::campaign::{
-    aggregate, check_inventory, discover_fuzz_targets, parse_members, replay, run_campaign,
-    verify_seal, Report, Status,
+    aggregate, check_inventory, compare_member, discover_fuzz_targets, parse_members, replay,
+    run_campaign, verify_seal, Report, Status,
 };
 
 fn git(dir: &Path, args: &[&str]) {
@@ -289,4 +289,94 @@ fn fuzz_evidence_with_a_wrong_schema_no_record_or_unreadable_file_fails() {
     // A directory named *.json cannot be read as a file.
     let unreadable = run(fuzz_member(r#"mkdir "$EV/r.json""#));
     assert_eq!(unreadable.status, Status::Fail);
+}
+
+fn kani_member(command: &str) -> tempfile::TempDir {
+    let members = format!(
+        r#"{{"schemaVersion": "tl-mltl.campaign-members/v1", "tools": [], "members": [
+        {{"id": "k", "technique": "kani", "kind": "kani",
+         "command": ["sh", "-c", {command:?}],
+         "determinism": "exact", "evidence": {{"env": "EV", "volatileKeys": ["elapsedSeconds"]}}}}]}}"#
+    );
+    fixture(&members)
+}
+
+fn kani_record_json(outcome: &str, satisfied: u32) -> String {
+    format!(
+        r#"{{"schemaVersion":"tl-mltl.kani-proof-record/v1","proofs":[{{"harness":"m::h","outcome":"{outcome}","kaniVersion":"Kani 0.68.0","cbmcVersion":"6.11.0","coversSatisfied":{satisfied},"coversTotal":2,"elapsedSeconds":3,"bounds":"Proves x.","reproduce":["cargo","kani"]}}]}}"#
+    )
+}
+
+// Trace: TC-121, FR-023-AC-3
+#[test]
+fn kani_proof_records_are_bound_into_the_report_and_replay_compares_them() {
+    let cmd = format!(
+        "cat > \"$EV/p.json\" <<'X'\n{}\nX",
+        kani_record_json("verified", 2)
+    );
+    let dir = kani_member(&cmd);
+    let out = tempfile::tempdir().unwrap();
+    let report = run_campaign(dir.path(), out.path(), &[]).unwrap();
+    let member = &report.members[0];
+    assert_eq!(member.status, Status::Pass, "{member:?}");
+    let proof = &member.kani_proofs[0];
+    assert_eq!(proof.harness, "m::h");
+    assert_eq!(proof.kani_version, "Kani 0.68.0");
+    let mut forged = member.clone();
+    forged.kani_proofs[0].outcome = tl_mltl::kani_record::ProofOutcome::Timeout;
+    assert!(!compare_member(member, &forged).is_empty());
+    let mut other_version = member.clone();
+    other_version.kani_proofs[0].kani_version = "Kani 0.69.0".into();
+    assert!(!compare_member(member, &other_version).is_empty());
+    let mut slower = member.clone();
+    slower.kani_proofs[0].elapsed_seconds = 99;
+    assert!(compare_member(member, &slower).is_empty());
+}
+
+// Trace: TC-121, FR-023-AC-3
+#[test]
+fn a_proof_that_did_not_verify_fails_the_member_under_its_own_name() {
+    for outcome in ["unwinding_failed", "timeout", "unsupported_construct"] {
+        let cmd = format!(
+            "cat > \"$EV/p.json\" <<'X'\n{}\nX",
+            kani_record_json(outcome, 0)
+        );
+        let out = tempfile::tempdir().unwrap();
+        let report = run_campaign(kani_member(&cmd).path(), out.path(), &[]).unwrap();
+        let member = &report.members[0];
+        assert_eq!(member.status, Status::Fail);
+        let wanted = match outcome {
+            "unwinding_failed" => "UnwindingFailed",
+            "timeout" => "Timeout",
+            _ => "UnsupportedConstruct",
+        };
+        assert!(
+            member.detail.as_deref().unwrap().contains(wanted),
+            "{:?}",
+            member.detail
+        );
+    }
+}
+
+#[test]
+fn a_missing_or_malformed_kani_record_fails_the_member() {
+    let run = |cmd: &str| {
+        let out = tempfile::tempdir().unwrap();
+        run_campaign(kani_member(cmd).path(), out.path(), &[])
+            .unwrap()
+            .members
+            .remove(0)
+    };
+    assert_eq!(run("true").status, Status::Fail);
+    assert_eq!(
+        run(r#"printf '{"result":"agree"}' > "$EV/p.json""#).status,
+        Status::Fail
+    );
+    let inconsistent = format!(
+        "cat > \"$EV/p.json\" <<'X'\n{}\nX",
+        kani_record_json("verified", 1)
+    );
+    let member = run(&inconsistent);
+    assert_eq!(member.status, Status::Fail);
+    assert!(member.detail.unwrap().contains("Inconsistent"));
 }
