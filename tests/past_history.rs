@@ -179,7 +179,7 @@ fn binary_nodes(kind: impl FnOnce(NodeId, NodeId) -> NodeKind) -> Vec<Node> {
 proptest! {
     #![proptest_config(ProptestConfig { cases: if cfg!(miri) { 4 } else { 192 }, ..ProptestConfig::default() })]
 
-    // Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+    // Trace: TC-178, FR-042-AC-1
     #[test]
     fn once_and_historically_match_independent_reverse_oracle(
         values in prop::collection::vec((any::<bool>(), any::<bool>()), 1..20),
@@ -203,7 +203,7 @@ proptest! {
         }
     }
 
-    // Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+    // Trace: TC-179, FR-042-AC-2
     #[test]
     fn since_uses_inclusive_witness_and_exact_lower_bounded_left_range(
         values in prop::collection::vec((any::<bool>(), any::<bool>()), 1..20),
@@ -223,7 +223,7 @@ proptest! {
         }
     }
 
-    // Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+    // Trace: TC-180, TC-181, FR-042-AC-3, FR-042-AC-4
     #[test]
     fn triggered_dual_and_strong_previous_equivalence_hold_at_every_boundary(
         values in prop::collection::vec((any::<bool>(), any::<bool>()), 1..20),
@@ -263,7 +263,7 @@ proptest! {
     }
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Trace: TC-179, FR-042-AC-2
 #[test]
 fn since_ignores_offsets_before_nonzero_lower_bound_and_accepts_both_endpoints() {
     let interval = Interval::new(2, 4).unwrap();
@@ -289,7 +289,7 @@ fn since_ignores_offsets_before_nonzero_lower_bound_and_accepts_both_endpoints()
     assert!(evaluate(&nodes, &event_history(&values, 1), 2));
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Trace: TC-178, TC-181, FR-042-AC-1, FR-042-AC-4
 #[test]
 fn constants_and_boolean_nests_recurse_across_pre_origin_positions() {
     let interval = Interval::new(1, 3).unwrap();
@@ -339,7 +339,7 @@ fn constants_and_boolean_nests_recurse_across_pre_origin_positions() {
     }
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Trace: TC-182, FR-042-AC-5
 #[test]
 fn history_admission_refuses_every_completeness_and_identity_dimension() {
     let clock = Some(ClockBinding::EventPosition);
@@ -467,7 +467,7 @@ fn history_admission_refuses_every_completeness_and_identity_dimension() {
     );
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Specified by tl-syntax FR-011-AC-4 and FR-012-AC-3/4; owned and traced there.
 #[test]
 fn results_bind_all_dimensions_and_validate_direct_corrections() {
     let nodes = unary_nodes(|operand| NodeKind::Once {
@@ -619,7 +619,7 @@ fn results_bind_all_dimensions_and_validate_direct_corrections() {
     );
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Trace: TC-183, FR-042-AC-6
 #[test]
 fn required_history_uses_checked_recursive_equations_and_ignores_spans() {
     let i24 = Interval::new(2, 4).unwrap();
@@ -692,7 +692,7 @@ fn required_history_uses_checked_recursive_equations_and_ignores_spans() {
     ));
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Specified by tl-syntax FR-011-AC-4 and FR-012-AC-3/4; owned and traced there.
 #[test]
 fn future_analysis_and_evaluation_refuse_the_closed_past_profile() {
     let nodes = [Node::new(NodeKind::True)];
@@ -713,7 +713,7 @@ fn future_analysis_and_evaluation_refuse_the_closed_past_profile() {
     ));
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Trace: TC-186, FR-042-AC-9
 #[test]
 fn evaluation_enforces_each_resource_limit_without_a_fallback_verdict() {
     let interval = Interval::new(0, 5).unwrap();
@@ -791,7 +791,7 @@ fn evaluation_enforces_each_resource_limit_without_a_fallback_verdict() {
     );
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Trace: TC-185, FR-042-AC-8
 #[test]
 fn clock_admission_is_exact_and_owner_nonvalues_are_preserved() {
     let values = [(false, false), (true, false), (false, true)];
@@ -1003,7 +1003,7 @@ fn clock_admission_is_exact_and_owner_nonvalues_are_preserved() {
     }
 }
 
-// Specified by the tl-syntax past-history requirements; tl-mltl declares no row for them.
+// Trace: TC-182, FR-042-AC-5
 #[test]
 fn anchors_are_explicit_final_originals_and_silence_advances_nothing() {
     let nodes = vec![
