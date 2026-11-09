@@ -655,3 +655,7 @@ fn hex(bytes: impl AsRef<[u8]>) -> String {
     }
     result
 }
+
+#[cfg(kani)]
+#[path = "kani_wire.rs"]
+mod kani_proofs;

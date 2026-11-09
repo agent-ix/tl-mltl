@@ -218,19 +218,41 @@
       "id": "mutation",
       "technique": "mutation",
       "kind": "mutation",
-      "state": "planned",
-      "ticket": "TL-231",
-      "determinism": "seeded",
-      "note": "Register with a command once the Make target lands on main."
+      "command": ["make", "mutants"],
+      "tools": ["cargo-mutants"],
+      "determinism": "exact",
+      "covers": ["make:mutants"],
+      "note": "Full run, hours (TL-231). The mutant population is fixed by --no-shuffle; kill-rate thresholds are in mutation-thresholds.toml."
+    },
+    {
+      "id": "mutation-diff",
+      "technique": "mutation",
+      "kind": "mutation",
+      "command": ["make", "mutants-diff"],
+      "tools": ["cargo-mutants"],
+      "determinism": "exact",
+      "covers": ["make:mutants-diff"],
+      "note": "Mutants in the diff against origin/main must all be killed (TL-231)."
     },
     {
       "id": "coverage",
       "technique": "coverage",
       "kind": "coverage",
-      "state": "planned",
-      "ticket": "TL-234",
+      "command": ["make", "coverage"],
+      "tools": ["cargo-llvm-cov"],
       "determinism": "exact",
-      "note": "Register with a command once the Make target lands on main."
+      "covers": ["make:coverage"],
+      "note": "Line, function and region coverage on the pinned toolchain (TL-234)."
+    },
+    {
+      "id": "coverage-branch",
+      "technique": "coverage",
+      "kind": "coverage",
+      "command": ["make", "coverage-branch"],
+      "tools": ["cargo-llvm-cov"],
+      "determinism": "exact",
+      "covers": ["make:coverage-branch"],
+      "note": "Adds branch coverage; requires a nightly toolchain with llvm-tools (TL-234)."
     },
     {
       "id": "r2u2-nightly",

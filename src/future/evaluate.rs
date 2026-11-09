@@ -938,6 +938,10 @@ pub fn evaluate_prefix_at_with_stats(
     )
 }
 
+#[cfg(kani)]
+#[path = "kani_evaluate.rs"]
+mod kani_proofs;
+
 #[cfg(test)]
 mod tests {
     use tl_syntax::{

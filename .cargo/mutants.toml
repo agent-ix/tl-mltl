@@ -1,0 +1,27 @@
+# cargo-mutants configuration (TL-231). Run with `make mutants` or
+# `make mutants-diff`; see docs/verification-tooling.md for the budgets.
+#
+# Mutants in CI-plumbing modules are excluded from every threshold: those
+# modules gate the build, not the MLTL logic, and inflate the score.
+exclude_globs = [
+    "src/ci_guard.rs",
+    "src/bin/ci_guard.rs",
+    # Verifier-only (cfg(kani)); never compiled by cargo test.
+    "src/future/kani_evaluate.rs",
+    "src/wire/kani_wire.rs",
+]
+
+# The infinite-trace provider is behind a feature; mutate it with the tests
+# that exercise it.
+additional_cargo_args = ["--all-features"]
+
+# The unmutated test suite takes about 75 s cold; allow generous headroom so a
+# slow runner does not turn a caught mutant into a timeout.
+minimum_test_timeout = 120
+timeout_multiplier = 3.0
+
+# Equivalent mutants (one-line reason each).
+exclude_re = [
+    # The inline cfg(kani) harness in horizon.rs is never compiled by cargo test, so no test can observe a mutation of it.
+    "replace kani_proofs::horizon_bound_addition_matches_checked_add with",
+]
