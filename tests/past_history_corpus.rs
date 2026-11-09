@@ -14,7 +14,7 @@ use tl_syntax::{
 
 const DIRECTORY: &str = "past-history";
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Manifest {
     corpus: String,
@@ -280,19 +280,68 @@ fn exact_shared_corpus_replays_history_analysis_evaluation_and_corrections() {
     }
 }
 
-// Trace: TC-098
+// Trace: TC-098, FR-009-AC-1
 #[test]
-fn corpus_digest_and_history_identity_mutations_are_detected() {
+fn manifest_and_history_mutations_are_refused_for_their_reason() {
     let root = Path::new(tl_syntax::CORPUS_DIR).join(DIRECTORY);
-    let mut manifest = read_corpus(&root, "manifest.json");
-    manifest[0] ^= 1;
-    assert!(serde_json::from_slice::<Manifest>(&manifest).is_err());
+    let bytes = read_corpus(&root, "manifest.json");
+    let original: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let parse = |value: &serde_json::Value| {
+        serde_json::from_value::<Manifest>(value.clone()).map_err(|e| e.to_string())
+    };
+    parse(&original).unwrap();
 
+    // A missing field is refused, and the error names the field.
+    for key in original.as_object().unwrap().keys() {
+        let mut missing = original.clone();
+        missing.as_object_mut().unwrap().remove(key);
+        let error = parse(&missing).unwrap_err();
+        assert!(
+            error.contains("missing field") && error.contains(key.as_str()),
+            "removing `{key}`: {error}"
+        );
+    }
+
+    // An unknown field is refused, and the error names the field.
+    let mut unknown = original.clone();
+    unknown["unexpectedField"] = serde_json::json!(true);
+    let error = parse(&unknown).unwrap_err();
+    assert!(
+        error.contains("unknown field") && error.contains("unexpectedField"),
+        "{error}"
+    );
+
+    // A corrupted byte is a syntax failure, distinct from the refusals above.
+    let mut corrupted = bytes;
+    corrupted[0] ^= 1;
+    assert!(serde_json::from_slice::<Manifest>(&corrupted).is_err());
+
+    // A history whose digest is stale is refused as a digest mismatch.
     let (_, cases) = load();
     let admitted = history(&cases.histories[0]);
     let mut value = serde_json::to_value(&admitted).unwrap();
     value["historySha256"] = serde_json::Value::String("0".repeat(64));
-    assert!(serde_json::from_value::<PositionHistoryDocument>(value).is_err());
+    let error = serde_json::from_value::<PositionHistoryDocument>(value)
+        .unwrap_err()
+        .to_string();
+    assert!(
+        error.to_lowercase().contains("digest") || error.to_lowercase().contains("sha"),
+        "{error}"
+    );
+
+    // A history missing a field, or carrying an unknown one, is refused by name.
+    let mut missing = serde_json::to_value(&admitted).unwrap();
+    missing.as_object_mut().unwrap().remove("historyId");
+    let error = serde_json::from_value::<PositionHistoryDocument>(missing)
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("historyId"), "{error}");
+    let mut extra = serde_json::to_value(&admitted).unwrap();
+    extra["unexpectedField"] = serde_json::json!(1);
+    let error = serde_json::from_value::<PositionHistoryDocument>(extra)
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("unexpectedField"), "{error}");
 }
 
 // Trace: TC-095, FR-008-AC-3

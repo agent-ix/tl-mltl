@@ -230,50 +230,54 @@ const FUTURE: [&str; 4] = ["future", "globally", "until", "release"];
 const PASTS: [&str; 4] = ["once", "historically", "since", "triggered"];
 const SHAPES: [&str; 4] = ["point-zero", "from-zero", "point", "interior"];
 
-/// No operator x interval-shape cell is left without its three cases, and
-/// every named edge condition and extreme appears.
-// Trace: TC-092, TC-097, FR-008-AC-1, FR-008-AC-4
-#[test]
-fn every_cell_has_positive_negative_and_boundary_cases() {
-    let cases = load();
+/// Every operator x interval-shape cell without its required case, named as
+/// `profile operator shape kind`.
+fn uncovered_cells(cases: &[Case]) -> Vec<String> {
     let has = |profile: &str, op: &str, shape: &str, kind: &str| {
         cases
             .iter()
             .any(|c| c.profile == profile && c.operator == op && c.shape == shape && c.kind == kind)
     };
+    let mut missing = Vec::new();
+    let mut need = |profile: &str, op: &str, shape: &str, kind: &str| {
+        if !has(profile, op, shape, kind) {
+            missing.push(format!("{profile} {op} {shape} {kind}"));
+        }
+    };
     for (profile, ops) in [(CLOSED, FUTURE), (PAST, PASTS)] {
         for op in ops {
             for shape in SHAPES {
                 for kind in ["positive", "negative", "boundary"] {
-                    assert!(
-                        has(profile, op, shape, kind),
-                        "{profile} {op} {shape} {kind}"
-                    );
+                    need(profile, op, shape, kind);
                 }
             }
             // An interval at u32::MAX has only a refusal verdict.
-            assert!(has(profile, op, "max", "boundary"), "{profile} {op} max");
+            need(profile, op, "max", "boundary");
         }
     }
     // Boolean connectives have no interval: each needs a positive and a negative.
     for profile in [CLOSED, PAST] {
         for op in ["not", "and", "or", "implies", "equivalent"] {
             for kind in ["positive", "negative"] {
-                assert!(
-                    has(profile, op, "not-applicable", kind),
-                    "{profile} {op} {kind}"
-                );
+                need(profile, op, "not-applicable", kind);
             }
         }
     }
     for kind in ["positive", "negative", "boundary"] {
-        assert!(
-            has(PAST, "yesterday", "not-applicable", kind),
-            "yesterday {kind}"
-        );
+        need(PAST, "yesterday", "not-applicable", kind);
     }
-    assert!(has(CLOSED, "true", "not-applicable", "positive"));
-    assert!(has(CLOSED, "false", "not-applicable", "negative"));
+    need(CLOSED, "true", "not-applicable", "positive");
+    need(CLOSED, "false", "not-applicable", "negative");
+    missing
+}
+
+/// No operator x interval-shape cell is left without its three cases, and
+/// every named edge condition and extreme appears.
+// Trace: TC-092, TC-097, FR-008-AC-1, FR-008-AC-4
+#[test]
+fn every_cell_has_positive_negative_and_boundary_cases() {
+    let cases = load();
+    assert_eq!(uncovered_cells(&cases), Vec::<String>::new());
     let mut tagged: BTreeSet<&str> = BTreeSet::new();
     for c in &cases {
         tagged.extend(c.edges.iter().map(String::as_str));
@@ -328,5 +332,51 @@ fn seeded_faults_turn_the_corpus_red() {
             replay(&cases, "production", production, &fault),
             Err(PopulationError::Mismatch { .. })
         ));
+    }
+}
+
+/// A dropped case and a changed stored result each fail their owning check and
+/// name the affected cell or fixture.
+// Trace: TC-099, TC-101, NFR-004-AC-2
+#[test]
+fn a_dropped_case_or_changed_stored_result_names_its_cell_or_fixture() {
+    // Dropping every case of a cell names that cell.
+    let mut cases = load();
+    cases.retain(|c| !(c.profile == CLOSED && c.operator == "globally" && c.shape == "point"));
+    let missing = uncovered_cells(&cases);
+    assert_eq!(
+        missing,
+        ["positive", "negative", "boundary"].map(|k| format!("{CLOSED} globally point {k}"))
+    );
+
+    // Flipping one stored verdict fails the replay at exactly that case.
+    let cases = load();
+    let modelled: Vec<usize> = cases
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| {
+            oracle_profile(c).is_some() && c.checked_by.iter().any(|s| s == "production")
+        })
+        .map(|(i, _)| i)
+        .collect();
+    let target = *modelled
+        .iter()
+        .find(|i| matches!(cases[**i].expected, Value::Bool(_)))
+        .unwrap();
+    let mut changed = load();
+    changed[target].expected = match &cases[target].expected {
+        Value::Bool(b) => Value::Bool(!b),
+        _ => unreachable!(),
+    };
+    let ledger_position = modelled.iter().position(|i| *i == target).unwrap() as u64;
+    match replay(&changed, "production", production, &Clone::clone) {
+        Err(PopulationError::Mismatch { case_id }) => {
+            assert_eq!(case_id, ledger_position);
+            assert!(!cases[target].id.is_empty());
+        }
+        other => panic!(
+            "changed stored verdict `{}` was not caught: {other:?}",
+            cases[target].id
+        ),
     }
 }
