@@ -229,9 +229,8 @@ fn cli_evaluates_an_online_prefix_formula_over_an_open_prefix() {
 // Trace: TC-014, FR-005-AC-1, NFR-002-AC-1
 #[test]
 fn cli_refuses_profiles_the_v1_wire_does_not_admit() {
-    // Origin-complete and infinite-trace formulas never reach evaluation (the
-    // matching run() arms are exhaustiveness-only):
-    // the v1 formula document refuses them while the request is parsed.
+    // Origin-complete and infinite-trace formulas never reach evaluation: the
+    // v1 formula document refuses them while the request is parsed.
     let origin = run_args(&[&format!("{CONTRACT}/cli-origin-complete-profile.json")]);
     assert_refused(
         &origin,
