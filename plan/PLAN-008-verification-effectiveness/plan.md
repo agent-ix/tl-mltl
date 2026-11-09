@@ -113,10 +113,10 @@ domain behavior.
 
 ### Bounded Kani claims
 
-- [ ] **TC-119:** Census candidates and require every applicable proof check.
+- [x] **TC-119:** Retired. The proof-candidate ledger and digest ceremony is dropped; TC-120 checks the harness list and bounds.
 - [ ] **TC-120:** Mutate assumptions, bounds, checks, outcome, and claim scope.
 - [ ] **TC-123:** Detect verifier-only production or MSRV divergence.
-- [ ] **TC-124:** Reject closed-unmerged #35 evidence as current proof.
+- [x] **TC-124:** Retired. A harness result is current only when run at the candidate revision, which the campaign report records.
 
 ### Shared intake and claim boundaries
 
@@ -125,7 +125,7 @@ domain behavior.
 - [ ] **TC-125:** Enforce Rust/Quire/Quoin/Engineering-Assurance boundaries.
 - [ ] **TC-126:** Prove shared tools do not execute or synthesize producer bytes.
 - [ ] **TC-127:** Preserve shared/domain states and reject corrupt substitutions.
-- [ ] **TC-128:** Refuse unsafe paths and resource-cap violations before decode.
+- [x] **TC-128:** Retired. It belonged to the withdrawn FR-009-AC-6 loader; no corpus manifest loader exists.
 - [ ] **TC-129:** Refuse invalid plan and verification-stack bindings.
 
 ## Remaining Work
@@ -178,8 +178,8 @@ Gate: Task-017
 | Task-018 | A | FR-020, NFR-005 | TC-104 through TC-108 | blocked |
 | Task-019 | B | FR-021, NFR-005 | TC-109 through TC-112, TC-121, TC-122 | blocked |
 | Task-020 | C | FR-022, NFR-005 | TC-113 through TC-118, TC-121 | blocked |
-| Task-021 | D | FR-023, NFR-005 | TC-119 through TC-124 | blocked |
-| Task-022 | A | FR-024, NFR-005 | TC-121, TC-122, TC-125 through TC-129 | blocked |
+| Task-021 | D | FR-023, NFR-005 | TC-120 through TC-123 | blocked |
+| Task-022 | A | FR-024, NFR-005 | TC-121, TC-122, TC-125 through TC-127, TC-129 | blocked |
 | Task-023 | A | FR-020 through FR-024, NFR-005 | TC-104 through TC-129 | blocked |
 
 ## Coordination Rules

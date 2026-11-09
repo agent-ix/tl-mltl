@@ -64,8 +64,9 @@ it creates no evidence store or approval mechanism.
 
 ### Property tests
 
-- [ ] **TC-092:** Enumerate the reviewed cell registry, require every dimension
-  class, pin the ordered set digest, and discriminate census mutations.
+- [ ] **TC-092:** Check that every profile, operator, and interval-shape cell
+  has a positive, a negative, and a boundary case, and that a missing case
+  fails naming the cell.
 - [ ] **TC-093:** Replay applicable semantic cells against isolated stored
   expectations.
 - [ ] **TC-094:** Exercise trace, interval, witness, counterexample, and prefix
@@ -73,8 +74,8 @@ it creates no evidence store or approval mechanism.
 
 ### Integration tests
 
-- [ ] **TC-091:** Round-trip strict campaign/cell schemas and exact digest
-  preimages.
+- [x] **TC-091:** Retired. The schema and digest ceremony is dropped; the cell
+  list is plain data checked by TC-092.
 - [ ] **TC-095:** Refuse malformed, incompatible, stale, incomplete, and
   resource-exceeding cells at the declared stage.
 - [ ] **TC-096:** Prove W/M source-to-canonical parity without a second
@@ -90,8 +91,8 @@ it creates no evidence store or approval mechanism.
   admission-refusal versus non-conclusive causes.
 - [ ] **TC-101:** Turn every profile/operator/status/oracle/denominator mutation
   red.
-- [ ] **TC-102:** Validate task/ticket ownership, consumers, methods,
-  predecessors, resume conditions, language, and framework boundary.
+- [x] **TC-102:** Retired. Ownership is stated in FR-009 and ticket routing
+  lives in the tracker.
 - [ ] **TC-103:** Reproduce byte-identical ordered raw populations and reports.
 
 ## Remaining Work
@@ -131,13 +132,13 @@ accept #38 -> Task-010 -> Task-011 -> Task-014 -------------> Task-016
 
 | Task | Track | Owns (references) | Verified by (verifies) | Status |
 |---|---|---|---|---|
-| Task-010 | A | FR-008 | TC-091, TC-092, TC-095 | blocked |
+| Task-010 | A | FR-008 | TC-092, TC-095 | blocked |
 | Task-011 | A | FR-008, FR-009 | TC-096, TC-098 | blocked |
 | Task-012 | B | FR-009 | TC-098, TC-099 | blocked |
 | Task-013 | B | FR-009 | TC-098, TC-099 | blocked |
 | Task-014 | A | FR-008, FR-009 | TC-093, TC-094, TC-097, TC-099 | blocked |
-| Task-015 | B | FR-010 | TC-100, TC-102 | blocked |
-| Task-016 | A | FR-009, NFR-004 | TC-098, TC-099, TC-101, TC-102, TC-103 | blocked |
+| Task-015 | B | FR-010 | TC-100 | blocked |
+| Task-016 | A | FR-009, NFR-004 | TC-098, TC-099, TC-101, TC-103 | blocked |
 
 ## Coordination Rules
 

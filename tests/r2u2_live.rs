@@ -30,6 +30,7 @@ fn grid_covers_every_operator_depth_interval_kind_and_trace_class() {
     }
 }
 
+// Trace: TC-100
 #[test]
 fn every_case_is_admitted_or_refused_with_a_typed_reason() {
     let plan = plan().unwrap();
@@ -165,6 +166,7 @@ fn replay_with(stdout: &BTreeMap<String, String>) -> tl_mltl::r2u2_live::Report 
     run(Path::new(REPO), &Source::Recorded, out.path()).unwrap()
 }
 
+// Trace: TC-100
 #[test]
 fn replay_refuses_unrecorded_unlive_or_altered_outputs() {
     let stdout = simulated_stdout(None);
@@ -219,6 +221,7 @@ fn a_disagreement_outside_the_origin_window_fails_the_run() {
     assert_eq!(row.differing_steps, vec![7]);
 }
 
+// Trace: TC-100, FR-010-AC-1
 #[test]
 fn a_silent_target_step_is_missing_not_agreement() {
     let mut s = simulated_stdout(None);
@@ -296,6 +299,7 @@ fn copy_dir(from: &Path, to: &Path) {
     }
 }
 
+// Trace: TC-100, TC-103, FR-010-AC-2, NFR-004-AC-3
 #[test]
 fn committed_live_r2u2_evidence_replays_to_the_recorded_summary() {
     let root = Path::new(REPO).join("corpus/r2u2-live-v1");

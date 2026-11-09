@@ -400,7 +400,7 @@ mod tests {
         }
     }
 
-    // Trace: TC-027, TC-028, FR-007-AC-3, FR-007-AC-4, StR-003-VC-2
+    // Trace: TC-027, TC-028, TC-100, FR-007-AC-3, FR-007-AC-4, FR-010-AC-3, StR-003-VC-2
     #[test]
     fn contextual_comparison_refuses_identity_mismatch_before_truth_comparison() {
         let report = compare_external_with_context(&reference(), external("other")).unwrap();
@@ -408,7 +408,7 @@ mod tests {
         assert!(!report.comparison_sha256.is_empty());
     }
 
-    // Trace: TC-027, TC-028, FR-007-AC-3, FR-007-AC-4, StR-003-VC-2
+    // Trace: TC-027, TC-028, TC-100, FR-007-AC-3, FR-007-AC-4, FR-010-AC-3, StR-003-VC-2
     #[test]
     fn contextual_comparison_keeps_semantic_and_nonconclusive_outcomes_distinct() {
         let mut semantic_mismatch = external("catalog");

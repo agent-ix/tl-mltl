@@ -57,6 +57,7 @@ fn sets(names: &[&str]) -> BTreeSet<String> {
     names.iter().map(|s| (*s).to_owned()).collect()
 }
 
+// Trace: TC-127
 #[test]
 fn real_member_list_covers_every_evidence_target() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -70,6 +71,7 @@ fn real_member_list_covers_every_evidence_target() {
     assert!(findings.is_empty(), "{findings:?}");
 }
 
+// Trace: TC-127
 #[test]
 fn inventory_refuses_uncovered_targets_and_duplicates() {
     let file = parse_members(MEMBERS).unwrap();
@@ -83,6 +85,7 @@ fn inventory_refuses_uncovered_targets_and_duplicates() {
     assert!(f.iter().any(|x| x.contains("duplicate")), "{f:?}");
 }
 
+// Trace: TC-127
 #[test]
 fn run_records_every_member_and_never_passes_a_missing_one() {
     let dir = fixture(MEMBERS);
@@ -117,6 +120,7 @@ fn failed_required_member_rejects() {
     assert_eq!(aggregate(&report.members), "reject");
 }
 
+// Trace: TC-103, NFR-004-AC-1
 #[test]
 fn replay_reproduces_exact_members_despite_volatile_evidence() {
     let dir = fixture(MEMBERS);
@@ -132,6 +136,7 @@ fn replay_reproduces_exact_members_despite_volatile_evidence() {
     );
 }
 
+// Trace: NFR-004-AC-1
 #[test]
 fn replay_refuses_a_moved_dirty_or_tampered_source() {
     let dir = fixture(MEMBERS);
