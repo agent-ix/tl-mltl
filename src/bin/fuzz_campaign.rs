@@ -164,61 +164,27 @@ fn run_one(target: &str, seed: u64, args: &Args) -> Result<RunRecord, String> {
         }
     });
 
-    let (mut cov, mut features, mut corpus_entries, mut executions) = (0, 0, 0, 0);
-    let mut samples: Vec<ProgressSample> = Vec::new();
-    let mut stopped_by_plateau = false;
-    // Until libFuzzer has printed one progress line the feature count is
-    // unknown, not zero, so no plateau may be decided from it.
-    let mut seen_progress = false;
+    let mut observer = Observer::default();
     let mut text = String::new();
     loop {
         match rx.recv_timeout(Duration::from_secs(1)) {
             Ok(line) => {
                 log.write_all(line.as_bytes()).map_err(|e| e.to_string())?;
                 text.push_str(&line);
-                if let Some((c, f, k)) = progress(&line) {
-                    seen_progress = true;
-                    (cov, features, corpus_entries) = (c, f.max(features), k);
-                }
-                if let Some(n) = executed_units(&line) {
-                    executions = n;
-                }
+                observer.line(&line);
             }
             Err(RecvTimeoutError::Timeout) => {}
             Err(RecvTimeoutError::Disconnected) => break,
         }
-        let elapsed_s = started.elapsed().as_secs();
-        if samples.last().map(|s| s.elapsed_s) != Some(elapsed_s) {
-            samples.push(ProgressSample {
-                elapsed_s,
-                features,
-            });
-        }
-        if seen_progress
-            && !stopped_by_plateau
-            && matches!(
-                decide_stop(&samples, args.budget, args.window),
-                Ok(StopDecision::Plateau { .. })
-            )
-        {
-            stopped_by_plateau = true;
+        if observer.tick(started.elapsed().as_secs(), args.budget, args.window) {
             interrupt(child.id());
         }
     }
     let _ = reader.join();
     let status = child.wait().map_err(|e| e.to_string())?;
     let observed_s = started.elapsed().as_secs();
-    // The final sample is at least the budget for a run that ended on its own
-    // clock, so the plateau rule decides it as it would at any other sample.
-    samples.push(ProgressSample {
-        elapsed_s: observed_s.max(if stopped_by_plateau { 0 } else { args.budget }),
-        features,
-    });
-    let mut state = classify_run(status.code(), &text, stopped_by_plateau);
-    if state == RunState::Completed && !seen_progress {
-        // No feature count was ever observed, so neither plateau nor growth can be stated.
-        state = RunState::ToolError;
-    }
+    let (mut state, stop_reason) =
+        observer.conclude(status.code(), &text, observed_s, args.budget, args.window);
     let mut crashes = Vec::new();
     if state == RunState::Crash {
         crashes = crash_files(&crashes_dir, &prefix)?;
@@ -227,28 +193,99 @@ fn run_one(target: &str, seed: u64, args: &Args) -> Result<RunRecord, String> {
             state = RunState::ToolError;
         }
     }
-    let stop_reason = if state == RunState::Completed {
-        match decide_stop(&samples, args.budget, args.window) {
-            Ok(StopDecision::Plateau { .. }) => StopReason::Plateau,
-            _ => StopReason::GrowthObserved,
-        }
-    } else {
-        StopReason::Abnormal
-    };
     Ok(RunRecord {
         target: target.to_owned(),
         seed,
         requested_seconds: args.budget,
         observed_seconds: observed_s,
         plateau_window_seconds: args.window,
-        executions,
-        coverage_edges: cov,
-        coverage_features: features,
-        corpus_entries,
+        executions: observer.executions,
+        coverage_edges: observer.cov,
+        coverage_features: observer.features,
+        corpus_entries: observer.corpus_entries,
         state,
         stop_reason,
         crashes,
     })
+}
+
+/// What the driver has seen of one run so far.
+#[derive(Default)]
+struct Observer {
+    cov: u64,
+    features: u64,
+    corpus_entries: u64,
+    executions: u64,
+    samples: Vec<ProgressSample>,
+    stopped_by_plateau: bool,
+    /// Until libFuzzer has printed one progress line the feature count is
+    /// unknown, not zero, so no plateau may be decided from it.
+    seen_progress: bool,
+}
+
+impl Observer {
+    fn line(&mut self, line: &str) {
+        if let Some((c, f, k)) = progress(line) {
+            self.seen_progress = true;
+            (self.cov, self.features, self.corpus_entries) = (c, f.max(self.features), k);
+        }
+        if let Some(n) = executed_units(line) {
+            self.executions = n;
+        }
+    }
+
+    /// Record the clock sample for `elapsed_s` and return true exactly once,
+    /// when the run should be interrupted because it reached a plateau.
+    fn tick(&mut self, elapsed_s: u64, budget: u64, window: u64) -> bool {
+        if self.samples.last().map(|s| s.elapsed_s) != Some(elapsed_s) {
+            self.samples.push(ProgressSample {
+                elapsed_s,
+                features: self.features,
+            });
+        }
+        if self.seen_progress
+            && !self.stopped_by_plateau
+            && matches!(
+                decide_stop(&self.samples, budget, window),
+                Ok(StopDecision::Plateau { .. })
+            )
+        {
+            self.stopped_by_plateau = true;
+            return true;
+        }
+        false
+    }
+
+    /// End state and stop reason of a finished process. The final sample is at
+    /// least the budget for a run that ended on its own clock, so the plateau
+    /// rule decides it as it would at any other sample. A run that printed no
+    /// progress line is a tool error: neither plateau nor growth can be stated.
+    fn conclude(
+        &mut self,
+        code: Option<i32>,
+        log: &str,
+        observed_s: u64,
+        budget: u64,
+        window: u64,
+    ) -> (RunState, StopReason) {
+        self.samples.push(ProgressSample {
+            elapsed_s: observed_s.max(if self.stopped_by_plateau { 0 } else { budget }),
+            features: self.features,
+        });
+        let mut state = classify_run(code, log, self.stopped_by_plateau);
+        if state == RunState::Completed && !self.seen_progress {
+            state = RunState::ToolError;
+        }
+        let stop_reason = if state == RunState::Completed {
+            match decide_stop(&self.samples, budget, window) {
+                Ok(StopDecision::Plateau { .. }) => StopReason::Plateau,
+                _ => StopReason::GrowthObserved,
+            }
+        } else {
+            StopReason::Abnormal
+        };
+        (state, stop_reason)
+    }
 }
 
 fn crash_files(dir: &Path, prefix: &str) -> Result<Vec<CrashRecord>, String> {
@@ -374,5 +411,110 @@ mod tests {
         assert!(parse_args(&[]).is_err());
         assert!(parse_args(&["out".into(), "--budget".into(), "0".into()]).is_err());
         assert!(parse_args(&["out".into(), "--nope".into()]).is_err());
+    }
+
+    fn feed(o: &mut Observer, secs: &[(u64, u64)], budget: u64, window: u64) -> Vec<bool> {
+        secs.iter()
+            .map(|(t, ft)| {
+                o.line(&format!("#1\tNEW    cov: 5 ft: {ft} corp: 2/9b lim: 4"));
+                o.tick(*t, budget, window)
+            })
+            .collect()
+    }
+
+    #[test]
+    fn no_plateau_is_decided_before_any_progress_line() {
+        let mut o = Observer::default();
+        for t in 0..50 {
+            assert!(!o.tick(t, 100, 10), "second {t}");
+        }
+        let (state, stop) = o.conclude(Some(0), "", 60, 100, 10);
+        assert_eq!((state, stop), (RunState::ToolError, StopReason::Abnormal));
+    }
+
+    #[test]
+    fn a_stalled_run_is_interrupted_once_and_concluded_as_a_plateau() {
+        let mut o = Observer::default();
+        let fired = feed(
+            &mut o,
+            &[(0, 5), (4, 6), (9, 6), (14, 6), (15, 6), (16, 6)],
+            100,
+            10,
+        );
+        assert_eq!(fired, [false, false, false, true, false, false]);
+        let (state, stop) = o.conclude(Some(72), "", 17, 100, 10);
+        assert_eq!((state, stop), (RunState::Completed, StopReason::Plateau));
+    }
+
+    #[test]
+    fn a_run_still_growing_at_the_budget_is_growth_observed() {
+        let mut o = Observer::default();
+        let fired = feed(&mut o, &[(0, 1), (30, 2), (60, 3), (95, 4)], 100, 40);
+        assert!(fired.iter().all(|f| !f));
+        let (state, stop) = o.conclude(Some(0), "", 100, 100, 40);
+        assert_eq!(
+            (state, stop),
+            (RunState::Completed, StopReason::GrowthObserved)
+        );
+    }
+
+    #[test]
+    fn a_crash_summary_is_abnormal_and_feature_counts_never_fall() {
+        let mut o = Observer::default();
+        feed(&mut o, &[(0, 9)], 100, 10);
+        o.line("#2\tNEW    cov: 5 ft: 3 corp: 2/9b");
+        assert_eq!(o.features, 9);
+        let (state, stop) = o.conclude(Some(1), "SUMMARY: AddressSanitizer: x", 5, 100, 10);
+        assert_eq!((state, stop), (RunState::Crash, StopReason::Abnormal));
+    }
+
+    fn fuzz_dir(name: &str, binary: &str) -> Args {
+        let dir = std::env::temp_dir().join(format!("fuzz-campaign-{}-{name}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        let release = dir.join("fuzz/target/t/release");
+        fs::create_dir_all(&release).unwrap();
+        fs::create_dir_all(dir.join("fuzz/fuzz_targets")).unwrap();
+        fs::create_dir_all(dir.join("fuzz/corpus/a")).unwrap();
+        fs::write(dir.join("fuzz/fuzz_targets/a.rs"), "").unwrap();
+        std::os::unix::fs::symlink(binary, release.join("a")).unwrap();
+        Args {
+            out: dir.join("out"),
+            budget: 1,
+            window: 1,
+            seeds: vec![7],
+            triple: "t".to_owned(),
+            targets: Vec::new(),
+            fuzz_dir: dir.join("fuzz"),
+        }
+    }
+
+    #[test]
+    fn targets_are_discovered_from_the_fuzz_target_sources() {
+        let args = fuzz_dir("discover", "/usr/bin/true");
+        assert_eq!(discover(&args.fuzz_dir).unwrap(), ["a"]);
+        assert!(discover(&args.out).is_err());
+    }
+
+    #[test]
+    fn a_target_that_prints_no_progress_is_a_tool_error_record() {
+        let args = fuzz_dir("silent", "/usr/bin/true");
+        campaign(&args).unwrap();
+        let record =
+            parse_record(&fs::read_to_string(args.out.join("record.json")).unwrap()).unwrap();
+        assert_eq!(record.runs.len(), 1);
+        assert_eq!(record.runs[0].state, RunState::ToolError);
+        assert_eq!(record.runs[0].stop_reason, StopReason::Abnormal);
+        assert!(args.out.join("logs/a-7.log").exists());
+    }
+
+    #[test]
+    fn a_failing_tool_is_a_tool_error_and_a_missing_binary_is_a_driver_error() {
+        let args = fuzz_dir("failing", "/usr/bin/false");
+        campaign(&args).unwrap();
+        let record =
+            parse_record(&fs::read_to_string(args.out.join("record.json")).unwrap()).unwrap();
+        assert_eq!(record.runs[0].state, RunState::ToolError);
+        let missing = fuzz_dir("missing", "/nonexistent/binary");
+        assert!(campaign(&missing).is_err());
     }
 }

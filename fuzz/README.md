@@ -62,7 +62,7 @@ one-second clock as well as on each libFuzzer progress line, so a target that pr
 reaches the plateau decision. Timeouts and out-of-memory are recorded by state only; their inputs stay
 under `OUT_DIR/crashes` and are not replayed by process (not done).
 
-The 2026-11-08 record, written by the Python driver this one replaces (format: see the file), is `fuzz/evidence/2026-11-08/campaign-900s.json` (18
+The 2026-11-08 record, written by the earlier driver in its own format, is `fuzz/evidence/2026-11-08/campaign-900s.json` (18
 runs, no crash, timeout or out-of-memory). No run reached a plateau; every run
 ended at the budget. For the five targets with regular progress output, features
 were still appearing within the last window (growth observed). For

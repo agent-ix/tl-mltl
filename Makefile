@@ -8,9 +8,8 @@
 #
 # This file is not a trust root and does not try to be one. The parse-time
 # guards that used to police Make's own execution controls — MAKEFLAGS,
-# PYTHONOPTIMIZE, the rustup and loader overrides, CARGO_TARGET_DIR, the
-# CARGO/PYTHON/QUIRE/SHA256SUM/BASH origin checks, and the static
-# check_failure_propagation.py inspection — went with the collector they were
+# the rustup and loader overrides, CARGO_TARGET_DIR, the tool origin checks and
+# the static failure-propagation inspection — went with the collector they were
 # protecting.
 #
 # `make ci` alone still trusts Make's own execution controls and Make's own
@@ -191,7 +190,7 @@ MUTANTS_OUT ?= target/mutants
 MUTANTS_JOBS ?= 4
 MUTANTS_BASE ?= origin/main
 COVERAGE_MIN_LINES ?= 80
-COVERAGE_IGNORE = '(ci_guard|kani_)'
+COVERAGE_IGNORE = '(ci_guard|kani_|fuzz_campaign)'
 
 # The wrapper accepts cargo-mutants' "survivors found" status and judges the
 # result against mutation-thresholds.toml (see tools/gate).

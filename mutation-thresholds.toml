@@ -7,7 +7,7 @@
 # `diff_min_kill_percent` applies to `make mutants-diff`: every mutant in the
 # changed code must be killed.
 diff_min_kill_percent = 100.0
-exclude = ["src/ci_guard.rs", "src/bin/ci_guard.rs", "src/future/kani_evaluate.rs", "src/wire/kani_wire.rs"]
+exclude = ["src/ci_guard.rs", "src/bin/ci_guard.rs", "src/bin/kani_gate.rs", "src/bin/fuzz_campaign.rs", "src/future/kani_evaluate.rs", "src/wire/kani_wire.rs"]
 
 # evaluation, horizon, interval arithmetic
 [[group]]

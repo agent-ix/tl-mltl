@@ -6,7 +6,7 @@ the gates enforce; it carries no measured results. Floors live in `mutation-thre
 and the Linear tickets.
 
 Tools (inputs): cargo-mutants 27.0.0, cargo-llvm-cov 0.8.7 (branch coverage needs a nightly toolchain with
-llvm-tools), Kani 0.68.0, Python 3.11 or newer (the gate reads TOML with `tomllib`).
+llvm-tools), Kani 0.68.0.
 
 ## Targets
 
@@ -27,7 +27,7 @@ count on neither side. Each group in `mutation-thresholds.toml` has a floor; the
 exits 1 when a group is below its floor, when a group has no viable mutants, or when the unmutated
 baseline failed. The campaign targets are a core group and a whole-crate group (the core is `src/future/*.rs` (evaluation, horizon, interval arithmetic)).
 
-Excluded from every threshold: `src/ci_guard.rs` and `src/bin/ci_guard.rs` (CI plumbing) and the two verifier-only Kani files `src/future/kani_evaluate.rs` and `src/wire/kani_wire.rs`, through `exclude_globs` in `.cargo/mutants.toml` and `exclude` in `mutation-thresholds.toml`. One equivalent mutant is listed in `exclude_re`: the inline `cfg(kani)` harness in `src/future/horizon.rs` is never compiled by `cargo test`, so no test can observe a mutation of it.
+Excluded from every threshold: `src/ci_guard.rs` and `src/bin/ci_guard.rs` (CI plumbing), the process-spawning drivers `src/bin/kani_gate.rs` and `src/bin/fuzz_campaign.rs` (their pure parts are unit-tested; the spawn loops need cargo-kani or a fuzz binary), and the two verifier-only Kani files `src/future/kani_evaluate.rs` and `src/wire/kani_wire.rs`, through `exclude_globs` in `.cargo/mutants.toml` and `exclude` in `mutation-thresholds.toml`. One equivalent mutant is listed in `exclude_re`: the inline `cfg(kani)` harness in `src/future/horizon.rs` is never compiled by `cargo test`, so no test can observe a mutation of it.
 
 `tl-gate mutants` accepts cargo-mutants exit statuses 0, 2 (survivors) and 3 (timeouts) so that
 the gate always runs and prints its table; any other status is passed on.
@@ -50,7 +50,7 @@ the two. It is a floor, not a target. Coverage reports exclude CI-plumbing code 
 
 ## Kani proofs (TL-232)
 
-`make kani-check` first runs `cargo test --test kani_harnesses`, which fails when `scripts/kani-harnesses.txt` and the `#[kani::proof]` functions disagree by name or a harness lacks a stated non-claim or a cover check. It then runs each listed harness through `scripts/kani-gate.sh` with `cargo kani --lib -Z stubbing --harness NAME --exact`; the script fails on any harness that is not verified or has an unsatisfied cover property (Kani itself exits 0 in that case). When `TL_MLTL_EVIDENCE_DIR` is set (a `make campaign-run` of the `kani-horizon-bound` member), the script also writes a per-proof record with a distinct outcome state, the Kani and CBMC versions, cover counts, the harness bounds and the command that reproduces the run; the campaign report carries them as `kaniProofs`. `-Z stubbing` is an unstable
+`make kani-check` first runs `cargo test --test kani_harnesses`, which fails when `scripts/kani-harnesses.txt` and the `#[kani::proof]` functions disagree by name or a harness lacks a stated non-claim or a cover check. It then runs every listed harness through `kani_gate` (`src/bin/kani_gate.rs`) with `cargo kani --lib -Z stubbing --harness NAME --exact`, reporting every failing harness; it fails on any harness that is not verified or has an unsatisfied cover property (Kani itself exits 0 in that case). When `TL_MLTL_EVIDENCE_DIR` is set (a `make campaign-run` of the `kani-horizon-bound` member), `kani_gate` also writes a per-proof record with a distinct outcome state, the Kani and CBMC versions, cover counts, the harness bounds and the command that reproduces the run; the campaign report carries them as `kaniProofs`. `-Z stubbing` is an unstable
 Kani feature used only by the combinator proof. It is part of `make ci`. Tool versions are inputs
 (Kani Rust Verifier 0.68.0, CBMC 6.11.0). Each harness doc comment states the bounds it covers and
 what it does not claim; `kani::cover!` checks show the paths are reachable, so no proof is vacuous, and
