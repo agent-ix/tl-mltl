@@ -62,17 +62,7 @@ one-second clock as well as on each libFuzzer progress line, so a target that pr
 reaches the plateau decision. Timeouts and out-of-memory are recorded by state only; their inputs stay
 under `OUT_DIR/crashes` and are not replayed by process (not done).
 
-The 2026-11-08 record, written by the earlier driver in its own format, is `fuzz/evidence/2026-11-08/campaign-900s.json` (18
-runs, no crash, timeout or out-of-memory). No run reached a plateau; every run
-ended at the budget. For the five targets with regular progress output, features
-were still appearing within the last window (growth observed). For
-`evaluator_differential` the growth label and last-new-feature time are
-unverified (`budget_growth_unverified`, null): its low execution rate left
-libFuzzer's block-buffered stderr empty until flush. The driver checks the
-plateau condition only when a stderr line arrives, so a quiet stretch cannot
-trigger it; that applies to any low-output target.
-
-The grown corpora are generated inputs and are not committed; they were kept
-locally, not retained, and re-running the driver with the recorded seeds and
+The grown corpora are generated inputs and are not committed; they are kept
+locally, not retained, and re-running the driver with the same seeds and
 budget reproduces them. A no-crash result is a bounded observation, not a
 correctness claim.

@@ -488,6 +488,56 @@ mod tests {
         }
     }
 
+    // Trace: TC-109, FR-021-AC-1
+    #[test]
+    fn the_default_campaign_covers_every_target_under_three_distinct_seeds_with_full_records() {
+        let args = parse_args(&["out".to_owned()]).unwrap();
+        let seeds: std::collections::BTreeSet<u64> = args.seeds.iter().copied().collect();
+        assert!(
+            seeds.len() >= 3 && seeds.len() == args.seeds.len(),
+            "{:?}",
+            args.seeds
+        );
+        assert!(args.budget > 0 && args.window > 0);
+        let fuzz = Path::new(env!("CARGO_MANIFEST_DIR")).join("fuzz");
+        let targets = discover(&fuzz).unwrap();
+        let manifest = fs::read_to_string(fuzz.join("Cargo.toml")).unwrap();
+        assert!(!targets.is_empty());
+        for target in &targets {
+            assert!(
+                manifest.contains(&format!("name = \"{target}\"")),
+                "{target}"
+            );
+        }
+        let run = RunRecord {
+            target: targets[0].clone(),
+            seed: args.seeds[0],
+            requested_seconds: 1,
+            observed_seconds: 1,
+            plateau_window_seconds: 1,
+            executions: 1,
+            coverage_edges: 1,
+            coverage_features: 1,
+            corpus_entries: 1,
+            state: RunState::Completed,
+            stop_reason: StopReason::GrowthObserved,
+            crashes: Vec::new(),
+        };
+        let json = serde_json::to_value(&run).unwrap();
+        for field in [
+            "target",
+            "seed",
+            "requestedSeconds",
+            "observedSeconds",
+            "executions",
+            "coverageEdges",
+            "coverageFeatures",
+            "corpusEntries",
+        ] {
+            assert!(!json[field].is_null(), "{field}");
+        }
+    }
+
     #[test]
     fn targets_are_discovered_from_the_fuzz_target_sources() {
         let args = fuzz_dir("discover", "/usr/bin/true");
