@@ -6,13 +6,13 @@ the gates enforce; it carries no measured results. Floors live in `mutation-thre
 and the Linear tickets.
 
 Tools (inputs): cargo-mutants 27.0.0, cargo-llvm-cov 0.8.7 (branch coverage needs a nightly toolchain with
-llvm-tools), Kani 0.68.0, Python 3.11 or newer (the gate reads TOML with `tomllib`).
+llvm-tools), Kani 0.68.0.
 
 ## Targets
 
 | Target | What it does |
 | --- | --- |
-| `make mutants` | Full cargo-mutants run (`--no-shuffle`, so the population and order are fixed), then `scripts/mutation_gate.py` against `mutation-thresholds.toml`. Takes hours; run it weekly. |
+| `make mutants` | Full cargo-mutants run (`--no-shuffle`, so the population and order are fixed), then `tl-gate gate` against `mutation-thresholds.toml`. Takes hours; run it weekly. |
 | `make mutants-diff` | cargo-mutants on `git diff $(MUTANTS_BASE)...HEAD` (default `origin/main`) only; every mutant in the diff must be killed. Only committed changes are mutated; uncommitted edits are not. |
 | `make coverage` | `cargo llvm-cov` line, function and region coverage on the pinned toolchain, failing below `COVERAGE_MIN_LINES`. |
 | `make coverage-branch` | The same on nightly, adding branch coverage. |
@@ -27,16 +27,15 @@ count on neither side. Each group in `mutation-thresholds.toml` has a floor; the
 exits 1 when a group is below its floor, when a group has no viable mutants, or when the unmutated
 baseline failed. The campaign targets are a core group and a whole-crate group (the core is `src/future/*.rs` (evaluation, horizon, interval arithmetic)).
 
-Excluded from every threshold: `src/ci_guard.rs` and `src/bin/ci_guard.rs` (CI plumbing) and the two verifier-only Kani files `src/future/kani_evaluate.rs` and `src/wire/kani_wire.rs`, through `exclude_globs` in `.cargo/mutants.toml` and `exclude` in `mutation-thresholds.toml`. One equivalent mutant is listed in `exclude_re`: the inline `cfg(kani)` harness in `src/future/horizon.rs` is never compiled by `cargo test`, so no test can observe a mutation of it.
+Excluded from every threshold: `src/ci_guard.rs` and `src/bin/ci_guard.rs` (CI plumbing), the process-spawning drivers `src/bin/kani_gate.rs` and `src/bin/fuzz_campaign.rs` (their pure parts are unit-tested; the spawn loops need cargo-kani or a fuzz binary), and the two verifier-only Kani files `src/future/kani_evaluate.rs` and `src/wire/kani_wire.rs`, through `exclude_globs` in `.cargo/mutants.toml` and `exclude` in `mutation-thresholds.toml`. One equivalent mutant is listed in `exclude_re`: the inline `cfg(kani)` harness in `src/future/horizon.rs` is never compiled by `cargo test`, so no test can observe a mutation of it.
 
-`scripts/run_mutants.py` accepts cargo-mutants exit statuses 0, 2 (survivors) and 3 (timeouts) so that
+`tl-gate mutants` accepts cargo-mutants exit statuses 0, 2 (survivors) and 3 (timeouts) so that
 the gate always runs and prints its table; any other status is passed on.
-The NFR-006 Makefile guard (`src/ci_guard.rs`) rejects Makefile recipes that join commands with a bare `;`, so the cargo-mutants exit-status handling lives in `scripts/run_mutants.py` and the Makefile only invokes it (help strings must not contain `;` either).
+The NFR-006 Makefile guard (`src/ci_guard.rs`) rejects Makefile recipes that join commands with a bare `;`, so the cargo-mutants exit-status handling lives in `tl-gate mutants` and the Makefile only invokes it (help strings must not contain `;` either).
 
 `--source-env` (tl-mltl only) exports `TL_MLTL_SOURCE_REVISION` and `TL_MLTL_SOURCE_STATE`, because `build.rs` reads git and cargo-mutants builds in a copy of the tree without `.git`.
 
-`scripts/mutation_gate.py` and `scripts/run_mutants.py` are the same in tl-syntax, tl-parse, tl-rewrite and
-tl-mltl (tl-mltl alone has `--source-env`); a shared copy is a separate follow-up.
+The gate and the runner are one Rust package, `tools/tl-gate` in tl-syntax; this repository builds it through the `tools/gate` shim, whose `Cargo.toml` names the tl-syntax revision. A thresholds file may set `require_survivor_reasons = true` to demand a `[[survivor]]` entry with a reason for every missed or timed-out mutant; this repository's file does not yet.
 
 ## Limits of the recorded measurements
 
@@ -51,7 +50,7 @@ the two. It is a floor, not a target. Coverage reports exclude CI-plumbing code 
 
 ## Kani proofs (TL-232)
 
-`make kani-check` first runs `cargo test --test kani_harnesses`, which fails when `scripts/kani-harnesses.txt` and the `#[kani::proof]` functions disagree by name or a harness lacks a stated non-claim or a cover check. It then runs each listed harness through `scripts/kani-gate.sh` with `cargo kani --lib -Z stubbing --harness NAME --exact`; the script fails on any harness that is not verified or has an unsatisfied cover property (Kani itself exits 0 in that case). When `TL_MLTL_EVIDENCE_DIR` is set (a `make campaign-run` of the `kani-horizon-bound` member), the script also writes a per-proof record with a distinct outcome state, the Kani and CBMC versions, cover counts, the harness bounds and the command that reproduces the run; the campaign report carries them as `kaniProofs`. `-Z stubbing` is an unstable
+`make kani-check` first runs `cargo test --test kani_harnesses`, which fails when `scripts/kani-harnesses.txt` and the `#[kani::proof]` functions disagree by name or a harness lacks a stated non-claim or a cover check. It then runs every listed harness through `kani_gate` (`src/bin/kani_gate.rs`) with `cargo kani --lib -Z stubbing --harness NAME --exact`, reporting every failing harness; it fails on any harness that is not verified or has an unsatisfied cover property (Kani itself exits 0 in that case). When `TL_MLTL_EVIDENCE_DIR` is set (a `make campaign-run` of the `kani-horizon-bound` member), `kani_gate` also writes a per-proof record with a distinct outcome state, the Kani and CBMC versions, cover counts, the harness bounds and the command that reproduces the run; the campaign report carries them as `kaniProofs`. `-Z stubbing` is an unstable
 Kani feature used only by the combinator proof. It is part of `make ci`. Tool versions are inputs
 (Kani Rust Verifier 0.68.0, CBMC 6.11.0). Each harness doc comment states the bounds it covers and
 what it does not claim; `kani::cover!` checks show the paths are reachable, so no proof is vacuous, and

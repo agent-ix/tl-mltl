@@ -146,9 +146,9 @@ fn combinator_harness_name_and_doc_say_the_evaluator_entry_is_stubbed() {
 fn gate_runs_each_listed_harness_exactly_and_every_proof_is_covered() {
     let makefile = read("Makefile");
     assert!(makefile.contains("scripts/kani-harnesses.txt"));
-    assert!(makefile.contains("scripts/kani-gate.sh"));
-    let gate = read("scripts/kani-gate.sh");
-    assert!(gate.contains("--harness") && gate.contains("--exact"));
+    assert!(makefile.contains("--bin kani_gate"));
+    let gate = read("src/bin/kani_gate.rs");
+    assert!(gate.contains("\"--harness\"") && gate.contains("\"--exact\""));
     // Kani exits 0 on an unsatisfied cover; the gate must read the result.
     assert!(gate.contains("cover properties satisfied"));
     assert!(gate.contains("VERIFICATION:- SUCCESSFUL"));

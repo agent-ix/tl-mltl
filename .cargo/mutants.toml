@@ -6,6 +6,10 @@
 exclude_globs = [
     "src/ci_guard.rs",
     "src/bin/ci_guard.rs",
+    # Process-spawning drivers (cargo kani, libFuzzer binaries); their pure parts are unit-tested but
+    # a mutant of the spawn and wait loops needs the external tool to observe.
+    "src/bin/kani_gate.rs",
+    "src/bin/fuzz_campaign.rs",
     # Verifier-only (cfg(kani)); never compiled by cargo test.
     "src/future/kani_evaluate.rs",
     "src/wire/kani_wire.rs",
