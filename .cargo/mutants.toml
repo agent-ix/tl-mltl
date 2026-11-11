@@ -19,9 +19,9 @@ exclude_globs = [
 # that exercise it.
 additional_cargo_args = ["--all-features"]
 
-# The unmutated test suite takes about 75 s cold; allow generous headroom so a
-# slow runner does not turn a caught mutant into a timeout.
-minimum_test_timeout = 120
+# The unmutated suite takes minutes under load; the floor is well above it so a loaded host does not
+# turn a caught mutant into a timeout.
+minimum_test_timeout = 300
 timeout_multiplier = 3.0
 
 # Equivalent mutants (one-line reason each).
@@ -29,3 +29,8 @@ exclude_re = [
     # The inline cfg(kani) harness in horizon.rs is never compiled by cargo test, so no test can observe a mutation of it.
     "replace kani_proofs::horizon_bound_addition_matches_checked_add with",
 ]
+
+# tests/tc138_feature_boundary.rs rebuilds the crate for external consumers and takes 12 minutes under
+# load; it checks feature gating, which no mutant changes, and as the slowest test it turned every
+# surviving mutant into a timeout. Mutation runs skip it.
+additional_cargo_test_args = ["--", "--skip", "external_consumer_feature_tree_and_complete_bounded_bytes"]

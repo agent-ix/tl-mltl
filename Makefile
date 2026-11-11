@@ -201,6 +201,7 @@ mutants:
 .PHONY: mutants-diff
 mutants-diff:
 	$(GATE) mutants --source-env --jobs $(MUTANTS_JOBS) --diff-base $(MUTANTS_BASE) $(MUTANTS_OUT)
+	$(CI_GUARD) record mutants-diff
 
 .PHONY: coverage
 coverage:
@@ -305,7 +306,7 @@ fuzz-smoke:
 
 .PHONY: ci
 ci: fmt-check lint kani-check test test-features conformance differential cli-conformance \
-	campaign-inventory deny fuzz-check spec msrv rustdoc miri
+	campaign-inventory deny fuzz-check spec msrv rustdoc miri mutants-diff
 
 # The assured entry point (NFR-006). Builds and runs the guard, which refuses
 # to invoke `make ci` at all if this file's execution controls or the calling
