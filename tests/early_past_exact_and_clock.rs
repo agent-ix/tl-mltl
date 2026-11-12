@@ -292,3 +292,14 @@ fn sample_instants_with_unit_denominators_terminate() {
     });
     assert_eq!((instant.numerator(), instant.denominator()), (2, 1));
 }
+
+// Trace: TC-176
+#[test]
+fn the_longest_formula_identity_validates_in_a_requirement_report() {
+    let nodes = nested(5, 2);
+    let formula =
+        Formula::new(SemanticProfile::OriginCompleteHistoryV1, NodeId(2), &nodes).unwrap();
+    let mut report = analyze_required_history(formula, "f").unwrap();
+    report.formula_id = "x".repeat(256);
+    assert!(report.validate().is_ok());
+}

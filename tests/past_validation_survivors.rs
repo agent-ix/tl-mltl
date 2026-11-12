@@ -294,3 +294,78 @@ fn a_correction_must_share_every_context_field_with_its_predecessor() {
         );
     }
 }
+
+// Trace: TC-176, NFR-001-AC-4
+#[test]
+fn an_original_carries_neither_a_predecessor_nor_a_corrected_history() {
+    let (first, second) = correction_chain();
+    let shape = Refusal::RelationShape;
+    assert_eq!(
+        refusal(|r| r.relation.direct_predecessor = second.relation.direct_predecessor.clone()),
+        shape
+    );
+    assert_eq!(
+        refusal(|r| r.relation.corrected_history = second.relation.corrected_history.clone()),
+        shape
+    );
+    drop(first);
+}
+
+// Trace: TC-176, NFR-001-AC-4
+#[test]
+fn the_evaluator_counts_temporal_work_and_bounds_identities() {
+    let stats = original().stats;
+    assert_eq!(
+        stats.steps,
+        stats.node_evaluations + stats.temporal_iterations
+    );
+    assert!(stats.temporal_iterations > 0, "{stats:?}");
+    let nodes = nodes();
+    let formula =
+        Formula::new(SemanticProfile::OriginCompleteHistoryV1, NodeId(2), &nodes).unwrap();
+    let run = |id: &str| {
+        evaluate_past(
+            formula,
+            id,
+            &history(1, 3),
+            1,
+            "map-a",
+            1,
+            PastEvaluationRelationInput::Original,
+            PastEvaluationLimits::default(),
+        )
+    };
+    assert!(run(&"x".repeat(MAX_IDENTITY_BYTES)).is_ok());
+    assert!(run(&"x".repeat(MAX_IDENTITY_BYTES + 1)).is_err());
+    assert!(run("").is_err());
+}
+
+// Trace: TC-176
+#[test]
+fn validation_errors_render_a_nonempty_message() {
+    for error in [
+        Refusal::RelationShape,
+        Refusal::StaleResultDigest,
+        Refusal::IdentityMismatch { field: "formulaId" },
+        Refusal::MalformedDigest {
+            field: "resultSha256",
+        },
+    ] {
+        assert!(!error.to_string().trim().is_empty(), "{error:?}");
+    }
+    assert!(Refusal::IdentityMismatch { field: "formulaId" }
+        .to_string()
+        .contains("formulaId"));
+    assert!(
+        !tl_mltl::HistoryRequirementValidationError::MalformedFormulaDigest
+            .to_string()
+            .trim()
+            .is_empty()
+    );
+    assert!(
+        !tl_mltl::PastEvaluationError::InvalidIdentity { field: "formulaId" }
+            .to_string()
+            .trim()
+            .is_empty()
+    );
+}
