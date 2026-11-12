@@ -110,7 +110,7 @@ fn every_identity_is_bounded_on_both_sides() {
 fn each_statistic_is_checked_on_its_own() {
     let out = Refusal::StatisticsOutOfRange;
     let base = original();
-    let stats = base.stats.clone();
+    let stats = base.stats;
     assert!(stats.max_recursion_depth >= 1 && stats.input_positions >= 2);
 
     assert_eq!(refusal(|r| r.stats.steps = 0), out);
