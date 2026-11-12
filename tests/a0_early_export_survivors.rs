@@ -178,7 +178,8 @@ fn a_replay_is_refused_when_any_manifest_field_alone_differs() {
     };
     assert!(replay(&manifest, &manifest.output_sha256).is_ok());
     let refused = Err(SafetyExportError::TargetMismatch);
-    let tampered: Vec<(&str, Box<dyn Fn(&mut SafetyMappingManifest)>)> = vec![
+    type Tamper = Box<dyn Fn(&mut SafetyMappingManifest)>;
+    let tampered: Vec<(&str, Tamper)> = vec![
         ("profile", Box::new(|m| m.profile = "other")),
         ("revision", Box::new(|m| m.provider_revision = "other")),
         ("graph", Box::new(|m| m.graph_id = "other".into())),

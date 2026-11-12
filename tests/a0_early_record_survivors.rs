@@ -292,3 +292,42 @@ fn future_traces_enumerate_every_two_proposition_word_in_order() {
     assert_eq!(traces[8][1], [false, true]);
     assert_eq!(traces[12][1], [true, true]);
 }
+
+// Trace: TC-100
+#[test]
+fn a_run_with_no_tool_marks_admitted_cases_not_run_with_an_empty_target() {
+    let out = tempfile::tempdir().unwrap();
+    let report = run(
+        Path::new(env!("CARGO_MANIFEST_DIR")),
+        &Source::None("x".into()),
+        out.path(),
+    )
+    .unwrap();
+    let not_run: Vec<_> = report
+        .cases
+        .iter()
+        .filter(|c| c.status == CaseStatus::NotRun)
+        .collect();
+    assert!(!not_run.is_empty());
+    assert!(not_run.iter().all(|c| c.target.is_empty()));
+}
+
+// Trace: TC-100
+#[test]
+fn a_replay_refuses_when_either_input_digest_alone_differs() {
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR"));
+    for field in ["specSha256", "traceSha256"] {
+        let dir = tempfile::tempdir().unwrap();
+        copy_tree(&repo.join("corpus/r2u2-live-v1/past"), dir.path());
+        let path = dir.path().join("report.json");
+        let mut value: serde_json::Value =
+            serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        value["groups"][0][field] = serde_json::json!("0".repeat(64));
+        fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
+        let error = run(repo, &Source::Recorded, dir.path()).unwrap_err();
+        assert!(
+            error.contains("no longer generates the inputs"),
+            "{field}: {error}"
+        );
+    }
+}
