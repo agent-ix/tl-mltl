@@ -88,3 +88,21 @@ fn agreement_needs_both_the_truth_value_and_the_verdict_time() {
     assert_eq!(status(false, 0), ComparisonStatus::Mismatch);
     assert_eq!(status(false, 1), ComparisonStatus::Mismatch);
 }
+
+// Trace: FR-005
+#[test]
+fn either_identity_differing_alone_is_a_mismatch() {
+    let reference = reference(0);
+    let mut formula = external(true, 0);
+    formula.formula_id = "other".into();
+    assert_eq!(
+        compare_external(&reference, formula).status,
+        ComparisonStatus::Mismatch
+    );
+    let mut trace = external(true, 0);
+    trace.trace_id = "other".into();
+    assert_eq!(
+        compare_external(&reference, trace).status,
+        ComparisonStatus::Mismatch
+    );
+}

@@ -13,9 +13,25 @@ fn exact(numerator: i64, denominator: u64) -> ExactNumber {
     ExactNumber::new(numerator, denominator).unwrap()
 }
 
+/// Runs `work` on a thread and fails if it does not finish: a mutated arithmetic loop would spin
+/// forever, and this turns that hang into an immediate failure.
+fn within_seconds<T: Send + 'static>(seconds: u64, work: impl FnOnce() -> T + Send + 'static) -> T {
+    let (sender, receiver) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = sender.send(work());
+    });
+    receiver
+        .recv_timeout(std::time::Duration::from_secs(seconds))
+        .expect("the computation must terminate")
+}
+
 // Trace: TC-176
 #[test]
 fn exact_numbers_expose_their_parts_and_normalize_sums() {
+    within_seconds(20, exact_number_checks);
+}
+
+fn exact_number_checks() {
     let value = exact(-7, 3);
     assert_eq!((value.numerator(), value.denominator()), (-7, 3));
     // 1/4 + 1 * 1/4 = 1/2: the sum 2/4 is reduced by its common divisor.
@@ -266,4 +282,13 @@ fn deserializer_errors_name_what_they_expected() {
         observations.contains("position observations"),
         "{observations}"
     );
+}
+
+// Trace: TC-176
+#[test]
+fn sample_instants_with_unit_denominators_terminate() {
+    let instant = within_seconds(20, || {
+        fixed_sample_instant(exact(0, 1), exact(1, 1), 2).unwrap()
+    });
+    assert_eq!((instant.numerator(), instant.denominator()), (2, 1));
 }
