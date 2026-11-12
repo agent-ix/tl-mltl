@@ -322,3 +322,39 @@ pub fn run_future(repo: &Path, source: &Source<'_>, out: &Path) -> Result<Report
     report.schema_version = FUTURE_REPORT_SCHEMA.to_owned();
     Ok(report)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Trace: TC-100
+    #[test]
+    fn the_worst_status_keeps_the_first_of_equal_rank() {
+        let order = [
+            CaseStatus::Agree,
+            CaseStatus::PendingResolvedByTarget,
+            CaseStatus::MissingTarget,
+            CaseStatus::Unexplained,
+        ];
+        for (low, high) in order.iter().zip(&order[1..]) {
+            assert_eq!(worst(*low, *high), *high);
+            assert_eq!(worst(*high, *low), *high);
+        }
+        assert_eq!(
+            worst(CaseStatus::Agree, CaseStatus::OriginProfileDifference),
+            CaseStatus::Agree
+        );
+        assert_eq!(
+            worst(CaseStatus::OriginProfileDifference, CaseStatus::Agree),
+            CaseStatus::OriginProfileDifference
+        );
+    }
+
+    // Trace: TC-100
+    #[test]
+    fn verdict_symbols_are_t_f_and_question_mark() {
+        assert_eq!(sym(Some(true)), 'T');
+        assert_eq!(sym(Some(false)), 'F');
+        assert_eq!(sym(None), '?');
+    }
+}
