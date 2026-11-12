@@ -206,3 +206,97 @@ fn a_prefix_identity_is_a_digest_of_the_map_and_rows() {
     assert_ne!(a, identity("map", &[]));
     let _ = evaluate_prefix_safety;
 }
+
+use tl_mltl::infinite::{
+    DetailedSettlementError, InfiniteProvider, ProviderRegistry, ProviderRequest,
+};
+use tl_syntax::{LivenessSubject, LivenessSubjectKind};
+
+fn settle(
+    request: ProviderRequest<'_>,
+    formula: &tl_syntax::InfiniteFormulaDocument,
+    kind: LivenessSubjectKind,
+    identity: &str,
+) -> Result<Disposition, DetailedSettlementError> {
+    let provider = InfiniteProvider { request };
+    let mut registry = ProviderRegistry::default();
+    registry.register(&provider).unwrap();
+    registry
+        .settle_detailed(formula, LivenessSubject { kind, identity })
+        .map(|result| result.disposition)
+}
+
+#[test]
+fn a_provider_serves_only_its_own_formula_and_subject() {
+    let built = safety();
+    let other = build(&T::F(Iv::Open(0), bx(T::P(0))), &[]);
+    let word = lasso(&[[Tr, Tr]], &[[Tr, Tr]]);
+    let graph = built.doc.content_identity().unwrap();
+    let trace = word.content_identity().unwrap();
+    let lasso_request = || {
+        ProviderRequest::Lasso(LassoRequest {
+            formula: &built.doc,
+            trace: &word,
+            fairness: None,
+            evidence_closure: EvidenceClosure::Closed,
+            graph_id: &graph,
+            trace_id: &trace,
+            selected_position: 0,
+            limit: EvaluationLimit::default(),
+        })
+    };
+    let refused = Err(DetailedSettlementError::InvalidRequest(
+        InfiniteError::IdentityMismatch,
+    ));
+    let lasso = LivenessSubjectKind::LassoTrace;
+    assert!(settle(lasso_request(), &built.doc, lasso, &trace).is_ok());
+    assert_eq!(settle(lasso_request(), &built.doc, lasso, "other"), refused);
+    assert_eq!(settle(lasso_request(), &other.doc, lasso, &trace), refused);
+    let model = LivenessSubjectKind::Model;
+    assert_eq!(
+        settle(lasso_request(), &built.doc, model, "m"),
+        Ok(Disposition::Unsupported)
+    );
+    assert_eq!(settle(lasso_request(), &other.doc, model, "m"), refused);
+    // A lasso provider does not serve a prefix subject.
+    let prefix = LivenessSubjectKind::FinitePrefix;
+    assert_eq!(settle(lasso_request(), &built.doc, prefix, &trace), refused);
+
+    let p = [PropositionId(0), PropositionId(1)];
+    let rows = [observation(0, "map", &p)];
+    let prefix_request = || {
+        ProviderRequest::FinitePrefix(PrefixRequest {
+            formula: &built.doc,
+            graph_id: &graph,
+            proposition_map_id: "map",
+            propositions: &p,
+            observations: &rows,
+            limit: EvaluationLimit::default(),
+        })
+    };
+    let prefix_id = PrefixRequest {
+        formula: &built.doc,
+        graph_id: &graph,
+        proposition_map_id: "map",
+        propositions: &p,
+        observations: &rows,
+        limit: EvaluationLimit::default(),
+    }
+    .content_identity()
+    .unwrap();
+    assert!(settle(prefix_request(), &built.doc, prefix, &prefix_id).is_ok());
+    assert_eq!(
+        settle(prefix_request(), &built.doc, prefix, "other"),
+        refused
+    );
+    assert_eq!(
+        settle(prefix_request(), &other.doc, prefix, &prefix_id),
+        refused
+    );
+    assert_eq!(
+        settle(prefix_request(), &built.doc, model, "m"),
+        Ok(Disposition::Unsupported)
+    );
+    assert_eq!(settle(prefix_request(), &other.doc, model, "m"), refused);
+    assert_eq!(settle(prefix_request(), &built.doc, lasso, &trace), refused);
+}
