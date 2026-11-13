@@ -34,12 +34,10 @@ exclude_re = [
     '^src/wire/common\.rs:401:37: replace \|\| with && in omit_top_level_field$',
     # Equivalent: the same refusal is made again by RawTraceRequest::validate with an identical result.
     '^src/infinite/mod\.rs:(715|716):\d+: replace \|\| with && in evaluate_lasso$',
-    # Equivalent: clock and semantic profile are single-valued on a validated trace, so the comparison cannot differ.
+    # Equivalent: InfiniteClock has the single variant EventPosition and both the trace and formula constructors admit only the infinite-trace profile, so neither comparison can be true alone.
     '^src/infinite/mod\.rs:703:\d+: replace \|\| with && in evaluate_lasso$',
     # Equivalent: PrefixRequest::validate_shape already refused the same observation faults before this loop.
     '^src/infinite/mod\.rs:(1035|1036):\d+: replace \|\| with && in evaluate_prefix_safety_at$',
-    # Equivalent: inverting the completion bit test enumerates the same exhaustive set of completions in another order.
-    '^src/infinite/mod\.rs:1134:\d+: replace != with == in evaluate_prefix_safety_at$',
     # Equivalent: evaluate_model rechecks the formula identity and refuses the same input.
     '^src/infinite/mod\.rs:(1257|1267):\d+: replace match guard formula == request.formula with true in',
     # Equivalent: a Since admitted by the target-origin evidence has the point interval [0,0], so the `&&` and `||` forms select the same case.
@@ -50,12 +48,11 @@ exclude_re = [
     '^src/mapping/past\.rs:310:\d+: replace \|= with &= in OriginShapeGuard::push$',
     # Equivalent: the position order was already refused by the equal-position check immediately before.
     '^src/past/mod\.rs:899:\d+: replace < with <= in PositionHistoryDocument::validate_without_digest$',
-    # Equivalent: a report with zero node evaluations or temporal iterations exceeding the step count is refused by the other statistic conditions that follow.
+    # Equivalent: a node-evaluation or temporal-iteration count above the step count, or a zero node-evaluation count, also breaks the earlier check that steps equal their sum or the depth check, so the same reports are refused.
     '^src/past/mod\.rs:(1650|1654):13: replace \|\| with && in PastEvaluationReport::validate$',
     '^src/past/mod\.rs:1654:47: replace > with (==|>=) in PastEvaluationReport::validate$',
-    # Equivalent: the predecessor history identity equals the validated report history identity, which the identity check already bounded.
+    # Equivalent: the predecessor history identity was just required to equal the report history identity, which the identity loop above already checked as non-empty; the length bound is covered by a boundary test.
     '^src/past/mod\.rs:1700:21: replace \|\| with && in PastEvaluationReport::validate$',
-    '^src/past/mod\.rs:1700:53: replace > with (==|>=) in PastEvaluationReport::validate$',
     # Equivalent: the anchor is part of the predecessor reference compared immediately before.
     '^src/past/mod\.rs:1760:\d+: replace \|\| with && in PastEvaluationReport::validate_with_predecessor$',
 ]

@@ -14,7 +14,7 @@ use tl_mltl::infinite::{
     EvidenceClosure, InfiniteError, LassoRequest, PrefixRequest, ResultReason,
 };
 use tl_syntax::PropositionId;
-use tl_syntax::{PartialValuation, TraceObservation, ValuationEntry};
+use tl_syntax::{PartialValuation, PartialValue, TraceObservation, ValuationEntry};
 
 fn safety() -> Built {
     build(&T::G(Iv::Open(0), bx(T::P(0))), &[])
@@ -299,4 +299,42 @@ fn a_provider_serves_only_its_own_formula_and_subject() {
     );
     assert_eq!(settle(prefix_request(), &other.doc, model, "m"), refused);
     assert_eq!(settle(prefix_request(), &built.doc, lasso, &trace), refused);
+}
+
+fn prefix_steps(built: &Built, row: [PartialValue; 2]) -> (Disposition, u64, u64) {
+    let word = lasso(&[row], &[[F, F]]);
+    let graph = built.doc.content_identity().unwrap();
+    let result = evaluate_prefix_safety(&PrefixRequest {
+        formula: &built.doc,
+        graph_id: &graph,
+        proposition_map_id: "map",
+        propositions: word.propositions(),
+        observations: word.prefix(),
+        limit: EvaluationLimit::default(),
+    })
+    .unwrap();
+    (
+        result.disposition,
+        result.admitted_completions,
+        result.evaluation_steps,
+    )
+}
+
+/// Completions are tried from all-false upward and the search stops at the first one that
+/// satisfies the body, so descending order would stop after the first (all-true) completion.
+#[test]
+fn prefix_completions_are_tried_in_ascending_order() {
+    let body = T::And(bx(T::P(0)), bx(T::P(1)));
+    let built = build(&T::G(Iv::Open(0), bx(body)), &[]);
+    let (known, _, one) = prefix_steps(&built, [Tr, Tr]);
+    assert_eq!(known, Disposition::Inconclusive);
+    assert!(one > 0);
+    // Only the last of the four completions (both true) satisfies the body.
+    let (unknown, completions, steps) = prefix_steps(&built, [M, M]);
+    assert_eq!(unknown, Disposition::Inconclusive);
+    assert_eq!(completions, 4);
+    assert!(
+        steps > 2 * one,
+        "all four completions are tried before the satisfying one"
+    );
 }

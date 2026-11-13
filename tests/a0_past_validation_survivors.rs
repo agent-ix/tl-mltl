@@ -369,3 +369,39 @@ fn validation_errors_render_a_nonempty_message() {
             .is_empty()
     );
 }
+
+fn history_named(name: &str, revision: u64, positions: u64) -> PositionHistoryDocument {
+    PositionHistoryDocument::new(
+        name,
+        revision,
+        0,
+        positions - 1,
+        Some(ClockBinding::EventPosition),
+        (0..positions)
+            .map(|p| PositionObservation::new(p, vec![PropositionId(0)], None))
+            .collect(),
+    )
+    .unwrap()
+}
+
+// Trace: TC-176, NFR-001-AC-4
+#[test]
+fn a_correction_of_a_history_with_a_maximum_length_identity_is_accepted() {
+    let name = "h".repeat(MAX_IDENTITY_BYTES);
+    let first = report(
+        &history_named(&name, 1, 3),
+        1,
+        PastEvaluationRelationInput::Original,
+    );
+    first.validate().unwrap();
+    let corrected = history_named(&name, 1, 3)
+        .corrected(2, 3, history(1, 4).observations().to_vec())
+        .unwrap();
+    let second = report(
+        &corrected,
+        2,
+        PastEvaluationRelationInput::Superseding(&first),
+    );
+    second.validate().unwrap();
+    second.validate_with_predecessor(Some(&first)).unwrap();
+}
