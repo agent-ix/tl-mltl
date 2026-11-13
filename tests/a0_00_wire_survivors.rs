@@ -514,7 +514,7 @@ fn a_member_value_with_an_escaped_quote_followed_by_a_comma_is_skipped_whole() {
 
 // Trace: TC-090
 #[test]
-fn empty_containers_count_no_fields_and_the_depth_limit_is_one_past_64() {
+fn empty_containers_count_no_fields_and_the_depth_limit_is_one_past_the_ceiling() {
     within_seconds(30, || {
         assert_eq!(Vec::<u32>::new().usage().visited_fields, 0);
         assert_eq!(vec![Vec::<u32>::new()].usage().visited_fields, 1);

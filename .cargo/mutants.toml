@@ -59,5 +59,5 @@ exclude_re = [
 
 # tests/tc138_feature_boundary.rs rebuilds the crate for external consumers and takes 12 minutes under
 # load; it checks feature gating, which no mutant changes, and as the slowest test it turned every
-# surviving mutant into a timeout. Mutation runs skip it.
-additional_cargo_test_args = ["--", "--skip", "external_consumer_feature_tree_and_complete_bounded_bytes"]
+# surviving mutant into a timeout. The tests named mutation_gate_ rebuild the gate and test no crate code. Mutation runs skip both.
+additional_cargo_test_args = ["--", "--skip", "external_consumer_feature_tree_and_complete_bounded_bytes", "--skip", "mutation_gate_"]
