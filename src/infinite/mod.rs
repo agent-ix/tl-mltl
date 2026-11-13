@@ -1506,4 +1506,54 @@ mod tests {
             assert!(report.evidence.is_none());
         }
     }
+
+    // Trace: TC-159
+    #[test]
+    fn raw_validation_refuses_each_fault_on_its_own() {
+        use tl_syntax::{InfiniteClock, InfiniteNode, SemanticProfile};
+        let document = InfiniteFormulaDocument::new(
+            SemanticProfile::InfiniteTraceV1,
+            InfiniteClock::EventPosition,
+            NodeId(0),
+            vec![InfiniteNode::new(InfiniteNodeKind::Proposition {
+                proposition: PropositionId(0),
+            })],
+        )
+        .unwrap();
+        let propositions = [PropositionId(0)];
+        let rows = vec![vec![ObservationValue::True]];
+        let request =
+            |graph: &str, map: &str, trace: &str, rows: &[Vec<ObservationValue>], entry: usize| {
+                RawTraceRequest {
+                    formula: document.formula(),
+                    graph_id: graph,
+                    proposition_map_id: map,
+                    trace_id: trace,
+                    propositions: &propositions,
+                    observations: rows,
+                    loop_entry: entry,
+                    selected_position: 0,
+                    fairness: &[],
+                    evidence_closure: EvidenceClosure::Closed,
+                    limit: EvaluationLimit::default(),
+                }
+                .validate()
+                .map(|_| ())
+            };
+        assert_eq!(request("g", "m", "t", &rows, 0), Ok(()));
+        for (graph, map, trace) in [("", "m", "t"), ("g", "", "t"), ("g", "m", "")] {
+            assert_eq!(
+                request(graph, map, trace, &rows, 0),
+                Err(InfiniteError::IdentityMismatch)
+            );
+        }
+        assert_eq!(
+            request("g", "m", "t", &[], 0),
+            Err(InfiniteError::InvalidLasso)
+        );
+        assert_eq!(
+            request("g", "m", "t", &rows, 1),
+            Err(InfiniteError::InvalidLasso)
+        );
+    }
 }

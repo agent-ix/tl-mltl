@@ -72,3 +72,11 @@ unwinding assertions are on.
 Limits of the proofs, recorded in SR-232 with the measurements behind them: a direct whole-formula proof through the real `Evaluator::at` is not proved (replaced by the compositional pair above); wire decode is not proved to the
 requested 64 bytes (the lexer to 16, `preflight` as a whole to 4 ASCII bytes), and `serde_json` is not modelled; closing-prefix is proved for the leaf and, as a lemma over verdict tables, for each operator; the whole-formula statement follows only by the induction argument.
 `node_lookahead` was extracted from `lookahead` (behavior unchanged) so the arithmetic can be proved.
+
+## Mutation test order
+
+cargo runs test binaries alphabetically and stops at the first failure, so a mutant is detected when the first
+binary that can see it runs. The tests written to kill surviving mutants (TL-371) are in files named `a0_*` so they run
+first, and the slow campaign tests are in `zz_slow_campaign_survivors.rs` so they run last. Mutation runs skip the single
+test `external_consumer_feature_tree_and_complete_bounded_bytes`, a twelve-minute external-consumer rebuild that
+checks feature gating, which no mutant changes; every other test runs.

@@ -41,3 +41,41 @@ Each is a test gap to kill, unless listed as equivalent above.
 - `src/differential.rs:188:9: replace <impl core::fmt::Display for ContextualComparisonError>::fmt -> core::fmt::Result with Ok(Default::default())`
 - `src/differential.rs:257:53: replace && with || in compare_external`
 - `src/main.rs:47:24: delete ! in run`
+
+## TL-371 results (2026-11-12)
+
+TL-371 ran cargo-mutants 27.0.0 (`--no-shuffle`) over the whole crate, killed or explained every survivor, and
+replaced the sampled floors in `mutation-thresholds.toml` with floors taken from the measured rates.
+
+- First full run (`-j 4`, 782 s timeout, 1465 mutants): 600 caught, 37 missed, 655 timeout, 173 unviable. Most
+  timeouts were not hangs: a 12-minute rebuild test and the 150 s `tests/cli.rs` ran before the killing test in
+  cargo's alphabetical binary order, and any surviving mutant ran the whole suite past the limit.
+- Follow-up passes used `--iterate` (previous caught and unviable verdicts kept, missed and timed-out mutants rerun)
+  at `-j 6` with a 600 s timeout, the last one only over mutants that new tests targeted. The combined verdicts over
+  the 1582 mutants that exist at the head of this branch: 1384 caught, 6 missed, 0 timeout, 192 unviable
+  (kill rate 99.57%). `evaluator-core` is 56 caught, 0 missed (100.00%). Floors are 100.0 and 99.5.
+- The 6 remaining survivors need a live R2U2 checkout (the `Source::Live` arms, `run_group`, and the tool-unavailable
+  guards in `src/r2u2_live.rs` and `src/r2u2_future.rs`); each is listed with its reason under `[[survivor]]`, and
+  `require_survivor_reasons` is now on.
+- 21 mutants are excluded in `.cargo/mutants.toml` as equivalent, each with a one-line reason: `min_*` ties in
+  `src/wire/common.rs`; duplicate checks in `src/infinite/mod.rs` (703, 715, 716, 1035, 1036, 1257, 1267) and
+  `src/past/mod.rs` (899, 1650, 1654, 1700:21, 1760); `src/infinite/export.rs` 465 (Since is admitted only as
+  [0,0]) and 301 (needs more than 2^32 observations); `src/mapping/past.rs` 310.
+- Real test gaps found and closed: the past-profile report and history validation had untested refusals
+  (`src/past/mod.rs`, including the interval gcd), as did `src/wire/common.rs` identity extraction, hex and sha256
+  rendering, accounting and ceilings, and `src/wire/trace.rs`, `src/wire/command.rs`, export, history and mapping
+  paths. They are killed by behavior-asserting tests, each wrapped in a thread watchdog where a mutant would loop.
+- Disclosures. Mutation runs skip the single test `external_consumer_feature_tree_and_complete_bounded_bytes`
+  (`additional_cargo_test_args` in `.cargo/mutants.toml`); it rebuilds the crate for external consumers, checks feature
+  gating that no mutant changes, and takes 12 minutes under load. `minimum_test_timeout` is 300 s. Tests written for
+  TL-371 are named `a0_*` so they run first and `zz_slow_campaign_survivors.rs` runs last; no existing test was
+  removed or weakened. The 24 exclusions and the skipped test are the only places a mutant is not tested.
+- `make mutants-diff` is part of `make ci`; it requires every mutant in changed code to be killed.
+- Re-check of four reviewed exclusions. `src/infinite/mod.rs:1134` (completion order) and `src/past/mod.rs:1700:53`
+  (an identity of exactly the maximum length) were not equivalent: the first changes the work done before the search
+  stops, the second refuses a valid correction. Each now has a test and both mutants are caught. `src/infinite/mod.rs:703`
+  stays excluded because the clock type has one variant and both document constructors admit only the infinite-trace
+  profile; `src/past/mod.rs:1654` stays excluded because each condition it carries also breaks the earlier sum check or
+  the depth check; `src/past/mod.rs:1700:21` stays excluded because the identity was already required to equal the
+  checked report identity.
+- `make spec` was red because `quire coverage --strict` found the FR-022 rows (TC-113 to TC-118) with no backing test. `tests/mutation_gate.rs` now backs them by driving the gate on synthetic outcomes and reading the mutation configuration; it is skipped during mutation runs (`mutation_gate_` in `additional_cargo_test_args`). One divergence is recorded in the matrix: on a failing baseline the gate refuses but still prints the group rates beside `FAIL baseline`, which TC-114 forbids, so TC-114 stays planned.

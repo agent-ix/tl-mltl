@@ -19,13 +19,45 @@ exclude_globs = [
 # that exercise it.
 additional_cargo_args = ["--all-features"]
 
-# The unmutated test suite takes about 75 s cold; allow generous headroom so a
-# slow runner does not turn a caught mutant into a timeout.
-minimum_test_timeout = 120
+# The unmutated suite takes minutes under load; the floor is well above it so a loaded host does not
+# turn a caught mutant into a timeout.
+minimum_test_timeout = 300
 timeout_multiplier = 3.0
 
 # Equivalent mutants (one-line reason each).
 exclude_re = [
     # The inline cfg(kani) harness in horizon.rs is never compiled by cargo test, so no test can observe a mutation of it.
     "replace kani_proofs::horizon_bound_addition_matches_checked_add with",
+    # Equivalent: `min_*` returns the same value for `<` and `<=` because equal operands give equal results.
+    '^src/wire/common\.rs:\d+:\d+: replace < with <= in min_(usize|u64|u32)$',
+    # Equivalent: serde_json output always starts with the byte that opens an object and ends with the byte that closes it, or neither, so `||` and `&&` refuse the same inputs.
+    '^src/wire/common\.rs:401:37: replace \|\| with && in omit_top_level_field$',
+    # Equivalent: the same refusal is made again by RawTraceRequest::validate with an identical result.
+    '^src/infinite/mod\.rs:(715|716):\d+: replace \|\| with && in evaluate_lasso$',
+    # Equivalent: InfiniteClock has the single variant EventPosition and both the trace and formula constructors admit only the infinite-trace profile, so neither comparison can be true alone.
+    '^src/infinite/mod\.rs:703:\d+: replace \|\| with && in evaluate_lasso$',
+    # Equivalent: PrefixRequest::validate_shape already refused the same observation faults before this loop.
+    '^src/infinite/mod\.rs:(1035|1036):\d+: replace \|\| with && in evaluate_prefix_safety_at$',
+    # Equivalent: evaluate_model rechecks the formula identity and refuses the same input.
+    '^src/infinite/mod\.rs:(1257|1267):\d+: replace match guard formula == request.formula with true in',
+    # Equivalent: a Since admitted by the target-origin evidence has the point interval [0,0], so the `&&` and `||` forms select the same case.
+    '^src/infinite/export\.rs:465:\d+: replace && with \|\| in Renderer',
+    # Unreachable: the arm needs more than 2^32 observations to be taken.
+    '^src/infinite/export\.rs:301:\d+: delete match arm InfiniteError::ResourceIncomplete in replay_target_step$',
+    # Equivalent: a child with the mixed flag set has already returned an error, so the flag is always false here.
+    '^src/mapping/past\.rs:310:\d+: replace \|= with &= in OriginShapeGuard::push$',
+    # Equivalent: the position order was already refused by the equal-position check immediately before.
+    '^src/past/mod\.rs:899:\d+: replace < with <= in PositionHistoryDocument::validate_without_digest$',
+    # Equivalent: a node-evaluation or temporal-iteration count above the step count, or a zero node-evaluation count, also breaks the earlier check that steps equal their sum or the depth check, so the same reports are refused.
+    '^src/past/mod\.rs:(1650|1654):13: replace \|\| with && in PastEvaluationReport::validate$',
+    '^src/past/mod\.rs:1654:47: replace > with (==|>=) in PastEvaluationReport::validate$',
+    # Equivalent: the predecessor history identity was just required to equal the report history identity, which the identity loop above already checked as non-empty; the length bound is covered by a boundary test.
+    '^src/past/mod\.rs:1700:21: replace \|\| with && in PastEvaluationReport::validate$',
+    # Equivalent: the anchor is part of the predecessor reference compared immediately before.
+    '^src/past/mod\.rs:1760:\d+: replace \|\| with && in PastEvaluationReport::validate_with_predecessor$',
 ]
+
+# tests/tc138_feature_boundary.rs rebuilds the crate for external consumers and takes 12 minutes under
+# load; it checks feature gating, which no mutant changes, and as the slowest test it turned every
+# surviving mutant into a timeout. The tests named mutation_gate_ rebuild the gate and test no crate code. Mutation runs skip both.
+additional_cargo_test_args = ["--", "--skip", "external_consumer_feature_tree_and_complete_bounded_bytes", "--skip", "mutation_gate_"]
