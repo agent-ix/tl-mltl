@@ -41,3 +41,25 @@ Each is a test gap to kill, unless listed as equivalent above.
 - `src/differential.rs:188:9: replace <impl core::fmt::Display for ContextualComparisonError>::fmt -> core::fmt::Result with Ok(Default::default())`
 - `src/differential.rs:257:53: replace && with || in compare_external`
 - `src/main.rs:47:24: delete ! in run`
+
+## TL-371 status (unfinished, 2026-11-12)
+
+This section records an interrupted measurement; no floor has been changed from it. Floors in
+`mutation-thresholds.toml` are still the pre-TL-371 sampled values.
+
+- First full run (cargo-mutants 27.0.0, `--no-shuffle`, `-j 4`, 782 s timeout, 1465 mutants): 600 caught, 37 missed,
+  655 timeout, 173 unviable. Most timeouts were not hangs: the 12-minute `tests/tc138_feature_boundary.rs` rebuild and
+  the 150 s `tests/cli.rs` run before the killing test in cargo's alphabetical binary order, and a surviving mutant runs the
+  whole suite past the limit.
+- Disclosure: mutation runs skip the single test `external_consumer_feature_tree_and_complete_bounded_bytes`
+  (`additional_cargo_test_args` in `.cargo/mutants.toml`; it checks feature gating, which no mutant changes), and
+  `minimum_test_timeout` is 300 s. Test binaries written for TL-371 are named `a0_*` so they run first, and the
+  slow campaign tests are `zz_slow_campaign_survivors.rs` so they run last; no test was removed or weakened.
+- Retests with `--iterate` (kept caught and unviable verdicts; reran missed and timed-out mutants):
+  the last pass (`-j 6`, 600 s timeout, 219 mutants) was stopped unfinished with       60 caught,      153 missed,        6 timeout and
+         0 unviable recorded in `target/mutants/mutants.out`. It ran against a tree that predates the export, history,
+  mapping and replay tests, so its misses in those files are expected to be killed.
+- Equivalent by analysis, to be excluded with reasons once confirmed: `src/infinite/mod.rs` 703, 715, 716, 1035,
+  1036, 1134; `src/past/mod.rs` 899:41, 1650, 1654, 1700, 1760; `src/infinite/export.rs` 301 and 465:40;
+  `src/mapping/past.rs` 310. Reachable only with a live R2U2: `Source::Live` arms in `src/r2u2_live.rs` 742 and
+  `src/r2u2_future.rs` 275, `run_group` (`src/r2u2_live.rs` 843), and the `run_future` guards at 274 and 298.
