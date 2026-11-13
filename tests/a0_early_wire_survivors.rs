@@ -12,6 +12,8 @@ use tl_mltl::wire::{command, trace, OwnerLimits, OwnerReadErrorCode, OwnerUsage}
 use tl_mltl::{CommandDocument, TraceDocument, TraceSchemaVersion};
 use tl_syntax::PropositionId;
 
+use erased::Erased as _;
+
 /// Runs `work` on a thread and fails if it does not finish: a scan that no longer advances would
 /// spin forever, and this turns that hang into an immediate failure.
 fn within_seconds<T: Send + 'static>(seconds: u64, work: impl FnOnce() -> T + Send + 'static) -> T {
@@ -27,6 +29,10 @@ fn within_seconds<T: Send + 'static>(seconds: u64, work: impl FnOnce() -> T + Se
 // Trace: TC-090
 #[test]
 fn owner_maxima_and_error_labels_are_exact() {
+    within_seconds(30, owner_maxima_and_error_labels_are_exact_body);
+}
+
+fn owner_maxima_and_error_labels_are_exact_body() {
     assert_eq!(OWNER_MAX.max_input_bytes, 8_388_608);
     assert_eq!(OWNER_MAX.max_output_bytes, 8_388_608);
     assert_eq!(OWNER_MAX.max_string_bytes, 1_048_576);
@@ -72,6 +78,13 @@ fn owner_maxima_and_error_labels_are_exact() {
 // Trace: TC-090
 #[test]
 fn hex_digests_match_known_vectors_and_the_validity_check_is_exact() {
+    within_seconds(
+        30,
+        hex_digests_match_known_vectors_and_the_validity_check_is_exact_body,
+    );
+}
+
+fn hex_digests_match_known_vectors_and_the_validity_check_is_exact_body() {
     assert_eq!(
         raw_sha256(b""),
         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -111,6 +124,13 @@ fn expected_identity(contract: &str, preimage: &str) -> String {
 // Trace: TC-090
 #[test]
 fn identity_omits_exactly_the_named_member_wherever_it_sits() {
+    within_seconds(
+        30,
+        identity_omits_exactly_the_named_member_wherever_it_sits_body,
+    );
+}
+
+fn identity_omits_exactly_the_named_member_wherever_it_sits_body() {
     let tricky = "x,\"y\\\"}],{[\\\\";
     let value = Members {
         a: tricky,
@@ -162,6 +182,10 @@ struct Empty {}
 // Trace: TC-090
 #[test]
 fn identity_refuses_what_it_cannot_split() {
+    within_seconds(30, identity_refuses_what_it_cannot_split_body);
+}
+
+fn identity_refuses_what_it_cannot_split_body() {
     assert_eq!(
         identity("c", &Only { a: 1 }, "a").unwrap(),
         expected_identity("c", "{}")
@@ -188,6 +212,10 @@ fn identity_refuses_what_it_cannot_split() {
 // Trace: TC-090
 #[test]
 fn the_lexical_scan_measures_depth_strings_and_fields() {
+    within_seconds(30, the_lexical_scan_measures_depth_strings_and_fields_body);
+}
+
+fn the_lexical_scan_measures_depth_strings_and_fields_body() {
     let usage = |value: &dyn erased::Erased| value.usage();
     // Arrays count one visited field per element; objects one per member.
     assert_eq!(usage(&vec![1, 2, 3]).visited_fields, 3);
@@ -222,6 +250,13 @@ mod erased {
 // Trace: TC-090
 #[test]
 fn whitespace_and_unterminated_strings_neither_hang_nor_panic() {
+    within_seconds(
+        30,
+        whitespace_and_unterminated_strings_neither_hang_nor_panic_body,
+    );
+}
+
+fn whitespace_and_unterminated_strings_neither_hang_nor_panic_body() {
     let outcome = within_seconds(20, || {
         let limits = OwnerLimits::default();
         let ok = read_expected::<Vec<u32>, _>(b" [ 1 , 2 ] ", &vec![1, 2], limits, |_, _| {
@@ -244,6 +279,10 @@ fn whitespace_and_unterminated_strings_neither_hang_nor_panic() {
 // Trace: TC-090
 #[test]
 fn produce_reports_the_bytes_it_attempted_to_write() {
+    within_seconds(30, produce_reports_the_bytes_it_attempted_to_write_body);
+}
+
+fn produce_reports_the_bytes_it_attempted_to_write_body() {
     let limits = OwnerLimits {
         max_output_bytes: 3,
         ..OwnerLimits::default()
@@ -280,6 +319,13 @@ fn trace_document(id: &str, instants: Vec<Vec<PropositionId>>) -> TraceDocument 
 // Trace: TC-090
 #[test]
 fn a_trace_reports_counts_and_enforces_each_ceiling_inclusively() {
+    within_seconds(
+        30,
+        a_trace_reports_counts_and_enforces_each_ceiling_inclusively_body,
+    );
+}
+
+fn a_trace_reports_counts_and_enforces_each_ceiling_inclusively_body() {
     let document = trace_document("t", vec![vec![PropositionId(1), PropositionId(2)], vec![]]);
     let owned = trace::derive(&document, OwnerLimits::default()).unwrap();
     assert_eq!(owned.usage().positions, 2);
@@ -374,6 +420,13 @@ fn command_document(formula_id: &str, trace: Option<&TraceDocument>) -> CommandD
 // Trace: TC-090
 #[test]
 fn a_command_reports_its_parts_and_is_read_only_against_the_expected_document() {
+    within_seconds(
+        30,
+        a_command_reports_its_parts_and_is_read_only_against_the_expected_document_body,
+    );
+}
+
+fn a_command_reports_its_parts_and_is_read_only_against_the_expected_document_body() {
     let trace = trace_document(
         "t",
         vec![
@@ -406,6 +459,10 @@ fn a_command_reports_its_parts_and_is_read_only_against_the_expected_document() 
 // Trace: TC-090
 #[test]
 fn a_command_formula_identity_is_bounded_inclusively() {
+    within_seconds(30, a_command_formula_identity_is_bounded_inclusively_body);
+}
+
+fn a_command_formula_identity_is_bounded_inclusively_body() {
     let default = OwnerLimits::default();
     let outcome = |limits: OwnerLimits, id: &str| {
         command::derive(&command_document(id, None), limits)
@@ -428,4 +485,59 @@ fn a_command_formula_identity_is_bounded_inclusively() {
         outcome(short, &"i".repeat(31)),
         Some((combination, "formulaId"))
     );
+}
+
+// Trace: TC-090
+#[test]
+fn a_member_value_with_an_escaped_quote_followed_by_a_comma_is_skipped_whole() {
+    within_seconds(30, || {
+        let value = Members {
+            a: "say \"hi\", bye",
+            b: serde_json::json!("a\\"),
+            ab: 1,
+            z: "end",
+        };
+        let full = serde_json::to_string(&value).unwrap();
+        let a_member = format!(
+            "\"a\":{},",
+            serde_json::to_string("say \"hi\", bye").unwrap()
+        );
+        assert_eq!(
+            identity("c", &value, "a").unwrap(),
+            expected_identity("c", &full.replacen(&a_member, "", 1))
+        );
+        // A trailing backslash escapes itself and so does not swallow the closing quote.
+        let b_member = format!("\"b\":{},", serde_json::to_string("a\\").unwrap());
+        assert_eq!(
+            identity("c", &value, "b").unwrap(),
+            expected_identity("c", &full.replacen(&b_member, "", 1))
+        );
+    });
+}
+
+// Trace: TC-090
+#[test]
+fn empty_containers_count_no_fields_and_the_depth_limit_is_one_past_64() {
+    within_seconds(30, || {
+        assert_eq!(Vec::<u32>::new().usage().visited_fields, 0);
+        assert_eq!(vec![Vec::<u32>::new()].usage().visited_fields, 1);
+        let deep = |levels: usize| {
+            let bytes = format!("{}{}", "[".repeat(levels), "]".repeat(levels));
+            read_expected::<serde_json::Value, _>(
+                bytes.as_bytes(),
+                &serde_json::Value::Null,
+                OwnerLimits::default(),
+                |_, _| Ok(OwnerUsage::default()),
+            )
+        };
+        let at_limit = deep(64).unwrap_err();
+        assert_eq!(at_limit.code(), OwnerReadErrorCode::ExpectedMismatch);
+        assert_ne!(at_limit.field(), "depth");
+        let past = deep(65).unwrap_err();
+        assert_eq!(
+            (past.code(), past.field()),
+            (OwnerReadErrorCode::ResourceIncomplete, "depth")
+        );
+        assert_eq!(past.usage().depth, 65);
+    });
 }

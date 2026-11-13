@@ -95,6 +95,10 @@ fn document(
 // Trace: TC-176
 #[test]
 fn clock_bindings_and_samples_are_validated() {
+    within_seconds(20, clock_binding_checks);
+}
+
+fn clock_binding_checks() {
     let good = || vec![sampled(0, exact(0, 1), "s"), sampled(1, exact(1, 1), "s")];
     assert!(document(fixed(exact(1, 1), "s"), good()).is_ok());
     // A period of exactly one unit is positive; zero is not.
