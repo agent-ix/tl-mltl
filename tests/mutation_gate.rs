@@ -213,5 +213,16 @@ fn mutation_gate_fails_a_weakened_test_selection() {
     write_outcomes(&dir, "Success", &weakened);
     let run = gate(&dir, &toml);
     assert_eq!(run.status, 1, "{}", run.stdout);
-    assert!(run.stdout.contains("m1") || !run.stdout.is_empty());
+    assert!(
+        run.stdout
+            .contains("FAIL survivor without a reason: src/future/eval.rs: m1"),
+        "{}",
+        run.stdout
+    );
+    assert!(
+        run.stdout
+            .contains("FAIL evaluator-core: kill 0.00% (min 100.00%)"),
+        "{}",
+        run.stdout
+    );
 }
