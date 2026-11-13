@@ -117,6 +117,7 @@ fn mutation_gate_refuses_a_failing_baseline() {
     let run = gate(&dir, &toml);
     assert_eq!(run.status, 1, "{}", run.stdout);
     assert!(run.stdout.contains("FAIL baseline"), "{}", run.stdout);
+    assert!(!run.stdout.contains("kill"), "{}", run.stdout);
     write_outcomes(&dir, "Success", &passing_population());
     assert_eq!(gate(&dir, &toml).status, 0);
 }
