@@ -1,22 +1,42 @@
-# Kill-rate thresholds checked by tl-gate gate (TL-231).
+# Kill-rate thresholds checked by tl-gate gate (TL-231, TL-371).
 # Kill rate = caught / (caught + missed + timeout); unviable mutants count on
-# neither side. `min_kill_percent` is the measured baseline floor (a ratchet:
-# raise it when survivors are killed, never lower it). The campaign targets are
-# 95% for the core group and 85% for the whole crate; a group whose floor is
-# below its target has recorded survivors listed in docs/verification-tooling.md.
-# `diff_min_kill_percent` applies to `make mutants-diff`: every mutant in the
-# changed code must be killed.
+# neither side. `min_kill_percent` is the measured floor (a ratchet: raise it when
+# survivors are killed, never lower it). `diff_min_kill_percent` applies to
+# `make mutants-diff`: every mutant in the changed code must be killed.
+# `require_survivor_reasons` makes a missed or timed-out mutant that is not listed under
+# `[[survivor]]` with a reason fail the gate. Equivalent mutants are excluded in
+# `.cargo/mutants.toml` (`exclude_re`), each with a reason; measured numbers are dated
+# evidence in SR-231, not in this file.
 diff_min_kill_percent = 100.0
+require_survivor_reasons = true
 exclude = ["src/ci_guard.rs", "src/bin/ci_guard.rs", "src/bin/kani_gate.rs", "src/bin/fuzz_campaign.rs", "src/future/kani_evaluate.rs", "src/wire/kani_wire.rs"]
 
 # evaluation, horizon, interval arithmetic
 [[group]]
 name = "evaluator-core"
 globs = ["src/future/*.rs"]
-min_kill_percent = 95.0
+min_kill_percent = 100.0
 
 # whole crate
 [[group]]
 name = "crate"
 globs = ["src/*.rs", "src/*/*.rs"]
-min_kill_percent = 83.0
+min_kill_percent = 99.5
+
+[[survivor]]
+file = "src/r2u2_live.rs"
+reason = "needs a live R2U2 checkout: the Source::Live arm and run_group spawn python3 and the pinned R2U2 binary; CI does not build R2U2, and the recorded replay and the not-run paths are tested"
+names = [
+    "delete match arm Source::Live(root) in run",
+    "replace run_group -> Result<String, String> with Ok(\"xyzzy\".into())",
+    "replace run_group -> Result<String, String> with Ok(String::new())",
+]
+
+[[survivor]]
+file = "src/r2u2_future.rs"
+reason = "needs a live R2U2 checkout: the Source::Live arm and the tool_unavailable guard select between running R2U2 and reading recorded output, and both give the same result without a built R2U2"
+names = [
+    "replace match guard mode == \"tool_unavailable\" with false in run_future",
+    "delete match arm Source::Live(root) in run_future",
+    "replace != with == in run_future",
+]

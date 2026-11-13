@@ -28,6 +28,36 @@ timeout_multiplier = 3.0
 exclude_re = [
     # The inline cfg(kani) harness in horizon.rs is never compiled by cargo test, so no test can observe a mutation of it.
     "replace kani_proofs::horizon_bound_addition_matches_checked_add with",
+    # Equivalent: `min_*` returns the same value for `<` and `<=` because equal operands give equal results.
+    '^src/wire/common\.rs:\d+:\d+: replace < with <= in min_(usize|u64|u32)$',
+    # Equivalent: serde_json output always starts with the byte that opens an object and ends with the byte that closes it, or neither, so `||` and `&&` refuse the same inputs.
+    '^src/wire/common\.rs:401:37: replace \|\| with && in omit_top_level_field$',
+    # Equivalent: the same refusal is made again by RawTraceRequest::validate with an identical result.
+    '^src/infinite/mod\.rs:(715|716):\d+: replace \|\| with && in evaluate_lasso$',
+    # Equivalent: clock and semantic profile are single-valued on a validated trace, so the comparison cannot differ.
+    '^src/infinite/mod\.rs:703:\d+: replace \|\| with && in evaluate_lasso$',
+    # Equivalent: PrefixRequest::validate_shape already refused the same observation faults before this loop.
+    '^src/infinite/mod\.rs:(1035|1036):\d+: replace \|\| with && in evaluate_prefix_safety_at$',
+    # Equivalent: inverting the completion bit test enumerates the same exhaustive set of completions in another order.
+    '^src/infinite/mod\.rs:1134:\d+: replace != with == in evaluate_prefix_safety_at$',
+    # Equivalent: evaluate_model rechecks the formula identity and refuses the same input.
+    '^src/infinite/mod\.rs:(1257|1267):\d+: replace match guard formula == request.formula with true in',
+    # Equivalent: a Since admitted by the target-origin evidence has the point interval [0,0], so the `&&` and `||` forms select the same case.
+    '^src/infinite/export\.rs:465:\d+: replace && with \|\| in Renderer',
+    # Unreachable: the arm needs more than 2^32 observations to be taken.
+    '^src/infinite/export\.rs:301:\d+: delete match arm InfiniteError::ResourceIncomplete in replay_target_step$',
+    # Equivalent: a child with the mixed flag set has already returned an error, so the flag is always false here.
+    '^src/mapping/past\.rs:310:\d+: replace \|= with &= in OriginShapeGuard::push$',
+    # Equivalent: the position order was already refused by the equal-position check immediately before.
+    '^src/past/mod\.rs:899:\d+: replace < with <= in PositionHistoryDocument::validate_without_digest$',
+    # Equivalent: a report with zero node evaluations or temporal iterations exceeding the step count is refused by the other statistic conditions that follow.
+    '^src/past/mod\.rs:(1650|1654):13: replace \|\| with && in PastEvaluationReport::validate$',
+    '^src/past/mod\.rs:1654:47: replace > with (==|>=) in PastEvaluationReport::validate$',
+    # Equivalent: the predecessor history identity equals the validated report history identity, which the identity check already bounded.
+    '^src/past/mod\.rs:1700:21: replace \|\| with && in PastEvaluationReport::validate$',
+    '^src/past/mod\.rs:1700:53: replace > with (==|>=) in PastEvaluationReport::validate$',
+    # Equivalent: the anchor is part of the predecessor reference compared immediately before.
+    '^src/past/mod\.rs:1760:\d+: replace \|\| with && in PastEvaluationReport::validate_with_predecessor$',
 ]
 
 # tests/tc138_feature_boundary.rs rebuilds the crate for external consumers and takes 12 minutes under
