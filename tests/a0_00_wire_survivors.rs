@@ -492,16 +492,13 @@ fn a_command_formula_identity_is_bounded_inclusively_body() {
 fn a_member_value_with_an_escaped_quote_followed_by_a_comma_is_skipped_whole() {
     within_seconds(30, || {
         let value = Members {
-            a: "say \"hi\", bye",
+            a: "q\"r,s",
             b: serde_json::json!("a\\"),
             ab: 1,
             z: "end",
         };
         let full = serde_json::to_string(&value).unwrap();
-        let a_member = format!(
-            "\"a\":{},",
-            serde_json::to_string("say \"hi\", bye").unwrap()
-        );
+        let a_member = format!("\"a\":{},", serde_json::to_string("q\"r,s").unwrap());
         assert_eq!(
             identity("c", &value, "a").unwrap(),
             expected_identity("c", &full.replacen(&a_member, "", 1))
