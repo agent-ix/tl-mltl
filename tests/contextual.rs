@@ -244,6 +244,9 @@ fn contextual_identities_change_for_independent_operation_inputs() {
         Some(&context),
     )
     .unwrap();
+    // The fixture is the exact v2 manifest wire. It differs from the pre-feature baseline only in
+    // `adapterVersion` (the crate version, now 0.4.0) and in `resultSha256`, whose preimage covers
+    // `adapterVersion`; every other field is byte-identical. Refresh both on a version bump.
     assert_eq!(
         serde_json::to_vec(&mapping).unwrap(),
         include_bytes!("fixtures/tl-216/legacy-v2.json")
