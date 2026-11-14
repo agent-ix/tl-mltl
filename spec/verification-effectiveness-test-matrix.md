@@ -15,7 +15,7 @@ relationships:
 |---|---|---|---|
 | FR-020 | FR-020-AC-1 through FR-020-AC-5 | TC-104 through TC-108 | 🚧 planned |
 | FR-021 | FR-021-AC-1 through FR-021-AC-5 | TC-109 through TC-112, TC-121, TC-122 | 🚧 planned |
-| FR-022 | FR-022-AC-1 through FR-022-AC-5 | TC-113 through TC-118 | ✅ implemented |
+| FR-022 | FR-022-AC-1 through FR-022-AC-5 | TC-113 through TC-118 | 🚧 partial — FR-022-AC-2 refuses a failing baseline; the unstable-baseline half is not yet specified or tested |
 | FR-023 | FR-023-AC-1 through FR-023-AC-4 (FR-023-AC-5 withdrawn) | TC-120, TC-121, TC-123 | 🚧 planned |
 
 ## Non-Functional Requirement Coverage
@@ -47,7 +47,7 @@ relationships:
 | TC-111 | Record crash, timeout, out-of-memory, tool error, resource refusal, cancellation, and not-run outcomes as distinct states | Integration | P0 | FR-021-AC-2, FR-021-AC-3 | 🚧 planned |
 | TC-112 | Replay every committed crash input and checked-in seed under `cargo test`, reaching accepting and refusing paths | Integration | P0 | FR-021-AC-3, FR-021-AC-4 | 🚧 planned |
 | TC-113 | Mutate the evaluator core and the crate as a whole and exclude the CI-plumbing modules by configuration | Integration | P0 | FR-022-AC-1 | ✅ implemented |
-| TC-114 | Refuse the mutation campaign and emit no kill rate when the unmutated baseline fails or is unstable | Integration | P0 | FR-022-AC-2, NFR-005-AC-1 | ✅ implemented |
+| TC-114 | Refuse the mutation campaign and emit no kill rate when the unmutated baseline fails or is unstable | Integration | P0 | FR-022-AC-2, NFR-005-AC-1 | 🚧 partial — a failing baseline is refused with no kill rate; an unstable baseline (passes on one run, fails on another) has no definition, mechanism or test yet |
 | TC-115 | Report caught, missed, timeout, unviable, and tool-error outcomes separately | Integration | P0 | FR-022-AC-3 | ✅ implemented |
 | TC-116 | Compute the kill rate as caught over caught plus missed plus timeout beside the raw counts and fail below 95% for the evaluator core or 85% for the crate | Integration | P0 | FR-022-AC-3, FR-022-AC-4 | ✅ implemented |
 | TC-117 | List every surviving mutant with exactly one reason (killing test, stated equivalence, or named Kani harness) and fail a survivor without one | Integration | P0 | FR-022-AC-5 | ✅ implemented |

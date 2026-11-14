@@ -51,6 +51,5 @@ gate this repository runs still emits a kill rate on a failing baseline.
 ## Resolution
 
 The high finding is fixed: `tools/gate/Cargo.toml` and `Cargo.lock` now build tl-gate from tl-syntax `371d7d5`, which
-includes #136, and `mutation_gate_refuses_a_failing_baseline` asserts that no kill rate is printed. The unstable-baseline
-case and the check that the configured floors keep the 95% and 85% thresholds are not covered by a test; they stay open
-as low-severity gaps.
+includes #136, and `mutation_gate_refuses_a_failing_baseline` asserts that no kill rate is printed. FND-3712 (medium, unstable baseline) and FND-3713 (low, configured floors versus the 95% and 85%
+thresholds) stay open; the matrix rows for FR-022 and TC-114 now say partial.
