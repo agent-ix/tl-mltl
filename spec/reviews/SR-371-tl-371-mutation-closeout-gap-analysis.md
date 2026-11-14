@@ -50,6 +50,21 @@ gate this repository runs still emits a kill rate on a failing baseline.
 
 ## Resolution
 
-The high finding is fixed: `tools/gate/Cargo.toml` and `Cargo.lock` now build tl-gate from tl-syntax `371d7d5`, which
-includes #136, and `mutation_gate_refuses_a_failing_baseline` asserts that no kill rate is printed. FND-3712 (medium, unstable baseline) and FND-3713 (low, configured floors versus the 95% and 85%
-thresholds) stay open; the matrix rows for FR-022 and TC-114 now say partial.
+The high finding (FND-3711) is fixed: `tools/gate/Cargo.toml` and `Cargo.lock` build tl-gate from tl-syntax `d44d00f`, which
+includes #136 (a failing baseline prints no kill rate) and #138 (an unstable baseline is refused), and
+`mutation_gate_refuses_a_failing_baseline` asserts that no kill rate is printed.
+
+FND-3712 is closed. `tl-gate mutants` runs the unmutated suite `baseline_runs` times (default 2; `mutation-thresholds.toml`
+sets 2) and merges one `Baseline` outcome per run; `tl-gate gate` refuses a campaign whose baseline outcomes are not all
+successes with `FAIL baseline: unstable (passed N of M runs)` and no kill rate. `mutation_gate_refuses_an_unstable_baseline`
+covers the gate's judgement over mixed baseline outcomes; the runner's N-run behavior is tested in tl-syntax.
+
+FND-3713 is closed. `the_real_thresholds_keep_the_core_and_crate_floors` fails if `evaluator-core` is below 95 or `crate` is
+below 85 in the real `mutation-thresholds.toml`, and `the_floor_check_fails_a_lowered_or_missing_floor` shows the check
+fails on lowered, missing and unparsable floors. The floors are 100.0 and 99.5.
+
+The matrix marks FR-022, TC-114, TC-120, TC-121, TC-122 and TC-127 implemented, and the NFR-005 summary row implemented. `kani_gate` runs each
+harness under a wall-clock budget (`TL_MLTL_KANI_BUDGET_SECS`, default 1800 s), kills the run at the budget and fails the gate with
+`<harness> TIMED OUT`; tests drive the gate binary with a fake `cargo` for the timeout and passing paths, and check the exact
+A zero or unparsable budget is refused with exit 2. A stochastic member's repetitions are kept as separate runs and replay compares each one (NFR-005-AC-1). Real `cargo kani` runs only in `make kani-check` (part of `make ci`); the tagged tests drive the real `kani_gate` binary through a fake `cargo`. This pass did not run a fresh full mutation campaign; the floors
+rest on the measured runs recorded in SR-231.

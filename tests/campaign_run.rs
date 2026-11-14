@@ -136,7 +136,7 @@ fn replay_reproduces_exact_members_despite_volatile_evidence() {
     );
 }
 
-// Trace: NFR-004-AC-1
+// Trace: TC-121, NFR-004-AC-1
 #[test]
 fn replay_refuses_a_moved_dirty_or_tampered_source() {
     let dir = fixture(MEMBERS);
@@ -406,4 +406,70 @@ fn a_missing_or_malformed_kani_record_fails_the_member() {
     let member = run(&inconsistent);
     assert_eq!(member.status, Status::Fail);
     assert!(member.detail.unwrap().contains("Inconsistent"));
+}
+
+fn fuzz_run_json(seed: u64, executions: u64, edges: u64, state: &str) -> String {
+    format!(
+        r#"{{"target":"t","seed":{seed},"requestedSeconds":9,"observedSeconds":9,
+        "plateauWindowSeconds":3,"executions":{executions},"coverageEdges":{edges},
+        "coverageFeatures":4,"corpusEntries":5,"state":"{state}","stopReason":"growth_observed",
+        "crashes":[]}}"#
+    )
+}
+
+// Trace: TC-121, NFR-005-AC-1
+// A stochastic member that repeats a run keeps each repetition as its own run with its own seed
+// and counts, and replay compares every repetition separately.
+#[test]
+fn stochastic_repetitions_are_kept_separately_and_replayed_one_by_one() {
+    let record = format!(
+        r#"{{"schemaVersion":"tl-mltl.fuzz-run-record/v1","runs":[{},{}]}}"#,
+        fuzz_run_json(7, 11, 2, "completed"),
+        fuzz_run_json(8, 40, 6, "completed")
+    );
+    let members = r#"{"schemaVersion": "tl-mltl.campaign-members/v1", "tools": [], "members": [
+        {"id": "f", "technique": "fuzz", "kind": "fuzz",
+         "command": ["sh", "-c", "cp rec.json \"$EV/r.json\""],
+         "determinism": "seeded", "seed": "7", "evidence": {"env": "EV"}}]}"#;
+    let dir = fixture(members);
+    fs::write(dir.path().join("rec.json"), record).unwrap();
+    git(dir.path(), &["add", "."]);
+    git(dir.path(), &["commit", "-q", "-m", "rec"]);
+    let out = tempfile::tempdir().unwrap();
+    let report = run_campaign(dir.path(), out.path(), &[]).unwrap();
+    let runs = &report.members[0].fuzz_runs;
+    // Two runs, neither merged nor averaged.
+    assert_eq!(runs.len(), 2);
+    assert_eq!(
+        runs.iter()
+            .map(|r| (r.seed, r.executions, r.coverage_edges))
+            .collect::<Vec<_>>(),
+        [(7, 11, 2), (8, 40, 6)]
+    );
+    let again = tempfile::tempdir().unwrap();
+    let (_, diffs) = replay(&report, dir.path(), again.path()).unwrap();
+    assert!(diffs.is_empty(), "{diffs:?}");
+
+    let replay_diffs = |retained: &Report| {
+        tl_mltl::campaign::replay(retained, dir.path(), again.path())
+            .unwrap()
+            .1
+    };
+    // A retained repetition the rerun does not reproduce is a difference.
+    let mut missing = report.clone();
+    missing.members[0].fuzz_runs.pop();
+    tl_mltl::campaign::seal(&mut missing).unwrap();
+    assert!(!replay_diffs(&missing).is_empty());
+    // So is a retained repetition that ended differently, whichever one it is.
+    for index in 0..2 {
+        let mut changed = report.clone();
+        changed.members[0].fuzz_runs[index].state = tl_mltl::fuzz_record::RunState::Cancelled;
+        tl_mltl::campaign::seal(&mut changed).unwrap();
+        assert!(!replay_diffs(&changed).is_empty(), "repetition {index}");
+    }
+    // And one with a different seed.
+    let mut reseeded = report.clone();
+    reseeded.members[0].fuzz_runs[1].seed = 9;
+    tl_mltl::campaign::seal(&mut reseeded).unwrap();
+    assert!(!replay_diffs(&reseeded).is_empty());
 }
