@@ -46,6 +46,11 @@ migration inventory below lists every break reported by `cargo-semver-checks`
 
 - **Depends on the `tl-syntax` 0.4.0 release** (pinned to its release commit,
   requirement `=0.4.0`).
+- **Mapping manifests carry the new crate version.** `adapterVersion` is the crate version, so
+  `tl-mltl.monitor-mapping/v1` and `/v2` manifests written by 0.4.0 say `0.4.0`, and the v2
+  `resultSha256` (whose preimage covers `adapterVersion`) differs from v0.3.0 for the same
+  inputs. Every other manifest field is byte-identical. Compare manifests by field, not by
+  retained digest, across the 0.3.0 to 0.4.0 boundary.
 - **Digests of retained results change.** `resultSha256` of past evaluation
   reports and the digests of contextual evaluation, horizon and mapping records
   no longer cover a `syntaxRevision`, so a record written by v0.3.0 has a
