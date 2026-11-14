@@ -52,6 +52,8 @@ fn supported_mapping_is_stable_and_identity_preserving() {
         .unwrap()
     };
     let first = run();
+    // The fixture is the exact v1 manifest wire; it differs from the pre-feature baseline only in
+    // `adapterVersion` (the crate version, now 0.4.0). Refresh it on a version bump.
     assert_eq!(
         serde_json::to_vec(&first).unwrap(),
         include_bytes!("fixtures/tl-216/legacy-v1.json")

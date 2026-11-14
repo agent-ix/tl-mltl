@@ -239,7 +239,7 @@ Look here: `lookahead` is 3, so a monitor decides the formula at time 0 once it 
 ```text
 $ tl-mltl map_c2po.json
 {
-  "adapterVersion": "0.3.0",
+  "adapterVersion": "0.4.0",
   "expression": "F[0,3](p2)",
   "externalTool": null,
   "formulaId": "r2u2-future-deadline-v1",
