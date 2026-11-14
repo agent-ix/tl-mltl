@@ -353,9 +353,8 @@ mod tests {
         );
     }
 
-    // Partly backs FR-023-AC-2: the classifier names each state; the gate
-    // script does not enforce a time budget, so a timeout is only recorded
-    // when `kani_gate` kills a run at its wall-clock budget.
+    // Backs FR-023-AC-2: the classifier names each state; a timeout is
+    // recorded when `kani_gate` kills a run at its wall-clock budget.
     #[test]
     fn every_failure_class_has_its_own_outcome() {
         let classify = |code, log, timed| classify_proof(code, log, timed);
