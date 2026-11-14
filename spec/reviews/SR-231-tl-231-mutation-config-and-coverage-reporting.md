@@ -79,3 +79,12 @@ replaced the sampled floors in `mutation-thresholds.toml` with floors taken from
   the depth check; `src/past/mod.rs:1700:21` stays excluded because the identity was already required to equal the
   checked report identity.
 - `make spec` was red because `quire coverage --strict` found the FR-022 rows (TC-113 to TC-118) with no backing test. `tests/mutation_gate.rs` now backs them by driving the gate on synthetic outcomes and reading the mutation configuration; it is skipped during mutation runs (`mutation_gate_` in `additional_cargo_test_args`). One divergence is recorded in the matrix: on a failing baseline the gate refuses but still prints the group rates beside `FAIL baseline`, which TC-114 forbids, so TC-114 stays planned.
+
+## Resolution
+
+FND-3712 and FND-3713 of SR-371 are closed. The unmutated suite must pass `baseline_runs` times (default 2) and an
+unstable baseline is refused with no kill rate (FR-022-AC-2, TC-114); the real `mutation-thresholds.toml` is checked
+to keep `evaluator-core` at or above 95 and `crate` at or above 85 (FR-022-AC-4, TC-116). FR-022 and TC-114 are
+implemented in the matrix, so the divergence recorded above no longer applies. The floors in `mutation-thresholds.toml`
+(100.0 and 99.5) rest on the TL-371 measured run above (a full run followed by `--iterate` passes), not on a fresh
+full run, and FND-2313 describes the earlier sampled floors it replaced.

@@ -136,7 +136,7 @@ fn replay_reproduces_exact_members_despite_volatile_evidence() {
     );
 }
 
-// Trace: NFR-004-AC-1
+// Trace: TC-121, NFR-004-AC-1
 #[test]
 fn replay_refuses_a_moved_dirty_or_tampered_source() {
     let dir = fixture(MEMBERS);

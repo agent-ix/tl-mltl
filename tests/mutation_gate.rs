@@ -29,8 +29,14 @@ fn outcome(file: &str, summary: &str, name: &str) -> String {
 }
 
 fn write_outcomes(dir: &Path, baseline: &str, outcomes: &[String]) {
-    let first = format!(r#"{{"scenario":"Baseline","summary":"{baseline}"}}"#);
-    let all = std::iter::once(first)
+    write_outcomes_with_baselines(dir, &[baseline], outcomes);
+}
+
+/// One `Baseline` outcome per entry of `baselines`, as the runner merges the unmutated runs.
+fn write_outcomes_with_baselines(dir: &Path, baselines: &[&str], outcomes: &[String]) {
+    let all = baselines
+        .iter()
+        .map(|baseline| format!(r#"{{"scenario":"Baseline","summary":"{baseline}"}}"#))
         .chain(outcomes.iter().cloned())
         .collect::<Vec<_>>()
         .join(",");
@@ -225,5 +231,99 @@ fn mutation_gate_fails_a_weakened_test_selection() {
             .contains("FAIL evaluator-core: kill 0.00% (min 100.00%)"),
         "{}",
         run.stdout
+    );
+}
+
+// Trace: TC-114, FR-022-AC-2, NFR-005-AC-1
+// The runner (tl-syntax `tl-gate mutants`) performs the extra unmutated run and merges its
+// outcome into the input; its own N-run behavior is tested in tl-syntax. This test covers the
+// gate's judgement over the merged outcomes.
+#[test]
+fn mutation_gate_refuses_an_unstable_baseline() {
+    let dir = scratch("unstable");
+    let toml = thresholds(&dir, 0.0, 0.0, "");
+    write_outcomes_with_baselines(&dir, &["Success", "Failure"], &passing_population());
+    let run = gate(&dir, &toml);
+    assert_eq!(run.status, 1, "{}", run.stdout);
+    assert!(
+        run.stdout
+            .contains("FAIL baseline: unstable (passed 1 of 2 runs)"),
+        "{}",
+        run.stdout
+    );
+    assert!(!run.stdout.contains("kill"), "{}", run.stdout);
+    write_outcomes_with_baselines(&dir, &["Success", "Success"], &passing_population());
+    assert_eq!(gate(&dir, &toml).status, 0);
+}
+
+/// The kill-rate floors a thresholds file must keep: 95% for the evaluator core, 85% for the
+/// crate (FR-022-AC-4). Returns every violation.
+fn floor_violations(thresholds_text: &str) -> Vec<String> {
+    // The thresholds file is flat (`[[group]]` tables of `key = value` lines), so a line scan is
+    // enough and the crate takes no TOML dependency for a test.
+    let mut groups: Vec<(String, Option<f64>)> = Vec::new();
+    let mut in_group = false;
+    for line in thresholds_text.lines().map(str::trim) {
+        if line.starts_with('[') {
+            in_group = line == "[[group]]";
+            if in_group {
+                groups.push((String::new(), None));
+            }
+        } else if in_group {
+            let Some((key, value)) = line.split_once('=') else {
+                continue;
+            };
+            let value = value.trim();
+            let last = groups.last_mut().unwrap();
+            match key.trim() {
+                "name" => last.0 = value.trim_matches('"').to_owned(),
+                "min_kill_percent" => last.1 = value.parse().ok(),
+                _ => {}
+            }
+        }
+    }
+    let mut violations = Vec::new();
+    for (name, floor) in [("evaluator-core", 95.0), ("crate", 85.0)] {
+        let min = groups.iter().find(|g| g.0 == name).and_then(|g| g.1);
+        match min {
+            None => violations.push(format!("group {name} has no min_kill_percent")),
+            Some(min) if min < floor => {
+                violations.push(format!(
+                    "group {name} min_kill_percent {min} is below {floor}"
+                ));
+            }
+            Some(_) => {}
+        }
+    }
+    violations
+}
+
+// Trace: TC-116, FR-022-AC-4
+#[test]
+fn the_real_thresholds_keep_the_core_and_crate_floors() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let text = fs::read_to_string(root.join("mutation-thresholds.toml")).unwrap();
+    assert_eq!(floor_violations(&text), Vec::<String>::new());
+}
+
+// Trace: TC-116, FR-022-AC-4
+#[test]
+fn the_floor_check_fails_a_lowered_or_missing_floor() {
+    let group = |name: &str, min: &str| {
+        format!("[[group]]\nname = \"{name}\"\nglobs = [\"src/*.rs\"]\nmin_kill_percent = {min}\n")
+    };
+    let both = |core: &str, krate: &str| {
+        format!("{}{}", group("evaluator-core", core), group("crate", krate))
+    };
+    assert!(floor_violations(&both("95.0", "85.0")).is_empty());
+    assert!(floor_violations(&both("95", "85")).is_empty());
+    assert_eq!(floor_violations(&both("94.9", "85.0")).len(), 1);
+    assert_eq!(floor_violations(&both("95.0", "84.9")).len(), 1);
+    assert_eq!(floor_violations(&both("0.0", "0.0")).len(), 2);
+    assert_eq!(floor_violations(&group("crate", "99.0")).len(), 1);
+    assert_eq!(floor_violations("").len(), 2);
+    assert_eq!(
+        floor_violations("[[group]]\nname = \"crate\"\nmin_kill_percent = high\n").len(),
+        2
     );
 }

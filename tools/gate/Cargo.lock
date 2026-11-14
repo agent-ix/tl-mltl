@@ -127,7 +127,7 @@ dependencies = [
 [[package]]
 name = "tl-gate"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/tl-syntax.git?rev=371d7d53a9b16f29202561750aaafe91777c85ca#371d7d53a9b16f29202561750aaafe91777c85ca"
+source = "git+https://github.com/agent-ix/tl-syntax.git?rev=d44d00f411b73b277d4e224c9d88f194f7812934#d44d00f411b73b277d4e224c9d88f194f7812934"
 dependencies = [
  "serde",
  "serde_json",

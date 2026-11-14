@@ -9,6 +9,10 @@
 # evidence in SR-231, not in this file.
 diff_min_kill_percent = 100.0
 require_survivor_reasons = true
+# The unmutated suite runs `baseline_runs` times (default 2) before the campaign; the campaign is
+# refused unless every run passes. cargo-mutants' own baseline is one run; the extra runs use the
+# test command derived from `.cargo/mutants.toml`.
+baseline_runs = 2
 exclude = ["src/ci_guard.rs", "src/bin/ci_guard.rs", "src/bin/kani_gate.rs", "src/bin/fuzz_campaign.rs", "src/future/kani_evaluate.rs", "src/wire/kani_wire.rs"]
 
 # evaluation, horizon, interval arithmetic
