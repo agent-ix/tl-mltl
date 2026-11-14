@@ -3,28 +3,124 @@
 All notable user-visible changes to `tl-mltl` are recorded here. The crate is
 distributed as a git source release (`publish = false`); versions are git tags.
 
-## Unreleased
+## 0.4.0
 
-- **Removed error variants that no input can produce (breaking, pre-release).**
-  `OwnerReadErrorCode::{ContractMismatch, IdentityMismatch, EvaluationRefused}`
-  (never constructed anywhere),
-  `MappingError::{InvalidCatalog, InvalidNodeReference, UnsupportedPastNode}`,
-  `PastMappingError::{InvalidCatalog, InvalidNode, UnsupportedNode}`,
-  `ContextualBindingError::InvalidCatalog`, `HorizonError::{InvalidNodeReference,
-  UnsupportedPastNode}`, `EvaluationError::{Horizon, InvalidNodeReference,
-  UnsupportedPastNode}`, `HistoryError::IdentityEncoding`,
-  `HistoryRequirementError::{InvalidNodeReference, FutureNodeUnsupported}`,
-  `PastResultValidationError::IdentityEncoding` and
-  `PastEvaluationError::{History, InvalidNodeReference, FutureNodeUnsupported,
-  PositionArithmeticOverflow, HistoryPositionAbsent, Result}`. A validated
-  formula or catalog already excludes each of them.
-- **`make miri` runs the unit and property suites under Miri** and is a `ci`
-  gate. `analyze_horizon_with_context` now returns
+Part of the second coordinated release of the MLTL crates (`tl-syntax`,
+`tl-parse`, `tl-mltl`, `tl-rewrite`). All four crates move to 0.4.0 together,
+and this crate depends on `tl-syntax` 0.4.0 (pinned to the release commit
+`9607722f24ac1978b5e0e0ceeb0cb2a828e10177` with the requirement `=0.4.0`).
+Changes are relative to v0.3.0. This is a breaking 0.x release; the API
+migration inventory below lists every break reported by `cargo-semver-checks`
+0.50.0.
+
+### Added
+
+- **Infinite-trace evaluation behind the `infinite-trace` feature.** Lasso and
+  prefix evaluation, the successor-fixpoint reference procedure, partial
+  valuations, and export of monitorable infinite safety refutations to C2PO.
+  The U/R and S/T guard covers `[a,i)`, aligning the infinite-trace semantics
+  with the finite ones.
+- **Past-formula export to C2PO** (`map_past_to_c2po`, `PastMappingManifest`,
+  `TargetOriginContract`).
+- **Reproducible campaign.** `CampaignRun` with a member inventory
+  (`campaign/members.json`), a report that states its populations, seeds, tool
+  versions and non-claims before any ratio, and source-bound replay that
+  refuses a moved or dirty source. Fuzz run records and Kani proof records are
+  bound into the report, and stochastic repetitions are kept as separate runs.
+  `make campaign-inventory`, `make campaign-run` and `make campaign-replay`
+  are the entry points.
+- **Verification evidence.** Seeded property laws, small-scope sweeps, a
+  hand-authored boundary corpus, an independent infinite-trace reference
+  corpus, six fuzz targets with recorded runs, bounded Kani proofs gated by
+  `make kani-check` (each harness runs under a wall-clock budget,
+  `TL_MLTL_KANI_BUDGET_SECS`, default 1800 s), a live R2U2 differential over
+  past and future suites (`make r2u2-past-differential`, `make r2u2-nightly`),
+  a limit register, an error-variant ledger, and `make miri`,
+  `make test-features`, `make coverage` and `make coverage-branch`.
+- **Mutation gate.** `make mutants` and `make mutants-diff` run cargo-mutants
+  under a measured floor per group (`mutation-thresholds.toml`); the gate is the
+  shared `tl-gate` tool built from tl-syntax, refuses a failing or unstable
+  baseline, and requires a reason for every surviving mutant.
+
+### Changed
+
+- **Depends on the `tl-syntax` 0.4.0 release** (pinned to its release commit,
+  requirement `=0.4.0`).
+- **Digests of retained results change.** `resultSha256` of past evaluation
+  reports and the digests of contextual evaluation, horizon and mapping records
+  no longer cover a `syntaxRevision`, so a record written by v0.3.0 has a
+  different digest from the same record written by 0.4.0.
+- **Removed error variants that no input can produce (breaking).** The
+  variants are listed one per symbol in the API migration inventory below. A
+  validated formula, catalog, history or request already excludes each of them.
+  The discriminants of the variants that follow a removed one shifted.
+- `analyze_horizon_with_context` returns
   `ContextualHorizonError::Horizon(HorizonError::UnsupportedProfile)` for an
   unsupported profile, where it used to return `ContextualHorizonError::Identity`.
 - `evaluate_past` no longer re-validates the freshly built report with an error
   path; it keeps a `debug_assert!` that the report validates, so a release build
   skips that check.
+- `make miri` runs the unit and property suites under Miri and is a `ci` gate.
+
+### Removed
+
+- The compiled-in `tl-syntax` revision: `TL_SYNTAX_REVISION`, and the
+  `syntax_revision` field of `MappingManifest`, `ContextualMappingManifest`,
+  `ContextualEvaluationReport`, `ContextualHorizonReport` and
+  `PastEvaluationReport`. The pinned revision is recorded in `Cargo.toml` only.
+- `PGM01_POLICY_REVISION`, a policy revision constant no code consumed.
+- `ToolIdentity::executable_sha256` and `ToolIdentity::configuration_sha256`.
+- **Wire break (serialized records).** The record types reject unknown fields,
+  so 0.4.0 refuses records written by v0.3.0 that still carry a removed field.
+  Schema identities were not bumped, by decision for the pre-release 0.x line.
+  Regenerate retained records with 0.4.0. The tl-syntax release gate's legacy
+  decoder replay covers the `tl-parse` parser report only; it replays no
+  tl-mltl record, so every refusal below is reviewer-checked from the serde
+  definitions (`deny_unknown_fields`), not replay-proven.
+  - `schemas/past-evaluation-v1.schema.json` (`tl-mltl.past-evaluation/v1`): Migration: drop `syntaxRevision` from records and regenerate them, because `resultSha256` no longer covers it; the schema (`additionalProperties: false`) rejects v0.3.0 records that carry it and 0.3.0 rejects new records. This is a declared golden exception of the release gate.
+  - `tl-mltl.monitor-mapping/v1` (`MappingManifest`) and `tl-mltl.monitor-mapping/v2` (`ContextualMappingManifest`): Migration: drop `syntaxRevision` from manifests and regenerate them; v0.3.0 manifests carrying it are refused.
+  - `tl-mltl.evaluation/v2` (`ContextualEvaluationReport`) and `tl-mltl.horizon/v2` (`ContextualHorizonReport`): Migration: drop `syntaxRevision` from reports and regenerate them; v0.3.0 reports carrying it are refused and their digests no longer match.
+  - `tl-mltl.external-verdict/v1`, `tl-mltl.external-verdict/v2`, `tl-mltl.differential/v1` and `tl-mltl.differential/v2` (each embeds an external verdict whose `tool` is a `ToolIdentity`; `differential/v2` also embeds a contextual evaluation report): Migration: drop `executableSha256` and `configurationSha256` from the `tool` object, and `syntaxRevision` from an embedded contextual evaluation report, then regenerate the record; v0.3.0 records carrying them are refused.
+
+### API migration inventory
+
+- `enum_no_repr_variant_discriminant_changed` `HistoryRequirementError::ArithmeticOverflow`: Migration: do not cast `HistoryRequirementError` variants to integers with `as`; discriminants shifted when variants were removed, so match on the variant or use an explicit mapping.
+- `enum_no_repr_variant_discriminant_changed` `HistoryRequirementError::FormulaIdentityEncoding`: Migration: do not cast `HistoryRequirementError` variants to integers with `as`; discriminants shifted when variants were removed, so match on the variant or use an explicit mapping.
+- `enum_no_repr_variant_discriminant_changed` `HistoryRequirementError::InvalidFormulaIdentity`: Migration: do not cast `HistoryRequirementError` variants to integers with `as`; discriminants shifted when variants were removed, so match on the variant or use an explicit mapping.
+- `enum_no_repr_variant_discriminant_changed` `OwnerReadErrorCode::Encoding`: Migration: do not cast `OwnerReadErrorCode` variants to integers with `as`; discriminants shifted when variants were removed, so match on the variant or use an explicit mapping.
+- `enum_no_repr_variant_discriminant_changed` `OwnerReadErrorCode::ExpectedMismatch`: Migration: do not cast `OwnerReadErrorCode` variants to integers with `as`; discriminants shifted when variants were removed, so match on the variant or use an explicit mapping.
+- `enum_no_repr_variant_discriminant_changed` `OwnerReadErrorCode::InvalidCombination`: Migration: do not cast `OwnerReadErrorCode` variants to integers with `as`; discriminants shifted when variants were removed, so match on the variant or use an explicit mapping.
+- `enum_variant_missing` `ContextualBindingError::InvalidCatalog`: Migration: delete the match arm for `ContextualBindingError::InvalidCatalog`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `EvaluationError::Horizon`: Migration: delete the match arm for `EvaluationError::Horizon`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `EvaluationError::InvalidNodeReference`: Migration: delete the match arm for `EvaluationError::InvalidNodeReference`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `EvaluationError::UnsupportedPastNode`: Migration: delete the match arm for `EvaluationError::UnsupportedPastNode`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `HistoryError::IdentityEncoding`: Migration: delete the match arm for `HistoryError::IdentityEncoding`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `HistoryRequirementError::FutureNodeUnsupported`: Migration: delete the match arm for `HistoryRequirementError::FutureNodeUnsupported`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `HistoryRequirementError::InvalidNodeReference`: Migration: delete the match arm for `HistoryRequirementError::InvalidNodeReference`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `HorizonError::InvalidNodeReference`: Migration: delete the match arm for `HorizonError::InvalidNodeReference`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `HorizonError::UnsupportedPastNode`: Migration: delete the match arm for `HorizonError::UnsupportedPastNode`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `MappingError::InvalidCatalog`: Migration: delete the match arm for `MappingError::InvalidCatalog`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `MappingError::InvalidNodeReference`: Migration: delete the match arm for `MappingError::InvalidNodeReference`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `MappingError::UnsupportedPastNode`: Migration: delete the match arm for `MappingError::UnsupportedPastNode`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `OwnerReadErrorCode::ContractMismatch`: Migration: delete the match arm for `OwnerReadErrorCode::ContractMismatch`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `OwnerReadErrorCode::EvaluationRefused`: Migration: delete the match arm for `OwnerReadErrorCode::EvaluationRefused`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `OwnerReadErrorCode::IdentityMismatch`: Migration: delete the match arm for `OwnerReadErrorCode::IdentityMismatch`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `PastEvaluationError::FutureNodeUnsupported`: Migration: delete the match arm for `PastEvaluationError::FutureNodeUnsupported`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `PastEvaluationError::History`: Migration: delete the match arm for `PastEvaluationError::History`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `PastEvaluationError::HistoryPositionAbsent`: Migration: delete the match arm for `PastEvaluationError::HistoryPositionAbsent`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `PastEvaluationError::InvalidNodeReference`: Migration: delete the match arm for `PastEvaluationError::InvalidNodeReference`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `PastEvaluationError::PositionArithmeticOverflow`: Migration: delete the match arm for `PastEvaluationError::PositionArithmeticOverflow`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `PastEvaluationError::Result`: Migration: delete the match arm for `PastEvaluationError::Result`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `enum_variant_missing` `PastResultValidationError::IdentityEncoding`: Migration: delete the match arm for `PastResultValidationError::IdentityEncoding`; a validated formula, catalog, history or request already excludes the case, so no input produces this variant.
+- `pub_module_level_const_missing` `PGM01_POLICY_REVISION`: Migration: delete uses; the constant named a policy revision no code consumed.
+- `pub_module_level_const_missing` `TL_SYNTAX_REVISION`: Migration: delete uses; the pinned tl-syntax revision is recorded in `Cargo.toml` only, and records no longer carry it.
+- `struct_pub_field_missing` `ContextualEvaluationReport::syntax_revision`: Migration: delete reads and struct-literal initializers of the field; serialized records no longer carry `syntaxRevision` (see Removed).
+- `struct_pub_field_missing` `ContextualHorizonReport::syntax_revision`: Migration: delete reads and struct-literal initializers of the field; serialized records no longer carry `syntaxRevision` (see Removed).
+- `struct_pub_field_missing` `ContextualMappingManifest::syntax_revision`: Migration: delete reads and struct-literal initializers of the field; serialized records no longer carry `syntaxRevision` (see Removed).
+- `struct_pub_field_missing` `MappingManifest::syntax_revision`: Migration: delete reads and struct-literal initializers of the field; serialized records no longer carry `syntaxRevision` (see Removed).
+- `struct_pub_field_missing` `PastEvaluationReport::syntax_revision`: Migration: delete reads and struct-literal initializers of the field; serialized records no longer carry `syntaxRevision` (see Removed).
+- `struct_pub_field_missing` `ToolIdentity::configuration_sha256`: Migration: delete the field from struct literals; serialized tool identities no longer carry `executableSha256` or `configurationSha256`, and records that still carry them are refused (see Removed).
+- `struct_pub_field_missing` `ToolIdentity::executable_sha256`: Migration: delete the field from struct literals; serialized tool identities no longer carry `executableSha256` or `configurationSha256`, and records that still carry them are refused (see Removed).
 
 ## 0.3.0
 
