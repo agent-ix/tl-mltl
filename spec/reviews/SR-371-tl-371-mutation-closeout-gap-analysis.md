@@ -66,5 +66,5 @@ fails on lowered, missing and unparsable floors. The floors are 100.0 and 99.5.
 The matrix marks FR-022, TC-114, TC-120, TC-121, TC-122 and TC-127 implemented, and the NFR-005 summary row implemented. `kani_gate` runs each
 harness under a wall-clock budget (`TL_MLTL_KANI_BUDGET_SECS`, default 1800 s), kills the run at the budget and fails the gate with
 `<harness> TIMED OUT`; tests drive the gate binary with a fake `cargo` for the timeout and passing paths, and check the exact
-`--harness NAME --exact` command. No test runs the real `cargo kani`. This pass did not run a fresh full mutation campaign; the floors
+A zero or unparsable budget is refused with exit 2. A stochastic member's repetitions are kept as separate runs and replay compares each one (NFR-005-AC-1). Real `cargo kani` runs only in `make kani-check` (part of `make ci`); the tagged tests drive the real `kani_gate` binary through a fake `cargo`. This pass did not run a fresh full mutation campaign; the floors
 rest on the measured runs recorded in SR-231.

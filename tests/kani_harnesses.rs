@@ -294,7 +294,9 @@ fn unreadable_proof_source_path_fails_with_a_clear_message() {
 /// Runs the built `kani_gate` binary with a fake `cargo` first on PATH, so no real Kani runs.
 fn run_gate_with_fake_cargo(script: &str, budget_secs: &str) -> (Option<i32>, String) {
     use std::os::unix::fs::PermissionsExt;
-    let dir = std::env::temp_dir().join(format!("tl-mltl-fake-cargo-{}", std::process::id()));
+    static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    let id = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let dir = std::env::temp_dir().join(format!("tl-mltl-fake-cargo-{}-{id}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let fake = dir.join("cargo");
@@ -326,4 +328,14 @@ fn gate_binary_fails_a_harness_that_outlives_its_budget_and_passes_a_verified_on
     let verified = "echo 'VERIFICATION:- SUCCESSFUL'; echo ' ** 1 of 1 cover properties satisfied'";
     let (code, stderr) = run_gate_with_fake_cargo(verified, "30");
     assert_eq!(code, Some(0), "{stderr}");
+}
+
+// Trace: TC-120, FR-023-AC-2
+#[test]
+fn gate_binary_refuses_a_zero_or_unparsable_budget_instead_of_using_the_default() {
+    for bad in ["0", "soon"] {
+        let (code, stderr) = run_gate_with_fake_cargo("exit 0", bad);
+        assert_eq!(code, Some(2), "{bad}: {stderr}");
+        assert!(stderr.contains("TL_MLTL_KANI_BUDGET_SECS"), "{stderr}");
+    }
 }

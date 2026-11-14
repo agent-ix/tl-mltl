@@ -127,13 +127,18 @@ struct Ran {
 /// bounded and finish in minutes; half an hour separates a slow host from a diverging proof.
 const DEFAULT_BUDGET_SECS: u64 = 1800;
 
-fn budget() -> Duration {
-    let secs = env::var("TL_MLTL_KANI_BUDGET_SECS")
-        .ok()
-        .and_then(|v| v.parse::<u64>().ok())
-        .filter(|s| *s > 0)
-        .unwrap_or(DEFAULT_BUDGET_SECS);
-    Duration::from_secs(secs)
+/// The per-harness budget: `value` is the text of `TL_MLTL_KANI_BUDGET_SECS`, if set. A value that is
+/// not a positive whole number of seconds is refused rather than replaced by the default.
+fn parse_budget(value: Option<&str>) -> Result<Duration, String> {
+    let Some(text) = value else {
+        return Ok(Duration::from_secs(DEFAULT_BUDGET_SECS));
+    };
+    match text.trim().parse::<u64>() {
+        Ok(secs) if secs > 0 => Ok(Duration::from_secs(secs)),
+        _ => Err(format!(
+            "TL_MLTL_KANI_BUDGET_SECS must be a positive whole number of seconds, got {text:?}"
+        )),
+    }
 }
 
 /// The command that runs exactly the harness with this qualified name.
@@ -197,8 +202,8 @@ fn run_with_budget(mut command: Command, budget: Duration) -> Result<Ran, String
     })
 }
 
-fn run_kani(harness: &str) -> Result<Ran, String> {
-    run_with_budget(kani_command(harness), budget())
+fn run_kani(harness: &str, budget: Duration) -> Result<Ran, String> {
+    run_with_budget(kani_command(harness), budget)
 }
 /// Judge one finished run, writing its record when `evidence` is set.
 fn evaluate(harness: &str, ran: &Ran, evidence: Option<&str>) -> Result<(), String> {
@@ -253,7 +258,14 @@ fn main() -> ExitCode {
     let evidence = env::var("TL_MLTL_EVIDENCE_DIR")
         .ok()
         .filter(|d| !d.is_empty());
-    let failures = run_all(&harnesses, evidence.as_deref(), run_kani);
+    let budget = match parse_budget(env::var("TL_MLTL_KANI_BUDGET_SECS").ok().as_deref()) {
+        Ok(budget) => budget,
+        Err(e) => {
+            eprintln!("kani_gate: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let failures = run_all(&harnesses, evidence.as_deref(), |h| run_kani(h, budget));
     for failure in &failures {
         eprintln!("kani_gate: {failure}");
     }
@@ -442,6 +454,19 @@ mod tests {
         let text = fs::read_to_string(format!("{dir}/w.json")).unwrap();
         assert!(text.contains("timeout"), "{text}");
         assert_eq!(DEFAULT_BUDGET_SECS, 1800);
+    }
+
+    #[test]
+    fn the_budget_defaults_and_refuses_zero_or_unparsable_values() {
+        assert_eq!(parse_budget(None), Ok(Duration::from_secs(1800)));
+        assert_eq!(parse_budget(Some("45")), Ok(Duration::from_secs(45)));
+        for bad in ["0", "", "abc", "-5", "1.5", "10m"] {
+            let err = parse_budget(Some(bad)).unwrap_err();
+            assert!(
+                err.contains("TL_MLTL_KANI_BUDGET_SECS") && err.contains(bad),
+                "{err}"
+            );
+        }
     }
 
     #[test]
