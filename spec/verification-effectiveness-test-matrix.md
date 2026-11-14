@@ -22,7 +22,7 @@ relationships:
 
 | Non-Functional Req | Verification Method | Evidence/Test Cases | Status |
 |---|---|---|---|
-| NFR-005 | seeded faults, weakened test selections, and campaign report replay | TC-107, TC-114, TC-118, TC-120 through TC-122, TC-127 | 🚧 partial — TC-120: the Kani gate has no time budget of its own, so a timeout fails only when the caller sets `TL_MLTL_KANI_TIMED_OUT`, and no test runs `cargo kani` |
+| NFR-005 | seeded faults, weakened test selections, and campaign report replay | TC-107, TC-114, TC-118, TC-120 through TC-122, TC-127 | ✅ implemented |
 
 ## Allocation
 
@@ -53,7 +53,7 @@ relationships:
 | TC-117 | List every surviving mutant with exactly one reason (killing test, stated equivalence, or named Kani harness) and fail a survivor without one | Integration | P0 | FR-022-AC-5 | ✅ implemented |
 | TC-118 | Weaken the test selection and require the threshold gate to fail while the unweakened selection passes | Integration | P0 | FR-022-AC-4, NFR-005-AC-2 | ✅ implemented |
 | TC-119 | Census the finite proof-candidate registry under candidate, proposition, and ledger digest preimages | Analysis | P0 | FR-023-AC-1 | ⛔ retired — proof-candidate ledger and digest ceremony; the harness list and its bounds are checked by TC-120 |
-| TC-120 | Check that each Kani harness states its bounds and non-claims, that the gate runs every listed harness by exact name, and that a vacuous proof, incomplete unwinding, or timeout fails | Integration | P0 | FR-023-AC-1, FR-023-AC-2, FR-023-AC-3, NFR-005-AC-2 | 🚧 partial — the gate, the proof classifier and the campaign record are tested on logs for vacuous cover, unwinding failure and timeout; `kani_gate` has no time budget of its own (a timeout is recorded only when the caller sets `TL_MLTL_KANI_TIMED_OUT`) and no test runs `cargo kani` |
+| TC-120 | Check that each Kani harness states its bounds and non-claims, that the gate runs every listed harness by exact name, and that a vacuous proof, incomplete unwinding, or timeout fails | Integration | P0 | FR-023-AC-1, FR-023-AC-2, FR-023-AC-3, NFR-005-AC-2 | ✅ implemented |
 | TC-121 | Record source revision, tool versions, seeds, and per-member outcome in the campaign report, and refuse a replay against a moved or dirty source | Integration | P0 | FR-021-AC-4, FR-023-AC-3, NFR-005-AC-1 | ✅ implemented |
 | TC-122 | Refuse every count, ratio, plateau, no-crash result, proof, or aggregate that widens into an automated authority claim | Integration | P0 | FR-021-AC-5, NFR-005-AC-3 | ✅ implemented |
 | TC-123 | Prove verifier-only code cannot change ordinary or MSRV behavior or add a production dependency on Kani or another verifier | Integration | P0 | FR-023-AC-4 | 🚧 planned |

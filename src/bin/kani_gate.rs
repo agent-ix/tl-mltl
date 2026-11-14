@@ -6,13 +6,16 @@
 //! gate reads the result lines. When `TL_MLTL_EVIDENCE_DIR` is set (a campaign
 //! run), a per-proof record with its own outcome state is written there for the
 //! campaign report; a record that cannot be written is reported but does not
-//! change the verdict. `TL_MLTL_KANI_TIMED_OUT=1` records a timeout; a timed-out
+//! change the verdict. Each harness runs under a wall-clock budget (`TL_MLTL_KANI_BUDGET_SECS`, default 1800); a run still going at the budget is killed, recorded as a timeout and fails the gate under its harness name. A timed-out
 //! run is never recorded as verified.
 
 use std::{
     env, fs,
-    process::{Command, ExitCode},
-    time::Instant,
+    io::Read,
+    os::unix::process::CommandExt,
+    process::{Command, ExitCode, Stdio},
+    thread,
+    time::{Duration, Instant},
 };
 
 use tl_mltl::kani_record::{
@@ -69,6 +72,7 @@ fn write_record(
     log: &str,
     status: Option<i32>,
     seconds: u64,
+    timed_out: bool,
     dir: &str,
 ) -> Result<(), String> {
     let source = fs::read_to_string(source_file(harness)).unwrap_or_default();
@@ -86,7 +90,7 @@ fn write_record(
         harness,
         exit_code: status,
         log,
-        timed_out: env::var("TL_MLTL_KANI_TIMED_OUT").is_ok_and(|v| v == "1"),
+        timed_out,
         kani_version: &kani_version,
         cbmc_version: &cbmc_version,
         elapsed_seconds: seconds,
@@ -115,11 +119,27 @@ struct Ran {
     code: Option<i32>,
     log: String,
     seconds: u64,
+    /// The run was killed at its wall-clock budget; it is never a verified proof.
+    timed_out: bool,
 }
 
-fn run_kani(harness: &str) -> Result<Ran, String> {
-    let started = Instant::now();
-    let output = Command::new("cargo")
+/// Wall-clock budget of one harness when `TL_MLTL_KANI_BUDGET_SECS` is not set. The proofs are
+/// bounded and finish in minutes; half an hour separates a slow host from a diverging proof.
+const DEFAULT_BUDGET_SECS: u64 = 1800;
+
+fn budget() -> Duration {
+    let secs = env::var("TL_MLTL_KANI_BUDGET_SECS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .filter(|s| *s > 0)
+        .unwrap_or(DEFAULT_BUDGET_SECS);
+    Duration::from_secs(secs)
+}
+
+/// The command that runs exactly the harness with this qualified name.
+fn kani_command(harness: &str) -> Command {
+    let mut command = Command::new("cargo");
+    command
         .args([
             "kani",
             "--lib",
@@ -128,26 +148,69 @@ fn run_kani(harness: &str) -> Result<Ran, String> {
             "--output-format",
             "terse",
         ])
-        .args(["--harness", harness, "--exact"])
-        .output()
-        .map_err(|e| format!("cargo kani: {e}"))?;
-    let mut log = String::from_utf8_lossy(&output.stdout).into_owned();
-    log.push_str(&String::from_utf8_lossy(&output.stderr));
-    Ok(Ran {
-        code: output.status.code(),
-        log,
-        seconds: started.elapsed().as_secs(),
+        .args(["--harness", harness, "--exact"]);
+    command
+}
+
+fn drain<R: Read + Send + 'static>(mut stream: R) -> thread::JoinHandle<String> {
+    thread::spawn(move || {
+        let mut bytes = Vec::new();
+        let _ = stream.read_to_end(&mut bytes);
+        String::from_utf8_lossy(&bytes).into_owned()
     })
 }
 
+/// Run `command` in its own process group and kill the whole group when `budget` expires, so
+/// a verifier child (CBMC) does not outlive the gate.
+fn run_with_budget(mut command: Command, budget: Duration) -> Result<Ran, String> {
+    let started = Instant::now();
+    let mut child = command
+        .process_group(0)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("{}: {e}", command.get_program().to_string_lossy()))?;
+    let out = drain(child.stdout.take().unwrap());
+    let err = drain(child.stderr.take().unwrap());
+    let mut timed_out = false;
+    let status = loop {
+        match child.try_wait().map_err(|e| e.to_string())? {
+            Some(status) => break status,
+            None if started.elapsed() >= budget => {
+                timed_out = true;
+                let _ = Command::new("kill")
+                    .args(["-KILL", "--", &format!("-{}", child.id())])
+                    .status();
+                let _ = child.kill();
+                break child.wait().map_err(|e| e.to_string())?;
+            }
+            None => thread::sleep(Duration::from_millis(20)),
+        }
+    };
+    let mut log = out.join().unwrap_or_default();
+    log.push_str(&err.join().unwrap_or_default());
+    Ok(Ran {
+        code: status.code(),
+        log,
+        seconds: started.elapsed().as_secs(),
+        timed_out,
+    })
+}
+
+fn run_kani(harness: &str) -> Result<Ran, String> {
+    run_with_budget(kani_command(harness), budget())
+}
 /// Judge one finished run, writing its record when `evidence` is set.
 fn evaluate(harness: &str, ran: &Ran, evidence: Option<&str>) -> Result<(), String> {
     if let Some(dir) = evidence {
-        if let Err(e) = write_record(harness, &ran.log, ran.code, ran.seconds, dir) {
+        if let Err(e) = write_record(harness, &ran.log, ran.code, ran.seconds, ran.timed_out, dir) {
             eprintln!("kani_gate: record not written: {e}");
         }
     }
     print!("{}", ran.log);
+    if ran.timed_out {
+        return Err(format!("{harness} TIMED OUT"));
+    }
     if ran.code != Some(0) {
         return Err(format!("{harness} did not verify"));
     }
@@ -212,6 +275,7 @@ mod tests {
             code: Some(code),
             log: log.to_owned(),
             seconds: 1,
+            timed_out: false,
         }
     }
 
@@ -303,8 +367,91 @@ mod tests {
     #[test]
     fn a_record_that_cannot_be_written_is_reported_and_does_not_change_the_verdict() {
         let missing = format!("{}/does-not-exist", scratch("missing"));
-        assert!(write_record("h", OK, Some(0), 1, &missing).is_err());
+        assert!(write_record("h", OK, Some(0), 1, false, &missing).is_err());
         assert!(evaluate("h", &ran(0, OK), Some(&missing)).is_ok());
         assert!(evaluate("h", &ran(1, OK), Some(&missing)).is_err());
+    }
+
+    fn sh(script: &str) -> Command {
+        let mut command = Command::new("sh");
+        command.args(["-c", script]);
+        command
+    }
+
+    #[test]
+    fn the_kani_command_names_the_harness_exactly() {
+        let command = kani_command("wire::some_harness");
+        let args: Vec<_> = command
+            .get_args()
+            .map(|a| a.to_string_lossy().into_owned())
+            .collect();
+        let at = args.iter().position(|a| a == "--harness").unwrap();
+        assert_eq!(args[at + 1], "wire::some_harness");
+        assert_eq!(args[at + 2], "--exact");
+        assert_eq!(args[..2], ["kani", "--lib"]);
+    }
+
+    #[test]
+    fn a_child_that_finishes_inside_its_budget_is_judged_by_its_log() {
+        let ran = run_with_budget(
+            sh("printf 'VERIFICATION:- SUCCESSFUL\\n ** 2 of 2 cover properties satisfied\\n'"),
+            Duration::from_secs(30),
+        )
+        .unwrap();
+        assert!(!ran.timed_out);
+        assert_eq!(ran.code, Some(0));
+        assert!(evaluate("h", &ran, None).is_ok());
+    }
+
+    #[test]
+    fn a_child_past_its_budget_is_killed_and_fails_under_the_harness_name() {
+        let started = Instant::now();
+        // A slow child that also holds a grandchild, as cargo kani holds CBMC.
+        let ran = run_with_budget(
+            sh("echo started; sleep 60 & sleep 60"),
+            Duration::from_millis(300),
+        )
+        .unwrap();
+        assert!(
+            started.elapsed() < Duration::from_secs(30),
+            "the child was not killed"
+        );
+        assert!(ran.timed_out);
+        assert!(ran.log.contains("started"));
+        // Even a log that looks successful cannot pass a timed-out run.
+        let looks_fine = Ran {
+            log: OK.to_owned(),
+            code: Some(0),
+            ..ran
+        };
+        let err = evaluate("future::horizon::slow", &looks_fine, None).unwrap_err();
+        assert!(
+            err.contains("future::horizon::slow") && err.contains("TIMED OUT"),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn a_timeout_is_recorded_as_a_timeout_and_the_budget_has_a_default() {
+        let dir = scratch("timeout");
+        let ran = Ran {
+            timed_out: true,
+            ..ran(0, OK)
+        };
+        assert!(evaluate("w", &ran, Some(&dir)).is_err());
+        let text = fs::read_to_string(format!("{dir}/w.json")).unwrap();
+        assert!(text.contains("timeout"), "{text}");
+        assert_eq!(DEFAULT_BUDGET_SECS, 1800);
+    }
+
+    #[test]
+    fn an_unstartable_command_is_an_error_naming_the_program() {
+        let err = run_with_budget(
+            Command::new("no-such-program-tl-mltl"),
+            Duration::from_secs(1),
+        )
+        .err()
+        .unwrap();
+        assert!(err.contains("no-such-program-tl-mltl"), "{err}");
     }
 }

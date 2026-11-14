@@ -63,7 +63,8 @@ FND-3713 is closed. `the_real_thresholds_keep_the_core_and_crate_floors` fails i
 below 85 in the real `mutation-thresholds.toml`, and `the_floor_check_fails_a_lowered_or_missing_floor` shows the check
 fails on lowered, missing and unparsable floors. The floors are 100.0 and 99.5.
 
-The matrix now marks FR-022 and TC-114 implemented, and TC-121, TC-122 and TC-127 implemented. TC-120 and the NFR-005
-summary stay partial: `kani_gate` has no time budget of its own, so a timeout fails only when the caller sets
-`TL_MLTL_KANI_TIMED_OUT`, and no test runs `cargo kani`. This pass did not run a fresh full mutation campaign; the floors
+The matrix marks FR-022, TC-114, TC-120, TC-121, TC-122 and TC-127 implemented, and the NFR-005 summary row implemented. `kani_gate` runs each
+harness under a wall-clock budget (`TL_MLTL_KANI_BUDGET_SECS`, default 1800 s), kills the run at the budget and fails the gate with
+`<harness> TIMED OUT`; tests drive the gate binary with a fake `cargo` for the timeout and passing paths, and check the exact
+`--harness NAME --exact` command. No test runs the real `cargo kani`. This pass did not run a fresh full mutation campaign; the floors
 rest on the measured runs recorded in SR-231.

@@ -88,3 +88,7 @@ to keep `evaluator-core` at or above 95 and `crate` at or above 85 (FR-022-AC-4,
 implemented in the matrix, so the divergence recorded above no longer applies. The floors in `mutation-thresholds.toml`
 (100.0 and 99.5) rest on the TL-371 measured run above (a full run followed by `--iterate` passes), not on a fresh
 full run, and FND-2313 describes the earlier sampled floors it replaced.
+
+`kani_gate` runs each Kani harness under a wall-clock budget (`TL_MLTL_KANI_BUDGET_SECS`, default 1800 s), kills the run
+at the budget and fails the gate with the harness name and `TIMED OUT` (FR-023-AC-2, TC-120); the timeout is recorded
+as its own proof outcome. The budget replaces the earlier caller-set `TL_MLTL_KANI_TIMED_OUT`.

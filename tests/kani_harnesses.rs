@@ -139,8 +139,9 @@ fn combinator_harness_name_and_doc_say_the_evaluator_entry_is_stubbed() {
     assert!(doc.contains("no-panic") && doc.contains("typed-error"));
 }
 
-// Partly backs FR-023-AC-2: the gate reports one generic failure; it does not
-// give unwinding failure, timeout or unsupported construct separate statuses.
+// The campaign record gives unwinding failure, timeout and unsupported construct their own
+// statuses (kani_record); the gate reports each failing harness by name. The gate binary's
+// timeout is exercised below with a fake `cargo`.
 // Trace: TC-120, FR-023-AC-2
 #[test]
 fn gate_runs_each_listed_harness_exactly_and_every_proof_is_covered() {
@@ -288,4 +289,41 @@ fn kani_cfg_detection_catches_every_attribute_form() {
 #[should_panic(expected = "cannot read src/no/such/file.rs")]
 fn unreadable_proof_source_path_fails_with_a_clear_message() {
     read("src/no/such/file.rs");
+}
+
+/// Runs the built `kani_gate` binary with a fake `cargo` first on PATH, so no real Kani runs.
+fn run_gate_with_fake_cargo(script: &str, budget_secs: &str) -> (Option<i32>, String) {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = std::env::temp_dir().join(format!("tl-mltl-fake-cargo-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let fake = dir.join("cargo");
+    std::fs::write(&fake, format!("#!/bin/sh\n{script}\n")).unwrap();
+    std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let path = format!("{}:{}", dir.display(), std::env::var("PATH").unwrap());
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_kani_gate"))
+        .arg("future::horizon::slow_harness")
+        .env("PATH", path)
+        .env("TL_MLTL_KANI_BUDGET_SECS", budget_secs)
+        .env_remove("TL_MLTL_EVIDENCE_DIR")
+        .output()
+        .unwrap();
+    (
+        output.status.code(),
+        String::from_utf8_lossy(&output.stderr).into_owned(),
+    )
+}
+
+// Trace: TC-120, FR-023-AC-2, NFR-005-AC-2
+#[test]
+fn gate_binary_fails_a_harness_that_outlives_its_budget_and_passes_a_verified_one() {
+    let (code, stderr) = run_gate_with_fake_cargo("sleep 60", "1");
+    assert_eq!(code, Some(1), "{stderr}");
+    assert!(
+        stderr.contains("future::horizon::slow_harness TIMED OUT"),
+        "{stderr}"
+    );
+    let verified = "echo 'VERIFICATION:- SUCCESSFUL'; echo ' ** 1 of 1 cover properties satisfied'";
+    let (code, stderr) = run_gate_with_fake_cargo(verified, "30");
+    assert_eq!(code, Some(0), "{stderr}");
 }
