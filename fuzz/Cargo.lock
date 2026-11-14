@@ -262,7 +262,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "tl-syntax 0.4.0",
+ "tl-syntax",
 ]
 
 [[package]]
@@ -275,26 +275,16 @@ dependencies = [
  "sha2",
  "tl-mltl",
  "tl-oracle",
- "tl-syntax 0.4.0",
+ "tl-syntax",
 ]
 
 [[package]]
 name = "tl-oracle"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/tl-oracle.git?rev=687e0e13fdf0c96bc9e610fe9a06228c24312ada#687e0e13fdf0c96bc9e610fe9a06228c24312ada"
+source = "git+https://github.com/agent-ix/tl-oracle.git?rev=11bc3dd0556c23f1339f3ecda016d9e8b911baee#11bc3dd0556c23f1339f3ecda016d9e8b911baee"
 dependencies = [
  "thiserror",
- "tl-syntax 0.3.0",
-]
-
-[[package]]
-name = "tl-syntax"
-version = "0.3.0"
-source = "git+https://github.com/agent-ix/tl-syntax.git?rev=2a83eb177e1fd157db3787c7c861d8452527145a#2a83eb177e1fd157db3787c7c861d8452527145a"
-dependencies = [
- "serde",
- "serde_json",
- "sha2",
+ "tl-syntax",
 ]
 
 [[package]]
