@@ -8,13 +8,13 @@ relationships:
     type: implements
   - target: ix://agent-ix/tl-mltl/FR-018
     type: depends_on
-  - target: ix://agent-ix/quire-observation/FR-009
+  - target: ix://agent-ix/filament-observation/FR-009
     type: references
-  - target: ix://agent-ix/quire-observation/FR-010
+  - target: ix://agent-ix/filament-observation/FR-010
     type: references
-  - target: ix://agent-ix/quire-observation/FR-011
+  - target: ix://agent-ix/filament-observation/FR-011
     type: references
-  - target: ix://agent-ix/quire-mltl/FR-002
+  - target: ix://agent-ix/filament-mltl/FR-002
     type: superseded_by
 ---
 
@@ -52,10 +52,10 @@ artifact.
   temporal evaluation or observation-authority logic.
 - The temporal dispatch output shall be byte-identical to a direct invocation of
   the existing adapter for the same inputs and limits.
-- The repair branch shall identify `quire.observation.repair-plan/v1` as
+- The repair branch shall identify `filament.observation.repair-plan/v1` as
   unsupported and shall not accept, inspect, or mutate a plan artifact.
 - The query branch shall identify
-  `quire.observation.closed-population-query/v1` as unsupported and shall not
+  `filament.observation.closed-population-query/v1` as unsupported and shall not
   accept, inspect, aggregate, or mutate an evaluation artifact.
 
 ## Constraints
@@ -83,20 +83,20 @@ disposition at its boundary.
 This requirement is superseded, not deleted or rewritten. The architect ruled,
 against Linear epic [TL-175](https://linear.app/agent-ix/issue/TL-175), that
 every TL-* crate — `tl-syntax`, `tl-parse`, `tl-mltl`, `tl-rewrite` — stays
-independent of the agent-ix/Quire ecosystem, and that only a dedicated
-integration crate may bridge one of them to Quire types. `quire-mltl` is that
+independent of the agent-ix/Filament ecosystem, and that only a dedicated
+integration crate may bridge one of them to Filament types. `filament-mltl` is that
 bridge (TL-176/TL-177); TL-178 ported this requirement's QObs C00
 compatibility-dispatch boundary there unchanged as
-[quire-mltl FR-002](ix://agent-ix/quire-mltl/FR-002). TL-180 retires this
-requirement in `tl-mltl`, removes MRS-001's `quire-contract-ir/PGM-01`
+[filament-mltl FR-002](ix://agent-ix/filament-mltl/FR-002). TL-180 retires this
+requirement in `tl-mltl`, removes MRS-001's `filament-contract-ir/PGM-01`
 `depends_on` edge, and removes NFR-002's PGM-01 reference, completing
-`tl-mltl`'s independence from Quire governance.
+`tl-mltl`'s independence from Filament governance.
 
 The Description, Inputs, Outputs, Behavior, Constraints, and Acceptance
 Criteria above are retained unmodified as the historical record of what this
 requirement specified while it governed `tl-mltl`'s own QObs boundary; they no
 longer describe `tl-mltl`'s current or target behavior. The implementation
-they describe is not removed by this ticket — dropping the `quire-observation`
+they describe is not removed by this ticket — dropping the `filament-observation`
 dependency and the four wire/mapping source files is separate, tracked
 follow-up work (TL-179's PR B) — so `src/wire/observation.rs` and TC-085 still
 exist and still pass at the time this requirement is marked superseded.

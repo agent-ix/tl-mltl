@@ -95,7 +95,7 @@ pub const TL_SYNTAX_CORPUS_REVISION: &str = "tl-syntax-corpus/v1";
 ///
 /// Call sites within this crate already read this through `env!` directly
 /// because `build.rs` runs for this crate; this constant exists for
-/// downstream crates (such as a future `quire-mltl`) that cannot invoke
+/// downstream crates (such as a future `filament-mltl`) that cannot invoke
 /// `env!` for a value only this crate's build script sets.
 pub const TL_MLTL_SOURCE_REVISION: &str = env!("TL_MLTL_SOURCE_REVISION");
 

@@ -231,8 +231,8 @@ impl CompleteWord {
     }
 
     fn denotation(&self, op: Op, start: usize, upper: Option<usize>, anchor: usize) -> bool {
-        // QSL [a,*] is the set of natural offsets d >= a, and the left operand
-        // of until and since covers `[a,d)` as in QSL FR-043-AC-4. A complete lasso
+        // FSL [a,*] is the set of natural offsets d >= a, and the left operand
+        // of until and since covers `[a,d)` as in FSL FR-043-AC-4. A complete lasso
         // needs one full cycle after both the lower bound and finite prefix.
         let future_end = upper.map_or_else(
             || self.prefix.len().max(anchor + start) + self.cycle.len() - anchor,
@@ -327,7 +327,7 @@ fn words() -> Vec<CompleteWord> {
 
 // Trace: TC-149, FR-031-AC-3
 #[test]
-fn generated_duals_lowering_and_qsl_unbounded_denotations_hold() {
+fn generated_duals_lowering_and_fsl_unbounded_denotations_hold() {
     let words = words();
     let demorgan_left = not_and();
     let demorgan_right = boolean_dual(false);
@@ -339,7 +339,7 @@ fn generated_duals_lowering_and_qsl_unbounded_denotations_hold() {
     let mut wrong_since_dual = 0;
     let mut wrong_weak = 0;
     let mut wrong_mighty = 0;
-    let mut wrong_qsl_lower = 0;
+    let mut wrong_fsl_lower = 0;
     for word in &words {
         for anchor in 0..=word.prefix.len() + 2 * word.cycle.len() {
             let left = evaluate(&demorgan_left, word, anchor);
@@ -416,13 +416,13 @@ fn generated_duals_lowering_and_qsl_unbounded_denotations_hold() {
                     Op::Triggered,
                 ] {
                     let tl = evaluate(&temporal(op, open(start), false, false), word, anchor);
-                    let qsl = word.denotation(op, usize::try_from(start).unwrap(), None, anchor);
+                    let fsl = word.denotation(op, usize::try_from(start).unwrap(), None, anchor);
                     assert_eq!(
-                        tl, qsl,
-                        "QSL [a,*] denotation: {op:?}, start={start}, anchor={anchor}"
+                        tl, fsl,
+                        "FSL [a,*] denotation: {op:?}, start={start}, anchor={anchor}"
                     );
                     if start == 1 {
-                        wrong_qsl_lower += usize::from(tl != word.denotation(op, 0, None, anchor));
+                        wrong_fsl_lower += usize::from(tl != word.denotation(op, 0, None, anchor));
                     }
                 }
             }
@@ -451,7 +451,7 @@ fn generated_duals_lowering_and_qsl_unbounded_denotations_hold() {
         ("S/T missing operand negation", wrong_since_dual),
         ("W missing G branch", wrong_weak),
         ("M missing F guard", wrong_mighty),
-        ("QSL lower bound shifted to zero", wrong_qsl_lower),
+        ("FSL lower bound shifted to zero", wrong_fsl_lower),
     ] {
         assert!(count > 0, "generated population did not detect {name}");
     }

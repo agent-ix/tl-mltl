@@ -65,8 +65,8 @@ correctness. Mapping correctness is checked against the canonical TL semantics,
 the exact Rust emitter output, and an independent expected result. Parser
 acceptance is at most an observation and never a semantic oracle.
 
-A target emitted by an agent-ix/Quire repository is not a row here: under
-ADR-002 its dispositions are `quire-mltl`'s.
+A target emitted by an agent-ix/Filament repository is not a row here: under
+ADR-002 its dispositions are `filament-mltl`'s.
 
 ## Acceptance Criteria
 

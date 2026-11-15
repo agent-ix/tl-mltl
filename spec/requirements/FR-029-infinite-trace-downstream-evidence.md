@@ -39,8 +39,8 @@ FR-160/161 authority at revision `2449ceb`, TL-210 provider semantics and
 registration, then TL-211 export and TL-212 verification. Implementation
 starts only after the combined TL-215 review is accepted. TL-13 implements
 the provider; TL-7 consumes the qualified result. Bounded results remain
-attributed to existing bounded APIs. The QSL
-`quire.temporal.infinite-trace/v1` member is a comparison correspondence and
+attributed to existing bounded APIs. The FSL
+`filament.temporal.infinite-trace/v1` member is a comparison correspondence and
 is never emitted as the TL profile. A green provider test or Quoin receipt
 does not itself grant a source release or native parity decision.
 

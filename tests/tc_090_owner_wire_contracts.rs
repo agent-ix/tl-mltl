@@ -1,5 +1,5 @@
 //! TC-090: the retained TL-owned wire contracts publish immutable schema bytes and digests,
-//! read strictly, and carry no dependency on the Quire ecosystem.
+//! read strictly, and carry no dependency on the Filament ecosystem.
 
 use sha2::{Digest, Sha256};
 use tl_mltl::past::{history, requirement, result};
@@ -134,12 +134,12 @@ fn owner_ceilings_are_enforced_before_acceptance() {
 
 // Trace: TC-090, FR-018-AC-3
 #[test]
-fn crate_has_no_quire_ecosystem_dependency() {
+fn crate_has_no_filament_ecosystem_dependency() {
     let manifest = include_str!("../Cargo.toml");
     for forbidden in [
-        "quire-observation",
+        "filament-observation",
         "agent-ix-baseline-producer",
-        "quire-mltl",
+        "filament-mltl",
     ] {
         assert!(
             !manifest.contains(forbidden),

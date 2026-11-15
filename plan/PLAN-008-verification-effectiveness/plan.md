@@ -74,7 +74,7 @@ exact MRS-002 revisions, and past/history rows remain blocked on tl-syntax #38
 plus evaluator support — the plan's only external resume condition, and it is
 TL-internal. The native-correspondence bridge is not measured here: it is
 `quire-mltl`'s under
-[ADR-002](../../spec/decisions/ADR-002-native-correspondence-lives-in-quire-mltl.md).
+[ADR-002](../../spec/decisions/ADR-002-native-correspondence-lives-in-filament-mltl.md).
 Sibling repositories own separate plans and owner-native producers.
 
 ## The seams

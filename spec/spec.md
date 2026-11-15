@@ -43,8 +43,8 @@ tl-mltl evaluates closed (`mltl.closed-trace/v1`) and open-prefix
 `infinite-trace` feature exposes `tl_mltl::infinite`, the provider for the
 TL-native `mltl.infinite-trace/v1` profile. That module consumes
 `tl-syntax.formula-unbounded/v1`, lasso, fairness and partial-valuation
-documents and registers the one `tl-syntax.liveness/v1` backend. QSL's
-`quire.temporal.infinite-trace/v1` member is a correspondence for result
+documents and registers the one `tl-syntax.liveness/v1` backend. FSL's
+`filament.temporal.infinite-trace/v1` member is a correspondence for result
 comparison. See FR-027 through FR-034 and ADR-003.
 
 ### Out of Scope
@@ -86,16 +86,16 @@ FR-018 publishes the five artifact contracts tl-mltl itself owns (`trace`,
 `command`, `position-history`, `history-requirement`, `past-evaluation`) with
 their immutable schema/digest and strict-reading discipline. It changes no
 existing future or past semantic profile. TL-179 removed the
-`quire-observation`-coupled request/result/mapping owner boundary FR-018
+`filament-observation`-coupled request/result/mapping owner boundary FR-018
 previously described; that layer, and the QObs C00 compatibility dispatch,
-now live in `quire-mltl` unchanged in behavior.
+now live in `filament-mltl` unchanged in behavior.
 
 FR-019 publishes explicit QObs C00 compatibility dispatch. It
 delegates the supported temporal path to FR-018 and reports QObs repair-plan and
 aggregate-query inputs as typed unsupported outcomes instead of recreating
 their owner semantics. The upstream enablement prerequisite is satisfied.
-FR-019 is now `status: superseded` by [quire-mltl
-FR-002](https://github.com/agent-ix/quire-mltl/blob/main/spec/requirements/FR-002-dispatch-qobs-c00-compatibility.md)
+FR-019 is now `status: superseded` by [filament-mltl
+FR-002](https://github.com/agent-ix/filament-mltl/blob/main/spec/requirements/FR-002-dispatch-qobs-c00-compatibility.md)
 per [ADR-001](decisions/ADR-001-retire-pgm01-citation-and-fr-019.md); this
 paragraph is retained as the historical record of what it specified while it
 governed `tl-mltl`'s own boundary, and TL-179 has since removed the
@@ -108,15 +108,15 @@ behavior in the bounded core.
 
 - [Post-v0.1 corpus and interoperability campaign](./corpus-campaign.md)
   (MRS-002), scoped to the TL-owned corpus families only per
-  [ADR-002](decisions/ADR-002-native-correspondence-lives-in-quire-mltl.md).
+  [ADR-002](decisions/ADR-002-native-correspondence-lives-in-filament-mltl.md).
 - [Verification-effectiveness and bounded-proof campaign](./verification-effectiveness-campaign.md)
   (MRS-003), which measures the TL crates' own property, fuzz, mutation, and
   bounded-proof evidence and carries no cross-repository producer dependency.
 - [tl-mltl epic](https://github.com/agent-ix/tl-mltl/issues/7).
 - [Typed context child](https://github.com/agent-ix/tl-mltl/issues/24).
-- [Future FRETish consumer](https://github.com/agent-ix/quire-contract-ir/issues/57).
+- [Future FRETish consumer](https://github.com/agent-ix/filament-contract-ir/issues/57).
 - [Infinite-trace scope, tl-mltl#72](https://github.com/agent-ix/tl-mltl/issues/72).
 - [Infinite-trace provider scope, tl-mltl#68](https://github.com/agent-ix/tl-mltl/issues/68).
 - [tl-syntax infinite-trace facet, tl-syntax#75](https://github.com/agent-ix/tl-syntax/issues/75).
-- [Liveness profile holes, quire-specification#112](https://github.com/agent-ix/quire-specification/issues/112).
+- [Liveness profile holes, filament-specification#112](https://github.com/agent-ix/filament-specification/issues/112).
 - [tl-syntax corpus](https://github.com/agent-ix/tl-syntax/tree/feat/tl-syntax-v0.1/corpus).

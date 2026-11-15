@@ -27,11 +27,11 @@ authority. R2U2/C2PO is a mapping target and a source of retained observations,
 never a source authority or a qualification dependency.
 
 This campaign covers the TL-owned families only. Under the TL-175 architect
-ruling every TL-* crate stays independent of the agent-ix/Quire ecosystem, so
+ruling every TL-* crate stays independent of the agent-ix/Filament ecosystem, so
 the native-predicate and native-temporal correspondence dimension, whose
-producer is `quire-contract-ir`, is not owned here. It is specified and routed
-in `quire-mltl`. See
-[ADR-002](./decisions/ADR-002-native-correspondence-lives-in-quire-mltl.md).
+producer is `filament-contract-ir`, is not owned here. It is specified and routed
+in `filament-mltl`. See
+[ADR-002](./decisions/ADR-002-native-correspondence-lives-in-filament-mltl.md).
 
 ## Scope
 
@@ -54,7 +54,7 @@ in `quire-mltl`. See
 
 - New temporal semantics, parsers, rewrite rules, or a production monitor.
 - The native-predicate and native-temporal correspondence coverage dimension,
-  which `quire-mltl` owns.
+  which `filament-mltl` owns.
 - Exhaustive enumeration of every formula graph, trace, or u32 interval value.
   Exhaustive small-scope sweeps against the oracle are evidence under MRS-003.
 - Live execution of Java, Node, Electron, C2PO, R2U2, or another foreign runtime

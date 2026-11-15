@@ -23,7 +23,7 @@ The TL crates are Rust representations, parsers, rewriters, reference
 evaluators, and mapping infrastructure. This campaign measures those components;
 it creates no authoring language and qualifies no external monitor. Every
 obligation here is TL-internal, consistent with the TL-175 ruling that each TL-*
-crate stays independent of the agent-ix/Quire ecosystem.
+crate stays independent of the agent-ix/Filament ecosystem.
 
 ## Scope
 
@@ -49,8 +49,8 @@ crate stays independent of the agent-ix/Quire ecosystem.
 - An exhaustive claim over all formulas, intervals, traces, histories, clocks,
   captures, or target behaviors.
 - Effectiveness measurement of the native-correspondence bridge, which
-  `quire-mltl` owns under
-  [ADR-002](./decisions/ADR-002-native-correspondence-lives-in-quire-mltl.md).
+  `filament-mltl` owns under
+  [ADR-002](./decisions/ADR-002-native-correspondence-lives-in-filament-mltl.md).
 - Treating a property count, fuzz duration, plateau, no-crash result, kill rate,
   or bounded proof as source release, qualification, certification, or human
   approval.

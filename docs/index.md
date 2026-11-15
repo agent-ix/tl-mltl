@@ -4,7 +4,7 @@ tl-mltl evaluates Mission-time Linear Temporal Logic (MLTL) formulas over finite
 
 | Page | What it covers |
 | --- | --- |
-| [how-it-works.md](how-it-works.md) | The evaluation pipeline, the input and result types, and where the crate sits between text and a Quire outcome. |
+| [how-it-works.md](how-it-works.md) | The evaluation pipeline, the input and result types, and where the crate sits between text and a Filament outcome. |
 | [semantics.md](semantics.md) | The meaning of the future, past and infinite-trace evaluators, with their verdict values and refusals. |
 | [horizon.md](horizon.md) | Lookahead, propagation delay, buffer length and required history, and how each is computed. |
 | [monitors-interop.md](monitors-interop.md) | The C2PO mapping, mapping manifests, external verdicts, differential comparison and the retained R2U2 exchange. |

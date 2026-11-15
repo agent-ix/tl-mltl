@@ -31,20 +31,20 @@ contracts — `tl-mltl.trace/v1`, `tl-mltl.command/v1`,
 documents. tl-mltl does not itself define, bind, or publish any
 owner-assertion request/result wire contract; a caller that wants to compose
 this crate's evaluators with an external owner's assertion views (for example
-Quire Observation's `authority::{clock,progress,closure,completeness,availability}`
+Filament Observation's `authority::{clock,progress,closure,completeness,availability}`
 views) does so entirely outside this crate, through a dedicated integration
 crate. That boundary is an architect ruling (Linear epic TL-175): every
-`tl-*` crate stays independent of the Quire ecosystem, and only a purpose-built
-integration crate may bridge them. `quire-mltl` is that crate for the
-Quire Observation pairing; see its FR-001/FR-002.
+`tl-*` crate stays independent of the Filament ecosystem, and only a purpose-built
+integration crate may bridge them. `filament-mltl` is that crate for the
+Filament Observation pairing; see its FR-001/FR-002.
 
-TL-179 removed this crate's `quire-observation` and
+TL-179 removed this crate's `filament-observation` and
 `agent-ix-baseline-producer` dependencies along with the
 `tl-mltl.temporal-assessment-request/v1`, `tl-mltl.temporal-assessment-result/v1`,
 and `tl-mltl.contract-ir-result-map/v1` contracts, the `wire::request`,
 `wire::report`, and `wire::observation` modules, and the `mapping::contract_ir`
 module that published them. Those contracts and the QObs C00 compatibility
-dispatch built on them (formerly FR-019) now live in `quire-mltl`, ported
+dispatch built on them (formerly FR-019) now live in `filament-mltl`, ported
 unchanged in evaluation behavior. This requirement's prior text described
 that now-removed layer; this revision instead documents the artifact
 contracts tl-mltl actually still owns and publishes, which no other
@@ -89,7 +89,7 @@ refuses with a typed error and no partial view.
 |---|---|---|
 | FR-018-AC-1 | Every one of the five retained owner contracts publishes exact schema bytes/digest, and its bounded reader accepts only canonical bytes matching that digest, returning a constructor-private validated view. | integration-testing (TC-090) |
 | FR-018-AC-2 | Every reader rejects unknown/duplicate/missing/reordered fields, trailing/noncanonical bytes, and identity/digest mutation with a typed error and no partial output; every owner-declared resource ceiling is enforced before allocation or traversal. | integration-testing (TC-090) |
-| FR-018-AC-3 | Removing the `quire-observation`-coupled request/result/mapping layer (TL-179) changes no existing future evaluator, past evaluator, CLI schema, or `mapping::legacy` C2PO mapping behavior. | integration-testing (TC-090) |
+| FR-018-AC-3 | Removing the `filament-observation`-coupled request/result/mapping layer (TL-179) changes no existing future evaluator, past evaluator, CLI schema, or `mapping::legacy` C2PO mapping behavior. | integration-testing (TC-090) |
 
 ## Dependencies
 
@@ -108,7 +108,7 @@ existing tests (`tests/cli.rs`, `tests/past_history.rs`,
 predate this requirement; `tests/tc_090_owner_wire_contracts.rs` now carries
 the FR-018 trace tags (schema bytes against the published digest for all five
 contracts, strict trace reading, owner ceilings, and the absence of any
-Quire-ecosystem dependency). TL-179 removed the QObs-coupled request/
+Filament ecosystem dependency). TL-179 removed the QObs-coupled request/
 result/mapping layer and its dedicated test (`tests/tc_084_temporal_owner_wire.rs`,
 formerly TC-084) outright rather than porting it, since that behavior now
-lives in `quire-mltl`.
+lives in `filament-mltl`.

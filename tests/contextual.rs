@@ -71,7 +71,7 @@ fn catalog_with_response_name(response_name: &str) -> SignalCatalogDocument {
 
 fn context() -> RequirementContextDocument {
     RequirementContextDocument::new(
-        "agent-ix/quire-contract-ir#57".to_owned(),
+        "agent-ix/filament-contract-ir#57".to_owned(),
         "overlay-example-v1".to_owned(),
         "response-window".to_owned(),
         "overlay-change-accepted-response-within-n".to_owned(),

@@ -90,4 +90,4 @@ swapped, negation dropped), and each fault must turn the replay red.
 
 Depends on FR-001 through FR-003 for the evaluation semantics. The dimension
 catalog admits no native-predicate or native-temporal correspondence class: that
-dimension is `quire-mltl`'s under ADR-002.
+dimension is `filament-mltl`'s under ADR-002.

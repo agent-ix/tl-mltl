@@ -4,7 +4,7 @@ This walkthrough follows one debugging session through the TL crates. A requirem
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/scenario-sequence-dark.svg">
-  <img alt="A deadline requirement fails on a recorded trace, and the engineer asks why. The engineer sends F[0,3] p2 to tl-parse and gets a formula document, binds p2 to signal s2 with tl-syntax, and sends the document to tl-rewrite, which reports Unchanged under the closed-trace profile. tl-mltl evaluates the formula and trace and returns false at time 0 with a buffer of 4 instants, and R2U2, which runs outside the crates, returns false at time 0 for the C2PO expression F[0,3](p2). tl-oracle evaluates the same formula and trace independently and returns false. quire-mltl maps the result to Value false. Numbered rings mark where to look at each step." src="images/scenario-sequence-light.svg">
+  <img alt="A deadline requirement fails on a recorded trace, and the engineer asks why. The engineer sends F[0,3] p2 to tl-parse and gets a formula document, binds p2 to signal s2 with tl-syntax, and sends the document to tl-rewrite, which reports Unchanged under the closed-trace profile. tl-mltl evaluates the formula and trace and returns false at time 0 with a buffer of 4 instants, and R2U2, which runs outside the crates, returns false at time 0 for the C2PO expression F[0,3](p2). tl-oracle evaluates the same formula and trace independently and returns false. filament-mltl maps the result to Value false. Numbered rings mark where to look at each step." src="images/scenario-sequence-light.svg">
 </picture>
 
 ## The case
@@ -277,13 +277,13 @@ The program in step 2 ran it for this case. The oracle's closed-trace evaluation
 
 Look here: two evaluators that share no code give the same verdict on the same formula and trace. The oracle evaluates the closed-trace semantics, and the trace here covers the whole window, so the closed and online-prefix verdicts coincide. This run compared one formula and one trace. The repository's own test suites run the same comparison over their corpora.
 
-## 6. Record the verdict (quire-mltl)
+## 6. Record the verdict (filament-mltl)
 
-quire-mltl is the one crate in the family that connects to Quire. It does not evaluate anything itself. It builds a temporal-assessment request from the formula, the trace and six observation views from quire-observation, calls the tl-mltl evaluator, and writes a result document. `contract_ir::map` then turns the result into a Boolean value or a typed reason that no value is available.
+filament-mltl is the one crate in the family that connects to Filament. It does not evaluate anything itself. It builds a temporal-assessment request from the formula, the trace and six observation views from filament-observation, calls the tl-mltl evaluator, and writes a result document. `contract_ir::map` then turns the result into a Boolean value or a typed reason that no value is available.
 
 For a final `violated` result the map returns `Value { value: false }`, provided the observation views report the required facts as complete and available. If completeness is `incomplete` or `contradicted`, or the results are not available, the map returns a non-value with that name, and `false` is not produced. The observation states are independent of the truth, so a result can say `violated` while the completeness view says `incomplete`.
 
-This walkthrough did not run quire-mltl on the case. Building a request needs the observation fixtures that its own tests construct, and the corpus case has none. The crate's test `tc_084_future_and_past_requests_evaluate_and_strict_read` exercises the same path for another formula and passes.
+This walkthrough did not run filament-mltl on the case. Building a request needs the observation fixtures that its own tests construct, and the corpus case has none. The crate's test `tc_084_future_and_past_requests_evaluate_and_strict_read` exercises the same path for another formula and passes.
 
 Look here: the outcome must be `Value false`, and the completeness and availability views in the request must show a complete, available fact population. A `false` that comes with an incomplete population is a non-value, and the assurance record should say so.
 

@@ -7,7 +7,7 @@ relationships:
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-040
     type: depends_on
-  - target: ix://agent-ix/quire-specification/FR-341
+  - target: ix://agent-ix/filament-specification/FR-341
     type: references
 ---
 

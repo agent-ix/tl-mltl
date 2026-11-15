@@ -49,7 +49,7 @@ relationships:
 NFR-004 constrains every task. This plan routes only TL-owned families: the
 native-predicate and native-temporal correspondence dimension is specified and
 routed in `quire-mltl`, the dedicated bridge crate, and is not a lane here (see
-MRS-002 and [ADR-002](../../spec/decisions/ADR-002-native-correspondence-lives-in-quire-mltl.md)).
+MRS-002 and [ADR-002](../../spec/decisions/ADR-002-native-correspondence-lives-in-filament-mltl.md)).
 
 ### The seams
 
