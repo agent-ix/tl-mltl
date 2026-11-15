@@ -35,11 +35,11 @@ Each evaluator has a `_with_context` form. It takes a `SignalCatalogDocument` an
 
 ## Where the crate sits
 
-A formula passes through several crates on its way from text to a Quire outcome. All of them exchange the documents and types defined by tl-syntax.
+A formula passes through several crates on its way from text to a Filament outcome. All of them exchange the documents and types defined by tl-syntax.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/pipeline-dark.svg">
-  <img alt="A formula moves from text to a Quire outcome. tl-parse turns MLTL text into a formula document, tl-rewrite returns a rewritten document, and tl-mltl evaluates it against a trace. In tests, tl-oracle evaluates the same formula and trace independently and the verdicts are compared. quire-mltl maps the result to a Boolean Value or a typed NonValue reason. All documents use the vocabulary of tl-syntax." src="images/pipeline-light.svg">
+  <img alt="A formula moves from text to a Filament outcome. tl-parse turns MLTL text into a formula document, tl-rewrite returns a rewritten document, and tl-mltl evaluates it against a trace. In tests, tl-oracle evaluates the same formula and trace independently and the verdicts are compared. filament-mltl maps the result to a Boolean Value or a typed NonValue reason. All documents use the vocabulary of tl-syntax." src="images/pipeline-light.svg">
 </picture>
 
-The calling program moves documents from one stage to the next. tl-mltl takes no input from Quire and produces no Quire type. The dependency structure between the crates is in the [README](../README.md#the-tl-stack).
+The calling program moves documents from one stage to the next. tl-mltl takes no input from Filament and produces no Filament type. The dependency structure between the crates is in the [README](../README.md#the-tl-stack).

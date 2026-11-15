@@ -11,13 +11,13 @@ relationships:
     type: depends_on
   - target: ix://agent-ix/tl-syntax/FR-012
     type: depends_on
-  - target: ix://agent-ix/quire-specification/FR-090
+  - target: ix://agent-ix/filament-specification/FR-090
     type: depends_on
-  - target: ix://agent-ix/quire-specification/FR-092
+  - target: ix://agent-ix/filament-specification/FR-092
     type: depends_on
-  - target: ix://agent-ix/quire-specification/FR-205
+  - target: ix://agent-ix/filament-specification/FR-205
     type: depends_on
-  - target: ix://agent-ix/quire-specification/FR-252
+  - target: ix://agent-ix/filament-specification/FR-252
     type: depends_on
 ---
 
@@ -116,7 +116,7 @@ mismatched unit or instant refuses. Dense or timestamped events, duration
 reinterpretation, rounding, implicit resampling and wall-clock inference are
 unsupported and refuse.
 
-Capture and typed-predicate evaluation remain outside TL. A native Quire
+Capture and typed-predicate evaluation remain outside TL. A FSL
 bridge resolves captures, anchors, clocks and total Boolean propositions before
 constructing the history, and tl-mltl accepts only the resulting total Boolean
 valuations. When the owner supplies an incomplete, unavailable, unsupported,
@@ -142,6 +142,6 @@ fabricated history row.
 
 tl-syntax FR-011 and FR-012 own the past vocabulary, profile identities and
 attribution relations this evaluator consumes. FR-001 owns intervals. The native
-clock, capture and predicate correspondence is owned by quire-contract-ir and
-consumed from `ix://agent-ix/quire-specification/FR-090`, `FR-092`, `FR-205`,
+clock, capture and predicate correspondence is owned by filament-contract-ir and
+consumed from `ix://agent-ix/filament-specification/FR-090`, `FR-092`, `FR-205`,
 and `FR-252`.

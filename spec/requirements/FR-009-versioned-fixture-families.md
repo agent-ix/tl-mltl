@@ -79,5 +79,5 @@ tl-mltl adds no generic evidence store, audit store, or approval mechanism.
 ## Dependencies
 
 Depends on FR-008 for the cell list. A family whose authoritative owner is an
-agent-ix/Quire repository is out of this campaign's scope under ADR-002 and
-belongs to `quire-mltl`'s own corpus.
+agent-ix/Filament repository is out of this campaign's scope under ADR-002 and
+belongs to `filament-mltl`'s own corpus.

@@ -85,11 +85,11 @@ and the command-line tool, are in [docs/examples.md](docs/examples.md).
 
 ## A worked example
 
-A deadline requirement, `F[0,3] p2`, is false on a recorded trace. [docs/scenario.md](docs/scenario.md) walks through finding out why, using tl-parse, tl-syntax, tl-rewrite, tl-mltl, R2U2, tl-oracle and quire-mltl on the retained R2U2 case `r2u2-future-deadline-v1`. It shows what to look at in each step and ends with a guide for results that disagree.
+A deadline requirement, `F[0,3] p2`, is false on a recorded trace. [docs/scenario.md](docs/scenario.md) walks through finding out why, using tl-parse, tl-syntax, tl-rewrite, tl-mltl, R2U2, tl-oracle and filament-mltl on the retained R2U2 case `r2u2-future-deadline-v1`. It shows what to look at in each step and ends with a guide for results that disagree.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/scenario-sequence-dark.svg">
-  <img alt="A deadline requirement fails on a recorded trace, and the engineer asks why. The engineer sends F[0,3] p2 to tl-parse and gets a formula document, binds p2 to signal s2 with tl-syntax, and sends the document to tl-rewrite, which reports Unchanged under the closed-trace profile. tl-mltl evaluates the formula and trace and returns false at time 0 with a buffer of 4 instants, and R2U2, which runs outside the crates, returns false at time 0 for the C2PO expression F[0,3](p2). tl-oracle evaluates the same formula and trace independently and returns false. quire-mltl maps the result to Value false. Numbered rings mark where to look at each step." src="docs/images/scenario-sequence-light.svg">
+  <img alt="A deadline requirement fails on a recorded trace, and the engineer asks why. The engineer sends F[0,3] p2 to tl-parse and gets a formula document, binds p2 to signal s2 with tl-syntax, and sends the document to tl-rewrite, which reports Unchanged under the closed-trace profile. tl-mltl evaluates the formula and trace and returns false at time 0 with a buffer of 4 instants, and R2U2, which runs outside the crates, returns false at time 0 for the C2PO expression F[0,3](p2). tl-oracle evaluates the same formula and trace independently and returns false. filament-mltl maps the result to Value false. Numbered rings mark where to look at each step." src="docs/images/scenario-sequence-light.svg">
 </picture>
 
 ## Reference
@@ -117,11 +117,11 @@ See [docs/api-reference.md](docs/api-reference.md).
 
 ## The TL stack
 
-tl-mltl evaluates tl-syntax formulas over traces. tl-rewrite and quire-mltl build on it.
+tl-mltl evaluates tl-syntax formulas over traces. tl-rewrite and filament-mltl build on it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/tl-stack-dark.svg">
-  <img alt="The TL crates. tl-syntax defines the formula graph, profiles and signal catalog, and tl-parse, tl-oracle, tl-mltl, tl-rewrite and quire-mltl all depend on it. tl-rewrite depends on tl-mltl. quire-mltl depends on tl-mltl and quire-observation, and is the single bridge to Quire. Dashed lines are development-only: tl-mltl and tl-rewrite test against tl-oracle, and tl-rewrite tests against tl-parse." src="docs/images/tl-stack-light.svg">
+  <img alt="The TL crates. tl-syntax defines the formula graph, profiles and signal catalog, and tl-parse, tl-oracle, tl-mltl, tl-rewrite and filament-mltl all depend on it. tl-rewrite depends on tl-mltl. filament-mltl depends on tl-mltl and filament-observation, and is the single bridge to Filament. Dashed lines are development-only: tl-mltl and tl-rewrite test against tl-oracle, and tl-rewrite tests against tl-parse." src="docs/images/tl-stack-light.svg">
 </picture>
 
 ## Building and testing

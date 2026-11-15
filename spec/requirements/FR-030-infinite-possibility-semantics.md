@@ -7,7 +7,7 @@ relationships:
     type: depends_on
   - target: ix://agent-ix/tl-syntax/FR-023
     type: depends_on
-  - target: ix://agent-ix/quire-specification/FR-160
+  - target: ix://agent-ix/filament-specification/FR-160
     type: references
 ---
 
