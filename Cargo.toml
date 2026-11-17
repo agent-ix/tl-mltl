@@ -22,7 +22,7 @@ name = "tl_mltl"
 path = "src/lib.rs"
 
 [dependencies]
-serde = { version = "=1.0.228", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "=1.0.151"
 sha2 = "=0.10.9"
 tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "9607722f24ac1978b5e0e0ceeb0cb2a828e10177", default-features = false, features = ["alloc", "serde"] }
