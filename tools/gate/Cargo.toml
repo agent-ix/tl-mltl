@@ -8,6 +8,6 @@ license = "MIT"
 publish = false
 
 [dependencies]
-tl-gate = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "d44d00f411b73b277d4e224c9d88f194f7812934" }
+tl-gate = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-syntax.git", tag = "v0.4.0" }
 
 [workspace]
