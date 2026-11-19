@@ -238,9 +238,16 @@ impl CompleteWord {
             || self.prefix.len().max(anchor + start) + self.cycle.len() - anchor,
             |end| end + 1,
         );
-        let past_end = upper.unwrap_or(anchor).min(anchor);
+        // A closed past window reads the pre-origin extension, where every atom
+        // is false (FSpec FR-092 "Positions before the origin"); `[a,*]` reads
+        // positions 0 through `anchor - a` only.
+        let past_end = upper.unwrap_or(anchor);
         let future = |p: usize, offset: usize| self.at(anchor + offset, p);
-        let past = |p: usize, offset: usize| self.at(anchor - offset, p);
+        let past = |p: usize, offset: usize| {
+            anchor
+                .checked_sub(offset)
+                .is_some_and(|time| self.at(time, p))
+        };
         match op {
             Op::Future => (start..future_end).any(|d| future(0, d)),
             Op::Globally => (start..future_end).all(|d| future(0, d)),
