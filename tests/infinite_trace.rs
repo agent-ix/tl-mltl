@@ -322,6 +322,158 @@ fn past_nodes_stabilize_later_than_the_trace_loop_entry() {
     );
 }
 
+/// FSpec FR-092 "Positions before the origin" (FR-092-AC-9): on a lasso where
+/// `p` holds at every position, a closed past interval reads the pre-origin
+/// extension (atoms false, constants unchanged, operators evaluated there),
+/// while unbounded and `[a,*]` past operators read only positions `0..=i-a`.
+// Trace: TC-147, TC-148, FR-031-AC-2
+#[test]
+fn closed_past_intervals_read_the_pre_origin_extension() {
+    let always_p = trace(&[], &[ObservationValue::True]);
+    let p = node(K::Proposition {
+        proposition: PropositionId(7),
+    });
+    let not_p = node(K::Not { operand: NodeId(0) });
+    let unary = |kind: K| formula(1, vec![p, node(kind)]);
+    let over_not = |kind: K| formula(2, vec![p, not_p, node(kind)]);
+    let verdict = |graph: &InfiniteFormulaDocument, at: u64| run(graph, &always_p, at, None);
+    let cases = [
+        // `once[1,1] p` at 0: no witness before the origin.
+        (
+            unary(K::Once {
+                interval: closed(1, 1),
+                operand: NodeId(0),
+            }),
+            0,
+            Disposition::Refuted,
+        ),
+        // `once[1,1] not p` at 0: `not p` holds at position -1.
+        (
+            over_not(K::Once {
+                interval: closed(1, 1),
+                operand: NodeId(1),
+            }),
+            0,
+            Disposition::Proved,
+        ),
+        // Strong previous is `once[1,1]`.
+        (
+            over_not(K::StrongPrevious { operand: NodeId(1) }),
+            0,
+            Disposition::Proved,
+        ),
+        // `historically[0,2] p` at 1: the offset 2 reaches position -1.
+        (
+            unary(K::Historically {
+                interval: closed(0, 2),
+                operand: NodeId(0),
+            }),
+            1,
+            Disposition::Refuted,
+        ),
+        (
+            unary(K::Historically {
+                interval: closed(0, 2),
+                operand: NodeId(0),
+            }),
+            2,
+            Disposition::Proved,
+        ),
+        // `historically[0,2] true` at 1: constants keep their value.
+        (
+            formula(
+                1,
+                vec![
+                    node(K::True),
+                    node(K::Historically {
+                        interval: closed(0, 2),
+                        operand: NodeId(0),
+                    }),
+                ],
+            ),
+            1,
+            Disposition::Proved,
+        ),
+        // `true since[1,1] not p` at 0.
+        (
+            formula(
+                3,
+                vec![
+                    p,
+                    not_p,
+                    node(K::True),
+                    node(K::Since {
+                        interval: closed(1, 1),
+                        left: NodeId(2),
+                        right: NodeId(1),
+                    }),
+                ],
+            ),
+            0,
+            Disposition::Proved,
+        ),
+        // `not p triggered[1,2] p` at 0: dual of `p since[1,2] not p`, which
+        // finds `not p` at -1.
+        (
+            formula(
+                2,
+                vec![
+                    p,
+                    not_p,
+                    node(K::Triggered {
+                        interval: closed(1, 2),
+                        left: NodeId(1),
+                        right: NodeId(0),
+                    }),
+                ],
+            ),
+            0,
+            Disposition::Refuted,
+        ),
+        // The unbounded `historically p` at 1 reads positions 0 and 1 only.
+        (
+            unary(K::Historically {
+                interval: open(0),
+                operand: NodeId(0),
+            }),
+            1,
+            Disposition::Proved,
+        ),
+        // `once[2,*] not p` at 1 reads no position at all.
+        (
+            over_not(K::Once {
+                interval: open(2),
+                operand: NodeId(1),
+            }),
+            1,
+            Disposition::Refuted,
+        ),
+        // A future operator at a pre-origin position reads the extended
+        // trace: `once[1,1] eventually[0,1] p` at 0 finds `p` at 0.
+        (
+            formula(
+                2,
+                vec![
+                    p,
+                    node(K::Future {
+                        interval: closed(0, 1),
+                        operand: NodeId(0),
+                    }),
+                    node(K::Once {
+                        interval: closed(1, 1),
+                        operand: NodeId(1),
+                    }),
+                ],
+            ),
+            0,
+            Disposition::Proved,
+        ),
+    ];
+    for (index, (graph, at, expected)) in cases.iter().enumerate() {
+        assert_eq!(verdict(graph, *at).disposition, *expected, "case {index}");
+    }
+}
+
 // Trace: TC-142, TC-143, TC-144, FR-030-AC-1, FR-030-AC-2, FR-030-AC-3
 #[test]
 fn one_unknown_cell_uses_one_shared_completion_across_references_and_loops() {

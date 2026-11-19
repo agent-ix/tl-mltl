@@ -408,8 +408,8 @@ dependencies = [
 
 [[package]]
 name = "tl-oracle"
-version = "0.1.0"
-source = "git+https://github.com/agent-ix/tl-oracle.git?tag=v0.1.0#c71d7410f9434675f30030036df742672254bec9"
+version = "0.1.1"
+source = "git+https://github.com/agent-ix/tl-oracle.git?tag=v0.1.1#15253a3da9003eb34faaf4884fd7d7f5acf7da5c"
 dependencies = [
  "thiserror",
  "tl-syntax",
