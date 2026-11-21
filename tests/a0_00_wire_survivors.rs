@@ -265,12 +265,10 @@ fn whitespace_and_unterminated_strings_neither_hang_nor_panic_body() {
             limits,
             |_, _| Ok(OwnerUsage::default()),
         );
-        let cut = read_expected::<Vec<String>, _, OwnerReadError>(
-            b"[\"abc",
-            &vec![],
-            limits,
-            |_, _| Ok(OwnerUsage::default()),
-        );
+        let cut =
+            read_expected::<Vec<String>, _, OwnerReadError>(b"[\"abc", &vec![], limits, |_, _| {
+                Ok(OwnerUsage::default())
+            });
         (ok.map(|(_, usage)| usage.visited_fields), cut.map(|_| ()))
     });
     // The spaces make the bytes non-canonical, but the lexical scan accepts them.
