@@ -322,14 +322,15 @@ impl io::Write for BoundedWriter {
     }
 }
 
-pub(crate) fn read<T, F>(
+pub(crate) fn read<T, F, E>(
     bytes: &[u8],
     limits: OwnerLimits,
     validate: F,
-) -> Result<(T, OwnerUsage), OwnerReadError>
+) -> Result<(T, OwnerUsage), E>
 where
     T: DeserializeOwned + Serialize,
-    F: FnOnce(&T, OwnerLimits) -> Result<OwnerUsage, OwnerReadError>,
+    F: FnOnce(&T, OwnerLimits) -> Result<OwnerUsage, E>,
+    E: From<OwnerReadError>,
 {
     let effective = limits.effective();
     let lexical = preflight(bytes, effective, true)?;
@@ -347,30 +348,33 @@ where
             OwnerReadErrorCode::NonCanonical,
             "document",
             merge_usage(semantic, lexical),
-        ));
+        )
+        .into());
     }
     Ok((value, merge_usage(semantic, lexical)))
 }
 
 /// Reads and validates a canonical document, then requires the decoded value
 /// to equal `expected`.
-pub fn read_expected<T, F>(
+///
+/// Validator errors propagate unchanged. Boundary errors convert through
+/// `E::from`, preserving the caller's own semantic refusal type.
+pub fn read_expected<T, F, E>(
     bytes: &[u8],
     expected: &T,
     limits: OwnerLimits,
     validate: F,
-) -> Result<(T, OwnerUsage), OwnerReadError>
+) -> Result<(T, OwnerUsage), E>
 where
     T: DeserializeOwned + Serialize + Eq,
-    F: FnOnce(&T, OwnerLimits) -> Result<OwnerUsage, OwnerReadError>,
+    F: FnOnce(&T, OwnerLimits) -> Result<OwnerUsage, E>,
+    E: From<OwnerReadError>,
 {
     let (value, usage) = read(bytes, limits, validate)?;
     if &value != expected {
-        return Err(OwnerReadError::new(
-            OwnerReadErrorCode::ExpectedMismatch,
-            "expected",
-            usage,
-        ));
+        return Err(
+            OwnerReadError::new(OwnerReadErrorCode::ExpectedMismatch, "expected", usage).into(),
+        );
     }
     Ok((value, usage))
 }
