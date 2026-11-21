@@ -19,7 +19,7 @@ Frozen head: dccf18830b2e8560620c860fb6bec03b7cb53cf4. Base and live remote main
 
 ## Verdict
 
-CONDITIONAL — FND-001 is fixed by inspection at 424a66102c2a52ba7252dd041e074c8300cd07da; no open findings remain. Exact affected-caller and production byte-limit runtime receipts are pending. Initial review verdict was FAIL.
+PASS — FND-001 is fixed and the affected caller and production byte-limit runtime receipts pass. No open findings or runtime conditions remain for this bounded code review. Initial review verdict was FAIL.
 
 ## Findings
 
@@ -148,3 +148,7 @@ Scoped rustfmt and diff checks passed per parent receipt. Earlier four owner-rea
 | FND | outcome | reason |
 | --- | --- | --- |
 | FND-001 | fixed | Round 1: all four calls use explicit OwnerReadError as the third type argument; import is present and Ok-only validator inference is resolved. Runtime receipts remain pending separately. |
+
+## Final runtime evidence
+
+Final runtime receipts inspected at 061cace5ed58642f08fdcfba550bddec04659b33. The delta from reviewed 424a66102c2a52ba7252dd041e074c8300cd07da changes only the two committed review artifacts; production remains identical to dccf18830b2e8560620c860fb6bec03b7cb53cf4. final-regressions/byte-limit.log records 1 passed, 13 filtered, 0 failed, 0 ignored. final-regressions/callers.log records 3 passed, 9 filtered, 0 failed, 0 ignored, including all three affected caller tests. Parent reports both commands exited 0 and both remote queued attempts were cancelled before starting. Combined with the retained 4 owner-reader-error tests, 8 focused tests passed. Scoped clippy and rustfmt retain their prior passing results. No runtime condition remains open; no further Cargo execution or full gate is claimed. Parent must copy the latest two scratch artifacts verbatim for review custody before merging. QSL-2324 remains open for filament-mltl#31 and the FSL consuming change.
