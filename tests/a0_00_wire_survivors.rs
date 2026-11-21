@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 use std::sync::mpsc;
 use std::time::Duration;
 use tl_mltl::wire::common::{identity, is_sha256, produce, raw_sha256, read_expected, OWNER_MAX};
-use tl_mltl::wire::{command, trace, OwnerLimits, OwnerReadErrorCode, OwnerUsage};
+use tl_mltl::wire::{command, trace, OwnerLimits, OwnerReadError, OwnerReadErrorCode, OwnerUsage};
 use tl_mltl::{CommandDocument, TraceDocument, TraceSchemaVersion};
 use tl_syntax::PropositionId;
 
@@ -259,12 +259,18 @@ fn whitespace_and_unterminated_strings_neither_hang_nor_panic() {
 fn whitespace_and_unterminated_strings_neither_hang_nor_panic_body() {
     let outcome = within_seconds(20, || {
         let limits = OwnerLimits::default();
-        let ok = read_expected::<Vec<u32>, _>(b" [ 1 , 2 ] ", &vec![1, 2], limits, |_, _| {
-            Ok(OwnerUsage::default())
-        });
-        let cut = read_expected::<Vec<String>, _>(b"[\"abc", &vec![], limits, |_, _| {
-            Ok(OwnerUsage::default())
-        });
+        let ok = read_expected::<Vec<u32>, _, OwnerReadError>(
+            b" [ 1 , 2 ] ",
+            &vec![1, 2],
+            limits,
+            |_, _| Ok(OwnerUsage::default()),
+        );
+        let cut = read_expected::<Vec<String>, _, OwnerReadError>(
+            b"[\"abc",
+            &vec![],
+            limits,
+            |_, _| Ok(OwnerUsage::default()),
+        );
         (ok.map(|(_, usage)| usage.visited_fields), cut.map(|_| ()))
     });
     // The spaces make the bytes non-canonical, but the lexical scan accepts them.
@@ -293,7 +299,7 @@ fn produce_reports_the_bytes_it_attempted_to_write_body() {
         (OwnerReadErrorCode::ResourceIncomplete, "outputBytes")
     );
     assert!(error.usage().wire_bytes > 3, "{:?}", error.usage());
-    let input_error = read_expected::<Vec<u32>, _>(
+    let input_error = read_expected::<Vec<u32>, _, OwnerReadError>(
         b"[1,2,3]",
         &vec![1, 2, 3],
         OwnerLimits {
@@ -520,7 +526,7 @@ fn empty_containers_count_no_fields_and_the_depth_limit_is_one_past_the_ceiling(
         assert_eq!(vec![Vec::<u32>::new()].usage().visited_fields, 1);
         let deep = |levels: usize| {
             let bytes = format!("{}{}", "[".repeat(levels), "]".repeat(levels));
-            read_expected::<serde_json::Value, _>(
+            read_expected::<serde_json::Value, _, OwnerReadError>(
                 bytes.as_bytes(),
                 &serde_json::Value::Null,
                 OwnerLimits::default(),
