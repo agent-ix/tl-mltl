@@ -136,3 +136,11 @@ bindings:
     ac_id: FR-018-AC-1
     trace: correct
 ```
+
+## Disposition round 1
+
+Disposition round 1 inspected frozen head 424a66102c2a52ba7252dd041e074c8300cd07da. The only source delta from dccf18830b2e8560620c860fb6bec03b7cb53cf4 imports OwnerReadError and updates the four existing explicit calls in tests/a0_00_wire_survivors.rs:262,269,300,527 to three type arguments with E explicitly OwnerReadError. This supplies the correct arity, resolves the Ok-only validator error inference and retains the original typed error assertions. The complete bounded reader caller inventory has no remaining old two-argument explicit calls. No production code, dependency, lock, validator, or limit change was introduced in this fix round. No new findings.
+
+Scoped rustfmt and diff checks passed per parent receipt. Earlier four owner-reader runtime tests and scoped clippy remain retained evidence for the unchanged production code. Three exact affected caller test filters at this head and the one production byte-limit test at production-identical dccf188 are queued elsewhere; runtime receipts remain pending and owned by the parent. No reviewer Cargo invocation or broad gate. Merge readiness is conditional on those runtime receipts and parent custody of these updated artifacts.
+
+Gap verdict remains CONDITIONAL: no new gap was introduced, the initial placeholder is not a defect requiring disposition, and the unchanged matrix baseline and bounded-audit limits remain as recorded.
