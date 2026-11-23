@@ -57,6 +57,7 @@ fn evaluator_temporal_endpoints_full_range() {
     let evaluator = Evaluator {
         formula,
         trace: &trace,
+        unknown: &[],
         closed: true,
         limits: EvaluationLimits {
             max_node_evaluations: 1,
@@ -180,6 +181,7 @@ fn evaluator_combinators_with_stubbed_at_never_panic() {
     let mut evaluator = Evaluator {
         formula,
         trace,
+        unknown: &[],
         closed: kani::any(),
         limits: EvaluationLimits {
             max_node_evaluations: 1_000,
@@ -350,6 +352,7 @@ fn evaluator_dispatch_with_stubbed_operators_never_panics() {
     let mut evaluator = Evaluator {
         formula,
         trace: &storage[..len],
+        unknown: &[],
         closed: kani::any(),
         limits: EvaluationLimits {
             max_node_evaluations: kani::any(),
@@ -490,6 +493,7 @@ fn closing_prefix_lemma(
     let make = |len: usize| Evaluator {
         formula,
         trace: &trace[..len],
+        unknown: &[],
         closed: false,
         limits: limits(),
         stats: EvaluationStats::default(),
@@ -656,6 +660,7 @@ fn closing_prefix_atomic_verdict_is_stable() {
         Evaluator {
             formula,
             trace,
+            unknown: &[],
             closed: false,
             limits: limits(),
             stats: EvaluationStats::default(),

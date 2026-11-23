@@ -38,6 +38,7 @@ pub mod fuzz_record;
 pub mod infinite;
 pub mod kani_record;
 pub mod mapping;
+pub mod numeric;
 pub mod past;
 pub mod r2u2_future;
 pub mod r2u2_live;

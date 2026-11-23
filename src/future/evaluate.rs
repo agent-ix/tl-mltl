@@ -290,6 +290,10 @@ impl std::error::Error for EvaluationError {}
 struct Evaluator<'formula, 'trace> {
     formula: Formula<'formula>,
     trace: &'trace [Vec<PropositionId>],
+    /// Per observed instant, strictly increasing propositions whose value is
+    /// unobserved there (numeric predicates, FR-055); read as `Pending`.
+    /// Empty for every Boolean entry point, which keeps their results unchanged.
+    unknown: &'trace [Vec<PropositionId>],
     closed: bool,
     limits: EvaluationLimits,
     stats: EvaluationStats,
@@ -525,6 +529,13 @@ impl Evaluator<'_, '_> {
                 TruthValue::Pending
             });
         };
+        let unknown = usize::try_from(time)
+            .ok()
+            .and_then(|index| self.unknown.get(index))
+            .is_some_and(|row| row.binary_search(&proposition).is_ok());
+        if unknown {
+            return Ok(TruthValue::Pending);
+        }
         Ok(if instant.binary_search(&proposition).is_ok() {
             TruthValue::True
         } else {
@@ -606,6 +617,7 @@ fn evaluate_with_stats(
     formula: Formula<'_>,
     formula_id: impl Into<String>,
     trace: &[Vec<PropositionId>],
+    unknown: &[Vec<PropositionId>],
     trace_id: impl Into<String>,
     closed: bool,
     verdict_time: u64,
@@ -636,6 +648,7 @@ fn evaluate_with_stats(
     let mut evaluator = Evaluator {
         formula,
         trace,
+        unknown,
         closed,
         limits,
         stats: EvaluationStats::default(),
@@ -782,6 +795,7 @@ pub fn evaluate_closed_at_with_stats(
         formula,
         formula_id,
         trace,
+        &[],
         trace_id,
         true,
         verdict_time,
@@ -931,11 +945,45 @@ pub fn evaluate_prefix_at_with_stats(
         formula,
         formula_id,
         trace,
+        &[],
         trace_id,
         closed,
         verdict_time,
         limits,
     )
+}
+
+/// Prefix evaluation over a three-valued atom source: `unknown[t]` lists the
+/// propositions unobserved at observed instant `t`, read as `Pending` (FR-055).
+/// With every row empty the result equals [`evaluate_prefix_at`].
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn evaluate_prefix_partial_at(
+    formula: Formula<'_>,
+    formula_id: impl Into<String>,
+    trace: &[Vec<PropositionId>],
+    unknown: &[Vec<PropositionId>],
+    trace_id: impl Into<String>,
+    closed: bool,
+    verdict_time: u64,
+    limits: EvaluationLimits,
+) -> Result<EvaluationReport, EvaluationError> {
+    if formula.profile() != SemanticProfile::OnlinePrefixV1 {
+        return Err(EvaluationError::UnsupportedProfile {
+            expected: SemanticProfile::OnlinePrefixV1.as_str(),
+            actual: formula.profile().as_str(),
+        });
+    }
+    evaluate_with_stats(
+        formula,
+        formula_id,
+        trace,
+        unknown,
+        trace_id,
+        closed,
+        verdict_time,
+        limits,
+    )
+    .0
 }
 
 #[cfg(kani)]

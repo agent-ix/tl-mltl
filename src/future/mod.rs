@@ -3,6 +3,7 @@
 mod evaluate;
 pub(crate) mod horizon;
 
+pub(crate) use evaluate::evaluate_prefix_partial_at;
 pub use evaluate::{
     evaluate_closed, evaluate_closed_at, evaluate_closed_at_with_stats,
     evaluate_closed_with_context, evaluate_prefix, evaluate_prefix_at,
