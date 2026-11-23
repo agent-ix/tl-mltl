@@ -1,10 +1,6 @@
 use std::{env, fmt::Display, fs, io::Read, process::ExitCode};
 
-use tl_mltl::{
-    analyze_horizon, evaluate_closed, evaluate_prefix, map_to_c2po, CommandDocument,
-    EvaluationLimits, Operation,
-};
-use tl_syntax::SemanticProfile;
+use tl_mltl::{analyze_horizon, map_to_c2po, record::evaluate_command, CommandDocument, Operation};
 
 /// Names the stage that refused so every failure renders as `stage: error`.
 fn refusal<S: Display, E: Display>(stage: S) -> impl FnOnce(E) -> String {
@@ -59,36 +55,7 @@ fn run() -> Result<(), String> {
         Operation::Analyze => serde_json::to_value(
             analyze_horizon(formula, request.formula_id).map_err(refusal("analyze formula"))?,
         ),
-        Operation::Evaluate => {
-            let trace = request
-                .trace
-                .ok_or_else(|| "evaluate operation requires trace".to_owned())?;
-            // Every non-closed profile goes to `evaluate_prefix`, which refuses a
-            // profile other than online-prefix with a typed error.
-            let report = if formula.profile() == SemanticProfile::ClosedTraceV1 {
-                if !trace.closed {
-                    return Err("closed-trace formula requires a closed trace document".to_owned());
-                }
-                evaluate_closed(
-                    formula,
-                    request.formula_id,
-                    &trace.instants,
-                    trace.trace_id,
-                    EvaluationLimits::default(),
-                )
-            } else {
-                evaluate_prefix(
-                    formula,
-                    request.formula_id,
-                    &trace.instants,
-                    trace.trace_id,
-                    trace.closed,
-                    EvaluationLimits::default(),
-                )
-            }
-            .map_err(refusal("evaluate formula"))?;
-            serde_json::to_value(report)
-        }
+        Operation::Evaluate => serde_json::to_value(evaluate_command(&request)?),
         Operation::MapC2po => {
             let formula_bytes =
                 serde_json::to_vec(&request.formula).map_err(refusal("serialize formula"))?;

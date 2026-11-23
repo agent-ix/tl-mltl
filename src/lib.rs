@@ -41,6 +41,7 @@ pub mod mapping;
 pub mod past;
 pub mod r2u2_future;
 pub mod r2u2_live;
+pub mod record;
 pub mod wire;
 
 pub(crate) use future::horizon;

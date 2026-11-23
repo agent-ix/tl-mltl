@@ -92,3 +92,29 @@ The examples under `examples/` are producers. Each runs the real crate or binary
 ## ci_guard
 
 `ci_guard` is the second binary. `make guarded-ci` runs `ci_guard ci`, which refuses to start `make ci` when the Makefile or the `MAKEFLAGS` environment can hide a failing gate, runs it, and compares the gates that wrote a completion record with the declared set, independent of Make's exit code. `ci_guard record GATE` is the last step of each gate recipe.
+
+## Evaluation record
+
+The `evaluation_record` example turns one `evaluate` request file into one `tl-mltl.evaluation-record/v1` JSON record, for consumers that must not scrape printed text.
+
+```sh
+cargo run --example evaluation_record -- tests/fixtures/evaluation-records/pending.json
+cargo run --example evaluation_record -- REQUEST.json --out RECORD.json
+```
+
+The request is the same `tl-mltl.command/v1` document the CLI reads, with `operation` set to `evaluate`. The record is written to standard output or to the `--out` file; a refusal prints one line beginning `evaluation_record:` to standard error and exits 2. The schema is `schemas/evaluation-record-v1.schema.json`.
+
+| Field | Meaning |
+| --- | --- |
+| `schemaVersion` | `tl-mltl.evaluation-record/v1`. |
+| `toolchain` | `name` (`tl-mltl`) and `version` of the build that evaluated. |
+| `semanticProfile` | `ClosedTraceV1` or `OnlinePrefixV1`; `semanticProfileId` is its wire identity. |
+| `formulaId` | The request's formula identity. |
+| `inputSha256` | SHA-256 of the request file bytes. |
+| `trace` | `traceId`, `closed` and `instants` (true proposition ids per instant), copied from the request. |
+| `window` | Inclusive `[evaluationPosition, evaluationPosition + horizon]`: the instants the evaluation can read. It is not the formula's own interval. |
+| `formulaInterval` | `start` and `end` of the root temporal operator's own interval, or null when the root is not temporal. |
+| `evaluationPosition` | The formula-time index of the verdict (0). |
+| `verdict` | `True`, `False` or `Pending`. |
+| `observedThrough`, `horizon` | Last observed instant (or null) and the static decision horizon. |
+| `witness` | A witness or counterexample when the evaluator reports one. The finite evaluators report none, so the field is null. |
