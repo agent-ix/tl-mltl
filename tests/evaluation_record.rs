@@ -245,3 +245,103 @@ fn a_refusal_exits_two_with_one_stderr_line_and_no_stdout() {
     assert_eq!(stderr.lines().count(), 1, "{stderr}");
     assert!(stderr.starts_with("evaluation_record: "), "{stderr}");
 }
+
+fn corpus_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("corpus/r2u2-v4.2")
+}
+
+fn json_names(directory: &str) -> BTreeSet<String> {
+    std::fs::read_dir(corpus_dir().join(directory))
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .collect()
+}
+
+// Trace: TC-187, FR-005-AC-4
+/// Every request is checked against the manifest and its committed record is compared with the
+/// record the evaluator builds now. `toolchain.version` is normalized to this build's version so a
+/// release bump never requires regenerating the records; every other field must match exactly.
+/// `UPDATE_CORPUS_RECORDS=1 cargo test --test evaluation_record corpus_records` rewrites the
+/// records from the requests (`make corpus-records`).
+#[test]
+fn corpus_records_are_regenerated_from_the_corpus_requests() {
+    let manifest: Value =
+        serde_json::from_slice(&std::fs::read(corpus_dir().join("manifest.json")).unwrap())
+            .unwrap();
+    let update = env::var_os("UPDATE_CORPUS_RECORDS").is_some();
+    let requests = json_names("requests");
+    if update {
+        std::fs::create_dir_all(corpus_dir().join("records")).unwrap();
+    } else {
+        assert_eq!(
+            requests,
+            json_names("records"),
+            "requests/ and records/ must match one to one"
+        );
+    }
+    assert!(!requests.is_empty());
+    for name in &requests {
+        let id = name.trim_end_matches(".json");
+        let bytes = std::fs::read(corpus_dir().join("requests").join(name)).unwrap();
+        let request: Value = serde_json::from_slice(&bytes).unwrap();
+        let case = manifest["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["id"] == id)
+            .unwrap_or_else(|| panic!("{id} is not a manifest case"));
+        assert_eq!(request["formulaId"], id, "{id} formulaId");
+        assert_eq!(request["formula"], case["formula"], "{id} formula drifted");
+        assert_eq!(
+            request["trace"]["instants"], manifest["trace"],
+            "{id} trace drifted"
+        );
+        assert_eq!(
+            request["trace"]["traceId"], "r2u2-v4.2-corpus",
+            "{id} traceId"
+        );
+        assert_eq!(
+            request["trace"]["closed"],
+            case["formula"]["semantic_profile"] == "mltl.closed-trace/v1",
+            "{id} closed must follow the formula's semantic profile"
+        );
+        let built = serde_json::to_value(build_record(&bytes).unwrap()).unwrap();
+        let record_path = corpus_dir().join("records").join(name);
+        if update {
+            let text = serde_json::to_string_pretty(&build_record(&bytes).unwrap()).unwrap();
+            std::fs::write(&record_path, format!("{text}\n")).unwrap();
+            continue;
+        }
+        let mut committed: Value =
+            serde_json::from_slice(&std::fs::read(&record_path).unwrap()).unwrap();
+        committed["toolchain"]["version"] = built["toolchain"]["version"].clone();
+        assert_eq!(
+            committed, built,
+            "{id} record is stale: run make corpus-records"
+        );
+    }
+}
+
+// Trace: TC-187, FR-005-AC-4
+#[test]
+fn figures_bind_only_checked_corpus_records() {
+    let figures = std::fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/images/figures.json"),
+    )
+    .unwrap();
+    let checked = json_names("records");
+    let marker = "corpus/r2u2-v4.2/records/";
+    let mut bound = 0;
+    for (at, _) in figures.match_indices(marker) {
+        let name: String = figures[at + marker.len()..]
+            .chars()
+            .take_while(|c| *c != '"')
+            .collect();
+        assert!(
+            checked.contains(&name),
+            "figures.json binds unchecked record {name}"
+        );
+        bound += 1;
+    }
+    assert!(bound > 0, "figures.json binds no corpus record");
+}

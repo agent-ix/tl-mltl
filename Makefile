@@ -319,6 +319,10 @@ $(error ixd not found: install with cargo install --locked --git https://github.
 endif
 endif
 
+.PHONY: corpus-records
+corpus-records:
+	UPDATE_CORPUS_RECORDS=1 cargo test -q --test evaluation_record corpus_records
+
 .PHONY: figures
 figures:
 	$(IXD) build docs/images/figures.json --out docs/images
