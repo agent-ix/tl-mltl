@@ -132,6 +132,11 @@ pub enum C2poImportError {
         /// Where.
         span: SourceRange,
     },
+    /// An unbounded temporal operator; no implicit mission-bound closure (FR-094).
+    MissionClosureRequired {
+        /// Where.
+        span: SourceRange,
+    },
     /// The graph is not admitted under the selected profile.
     OperatorOutsideProfile {
         /// Requirement index.
@@ -167,6 +172,11 @@ impl fmt::Display for C2poImportError {
             Self::InvalidInterval { span } => {
                 write!(formatter, "invalid interval at byte {}", span.start)
             }
+            Self::MissionClosureRequired { span } => write!(
+                formatter,
+                "unbounded operator at byte {} needs an explicit mission-bound closure",
+                span.start
+            ),
             Self::OperatorOutsideProfile {
                 requirement,
                 detail,
@@ -265,7 +275,7 @@ pub(crate) struct Token {
     pub(crate) span: SourceRange,
 }
 
-fn lex(text: &str, limits: ReaderLimits) -> Result<Vec<Token>, ReaderError> {
+pub(crate) fn lex(text: &str, limits: ReaderLimits) -> Result<Vec<Token>, ReaderError> {
     let bytes = text.as_bytes();
     let mut tokens = Vec::new();
     let mut i = 0usize;
@@ -555,13 +565,16 @@ pub(crate) enum Issue {
     Undeclared(String, SourceRange),
     Interval(SourceRange),
     Nesting(SourceRange),
+    /// A temporal operator with no interval: carrying it would close an
+    /// unbounded formula (FR-094, ADR-045).
+    Unbounded(SourceRange),
 }
 
 const TEMPORAL_KEYWORDS: [&str; 11] = ["F", "G", "O", "H", "Y", "U", "R", "S", "T", "true", "false"];
 const AGGREGATION_KEYWORDS: [&str; 5] = ["foreach", "forsome", "forexactly", "foratleast", "foratmost"];
 
 /// The first expression-level construct in token order, if any.
-fn prescan(tokens: &[Token]) -> Option<Issue> {
+pub(crate) fn prescan(tokens: &[Token]) -> Option<Issue> {
     for (index, token) in tokens.iter().enumerate() {
         let construct = match &token.tok {
             Tok::Arith => Some(UnsupportedConstruct::ArithmeticOperator),
@@ -570,6 +583,12 @@ fn prescan(tokens: &[Token]) -> Option<Issue> {
             Tok::Unknown | Tok::Colon => Some(UnsupportedConstruct::UnrecognizedToken),
             Tok::Ident(name) if AGGREGATION_KEYWORDS.contains(&name.as_str()) => {
                 Some(UnsupportedConstruct::SetAggregation)
+            }
+            Tok::Ident(name)
+                if matches!(name.as_str(), "F" | "G" | "O" | "H" | "U" | "R" | "S" | "T")
+                    && tokens.get(index + 1).map(|t| &t.tok) != Some(&Tok::LBracket) =>
+            {
+                return Some(Issue::Unbounded(token.span));
             }
             Tok::Ident(name)
                 if !TEMPORAL_KEYWORDS.contains(&name.as_str())
@@ -840,6 +859,7 @@ fn issue_error(issue: Issue, limits: ReaderLimits) -> C2poImportError {
         Issue::Construct(construct, span) => unsupported(construct, span),
         Issue::Undeclared(name, span) => C2poImportError::UndeclaredSignal { name, span },
         Issue::Interval(span) => C2poImportError::InvalidInterval { span },
+        Issue::Unbounded(span) => C2poImportError::MissionClosureRequired { span },
         Issue::Nesting(span) => ReaderError::NestingTooDeep {
             limit: limits.max_nesting,
             span,
@@ -925,11 +945,22 @@ pub fn import_c2po_requirements(
     })
 }
 
+pub(crate) fn issue_loss_kind(issue: &Issue) -> LossKind {
+    match issue {
+        Issue::Construct(construct, _) => construct.loss_kind(),
+        Issue::Undeclared(..) => LossKind::UnmappedVariable,
+        Issue::Interval(_) => LossKind::UnsupportedInterval,
+        Issue::Nesting(_) => LossKind::ResourceLimit,
+        Issue::Unbounded(_) => LossKind::MissionClosureRequired,
+    }
+}
+
 fn issue_loss(issue: Issue, index: usize) -> LossRecord {
     let (kind, construct, span) = match issue {
         Issue::Construct(construct, span) => (construct.loss_kind(), construct.name().to_owned(), span),
         Issue::Undeclared(name, span) => (LossKind::UnmappedVariable, name, span),
         Issue::Interval(span) => (LossKind::UnsupportedInterval, "interval".to_owned(), span),
+        Issue::Unbounded(span) => (LossKind::MissionClosureRequired, "unbounded-operator".to_owned(), span),
         Issue::Nesting(span) => (LossKind::ResourceLimit, "nesting".to_owned(), span),
     };
     LossRecord::at(kind, ForeignFormat::C2po, construct, span, Some(index))

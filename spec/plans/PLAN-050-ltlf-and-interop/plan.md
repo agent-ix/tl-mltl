@@ -138,6 +138,12 @@ ownership of the reader.
 | TC-306 (corpus provenance/tamper refusal) not written | the corpus format needs an "input digest" and a rows digest; decision 7 (2026-11-23) forbids new digests (SPEC-GAP) and no corpus exists | decide the integrity mechanism (byte comparison or a registered digest) with the corpus |
 | UNBUILT (TL-432): FR-086-AC-1..4 (TC-310, TC-311, TC-312, TC-332); `src/interop/{mod,loss,c2po}.rs`, `tests/c2po_import.rs` | written without cargo/rustc; nothing compiled or run | `cargo test --test c2po_import` |
 | C2PO construct list and keyword spellings (`CONTRACT`, `ORDER`, `foreach`..`foratmost`, `Y` as a prefix operator) not checked against the C2PO 4.1.0 grammar (SPEC-GAP, UNGROUNDED) | no grammar retained; nothing may run C2PO | reconcile with the pinned C2PO checkout; split, never drop, entries |
+| UNBUILT (TL-431): FR-087-AC-2, FR-088-AC-2, FR-089-AC-1/3, FR-090-AC-1/2, FR-091-AC-1/2, FR-094-AC-1..3 (TC-314, TC-316, TC-317, TC-318..TC-321, TC-327..TC-329); `src/interop/{attribution,fret,mission}.rs`, unbounded-operator refusal added to the C2PO reader; `tests/fret_import.rs`, `tests/mission_closure.rs` | written without cargo/rustc; nothing compiled or run | `cargo test --test fret_import --test mission_closure`, plus `--features infinite-trace` for the infinite-trace closure row |
+| TC-313, TC-315 (published FRET examples) not written | no FRET export retained; retrieval DEFERRED (row above); the FRET MLTL, variable-map (`variable:signal-id`) and header (`# a,b`, `# key: value`) spellings are provisional (UNGROUNDED) | retrieve fixtures with licence and revision, rewrite the reader against their bytes, add the manifest census test |
+| TC-333 withdrawn | decision 4 (2026-11-23): refusal and report only; `request_mission_closure` always refuses, no `ClosurePolicy` | none unless the decision changes |
+| FR-090 report SHA-256 identity omitted (SPEC-GAP) | decision 7 forbids digests outside the ADR-019 / tl-solve ADR-004 register | owner decides whether to register it |
+| TC-319 horizon-overflow refusal not exercised | an overflowing `u64` horizon needs ~2^32 nested `u32`-bounded nodes | inspection of the error mapping |
+| UNBUILT-PIN: `InfiniteFormulaDocument::validate()` returning `InfiniteFormula` (TC-329 infinite row) | guessed tl-syntax API | confirm against tl-syntax |
 
 ## Ungrounded items
 

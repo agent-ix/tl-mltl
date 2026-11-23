@@ -13,9 +13,13 @@ use core::fmt;
 
 use serde::{Deserialize, Serialize};
 
+pub mod attribution;
 pub mod c2po;
+pub mod fret;
 pub mod loss;
+pub mod mission;
 
+pub use attribution::{Attribution, AttributionError, REVISION_UNKNOWN};
 pub use loss::{ForeignFormat, LossKind, LossRecord, LOSS_RECORD_V1};
 
 /// Byte range `[start, end)` in the source text.
