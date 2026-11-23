@@ -65,10 +65,20 @@ the checks run.
 
 ## Decision
 
-1. **Name.** The problem is called *requirement realizability* everywhere it is
-   named in a type, wire identity, command or document: "realizability" is
-   never used bare in an identity minted by this project. Protocol
-   realizability (decision 9) keeps its own name.
+1. **Name.** The problem is called *requirement realizability*. Every string
+   identity that names the problem (wire identity, schema id, file name,
+   command and subcommand, document title, result member and message) carries
+   the two words together, as `requirement-realizability` or `requirement
+   realizability`; the bare word "realizability" names the problem in no string
+   identity this project mints. Rust items minted inside the module
+   `requirement_realizability` of tl-solve (`RealizabilityProblem`,
+   `RealizabilityRequestError`, `RealizabilityLimits`,
+   `RealizabilityCertificate`) may use the short stem, because the module path
+   is the qualification: they are exposed only by that path and never
+   re-exported at a crate root or under another name. The verdict labels
+   `Realizable` and `Unrealizable` name an outcome, not the problem, and are
+   qualified by the envelope identity. Protocol realizability (decision 9) keeps
+   its own name.
 
 2. **Fixed horizon.** For a request over formulas `phi_1 ... phi_k` the play has
    exactly `L = H + 1` steps, numbered `0 ... H`, where `H` is the maximum
@@ -76,10 +86,13 @@ the checks run.
    system cannot end the play early and the environment cannot end it at all.
    `L` is never supplied by the caller: a caller value that differs from the
    derived one is refused. Only the `mltl.closed-trace/v1` semantic profile is
-   admitted. Because `H` is the exact lookahead at position zero, no formula
-   reads a position at or beyond `L`, so the closed-trace convention of an
-   all-false valuation after the declared end is never exercised and cannot
-   favour either player.
+   admitted. `lookahead` is an upper bound on the last position a formula reads
+   (it sums interval ends along nesting), not always the exact last position.
+   Because `H` bounds every read from position zero, no formula reads a
+   position at or beyond `L`, so the closed-trace convention of an all-false
+   valuation after the declared end is never exercised and cannot favour either
+   player. A looser bound adds steps no formula reads, which cannot change a
+   verdict.
 
 3. **Turn order.** In each step `t`, the environment first chooses the
    valuation of the input propositions, then the system, having seen it,
@@ -88,8 +101,9 @@ the checks run.
    chooses `o_t`. It cannot know `i_(t+1)`. A strategy is a function from the
    input history through step `t` to `o_t` (Mealy-style); a counter-strategy is a
    function from the output history through step `t-1` to `i_t`. The system
-   wins a play exactly when `evaluate_closed_at` at position zero returns
-   `True` for every requirement formula. This is the only winning condition; the
+   wins a play exactly when `evaluate_closed_at` at position zero returns an
+   `EvaluationReport` whose verdict is `TruthValue::True` for every requirement
+   formula. This is the only winning condition; the
    search, the re-check and every export are defined to agree with it.
 
 4. **Declaring inputs and outputs.** Direction is a per-signal property of the
@@ -102,39 +116,75 @@ the checks run.
    formula shape or naming. Direction is a declaration by the caller, not a
    checked property of any system.
 
-5. **Environment assumptions: assume-guarantee contracts (inter-project
-   decision, needs the program owner).** Recommended and recorded here:
-   environment assumptions are expressed as the assume-guarantee contracts of
-   P-TL-150 (TL-425), and are not a separate TL-149 assumption syntax. A
-   contract `(A, G)` contributes to the winning condition the implication
-   `A -> G` over the whole fixed trace. A play is inactive when `A` fails,
-   invalid when `A` holds and `G` fails, and verified when both hold; the system
-   loses exactly the invalid plays. The interface this decision requires of
-   P-TL-150:
+5. **Environment assumptions: assume-guarantee contracts (OPEN DECISION FOR
+   PETER; inter-project with P-TL-150; nothing below is accepted).**
+   Environment assumptions are expressed as the assume-guarantee contracts of
+   P-TL-150 (TL-425), and are not a separate TL-149 assumption syntax. This
+   decision does not select among the options A, B and C of tl-syntax ADR-017
+   (P-TL-150, "Contract interface required by realizability"); those are
+   decided by Peter for the contract form, and tl-syntax FR-311-AC-2 forbids any
+   realizability document from citing a contract as an assumption before that
+   choice is recorded. What follows is therefore conditional, a proposal for the
+   winning condition on top of whatever ADR-017 records, and V1 of this project
+   accepts only plain requirement sets (the conjunction of formulas that must
+   all hold). A request that carries a contract returns `Unsupported` with a
+   reason naming contracts. No contract wire form is minted by P-TL-149.
 
-   - the contract form exposes `A` and `G` as separate validated formulas in
-     the `mltl.closed-trace/v1` profile, each with its own root, under one
-     stable contract identity;
-   - tl-mltl exposes the three-valued status in terms that coincide with the
-     play outcome above;
-   - every proposition occurring in `A` is bound to an `Input` signal. An
-     assumption that mentions an output is refused, because the system could
-     win by falsifying its own assumption;
-   - the status vocabulary and its order are `inactive`, `invalid`, `verified`,
-     as ticket TL-425 states.
+   *Status vocabulary consumed.* P-TL-150 ADR-017 and tl-mltl FR-059 define the
+   status of a contract at one evaluation position: `inactive` (assumption
+   false), `invalid` (assumption true, guarantee false), `verified` (both true)
+   and `pending` (not decided), reported as a per-position series, never
+   collapsed.
 
-   Until TL-425 ships, V1 of this project accepts only plain requirement sets
-   (the conjunction of formulas that must all hold), and a request that carries
-   a contract returns `Unsupported` with a reason naming contracts. No contract
-   wire form is minted by P-TL-149. Two known limits are stated now so the
-   owner can reject them: (a) the whole-trace implication lets a system win
-   against an environment that violates `A` only at a late step, which is
-   weaker than requiring `G` for as long as `A` has held; the stronger reading
-   is not specified in V1; (b) an assumption no input sequence satisfies makes
-   every guarantee realizable vacuously, so the result of a contract request
-   carries a mandatory assumption-satisfiable flag, computed by one
-   satisfiability query over inputs, and a `false` flag is reported beside the
-   verdict, not hidden.
+   *Proposed default: the guarantee holds at every position at which the
+   assumption has held so far.* Let `A` and `G` be the two roots of one
+   contract and `look(c) = max(lookahead(A), lookahead(G))`. A position `p` is
+   settled for the contract when `p + look(c) <= H`, so that no read at `p`
+   reaches the end of the play. Over a complete play the system loses exactly
+   when some settled position `p` has status `invalid` and no earlier position
+   `q < p` has status `inactive` (the assumption has held at every position so
+   far). Positions that are not settled are `pending` in the sense of ADR-017
+   and never decide a play. Because settledness is computed here from
+   `lookahead`, the closed-trace padding convention is not exercised for any
+   contract position, which preserves the argument of decision 2. If the
+   tl-mltl FR-059 series for a complete play reports `pending` at a settled
+   position, that is a `Failed` result (a tool fault), never a verdict. This is
+   the stronger reading ("`G` while `A` held") and replaces the whole-trace
+   implication of the earlier draft; it removes the late-violation excuse that
+   draft listed as limit (a).
+
+   *Input-only rule (requirement of P-TL-149 on P-TL-150).* Every proposition
+   occurring in `A` shall be bound to an `Input` signal, checked by tl-solve
+   FR-100 against the tl-syntax partition. An assumption that mentions an
+   output is refused with a typed request error, because the system could win
+   by falsifying its own assumption. P-TL-150 shall expose `A` and `G` as
+   separate validated roots in profile `mltl.closed-trace/v1` under one stable
+   contract identity (tl-syntax FR-311 already does), shall keep the per-position
+   series of FR-059 as it is, and shall not collapse statuses into a boolean.
+   P-TL-149 asks nothing else of P-TL-150.
+
+   *Residual limits, stated so the owner can reject them.* (a) An assumption
+   with `lookahead(A) > 0` is a statement about future inputs, and the system
+   may exploit it at a position before those inputs are chosen; only an
+   assumption of lookahead 0 is causal. (b) An assumption no input sequence
+   satisfies makes every guarantee realizable vacuously, so a contract
+   request's result carries a mandatory assumption-satisfiable flag, computed
+   by one satisfiability query over inputs, and a `false` flag is reported
+   beside the verdict. (c) The whole `Realizable` label for a contract request
+   is a verdict about this winning condition only and states which condition.
+
+   *Open decision for Peter.* Pick one; until then contracts stay
+   `Unsupported`.
+
+   | | Winning condition for contract `(A, G)` | Consequence |
+   |---|---|---|
+   | 1 (proposed default) | `G` holds at every settled position at which `A` has held at all earlier and current positions: consumes the per-position series; the "`G` while `A` held" reading | Needs the series of FR-059 and the Input-only rule. Fits ADR-017 option C as written ("no contract is ever `invalid`" over the behaviours this project constrains). Positions are judged by this project's settledness rule. |
+   | 2 (earlier draft) | the single implication `A -> G` judged once at position 0 of the whole trace | Needs only the roots of FR-311. Weaker: a late assumption violation excuses an earlier guarantee failure for plays the environment would not choose. Ignores the series. Does not use ADR-017 option C's per-position reading. |
+
+   ADR-017 option A (invariant assumptions, a `contract-set/v2` with an explicit
+   scope) and option B (a separate assumption document) remain open for
+   P-TL-150 under either row; they change the contract form, not the choice
+   above.
 
 6. **Result labels.** A completed request yields exactly one of five labels.
    A malformed request, including an undeclared signal, is a typed request
@@ -175,11 +225,24 @@ the checks run.
    | QDIMACS export (TL-418) | Nothing by itself; hands the problem to a QBF solver | Encoding size of the closed-trace encoder plus the quantifier prefix | Encoder size, variable count | Typed export refusal |
    | TLSF export (TL-418) | Nothing by itself; hands the problem to an LTLf synthesis tool | Unrolled size grows with `L` times formula size | Trace length, formula size | Typed export refusal |
 
-   With no input signals the problem reduces to MLTL satisfiability, which is
-   reported to be PSPACE-complete (Li, Vardi and Rozier, CAV 2019; cited, not
-   re-derived here), so no method may be advertised as polynomial. The
-   interval bounds are checked integers, so `L` can be large; limits are on
-   `L`, not on formula text size.
+   *Complexity.* With no input signals the problem reduces to MLTL
+   satisfiability. MLTL satisfiability checking is NEXPTIME-complete
+   (interval bounds written in binary); only MLTL0, the fragment in which every
+   interval starts at 0, is PSPACE-complete (Li, Vardi and Rozier, CAV 2019).
+   Source status: cited from publisher and index records; the paper body was
+   not read by this project, and the classes are not re-derived here. The
+   statement above is a correction of an earlier draft that called MLTL
+   satisfiability PSPACE-complete. Consequences stated for the specification and
+   the documentation: requirement realizability over general MLTL is at least
+   NEXPTIME-hard (the no-input case), no upper-bound class is claimed for the
+   game, and no method may be advertised as polynomial or as scalable. The
+   declared small population uses the intervals `[0,0]`, `[0,1]`, `[1,1]`,
+   `[0,2]` and `[1,2]`, so it is not MLTL0 (it contains `[1,1]` and `[1,2]`),
+   but its interval ends are at most 2 and its play length at most 4, so the
+   class says nothing about it: every case there is a bounded enumeration of at
+   most 16^4 plays. Agreement on the population is not evidence about scaling
+   in interval size. The interval bounds are checked integers, so `L` can be
+   large; limits are on `L`, not on formula text size.
 
 9. **Relationship to protocol realizability.** Protocol realizability asks
    whether a choreography can be split into roles. It is tracked in QSL-1868,
@@ -203,11 +266,16 @@ the checks run.
 - Strategy size is the dominant cost of a `Realizable` result, since the
   certificate is a table over reachable states and `2^|I|` input valuations.
   The certificate and the state limit are therefore reported together.
-- Because the horizon is exact and the end is fixed, every result is stated for
+- Because the horizon is a derived upper bound and the end is fixed, every result is stated for
   one `L`. A result for a formula set is not a result for any longer run. That
   is a property of MLTL's bounded intervals and is stated in every result.
-- Decision 5 leaves contract-bearing requests `Unsupported` until the owner
-  decides. That is a deliberate dependency, not a defect.
+- Decision 5 leaves contract-bearing requests `Unsupported` until Peter picks
+  a row of its open-decision table and records the ADR-017 option. That is a
+  deliberate dependency, not a defect.
+- The realizability checks need no strategy-judging code in tl-mltl production
+  paths: FR-043 offers a callback-based judge (FR-043-AC-7) whose adapter lives
+  in tl-solve test code (tl-solve FR-104-AC-6), because tl-mltl FR-113 forbids
+  a tl-mltl to tl-solve dependency.
 
 ## Alternatives Considered
 

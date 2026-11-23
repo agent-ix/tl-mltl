@@ -13,7 +13,7 @@ Rows for FR-043 and StR-004 (TL-413 in project P-TL-149). The population the
 property rows range over is declared once, in tl-solve TM-100
 (`ix://agent-ix/tl-solve/TM-100`, section Declared small population): 126960
 cases (2160 single-formula requirement sets times 16 input/output splits, plus
-15400 two-formula sets times 6 splits). No row is implemented at
+15400 two-formula sets times 6 splits). tl-mltl generates the population by that rule in its own test code (tl-mltl FR-113 forbids importing tl-solve) and compares the recorded counts 126960, 44566, 82394 and 768 as numbers. No row is implemented at
 the time of writing; every status is planned.
 
 ## Test Case Summary
@@ -25,3 +25,4 @@ the time of writing; every status is planned.
 | TC-190 | All-output partitions agree with satisfiability by enumeration and all-input partitions with validity | Property | P1 | FR-043-AC-4, StR-004-VC-2 | 🚧 planned, not yet written |
 | TC-191 | Trace-length, alphabet-width and play-count limits admit the limit and refuse one past it; unpartitioned proposition is refused | Unit | P0 | FR-043-AC-5, StR-004-VC-2 | 🚧 planned, not yet written |
 | TC-192 | Deterministic reports and evaluation failure returns no verdict | Unit | P1 | FR-043-AC-6, StR-004-VC-1 | 🚧 planned, not yet written |
+| TC-193 | `judge_strategy` wins and loses as the callback dictates, equals the verdict on the population for a derived callback, and refuses an out-of-list output | Unit | P0 | FR-043-AC-7, StR-004-VC-1 | 🚧 planned, not yet written |

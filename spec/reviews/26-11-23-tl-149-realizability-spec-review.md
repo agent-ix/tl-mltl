@@ -26,3 +26,8 @@ rise by planned rows only.
 | FND-1403 | medium | Whole-trace A -> G makes Realizable weaker than G while A held; limit (a) and (b) acknowledged but label unchanged. | ADR-004 decision 5 |
 | FND-1404 | medium | FR-043 has no interface to judge a mutated strategy (needed by tl-solve FR-106-AC-3) and no build ticket; population is declared only in tl-solve while tl-mltl FR-113 forbids that edge. | FR-043; TM-007 |
 | FND-1405 | low | evaluate_closed_at returns EvaluationReport; lookahead is an upper bound, not the exact last read position. | ADR-004 decision 2; FR-043 |
+
+## Fix pass
+
+All findings above were addressed in specification text in this branch on
+2026-11-23; see tl-solve SR-100 "Fix pass" for dispositions. No build was run.

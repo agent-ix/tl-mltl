@@ -46,6 +46,7 @@ code, and it is not a production decision procedure.
   `L`; the horizon report identity that produced it; the number of complete
   plays evaluated; and `every_input_sequence_has_response`, the truth of
   "for every input sequence some output sequence makes every formula true".
+- `StrategyJudgement`, returned by `judge_strategy` (see Behavior): `Wins` or `Loses` with the first losing input sequence, and the number of input sequences played.
 - `PlayOutError`, a closed set of typed refusals: unsupported profile, horizon
   failure, empty requirement set, proposition not partitioned, trace-length
   limit, alphabet-width limit, play-count limit, and evaluation failure.
@@ -77,6 +78,29 @@ code, and it is not a production decision procedure.
   any play is evaluated; each limit admits the value exactly at the limit and
   refuses one more, with its own variant.
 - Results depend only on the formulas, the partition and the limits.
+- Strategy judgement interface. `judge_strategy(formulas, partition, limits,
+  respond)` takes the same formulas, partition and limits as the verdict, and
+  a callback `respond(&[Vec<PropositionId>]) -> Vec<PropositionId>` that maps
+  the input history through step `t` (one strictly increasing list of true
+  input `PropositionId` values per step) to the output valuation for step
+  `t`. The judge enumerates every input sequence of `L` steps, calls `respond`
+  at each step in order, builds the complete play, and judges it with
+  `evaluate_closed_at`. It returns `Wins` exactly when every play satisfies
+  every formula, else `Loses` with the lexicographically first losing input
+  sequence. A `respond` result that names a proposition not in the output list
+  is refused with its own `PlayOutError` variant. The callback type mentions no
+  tl-solve type, so tl-mltl keeps its independence from tl-solve (tl-mltl
+  FR-113); the adapter that turns a tl-solve strategy certificate into a
+  callback lives in tl-solve test code and is owned by tl-solve FR-104-AC-6
+  (ticket TL-416), not by this crate. The judge shares no code with tl-solve and
+  is not a production decision procedure.
+- Population ownership. The declared population is specified by rule in tl-solve
+  TM-100 (section Declared small population) and restated in TM-007. tl-mltl
+  tests generate it from that rule with a generator written in tl-mltl test
+  code; the counts 126960, 44566, 82394 and 768 are compared as numbers
+  recorded in the rule, never by importing tl-solve code or data. tl-solve
+  tests generate it with its own generator. A mismatch between the two
+  generators' counts is a finding against the rule.
 
 ## Acceptance Criteria
 
@@ -88,6 +112,7 @@ code, and it is not a production decision procedure.
 | FR-043-AC-4 | The all-output partition reports the same verdict as satisfiability of the conjunction by direct enumeration, and the all-input partition reports validity by direct enumeration. | property-based-testing (TC-190) |
 | FR-043-AC-5 | Trace-length, alphabet-width and play-count limits each admit a value exactly at the limit and refuse a value one past it with their own typed variant before evaluating any play, and a proposition occurring in a formula but absent from the partition is refused with its own variant. | unit-testing (TC-191) |
 | FR-043-AC-6 | Repeated runs on equal inputs return equal reports, and an evaluation failure on any play returns the failure and no verdict. | unit-testing (TC-192) |
+| FR-043-AC-7 | `judge_strategy` returns `Wins` for a callback that copies the input at step `t` to the output at step `t` on the game where that wins, returns `Loses` with the lexicographically first losing input sequence for a callback that violates one requirement on exactly one input sequence, equals the verdict on every case of the declared population when the callback is the lowest winning response derived inside the test by direct enumeration, and refuses a callback output outside the output list with its own variant. | unit-testing (TC-193) |
 
 ## Dependencies
 

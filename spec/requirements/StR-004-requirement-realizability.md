@@ -33,7 +33,7 @@ satisfied requirement.
 
 | ID | Criteria | Validation |
 |---|---|---|
-| StR-004-VC-1 | For a declared population of small requirement sets with declared input and output splits, the reference answer equals an independently computed answer, and the distinction between a set that fails for every environment input and a set that fails only because the response depends on a later input is visible in the reference's output. | Test (TC-188, TC-189, TC-192) |
+| StR-004-VC-1 | For a declared population of small requirement sets with declared input and output splits, the reference answer equals an independently computed answer, and the distinction between a set that fails for every environment input and a set that fails only because the response depends on a later input is visible in the reference's output. | Test (TC-188, TC-189, TC-192, TC-193) |
 | StR-004-VC-2 | A reviewer can tell from the reference's output which trace length was played, where that length came from, and that no more than the declared work was done. | Test (TC-190, TC-191) |
 
 ## Stakeholders
