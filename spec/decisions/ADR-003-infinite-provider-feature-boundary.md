@@ -69,7 +69,7 @@ behavior, wire bytes and dependency closure except for explicit version pins.
 
 ## Consequences
 
-The campaign remains four production TL crates. TL-213's release graph keeps
+The campaign remained four production TL crates when this ADR was accepted; [ADR-074](./ADR-074-fifth-production-crate-tl-solve.md) supersedes that sentence and adds tl-solve as a fifth. TL-213's release graph keeps
 those four crates and checks both tl-mltl feature sets. TL-211's infinite C2PO
 export and TL-212's infinite verification evidence live under the module's
 feature gate; bounded exports remain unchanged. tl-rewrite uses tl-oracle in
