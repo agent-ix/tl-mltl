@@ -8,6 +8,7 @@ interoperability.
 ```bash
 make fmt              # format with rustfmt
 make fmt-check        # verify formatting (CI gate)
+make figures-check    # local pre-merge check that docs/images match docs/images/figures.json (needs ixd; not in ci)
 make lint             # clippy with -D warnings
 make test             # cargo test
 make test-features    # cargo test under default and infinite-trace features

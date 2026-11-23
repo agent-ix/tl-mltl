@@ -308,9 +308,16 @@ fuzz-smoke:
 #
 # docs/images/figures.json declares the figures and is built by the ix-diagrams `ixd`
 # command (cargo install --locked --git https://github.com/agent-ix/ix-diagrams ix-diagrams).
-# `figures-check` writes nothing and fails on a missing, stale or orphaned figure.
+# `figures-check` writes nothing and fails on a missing, stale or orphaned figure. It is the local
+# pre-merge regeneration check; hosted CI is manual-only and does not run it.
 
 IXD ?= ixd
+
+ifneq ($(filter figures figures-check,$(MAKECMDGOALS)),)
+ifeq ($(shell command -v $(IXD) 2>/dev/null),)
+$(error ixd not found: install with cargo install --locked --git https://github.com/agent-ix/ix-diagrams ix-diagrams or set IXD=<path>)
+endif
+endif
 
 .PHONY: figures
 figures:
@@ -319,14 +326,13 @@ figures:
 .PHONY: figures-check
 figures-check:
 	$(IXD) build docs/images/figures.json --out docs/images --check
-	$(CI_GUARD) record figures-check
 
 # =============================================================================
 # Composite
 # =============================================================================
 
 .PHONY: ci
-ci: fmt-check lint kani-check test test-features conformance differential cli-conformance figures-check \
+ci: fmt-check lint kani-check test test-features conformance differential cli-conformance \
 	campaign-inventory deny fuzz-check spec msrv rustdoc miri mutants-diff
 
 # The assured entry point (NFR-006). Builds and runs the guard, which refuses
