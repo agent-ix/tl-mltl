@@ -144,6 +144,9 @@ ownership of the reader.
 | FR-090 report SHA-256 identity omitted (SPEC-GAP) | decision 7 forbids digests outside the ADR-019 / tl-solve ADR-004 register | owner decides whether to register it |
 | TC-319 horizon-overflow refusal not exercised | an overflowing `u64` horizon needs ~2^32 nested `u32`-bounded nodes | inspection of the error mapping |
 | UNBUILT-PIN: `InfiniteFormulaDocument::validate()` returning `InfiniteFormula` (TC-329 infinite row) | guessed tl-syntax API | confirm against tl-syntax |
+| UNBUILT (TL-433): FR-092-AC-1..4, FR-089-AC-2, NFR-047-AC-1 (TC-322..TC-325, TC-330, WEST part of TC-327); `src/interop/west.rs`, `corpus/west-v1/{formulas_d1.txt,LICENSE,manifest.json}` (first two copied byte-identically from tl-rewrite origin/main `7a907d9`), `tests/west_interop.rs`; reader nesting now counts parentheses and prefix operators | written without cargo/rustc; nothing compiled or run | `cargo test --test west_interop`; TC-325's byte comparison needs `../tl-rewrite` or `TL_REWRITE_WEST_DIR`, otherwise it prints that it did not run (SPEC-GAP) |
+| TC-331 / NFR-047-AC-2 (fuzz targets `c2po_import`, `fret_mltl_import`, `west_import`) not written | new fuzz targets need campaign members (CLAUDE.md inventory rule) and a fuzz build; no build capacity | add the three targets, seeds and campaign members together |
+| FR-092-AC-3 fifth class (`W`/`M`) has no graph node, so no export test (SPEC-GAP) | tl-syntax has no W/M node kind | spec amendment: drop the class or define it on import |
 
 ## Ungrounded items
 

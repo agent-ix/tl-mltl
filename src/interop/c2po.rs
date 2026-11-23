@@ -650,7 +650,6 @@ impl Parser<'_> {
     }
 
     fn equivalence(&mut self, depth: u32) -> Result<NodeId, Issue> {
-        let depth = self.enter(depth)?;
         let mut left = self.implication(depth)?;
         while self.peek() == Some(&Tok::Iff) {
             self.position += 1;
@@ -660,19 +659,22 @@ impl Parser<'_> {
         Ok(left)
     }
 
+    /// Right-associative, built iteratively so a long `->` chain cannot grow
+    /// the stack. Operands are pushed left to right, then folded from the right.
     fn implication(&mut self, depth: u32) -> Result<NodeId, Issue> {
-        let depth = self.enter(depth)?;
-        let left = self.disjunction(depth)?;
-        if self.peek() == Some(&Tok::Arrow) {
+        let mut operands = vec![self.disjunction(depth)?];
+        while self.peek() == Some(&Tok::Arrow) {
             self.position += 1;
-            let right = self.implication(depth)?;
-            return Ok(self.push(NodeKind::Implies { left, right }));
+            operands.push(self.disjunction(depth)?);
         }
-        Ok(left)
+        let mut right = operands.pop().expect("at least one operand");
+        while let Some(left) = operands.pop() {
+            right = self.push(NodeKind::Implies { left, right });
+        }
+        Ok(right)
     }
 
     fn disjunction(&mut self, depth: u32) -> Result<NodeId, Issue> {
-        let depth = self.enter(depth)?;
         let mut left = self.conjunction(depth)?;
         while self.peek() == Some(&Tok::OrOr) {
             self.position += 1;
@@ -683,7 +685,6 @@ impl Parser<'_> {
     }
 
     fn conjunction(&mut self, depth: u32) -> Result<NodeId, Issue> {
-        let depth = self.enter(depth)?;
         let mut left = self.binary_temporal(depth)?;
         while self.peek() == Some(&Tok::AndAnd) {
             self.position += 1;
@@ -694,7 +695,6 @@ impl Parser<'_> {
     }
 
     fn binary_temporal(&mut self, depth: u32) -> Result<NodeId, Issue> {
-        let depth = self.enter(depth)?;
         let mut left = self.unary(depth)?;
         loop {
             let operator = match self.peek() {
@@ -733,15 +733,18 @@ impl Parser<'_> {
         Ok(left)
     }
 
+    /// Nesting counts each prefix operator and each parenthesis (NFR-047):
+    /// a source nested exactly `max_nesting` deep is admitted, one more refused.
     fn unary(&mut self, depth: u32) -> Result<NodeId, Issue> {
-        let depth = self.enter(depth)?;
         match self.peek().cloned() {
             Some(Tok::Bang) => {
+                let depth = self.enter(depth)?;
                 self.position += 1;
                 let operand = self.unary(depth)?;
                 Ok(self.push(NodeKind::Not { operand }))
             }
             Some(Tok::Ident(name)) if matches!(name.as_str(), "F" | "G" | "O" | "H") => {
+                let depth = self.enter(depth)?;
                 self.position += 1;
                 let interval = self.interval()?;
                 let operand = self.unary(depth)?;
@@ -753,6 +756,7 @@ impl Parser<'_> {
                 }))
             }
             Some(Tok::Ident(name)) if name == "Y" => {
+                let depth = self.enter(depth)?;
                 self.position += 1;
                 let operand = self.unary(depth)?;
                 Ok(self.push(NodeKind::StrongPrevious { operand }))
@@ -765,6 +769,7 @@ impl Parser<'_> {
         let span = self.span();
         match self.peek().cloned() {
             Some(Tok::LParen) => {
+                let depth = self.enter(depth)?;
                 self.position += 1;
                 let inner = self.equivalence(depth)?;
                 if self.peek() != Some(&Tok::RParen) {

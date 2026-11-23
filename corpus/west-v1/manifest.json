@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "tl-mltl.west-corpus/v1",
+  "upstream": "https://github.com/zwang271/WEST",
+  "upstreamPath": "experiments/verification/verify_formulas/formulas_d1.txt",
+  "revision": "UNKNOWN",
+  "license": "MIT",
+  "licenseFile": "LICENSE",
+  "formulaFile": "formulas_d1.txt",
+  "retainedFiles": ["LICENSE", "formulas_d1.txt", "manifest.json"],
+  "copiedFrom": "tl-rewrite corpus/west-v1 (tl-rewrite origin/main 7a907d991065a506f93225c10f48c4b5525ef90c), byte-identical",
+  "selectedCases": [
+    {"id": "west-d1-and-idempotent", "line": 6},
+    {"id": "west-d1-or-true", "line": 9},
+    {"id": "west-d1-and-true", "line": 10},
+    {"id": "west-d1-globally-true", "line": 11},
+    {"id": "west-d1-future-true", "line": 12},
+    {"id": "west-d1-until-true", "line": 14},
+    {"id": "west-d1-or-false", "line": 15},
+    {"id": "west-d1-and-true-left", "line": 16},
+    {"id": "west-d1-false-or", "line": 19},
+    {"id": "west-d1-false-and", "line": 20}
+  ],
+  "limitations": "No upstream revision was recorded by tl-rewrite, so the revision is the explicit marker UNKNOWN and is never invented. No content hash is recorded; integrity is a byte comparison with tl-rewrite's copy while it exists (FR-089, FR-092-AC-4)."
+}

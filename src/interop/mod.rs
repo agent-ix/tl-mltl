@@ -18,6 +18,7 @@ pub mod c2po;
 pub mod fret;
 pub mod loss;
 pub mod mission;
+pub mod west;
 
 pub use attribution::{Attribution, AttributionError, REVISION_UNKNOWN};
 pub use loss::{ForeignFormat, LossKind, LossRecord, LOSS_RECORD_V1};
