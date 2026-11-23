@@ -78,3 +78,6 @@ Layers follow `ix-board project-chunk P-TL-150`:
 | TC-1573 uses a hand-written truth table in the test, not the tl-syntax numeric corpus | tl-syntax FR-305 corpus not merged (UNBUILT-PIN) | replay the corpus from `tl_syntax::CORPUS_DIR` |
 | TC-1577 (FR-054-AC-4, TL-424 aggregation equivalence, 567 traces) | not in this coder's ticket list; needs tl-syntax FR-306..308 | TL-424 |
 | Kani harnesses `src/future/kani_evaluate.rs` gained `unknown: &[]` in five `Evaluator` literals | not run | `make kani`/kani gate |
+| UNBUILT (TL-425 evaluation): FR-059-AC-1..5 (TC-1593, TC-1594, TC-1595, TC-1603, TC-1604); `src/contract.rs`, `tests/contract_evaluation.rs` | written without cargo/rustc; nothing compiled or run | `cargo test --test contract_evaluation` |
+| UNBUILT-PIN: `ContractSet::from_tl_syntax` guesses tl-syntax FR-309/FR-311 accessors; `contract_outcome` mirrors the FR-310 table locally | tl-syntax contract set not merged | switch to the merged `ContractView` and the tl-syntax status function |
+| Contract-as-assumption realizability (decision 1, 2026-11-23: option C, G-while-A-held, Input-only assumptions) | owned by tl-solve; FR-043 reference play-out has no contract winning condition (SPEC-GAP) | tl-solve TL-416 adapter and an FR-043 amendment if a contract oracle is wanted |

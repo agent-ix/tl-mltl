@@ -31,6 +31,7 @@ pub mod campaign;
 pub mod ci_guard;
 pub mod clock;
 mod context;
+pub mod contract;
 mod differential;
 pub mod future;
 pub mod fuzz_record;
