@@ -45,7 +45,7 @@ TL-native `mltl.infinite-trace/v1` profile. That module consumes
 `tl-syntax.formula-unbounded/v1`, lasso, fairness and partial-valuation
 documents and registers the one `tl-syntax.liveness/v1` backend. FSL's
 `filament.temporal.infinite-trace/v1` member is a correspondence for result
-comparison. See FR-027 through FR-034 and ADR-003.
+comparison. See FR-027 through FR-034 and ADR-003. ADR-074 and FR-113 record that tl-solve is a fifth crate that tl-mltl never depends on.
 
 ### Out of Scope
 
