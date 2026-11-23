@@ -63,6 +63,8 @@ help:
 	@echo "  make campaign-inventory - Check the campaign member list is complete"
 	@echo "  make campaign-run     - Run all campaign members, write target/campaign/report.json"
 	@echo "  make campaign-replay REPORT=path - Source-bound replay of a retained report"
+	@echo "  make figures          - Regenerate docs/images with ixd-tl"
+	@echo "  make figures-check    - Fail on a missing or stale figure, writes nothing"
 	@echo "  make deny             - cargo deny check licenses and sources"
 	@echo "  make spec             - Validate specification and coverage with Quire"
 	@echo "  make msrv             - Check all targets and features with Rust 1.98.1"
@@ -301,11 +303,32 @@ fuzz-smoke:
 	rustup run nightly cargo fuzz list | xargs -I % rustup run nightly cargo fuzz run % fuzz/corpus/% -- -runs=0
 
 # =============================================================================
+# Documentation figures
+# =============================================================================
+#
+# docs/images/figures.json declares the figures; the shared TL figures and the
+# generate and check commands come from ix-diagrams. Install the tool once with
+#   cargo install --locked --git https://github.com/agent-ix/ix-diagrams ixd-tl
+# or point IXD_TL at a built binary. `figures-check` writes nothing and fails on
+# a missing or stale SVG or a README image whose alt text differs from the claim.
+
+IXD_TL ?= ixd-tl
+
+.PHONY: figures
+figures:
+	$(IXD_TL) generate
+
+.PHONY: figures-check
+figures-check:
+	$(IXD_TL) check
+	$(CI_GUARD) record figures-check
+
+# =============================================================================
 # Composite
 # =============================================================================
 
 .PHONY: ci
-ci: fmt-check lint kani-check test test-features conformance differential cli-conformance \
+ci: fmt-check lint kani-check test test-features conformance differential cli-conformance figures-check \
 	campaign-inventory deny fuzz-check spec msrv rustdoc miri mutants-diff
 
 # The assured entry point (NFR-006). Builds and runs the guard, which refuses
