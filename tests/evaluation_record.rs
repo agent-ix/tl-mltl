@@ -1,7 +1,7 @@
 //! TC-187: the evaluation record is read from the request file, taken from the
 //! evaluator, and held to the checked-in record schema.
 
-use std::{collections::BTreeSet, path::PathBuf, process::Command};
+use std::{collections::BTreeSet, env, path::PathBuf, process::Command};
 
 use serde_json::Value;
 use tl_mltl::record::{build_record, RECORD_SCHEMA_BYTES};
@@ -106,28 +106,142 @@ fn record_fields_equal_the_schema_fields() {
     }
 }
 
+fn json_type_of(value: &Value) -> &'static str {
+    match value {
+        Value::Null => "null",
+        Value::Bool(_) => "boolean",
+        Value::Number(_) => "integer",
+        Value::String(_) => "string",
+        Value::Array(_) => "array",
+        Value::Object(_) => "object",
+    }
+}
+
+fn type_allows(property: &Value, value: &Value) -> bool {
+    if let Some(constant) = property.get("const") {
+        return constant == value;
+    }
+    if let Some(options) = property.get("enum") {
+        return options.as_array().unwrap().contains(value);
+    }
+    if let Some(options) = property.get("oneOf") {
+        return options
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|option| type_allows(option, value));
+    }
+    match &property["type"] {
+        Value::String(name) => name == json_type_of(value),
+        Value::Array(names) => names.iter().any(|name| name == json_type_of(value)),
+        _ => false,
+    }
+}
+
+// Trace: TC-187, FR-005-AC-4
+#[test]
+fn every_record_value_satisfies_its_schema_property() {
+    let schema = schema();
+    for name in ["true", "false", "pending"] {
+        let record = record_of(name);
+        for (field, value) in record.as_object().unwrap() {
+            let property = &schema["properties"][field];
+            assert!(type_allows(property, value), "{name} {field}: {value}");
+            if let Some(nested) = property.get("properties") {
+                for (inner, inner_value) in value.as_object().unwrap() {
+                    assert!(
+                        type_allows(&nested[inner], inner_value),
+                        "{name} {field}.{inner}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+// Trace: TC-187, FR-005-AC-4
+#[test]
+fn schema_enums_name_every_verdict_and_profile_the_tool_emits() {
+    let schema = schema();
+    let enum_of = |field: &str| -> BTreeSet<String> {
+        schema["properties"][field]["enum"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_str().unwrap().to_owned())
+            .collect()
+    };
+    let owned = |items: &[&str]| items.iter().map(|item| (*item).to_owned()).collect();
+    assert_eq!(enum_of("verdict"), owned(&["True", "False", "Pending"]));
+    assert_eq!(
+        enum_of("semanticProfile"),
+        owned(&["ClosedTraceV1", "OnlinePrefixV1"])
+    );
+    assert_eq!(
+        enum_of("semanticProfileId"),
+        owned(&["mltl.closed-trace/v1", "mltl.online-prefix/v1"])
+    );
+}
+
+// Trace: TC-187, FR-005-AC-4
+#[test]
+fn formula_interval_is_the_root_operator_interval() {
+    for name in ["true", "false", "pending"] {
+        let record = record_of(name);
+        assert_eq!(record["formulaInterval"]["start"], 1, "{name}");
+        assert_eq!(record["formulaInterval"]["end"], 2, "{name}");
+    }
+    let mut request: Value =
+        serde_json::from_slice(&std::fs::read(fixture("true")).unwrap()).unwrap();
+    request["formula"]["root"] = serde_json::json!(0);
+    let record = build_record(&serde_json::to_vec(&request).unwrap()).unwrap();
+    assert!(serde_json::to_value(record).unwrap()["formulaInterval"].is_null());
+}
+
+// Trace: TC-187, FR-005-AC-4
+#[test]
+fn a_non_evaluate_request_is_refused() {
+    let mut request: Value =
+        serde_json::from_slice(&std::fs::read(fixture("true")).unwrap()).unwrap();
+    request["operation"] = serde_json::json!("analyze");
+    let error = build_record(&serde_json::to_vec(&request).unwrap()).unwrap_err();
+    assert_eq!(error, "evaluation record requires operation evaluate");
+}
+
+fn run_example(arguments: &[&std::ffi::OsStr]) -> std::process::Output {
+    Command::new(env::var_os("CARGO").unwrap())
+        .args(["run", "--quiet", "--example", "evaluation_record", "--"])
+        .args(arguments)
+        .current_dir(env!("CARGO_MANIFEST_DIR"))
+        .output()
+        .unwrap()
+}
+
 // Trace: TC-187, FR-005-AC-4
 #[test]
 fn the_example_writes_the_same_record_to_stdout_and_to_a_named_file() {
-    let example = PathBuf::from(env!("CARGO_BIN_EXE_tl-mltl"))
-        .parent()
-        .unwrap()
-        .join("examples")
-        .join(format!("evaluation_record{}", std::env::consts::EXE_SUFFIX));
     let request = fixture("pending");
-    let stdout = Command::new(&example).arg(&request).output().unwrap();
+    let stdout = run_example(&[request.as_os_str()]);
     assert!(stdout.status.success());
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("record.json");
-    let status = Command::new(&example)
-        .arg(&request)
-        .arg("--out")
-        .arg(&path)
-        .status()
-        .unwrap();
-    assert!(status.success());
+    let status = run_example(&[request.as_os_str(), "--out".as_ref(), path.as_os_str()]);
+    assert!(status.status.success());
     let printed: Value = serde_json::from_slice(&stdout.stdout).unwrap();
     let written: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
     assert_eq!(printed, written);
     assert_eq!(printed, record_of("pending"));
+}
+
+// Trace: TC-187, FR-005-AC-4
+#[test]
+fn a_refusal_exits_two_with_one_stderr_line_and_no_stdout() {
+    let directory = tempfile::tempdir().unwrap();
+    let missing = directory.path().join("absent.json");
+    let output = run_example(&[missing.as_os_str()]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty());
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert_eq!(stderr.lines().count(), 1, "{stderr}");
+    assert!(stderr.starts_with("evaluation_record: "), "{stderr}");
 }

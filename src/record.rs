@@ -6,7 +6,7 @@
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use tl_syntax::SemanticProfile;
+use tl_syntax::{NodeKind, SemanticProfile};
 
 use crate::{
     evaluate_closed, evaluate_prefix, CommandDocument, EvaluationLimits, EvaluationReport,
@@ -99,7 +99,7 @@ pub struct RecordTrace {
     pub instants: Vec<Vec<u32>>,
 }
 
-/// Inclusive evaluated window `[start, end]`.
+/// Inclusive window `[start, end]`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 pub struct RecordWindow {
     /// First instant the formula can read (the evaluation position).
@@ -126,6 +126,8 @@ pub struct EvaluationRecord {
     pub input_sha256: String,
     /// Trace read from the request.
     pub trace: RecordTrace,
+    /// The root operator's own interval bounds, or null when the root is not temporal.
+    pub formula_interval: Option<RecordWindow>,
     /// Evaluated window.
     pub window: RecordWindow,
     /// Formula-time index the verdict applies to.
@@ -138,6 +140,20 @@ pub struct EvaluationRecord {
     pub horizon: u64,
     /// Witness or counterexample; null because the evaluator reports none.
     pub witness: Option<serde_json::Value>,
+}
+
+fn root_interval(formula: &tl_syntax::FormulaDocument) -> Option<RecordWindow> {
+    let root = formula.nodes().get(formula.root().0 as usize)?;
+    match &root.kind {
+        NodeKind::Future { interval, .. }
+        | NodeKind::Globally { interval, .. }
+        | NodeKind::Until { interval, .. }
+        | NodeKind::Release { interval, .. } => Some(RecordWindow {
+            start: u64::from(interval.start()),
+            end: u64::from(interval.end()),
+        }),
+        _ => None,
+    }
 }
 
 /// Builds the record for the request file bytes `input`.
@@ -156,6 +172,7 @@ pub fn build_record(input: &[u8]) -> Result<EvaluationRecord, String> {
         "mltl.online-prefix/v1" => "OnlinePrefixV1",
         other => return Err(format!("unsupported semantic profile {other}")),
     };
+    let formula_interval = root_interval(&request.formula);
     let digest = Sha256::digest(input);
     let input_sha256 = digest.iter().map(|byte| format!("{byte:02x}")).collect();
     Ok(EvaluationRecord {
@@ -179,8 +196,12 @@ pub fn build_record(input: &[u8]) -> Result<EvaluationRecord, String> {
         },
         window: RecordWindow {
             start: report.verdict_time,
-            end: report.verdict_time + report.horizon,
+            end: report
+                .verdict_time
+                .checked_add(report.horizon)
+                .ok_or_else(|| "evaluation window overflows u64".to_owned())?,
         },
+        formula_interval,
         evaluation_position: report.verdict_time,
         verdict: report.verdict.into(),
         observed_through: report.observed_through,

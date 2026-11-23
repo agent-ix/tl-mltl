@@ -112,7 +112,8 @@ The request is the same `tl-mltl.command/v1` document the CLI reads, with `opera
 | `formulaId` | The request's formula identity. |
 | `inputSha256` | SHA-256 of the request file bytes. |
 | `trace` | `traceId`, `closed` and `instants` (true proposition ids per instant), copied from the request. |
-| `window` | Inclusive `start` and `end` the formula can read: the evaluation position and the position plus the lookahead horizon. |
+| `window` | Inclusive `[evaluationPosition, evaluationPosition + horizon]`: the instants the evaluation can read. It is not the formula's own interval. |
+| `formulaInterval` | `start` and `end` of the root temporal operator's own interval, or null when the root is not temporal. |
 | `evaluationPosition` | The formula-time index of the verdict (0). |
 | `verdict` | `True`, `False` or `Pending`. |
 | `observedThrough`, `horizon` | Last observed instant (or null) and the static decision horizon. |
