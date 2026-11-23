@@ -128,6 +128,9 @@ ownership of the reader.
 | Live R2U2/C2PO re-check of imported C2PO | no outside tool run | existing `make r2u2-nightly` pin |
 | `make ci`, fuzz campaigns, mutation | no build capacity | repository gates |
 | Human acceptance of ADR-044 to ADR-047 | only a human accepts | Peter |
+| UNBUILT (TL-416, P-TL-149, no PLAN of its own): FR-043-AC-1..7 (TC-188..TC-193), `src/requirement_realizability.rs`, `tests/requirement_realizability.rs` | written without cargo/rustc; nothing compiled or run | `cargo test --test requirement_realizability`, then `-- --ignored` for the full 126,960-case population (440,951,040 plays; expected R 44566, unrealizable 82394, of which 768 pass the relaxation) |
+| UNBUILT-PIN: `tl_syntax::SignalPartition` with guessed `inputs()`/`outputs()` accessors and a guessed `SignalPartition::new(inputs, outputs)` test constructor | tl-syntax FR-034 is not merged; Cargo.toml pins tl-syntax `a80d09e` (origin/main) | replace the pin with the merged FR-034 rev, fix the two adapters, refresh Cargo.lock |
+| UNBUILT (TL-393, P-TL-147): FR-113-AC-1/2 (TC-257, TC-258), `tests/solver_independence.rs` | not run; TC-257 reads `Cargo.lock` and `fuzz/Cargo.lock` instead of `cargo tree` (guess that the lock is a superset of every feature view) | `cargo test --test solver_independence` and one manual `cargo tree -e all --all-features` cross-check |
 
 ## Ungrounded items
 
