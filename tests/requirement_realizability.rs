@@ -12,12 +12,14 @@
 //! population. Both are listed in the PLAN deferred-verification table.
 
 use tl_mltl::requirement_realizability::{
-    judge_strategy, play_out, PlayOutError, PlayOutLimits, PlayOutVerdict, RequirementFormula,
-    StrategyJudgement,
+    judge_strategy, play_out, PlayOutError, PlayOutLimits, PlayOutVerdict, RealizabilityContract,
+    RequirementFormula, StrategyJudgement,
 };
 use tl_mltl::EvaluationLimits;
 use tl_syntax::{
-    Formula, Interval, Node, NodeId, NodeKind, PropositionId, SemanticProfile, SignalPartition,
+    Formula, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration, PropositionBinding,
+    PropositionId, SemanticProfile, SignalCatalogDocument, SignalDirection, SignalDomain,
+    SignalId, SignalPartition,
 };
 
 // ------------------------------------------------------------ test-only tree
@@ -356,11 +358,58 @@ fn mask_of(list: &[PropositionId]) -> u8 {
     list.iter().fold(0u8, |acc, id| acc | (1 << id.0))
 }
 
-// UNBUILT-PIN: `SignalPartition` is tl-syntax FR-034. The constructor name and
-// shape are a guess; once tl-syntax lands, build it through
-// `SignalCatalog::partition_all` over a v2 catalog if no direct constructor exists.
-fn partition(input_mask: u8, all_mask: u8) -> SignalPartition {
-    SignalPartition::new(ids(input_mask), ids(all_mask & !input_mask))
+/// A v2 signal catalog: signal `k` bound to `p_k`, `Input` when bit `k` of
+/// `input_mask` is set, else `Output` (tl-syntax FR-034).
+fn catalog(input_mask: u8) -> SignalCatalogDocument {
+    SignalCatalogDocument::new_v2(
+        (0..4u32)
+            .map(|k| {
+                let direction = if input_mask >> k & 1 == 1 {
+                    SignalDirection::Input
+                } else {
+                    SignalDirection::Output
+                };
+                OwnedSignalDeclaration::new(SignalId(k), format!("s{k}"), SignalDomain::Boolean)
+                    .with_direction(direction)
+            })
+            .collect(),
+        (0..4u32)
+            .map(|k| PropositionBinding::new(PropositionId(k), SignalId(k)))
+            .collect(),
+    )
+    .unwrap()
+}
+
+/// The partition tl-syntax derives: only propositions occurring in `formulas`.
+fn partition(input_mask: u8, formulas: &[Formula<'_>]) -> SignalPartition {
+    catalog(input_mask)
+        .validate()
+        .unwrap()
+        .partition_all(formulas)
+        .unwrap()
+}
+
+fn forms<'a>(requirements: &[RequirementFormula<'a>]) -> Vec<Formula<'a>> {
+    requirements.iter().map(|requirement| requirement.formula).collect()
+}
+
+/// Bitmask of the propositions occurring in a case.
+fn occurring_mask(formulas: &[P]) -> u8 {
+    fn walk(formula: &P, mask: &mut u8) {
+        match formula {
+            P::Atom(index) => *mask |= 1 << index,
+            P::Not(operand) | P::F(_, _, operand) | P::G(_, _, operand) => walk(operand, mask),
+            P::Bin(_, left, right) | P::U(_, _, left, right) => {
+                walk(left, mask);
+                walk(right, mask);
+            }
+        }
+    }
+    let mut mask = 0;
+    for formula in formulas {
+        walk(formula, &mut mask);
+    }
+    mask
 }
 
 fn limits() -> PlayOutLimits {
@@ -382,7 +431,7 @@ fn run(case: &Case) -> Result<tl_mltl::requirement_realizability::PlayOutReport,
             formula: lowered.formula(SemanticProfile::ClosedTraceV1),
         })
         .collect();
-    play_out(&requirements, &partition(case.input_mask, 0x0f), limits())
+    play_out(&requirements, &[], &partition(case.input_mask, &forms(&requirements)), limits())
 }
 
 fn check_case(case: &Case) -> (bool, bool) {
@@ -391,7 +440,11 @@ fn check_case(case: &Case) -> (bool, bool) {
     let expected_length = case.formulas.iter().map(horizon).max().unwrap() + 1;
     assert_eq!(report.trace_length, expected_length);
     assert_eq!(report.max_lookahead + 1, report.trace_length);
-    assert_eq!(report.plays_evaluated, 16u64.pow(expected_length as u32));
+    // The partition lists only occurring propositions (tl-syntax partition_all),
+    // so a play has 2^(|occurring| * L) valuations; non-occurring signals of
+    // the TM-100 split cannot change a verdict.
+    let bits = occurring_mask(&case.formulas).count_ones();
+    assert_eq!(report.plays_evaluated, 1u64 << (bits * expected_length as u32));
     let realizable = independent.realizable();
     let forall_exists = independent.forall_exists();
     assert_eq!(report.verdict == PlayOutVerdict::Realizable, realizable);
@@ -443,7 +496,7 @@ fn non_closed_trace_profiles_are_refused() {
         formula: prefix.formula(SemanticProfile::OnlinePrefixV1),
     }];
     assert!(matches!(
-        play_out(&requirement, &partition(0b0001, 0b0001), limits()),
+        play_out(&requirement, &[], &partition(0b0001, &forms(&requirement)), limits()),
         Err(PlayOutError::UnsupportedProfile { .. })
     ));
 
@@ -463,7 +516,7 @@ fn non_closed_trace_profiles_are_refused() {
         formula: past,
     }];
     assert!(matches!(
-        play_out(&requirement, &partition(0b0001, 0b0001), limits()),
+        play_out(&requirement, &[], &partition(0b0001, &forms(&requirement)), limits()),
         Err(PlayOutError::UnsupportedProfile { .. })
     ));
 }
@@ -515,7 +568,7 @@ fn copy_now_is_realizable_and_copy_next_is_not() {
         id: "copy-now",
         formula: lowered.formula(SemanticProfile::ClosedTraceV1),
     }];
-    let report = play_out(&requirement, &partition(0b0001, 0b0011), limits()).unwrap();
+    let report = play_out(&requirement, &[], &partition(0b0001, &forms(&requirement)), limits()).unwrap();
     assert_eq!(report.verdict, PlayOutVerdict::Realizable);
     assert!(report.every_input_sequence_has_response);
 
@@ -529,7 +582,7 @@ fn copy_now_is_realizable_and_copy_next_is_not() {
         id: "copy-next",
         formula: lowered.formula(SemanticProfile::ClosedTraceV1),
     }];
-    let report = play_out(&requirement, &partition(0b0001, 0b0011), limits()).unwrap();
+    let report = play_out(&requirement, &[], &partition(0b0001, &forms(&requirement)), limits()).unwrap();
     assert_eq!(report.verdict, PlayOutVerdict::Unrealizable);
     // The relaxation passes: the response exists once all inputs are known.
     assert!(report.every_input_sequence_has_response);
@@ -557,30 +610,36 @@ fn all_output_is_satisfiability_and_all_input_is_validity() {
 // Trace: TC-191, FR-043-AC-5, StR-004-VC-2
 #[test]
 fn limits_admit_the_edge_and_refuse_one_past_it() {
-    // G[0,1] p0 over p0 (output) and p1 (input): L = 2, width 2, 16 plays.
-    let lowered = Lowered::new(&P::G(0, 1, Box::new(atom(0))));
+    // G[0,1] p0 && (p1 || !p1): p0 output, p1 input both occur; L = 2,
+    // width 2, 16 plays.
+    let tautology = P::Bin(Bop::Or, Box::new(atom(1)), Box::new(P::Not(Box::new(atom(1)))));
+    let lowered = Lowered::new(&P::Bin(
+        Bop::And,
+        Box::new(P::G(0, 1, Box::new(atom(0)))),
+        Box::new(tautology),
+    ));
     let requirement = [RequirementFormula {
         id: "g",
         formula: lowered.formula(SemanticProfile::ClosedTraceV1),
     }];
-    let split = partition(0b0010, 0b0011);
+    let split = partition(0b0010, &forms(&requirement));
     let exact = PlayOutLimits {
         max_trace_length: 2,
         max_bits_per_step: 2,
         max_plays: 16,
         evaluation: EvaluationLimits::default(),
     };
-    assert!(play_out(&requirement, &split, exact).is_ok());
+    assert!(play_out(&requirement, &[], &split, exact).is_ok());
     assert!(matches!(
-        play_out(&requirement, &split, PlayOutLimits { max_trace_length: 1, ..exact }),
+        play_out(&requirement, &[], &split, PlayOutLimits { max_trace_length: 1, ..exact }),
         Err(PlayOutError::TraceLengthLimit { requested: 2, limit: 1 })
     ));
     assert!(matches!(
-        play_out(&requirement, &split, PlayOutLimits { max_bits_per_step: 1, ..exact }),
+        play_out(&requirement, &[], &split, PlayOutLimits { max_bits_per_step: 1, ..exact }),
         Err(PlayOutError::AlphabetWidthLimit { requested: 2, limit: 1 })
     ));
     assert!(matches!(
-        play_out(&requirement, &split, PlayOutLimits { max_plays: 15, ..exact }),
+        play_out(&requirement, &[], &split, PlayOutLimits { max_plays: 15, ..exact }),
         Err(PlayOutError::PlayCountLimit { requested: 16, limit: 15 })
     ));
     // Refusal happens before any play: a zero evaluation budget would
@@ -594,18 +653,20 @@ fn limits_admit_the_edge_and_refuse_one_past_it() {
         ..exact
     };
     assert!(matches!(
-        play_out(&requirement, &split, starved),
+        play_out(&requirement, &[], &split, starved),
         Err(PlayOutError::PlayCountLimit { .. })
     ));
-    // p0 occurs but the partition lists only p1.
+    // p0 occurs but the partition (derived from a formula over p1 only) lacks it.
+    let only_p1 = Lowered::new(&atom(1));
+    let narrow = partition(0b0010, &[only_p1.formula(SemanticProfile::ClosedTraceV1)]);
     assert_eq!(
-        play_out(&requirement, &partition(0b0010, 0b0010), exact),
+        play_out(&requirement, &[], &narrow, exact),
         Err(PlayOutError::PropositionNotPartitioned {
             proposition: PropositionId(0)
         })
     );
     assert_eq!(
-        play_out(&[], &split, exact),
+        play_out(&[], &[], &split, exact),
         Err(PlayOutError::EmptyRequirementSet)
     );
 }
@@ -632,7 +693,7 @@ fn reports_are_deterministic_and_evaluation_failure_has_no_verdict() {
         ..limits()
     };
     assert!(matches!(
-        play_out(&requirement, &partition(0b0101, 0x0f), starved),
+        play_out(&requirement, &[], &partition(0b0101, &forms(&requirement)), starved),
         Err(PlayOutError::EvaluationFailure { .. })
     ));
 }
@@ -651,7 +712,7 @@ fn judge_strategy_wins_loses_and_refuses() {
         id: "copy-now",
         formula: lowered.formula(SemanticProfile::ClosedTraceV1),
     }];
-    let split = partition(0b0001, 0b0011);
+    let split = partition(0b0001, &forms(&requirement));
     let copy = |history: &[Vec<PropositionId>]| -> Vec<PropositionId> {
         if history.last().unwrap().contains(&PropositionId(0)) {
             vec![PropositionId(1)]
@@ -660,7 +721,7 @@ fn judge_strategy_wins_loses_and_refuses() {
         }
     };
     assert_eq!(
-        judge_strategy(&requirement, &split, limits(), copy),
+        judge_strategy(&requirement, &[], &split, limits(), copy),
         Ok(StrategyJudgement::Wins {
             input_sequences_played: 4
         })
@@ -678,7 +739,7 @@ fn judge_strategy_wins_loses_and_refuses() {
         }
     };
     assert_eq!(
-        judge_strategy(&requirement, &split, limits(), faulty),
+        judge_strategy(&requirement, &[], &split, limits(), faulty),
         Ok(StrategyJudgement::Loses {
             first_losing_input_sequence: vec![vec![PropositionId(0)], vec![PropositionId(0)]],
             input_sequences_played: 4,
@@ -687,7 +748,7 @@ fn judge_strategy_wins_loses_and_refuses() {
 
     let outside = |_: &[Vec<PropositionId>]| vec![PropositionId(0)];
     assert!(matches!(
-        judge_strategy(&requirement, &split, limits(), outside),
+        judge_strategy(&requirement, &[], &split, limits(), outside),
         Err(PlayOutError::ResponseOutsideOutputs {
             step: 0,
             proposition: PropositionId(0)
@@ -697,6 +758,7 @@ fn judge_strategy_wins_loses_and_refuses() {
 
 fn judge_with_lowest_response(case: &Case) {
     let independent = Independent::new(case);
+    let occurring = occurring_mask(&case.formulas);
     let lowered: Vec<Lowered> = case.formulas.iter().map(Lowered::new).collect();
     let requirements: Vec<RequirementFormula<'_>> = lowered
         .iter()
@@ -713,11 +775,12 @@ fn judge_with_lowest_response(case: &Case) {
             output = independent.lowest_response(prefix, step, input);
             prefix = prefix * 16 + usize::from(input | output);
         }
-        ids(output)
+        // Non-occurring outputs are never needed, so the lowest response
+        // leaves them clear; mask anyway to stay inside the partition.
+        ids(output & occurring)
     };
-    let judgement =
-        judge_strategy(&requirements, &partition(case.input_mask, 0x0f), limits(), respond)
-            .unwrap();
+    let split = partition(case.input_mask, &forms(&requirements));
+    let judgement = judge_strategy(&requirements, &[], &split, limits(), respond).unwrap();
     assert_eq!(
         matches!(judgement, StrategyJudgement::Wins { .. }),
         independent.realizable()
@@ -739,4 +802,62 @@ fn derived_lowest_response_wins_exactly_when_realizable_full() {
     for case in &population() {
         judge_with_lowest_response(case);
     }
+}
+
+// --------------------------------------------- contract assumptions (H5)
+
+fn contract_game(
+    assumption: &P,
+    guarantee: &P,
+    input_mask: u8,
+) -> Result<tl_mltl::requirement_realizability::PlayOutReport, PlayOutError> {
+    let a = Lowered::new(assumption);
+    let g = Lowered::new(guarantee);
+    let contract = RealizabilityContract {
+        id: 7,
+        assumption: a.formula(SemanticProfile::ClosedTraceV1),
+        guarantee: g.formula(SemanticProfile::ClosedTraceV1),
+    };
+    let split = partition(input_mask, &[contract.assumption, contract.guarantee]);
+    play_out(&[], &[contract], &split, limits())
+}
+
+fn never(index: u32) -> P {
+    P::Bin(Bop::And, Box::new(atom(index)), Box::new(P::Not(Box::new(atom(index)))))
+}
+
+// Trace: TC-194 (proposed), FR-043-AC-8 (proposed), StR-004-VC-1
+#[test]
+fn contract_assumptions_follow_g_while_a_held_with_settled_positions() {
+    // A = p0 (input) can hold at 0; G = p1 && !p1 never holds: Unrealizable.
+    let report = contract_game(&atom(0), &never(1), 0b0001).unwrap();
+    assert_eq!(report.verdict, PlayOutVerdict::Unrealizable);
+    assert_eq!(report.assumptions_satisfiable, Some(true));
+
+    // An assumption nothing satisfies makes the guarantee vacuous: Realizable,
+    // and the mandatory flag says so.
+    let report = contract_game(&never(0), &never(1), 0b0001).unwrap();
+    assert_eq!(report.verdict, PlayOutVerdict::Realizable);
+    assert_eq!(report.assumptions_satisfiable, Some(false));
+
+    // Settled positions only: A = p0, G = F[1,1] p1, look 1, H = 1, so only
+    // position 0 is settled. Position 1 would read the padded p1 at 2 and
+    // always be invalid; it decides nothing, so the system wins by setting p1
+    // at step 1.
+    let report = contract_game(&atom(0), &P::F(1, 1, Box::new(atom(1))), 0b0001).unwrap();
+    assert_eq!(report.trace_length, 2);
+    assert_eq!(report.verdict, PlayOutVerdict::Realizable);
+}
+
+// Trace: TC-194 (proposed), FR-043-AC-8 (proposed), StR-004-VC-2
+#[test]
+fn an_assumption_reading_an_output_is_refused_before_any_play() {
+    // p1 is an output (mask 0b0001 makes only p0 an input).
+    assert_eq!(
+        contract_game(&atom(1), &atom(0), 0b0001),
+        Err(PlayOutError::AssumptionNotInput {
+            contract: 7,
+            proposition: PropositionId(1)
+        })
+    );
 }
