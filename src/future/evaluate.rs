@@ -402,6 +402,17 @@ impl Evaluator<'_, '_> {
             | NodeKind::Triggered { .. } => {
                 unreachable!("closed and prefix profiles reject past operators")
             }
+            // UNBUILT-PIN: LTLf node kinds (tl-syntax ADR-044, FR-333). `Formula::new`
+            // admits them only under `mltl.ltlf-finite-trace/v1`, which the
+            // closed and prefix entry points refuse before evaluation.
+            NodeKind::LtlfFuture { .. }
+            | NodeKind::LtlfGlobally { .. }
+            | NodeKind::LtlfUntil { .. }
+            | NodeKind::LtlfRelease { .. }
+            | NodeKind::StrongNext { .. }
+            | NodeKind::WeakNext { .. } => {
+                unreachable!("closed and prefix profiles reject LTLf operators")
+            }
         }
     }
 

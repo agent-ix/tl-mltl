@@ -215,6 +215,15 @@ impl Renderer<'_, '_> {
             | NodeKind::Release { .. } => {
                 unreachable!("the origin-complete profile rejects future operators")
             }
+            // UNBUILT-PIN: LTLf node kinds; the origin-complete profile rejects them.
+            NodeKind::LtlfFuture { .. }
+            | NodeKind::LtlfGlobally { .. }
+            | NodeKind::LtlfUntil { .. }
+            | NodeKind::LtlfRelease { .. }
+            | NodeKind::StrongNext { .. }
+            | NodeKind::WeakNext { .. } => {
+                unreachable!("the origin-complete profile rejects LTLf operators")
+            }
         };
         Ok(rendered)
     }
@@ -389,6 +398,15 @@ fn validate_origin_shape(formula: Formula<'_>) -> Result<(), PastMappingError> {
             | NodeKind::Until { .. }
             | NodeKind::Release { .. } => {
                 unreachable!("the origin-complete profile rejects future operators")
+            }
+            // UNBUILT-PIN: LTLf node kinds; the origin-complete profile rejects them.
+            NodeKind::LtlfFuture { .. }
+            | NodeKind::LtlfGlobally { .. }
+            | NodeKind::LtlfUntil { .. }
+            | NodeKind::LtlfRelease { .. }
+            | NodeKind::StrongNext { .. }
+            | NodeKind::WeakNext { .. } => {
+                unreachable!("the origin-complete profile rejects LTLf operators")
             }
         };
         guard.push(id, children, temporal)?;

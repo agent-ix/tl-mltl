@@ -145,6 +145,10 @@ pub enum HorizonError {
         /// Node at which the calculation failed.
         node: NodeId,
     },
+    /// The formula is under `mltl.ltlf-finite-trace/v1`: its temporal
+    /// operators read to the end of the trace, so its horizon is the trace
+    /// length and no number is returned (FR-083).
+    UnboundedByTraceLength,
 }
 
 impl fmt::Display for HorizonError {
@@ -156,6 +160,9 @@ impl fmt::Display for HorizonError {
             ),
             Self::ArithmeticOverflow { node } => {
                 write!(formatter, "horizon arithmetic overflow at node {}", node.0)
+            }
+            Self::UnboundedByTraceLength => {
+                write!(formatter, "unbounded-by-trace-length")
             }
         }
     }
@@ -239,6 +246,16 @@ pub(crate) fn node_lookahead(
         | NodeKind::StrongPrevious { .. }
         | NodeKind::Since { .. }
         | NodeKind::Triggered { .. } => unreachable!("future profiles reject past operators"),
+        // UNBUILT-PIN: LTLf node kinds; `analyze_horizon` returns
+        // `UnboundedByTraceLength` for the LTLf profile before traversal.
+        NodeKind::LtlfFuture { .. }
+        | NodeKind::LtlfGlobally { .. }
+        | NodeKind::LtlfUntil { .. }
+        | NodeKind::LtlfRelease { .. }
+        | NodeKind::StrongNext { .. }
+        | NodeKind::WeakNext { .. } => {
+            return Err(HorizonError::UnboundedByTraceLength)
+        }
     };
     Ok(value)
 }
@@ -265,6 +282,10 @@ pub fn analyze_horizon(
     formula: Formula<'_>,
     formula_id: impl Into<String>,
 ) -> Result<HorizonReport, HorizonError> {
+    // UNBUILT-PIN: `SemanticProfile::LtlfFiniteTraceV1` (tl-syntax ADR-044).
+    if formula.profile() == SemanticProfile::LtlfFiniteTraceV1 {
+        return Err(HorizonError::UnboundedByTraceLength);
+    }
     if !matches!(
         formula.profile(),
         SemanticProfile::ClosedTraceV1 | SemanticProfile::OnlinePrefixV1

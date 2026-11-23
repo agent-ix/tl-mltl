@@ -299,6 +299,15 @@ impl Renderer<'_, '_> {
             | NodeKind::Triggered { .. } => {
                 unreachable!("the online-prefix profile rejects past operators")
             }
+            // UNBUILT-PIN: LTLf node kinds; the online-prefix profile rejects them.
+            NodeKind::LtlfFuture { .. }
+            | NodeKind::LtlfGlobally { .. }
+            | NodeKind::LtlfUntil { .. }
+            | NodeKind::LtlfRelease { .. }
+            | NodeKind::StrongNext { .. }
+            | NodeKind::WeakNext { .. } => {
+                unreachable!("the online-prefix profile rejects LTLf operators")
+            }
         }
     }
 

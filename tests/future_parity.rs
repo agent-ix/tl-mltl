@@ -714,6 +714,10 @@ fn lowered_wm_horizon_matches_direct_lookahead_including_maximum_bounds() {
                 SemanticProfile::InfiniteTraceV1 => {
                     unreachable!("future parity profiles exclude infinite trace")
                 }
+                // UNBUILT-PIN: fifth profile (tl-syntax ADR-044).
+                SemanticProfile::LtlfFiniteTraceV1 => {
+                    unreachable!("future parity profiles exclude LTLf")
+                }
             }
             .unwrap();
             assert_eq!(record.horizon, analysis.lookahead, "{kind:?} {profile:?}");
@@ -763,6 +767,10 @@ fn evaluate_both(
         }
         SemanticProfile::InfiniteTraceV1 => {
             unreachable!("future parity profiles exclude infinite trace")
+        }
+        // UNBUILT-PIN: fifth profile (tl-syntax ADR-044).
+        SemanticProfile::LtlfFiniteTraceV1 => {
+            unreachable!("future parity profiles exclude LTLf")
         }
     }
     .map(|report| report.verdict)
@@ -899,6 +907,10 @@ fn lowered_wm_resource_outcomes_match_direct_canonical_construction() {
                     }
                     SemanticProfile::InfiniteTraceV1 => {
                         unreachable!("future parity profiles exclude infinite trace")
+                    }
+                    // UNBUILT-PIN: fifth profile (tl-syntax ADR-044).
+                    SemanticProfile::LtlfFiniteTraceV1 => {
+                        unreachable!("future parity profiles exclude LTLf")
                     }
                 };
                 assert_eq!(
@@ -1091,6 +1103,13 @@ const fn canonical_vocabulary(kind: NodeKind) -> &'static str {
         NodeKind::StrongPrevious { .. } => "strong_previous",
         NodeKind::Since { .. } => "since",
         NodeKind::Triggered { .. } => "triggered",
+        // UNBUILT-PIN: LTLf node kinds (tl-syntax ADR-044 wire tags).
+        NodeKind::LtlfFuture { .. } => "ltlf_future",
+        NodeKind::LtlfGlobally { .. } => "ltlf_globally",
+        NodeKind::LtlfUntil { .. } => "ltlf_until",
+        NodeKind::LtlfRelease { .. } => "ltlf_release",
+        NodeKind::StrongNext { .. } => "strong_next",
+        NodeKind::WeakNext { .. } => "weak_next",
     }
 }
 

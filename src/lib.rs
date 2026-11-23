@@ -38,6 +38,7 @@ pub mod fuzz_record;
 #[cfg(feature = "infinite-trace")]
 pub mod infinite;
 pub mod kani_record;
+pub mod ltlf;
 pub mod mapping;
 pub mod numeric;
 pub mod past;

@@ -1272,6 +1272,15 @@ pub fn analyze_required_history(
             | NodeKind::Release { .. } => {
                 unreachable!("the origin-complete profile rejects future operators")
             }
+            // UNBUILT-PIN: LTLf node kinds; the origin-complete profile rejects them.
+            NodeKind::LtlfFuture { .. }
+            | NodeKind::LtlfGlobally { .. }
+            | NodeKind::LtlfUntil { .. }
+            | NodeKind::LtlfRelease { .. }
+            | NodeKind::StrongNext { .. }
+            | NodeKind::WeakNext { .. } => {
+                unreachable!("the origin-complete profile rejects LTLf operators")
+            }
         };
         values.push(value);
     }
@@ -1980,6 +1989,15 @@ impl PastEvaluator<'_, '_> {
             | NodeKind::Until { .. }
             | NodeKind::Release { .. } => {
                 unreachable!("the origin-complete profile rejects future operators")
+            }
+            // UNBUILT-PIN: LTLf node kinds; the origin-complete profile rejects them.
+            NodeKind::LtlfFuture { .. }
+            | NodeKind::LtlfGlobally { .. }
+            | NodeKind::LtlfUntil { .. }
+            | NodeKind::LtlfRelease { .. }
+            | NodeKind::StrongNext { .. }
+            | NodeKind::WeakNext { .. } => {
+                unreachable!("the origin-complete profile rejects LTLf operators")
             }
         }
     }
