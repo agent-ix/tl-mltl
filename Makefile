@@ -321,9 +321,7 @@ endif
 
 .PHONY: corpus-records
 corpus-records:
-	for request in corpus/r2u2-v4.2/requests/*.json; do \
-		cargo run -q --example evaluation_record -- $$request --out corpus/r2u2-v4.2/records/$$(basename $$request) || exit 1; \
-	done
+	UPDATE_CORPUS_RECORDS=1 cargo test -q --test evaluation_record corpus_records
 
 .PHONY: figures
 figures:
