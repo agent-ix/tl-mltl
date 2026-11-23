@@ -136,6 +136,8 @@ ownership of the reader.
 | Fuzz crate `fuzz/fuzz_targets/evaluator_differential.rs` exhaustive `NodeKind` matches have no LTLf arms | fuzz crate pins tl-syntax `v0.4.0` separately and is not bumped here | add arms when the fuzz pin moves |
 | TC-300 uses hand-written rule cases, not the tl-syntax `ltlf` corpus (FR-335) | corpus not merged | read `tl_syntax::CORPUS_DIR/ltlf` |
 | TC-306 (corpus provenance/tamper refusal) not written | the corpus format needs an "input digest" and a rows digest; decision 7 (2026-11-23) forbids new digests (SPEC-GAP) and no corpus exists | decide the integrity mechanism (byte comparison or a registered digest) with the corpus |
+| UNBUILT (TL-432): FR-086-AC-1..4 (TC-310, TC-311, TC-312, TC-332); `src/interop/{mod,loss,c2po}.rs`, `tests/c2po_import.rs` | written without cargo/rustc; nothing compiled or run | `cargo test --test c2po_import` |
+| C2PO construct list and keyword spellings (`CONTRACT`, `ORDER`, `foreach`..`foratmost`, `Y` as a prefix operator) not checked against the C2PO 4.1.0 grammar (SPEC-GAP, UNGROUNDED) | no grammar retained; nothing may run C2PO | reconcile with the pinned C2PO checkout; split, never drop, entries |
 
 ## Ungrounded items
 
