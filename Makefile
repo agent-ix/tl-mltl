@@ -63,6 +63,8 @@ help:
 	@echo "  make campaign-inventory - Check the campaign member list is complete"
 	@echo "  make campaign-run     - Run all campaign members, write target/campaign/report.json"
 	@echo "  make campaign-replay REPORT=path - Source-bound replay of a retained report"
+	@echo "  make figures          - Regenerate docs/images with ixd build"
+	@echo "  make figures-check    - Fail on a missing or stale figure, writes nothing"
 	@echo "  make deny             - cargo deny check licenses and sources"
 	@echo "  make spec             - Validate specification and coverage with Quire"
 	@echo "  make msrv             - Check all targets and features with Rust 1.98.1"
@@ -299,6 +301,31 @@ fuzz-check:
 .PHONY: fuzz-smoke
 fuzz-smoke:
 	rustup run nightly cargo fuzz list | xargs -I % rustup run nightly cargo fuzz run % fuzz/corpus/% -- -runs=0
+
+# =============================================================================
+# Documentation figures
+# =============================================================================
+#
+# docs/images/figures.json declares the figures and is built by the ix-diagrams `ixd`
+# command (cargo install --locked --git https://github.com/agent-ix/ix-diagrams ix-diagrams).
+# `figures-check` writes nothing and fails on a missing, stale or orphaned figure. It is the local
+# pre-merge regeneration check; hosted CI is manual-only and does not run it.
+
+IXD ?= ixd
+
+ifneq ($(filter figures figures-check,$(MAKECMDGOALS)),)
+ifeq ($(shell command -v $(IXD) 2>/dev/null),)
+$(error ixd not found: install with cargo install --locked --git https://github.com/agent-ix/ix-diagrams ix-diagrams or set IXD=<path>)
+endif
+endif
+
+.PHONY: figures
+figures:
+	$(IXD) build docs/images/figures.json --out docs/images
+
+.PHONY: figures-check
+figures-check:
+	$(IXD) build docs/images/figures.json --out docs/images --check
 
 # =============================================================================
 # Composite
