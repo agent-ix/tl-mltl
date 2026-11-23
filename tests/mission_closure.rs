@@ -382,9 +382,7 @@ fn closure_report_has_one_row_per_unbounded_node_and_converts_nothing() {
             ],
         )
         .unwrap();
-        // UNBUILT-PIN: `InfiniteFormulaDocument::validate` returning the
-        // borrowed `InfiniteFormula` is a guess at the tl-syntax API.
-        let infinite = mission_closure_report_infinite(document.validate().unwrap(), 5).unwrap();
+        let infinite = mission_closure_report_infinite(document.formula(), 5).unwrap();
         assert_eq!(infinite.rows.len(), 1);
         assert_eq!(infinite.rows[0].known_case, KnownCaseReference::NotComputed);
     }

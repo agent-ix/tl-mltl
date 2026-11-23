@@ -25,15 +25,21 @@ path = "src/lib.rs"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "=1.0.151"
 sha2 = "=0.10.9"
-# UNBUILT-PIN: a80d09e is tl-syntax origin/main on 2026-11-23. The unbuilt TL-149/150/151
-# code needs SignalPartition (FR-034), the LTLf NodeKind variants and profile (FR-332/333);
-# replace with the merged tl-syntax rev that carries them, then refresh Cargo.lock.
+# UNBUILT-PIN: the git rev stays tl-syntax origin/main a80d09e; the [patch] below points
+# the source at the sibling tl-syntax worktree that carries FR-034, the numeric model,
+# the contract set and the LTLf profile. Replace both with the merged tl-syntax rev,
+# then refresh Cargo.lock.
 tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "a80d09e", default-features = false, features = ["alloc", "serde"] }
 
 [dev-dependencies]
 proptest = "=1.5.0"
 tempfile = "=3.10.1"
 tl-oracle = { version = "=0.1.1", git = "https://github.com/agent-ix/tl-oracle.git", tag = "v0.1.1" }
+
+# UNBUILT-PIN: local sibling worktree; replace by the merged tl-syntax rev. Whether the
+# patch also redirects tl-oracle's own tl-syntax pin (a different rev) is unverified.
+[patch."https://github.com/agent-ix/tl-syntax.git"]
+tl-syntax = { path = "../TL-code-tl-syntax" }
 
 [profile.release]
 lto = "thin"

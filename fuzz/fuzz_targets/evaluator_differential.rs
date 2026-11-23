@@ -159,6 +159,13 @@ fn work_estimate(nodes: &[Node]) -> u64 {
                 right,
             } => 1u64
                 .saturating_add(width(interval).saturating_mul(at(left).saturating_add(at(right)))),
+            // The generator emits no LTLf node; charge it past the ceiling.
+            NodeKind::LtlfFuture { .. }
+            | NodeKind::LtlfGlobally { .. }
+            | NodeKind::LtlfUntil { .. }
+            | NodeKind::LtlfRelease { .. }
+            | NodeKind::StrongNext { .. }
+            | NodeKind::WeakNext { .. } => MAX_WORK + 1,
         };
         cost.push(value.min(MAX_WORK + 1));
     }
@@ -187,6 +194,13 @@ fn tree_size(nodes: &[Node]) -> usize {
             | NodeKind::Triggered { left, right, .. } => {
                 1usize.saturating_add(at(left)).saturating_add(at(right))
             }
+            // The generator emits no LTLf node.
+            NodeKind::LtlfFuture { .. }
+            | NodeKind::LtlfGlobally { .. }
+            | NodeKind::LtlfUntil { .. }
+            | NodeKind::LtlfRelease { .. }
+            | NodeKind::StrongNext { .. }
+            | NodeKind::WeakNext { .. } => MAX_TREE + 1,
         };
         sizes.push(size.min(MAX_TREE + 1));
     }
@@ -236,6 +250,12 @@ fn oracle_tree(nodes: &[Node], id: NodeId) -> O {
             left,
             right,
         } => O::Triggered(span(interval), b(left), b(right)),
+        NodeKind::LtlfFuture { .. }
+        | NodeKind::LtlfGlobally { .. }
+        | NodeKind::LtlfUntil { .. }
+        | NodeKind::LtlfRelease { .. }
+        | NodeKind::StrongNext { .. }
+        | NodeKind::WeakNext { .. } => unreachable!("the generator emits no LTLf node"),
     }
 }
 

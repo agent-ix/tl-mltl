@@ -15,7 +15,9 @@ serde_json = "=1.0.151"
 tl-oracle = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-oracle.git", tag = "v0.1.0" }
 sha2 = "=0.10.9"
 tl-mltl = { path = "..", features = ["infinite-trace"] }
-tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", tag = "v0.4.0", default-features = false, features = ["alloc", "serde"] }
+# Same source spec as ../Cargo.toml so one tl-syntax crate is built (it was a separate
+# tag before, which made the target's Formula a different type from tl-mltl's).
+tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "a80d09e", default-features = false, features = ["alloc", "serde"] }
 
 [[bin]]
 name = "c2po_map"
@@ -58,6 +60,10 @@ path = "fuzz_targets/partial_valuation_monotone.rs"
 test = false
 doc = false
 bench = false
+
+# UNBUILT-PIN: local sibling worktree; replace by the merged tl-syntax rev.
+[patch."https://github.com/agent-ix/tl-syntax.git"]
+tl-syntax = { path = "../../TL-code-tl-syntax" }
 
 [workspace]
 members = ["."]

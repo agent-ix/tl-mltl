@@ -151,6 +151,14 @@ fn oracle(nodes: &[Node], values: &[(bool, bool)], node: NodeId, position: i128)
         | NodeKind::Release { .. } => {
             unreachable!("the independent past oracle accepts no future node")
         }
+        NodeKind::LtlfFuture { .. }
+        | NodeKind::LtlfGlobally { .. }
+        | NodeKind::LtlfUntil { .. }
+        | NodeKind::LtlfRelease { .. }
+        | NodeKind::StrongNext { .. }
+        | NodeKind::WeakNext { .. } => {
+            unreachable!("the independent past oracle accepts no LTLf node")
+        }
     }
 }
 
