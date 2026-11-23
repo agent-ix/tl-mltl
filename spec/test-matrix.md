@@ -46,7 +46,7 @@ until tagged.
 | FR-002 | FR-002-AC-1 through FR-002-AC-3 | TC-005 through TC-008 | ✅ covered |
 | FR-003 | FR-003-AC-1 through FR-003-AC-3 | TC-008 through TC-010, TC-032 | ✅ covered |
 | FR-004 | FR-004-AC-1 through FR-004-AC-3 | TC-011 through TC-013 | ✅ covered |
-| FR-005 | FR-005-AC-1 through FR-005-AC-3 | TC-014 through TC-016 | ✅ covered |
+| FR-005 | FR-005-AC-1 through FR-005-AC-4 | TC-014 through TC-016, TC-187 | ✅ covered |
 | FR-007 | FR-007-AC-1 through FR-007-AC-5, FR-007-AC-7 through FR-007-AC-9 | TC-025 through TC-029, TC-031, TC-034, TC-035 | ✅ covered |
 | FR-016 | FR-016-AC-1 through FR-016-AC-6 | TC-076 through TC-080 | ✅ covered |
 | FR-017 | FR-017-AC-1 through FR-017-AC-3 | TC-081 through TC-083 | ✅ covered |
@@ -129,3 +129,4 @@ FR-027 through FR-034 and TC-138 through TC-159 are detailed in
 | TC-175 | For every limit in the NFR-001 Limit Register, a value equal to the limit is accepted and a value one past it is refused with the typed error named in the register; the native run uses the production value, private and `pub(crate)` limits are tested in their defining module | Unit | P0 | NFR-001-AC-3 | ✅ implemented |
 | TC-176 | Produce every variant of every public error and error-code enumeration by at least one test that matches the variant; a variant no reachable input produces is removed in the same change | Unit | P0 | NFR-001-AC-4 | ✅ implemented |
 | TC-177 | Run the unit and property suites under Miri on the pinned nightly named in the Makefile with the recorded flags and reduced property case counts, heavy limits lowered as the Limit Register states, and observe no undefined-behavior report | Unit | P0 | NFR-001-AC-5 | ✅ implemented |
+| TC-187 | Emit evaluation records for the true, false and pending fixtures and compare them to the evaluator, the request file and the checked-in record schema; a removed or renamed field fails | Integration | P0 | FR-005-AC-4 | ✅ implemented |

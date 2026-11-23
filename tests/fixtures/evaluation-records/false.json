@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "tl-mltl.command/v1",
+  "operation": "evaluate",
+  "formulaId": "request-ready",
+  "formula": {
+    "schema_version": "tl-syntax.formula/v1",
+    "semantic_profile": "mltl.closed-trace/v1",
+    "root": 1,
+    "nodes": [
+      {"kind": "proposition", "proposition": 0},
+      {"kind": "future", "interval": {"start": 1, "end": 2}, "operand": 0}
+    ]
+  },
+  "trace": {
+    "schemaVersion": "tl-mltl.trace/v1",
+    "traceId": "run-2",
+    "closed": true,
+    "instants": [[], [], []]
+  }
+}
