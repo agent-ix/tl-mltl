@@ -454,8 +454,8 @@ pub(crate) fn prepare(
         derived_trace.push(truth.into_iter().collect::<Vec<_>>());
         derived_unobserved.push(unknown);
     }
-    let history = if profile == SemanticProfile::OriginCompleteHistoryV1 && !derived_trace.is_empty()
-    {
+    let origin_complete = profile == SemanticProfile::OriginCompleteHistoryV1;
+    let history = if origin_complete && !derived_trace.is_empty() {
         let observations = derived_trace
             .iter()
             .enumerate()

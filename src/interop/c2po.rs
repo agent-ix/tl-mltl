@@ -23,6 +23,7 @@ use tl_syntax::{
 use super::loss::{ForeignFormat, LossKind, LossRecord};
 use super::{admit_source, ReaderError, ReaderLimits, SourceRange};
 use crate::mapping::legacy::render_contextual_expression;
+use crate::mapping::render_past_surface;
 
 /// The ten constructs outside the supported subset.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -570,8 +571,16 @@ pub(crate) enum Issue {
     Unbounded(SourceRange),
 }
 
-const TEMPORAL_KEYWORDS: [&str; 11] = ["F", "G", "O", "H", "Y", "U", "R", "S", "T", "true", "false"];
-const AGGREGATION_KEYWORDS: [&str; 5] = ["foreach", "forsome", "forexactly", "foratleast", "foratmost"];
+const TEMPORAL_KEYWORDS: [&str; 11] = [
+    "F", "G", "O", "H", "Y", "U", "R", "S", "T", "true", "false",
+];
+const AGGREGATION_KEYWORDS: [&str; 5] = [
+    "foreach",
+    "forsome",
+    "forexactly",
+    "foratleast",
+    "foratmost",
+];
 
 /// The first expression-level construct in token order, if any.
 pub(crate) fn prescan(tokens: &[Token]) -> Option<Issue> {
@@ -603,6 +612,15 @@ pub(crate) fn prescan(tokens: &[Token]) -> Option<Issue> {
         }
     }
     None
+}
+
+/// A binary operator read by [`Parser::binary_operator`].
+enum BinaryOperator {
+    Equivalent,
+    Implies,
+    Or,
+    And,
+    Temporal(String, Interval),
 }
 
 pub(crate) struct Parser<'a> {
@@ -642,71 +660,61 @@ impl Parser<'_> {
     }
 
     pub(crate) fn parse_all(&mut self) -> Result<NodeId, Issue> {
-        let root = self.equivalence(0)?;
+        let root = self.binary(0)?;
         if self.position != self.tokens.len() {
             return Err(self.unrecognized());
         }
         Ok(root)
     }
 
-    fn equivalence(&mut self, depth: u32) -> Result<NodeId, Issue> {
-        let mut left = self.implication(depth)?;
-        while self.peek() == Some(&Tok::Iff) {
-            self.position += 1;
-            let right = self.implication(depth)?;
-            left = self.push(NodeKind::Equivalent { left, right });
-        }
-        Ok(left)
+    /// The binary operator at the cursor, consumed with its interval.
+    fn binary_operator(&mut self) -> Result<Option<BinaryOperator>, Issue> {
+        let operator = match self.peek() {
+            Some(Tok::Iff) => BinaryOperator::Equivalent,
+            Some(Tok::Arrow) => BinaryOperator::Implies,
+            Some(Tok::OrOr) => BinaryOperator::Or,
+            Some(Tok::AndAnd) => BinaryOperator::And,
+            Some(Tok::Ident(name)) if matches!(name.as_str(), "U" | "R" | "S" | "T") => {
+                let name = name.clone();
+                self.position += 1;
+                let interval = self.interval()?;
+                return Ok(Some(BinaryOperator::Temporal(name, interval)));
+            }
+            _ => return Ok(None),
+        };
+        self.position += 1;
+        Ok(Some(operator))
     }
 
-    /// Right-associative, built iteratively so a long `->` chain cannot grow
-    /// the stack. Operands are pushed left to right, then folded from the right.
-    fn implication(&mut self, depth: u32) -> Result<NodeId, Issue> {
-        let mut operands = vec![self.disjunction(depth)?];
-        while self.peek() == Some(&Tok::Arrow) {
-            self.position += 1;
-            operands.push(self.disjunction(depth)?);
+    fn binary_operator_ahead(&self) -> bool {
+        match self.peek() {
+            Some(Tok::Iff) | Some(Tok::Arrow) | Some(Tok::OrOr) | Some(Tok::AndAnd) => true,
+            Some(Tok::Ident(name)) => matches!(name.as_str(), "U" | "R" | "S" | "T"),
+            _ => false,
         }
-        let mut right = operands.pop().expect("at least one operand");
-        while let Some(left) = operands.pop() {
-            right = self.push(NodeKind::Implies { left, right });
-        }
-        Ok(right)
     }
 
-    fn disjunction(&mut self, depth: u32) -> Result<NodeId, Issue> {
-        let mut left = self.conjunction(depth)?;
-        while self.peek() == Some(&Tok::OrOr) {
-            self.position += 1;
-            let right = self.conjunction(depth)?;
-            left = self.push(NodeKind::Or { left, right });
+    /// At most one binary operator per parenthesis level. C2PO's precedence
+    /// and associativity are not retained (SPEC-GAP, FR-086), so a chained or
+    /// mixed unparenthesized form such as `a -> b -> c` or `a && b U[0,1] c`
+    /// is refused as an unrecognized token at the second operator rather than
+    /// read with a guessed meaning. The exporter parenthesizes every binary
+    /// form, so export-then-import identity is unaffected.
+    fn binary(&mut self, depth: u32) -> Result<NodeId, Issue> {
+        let left = self.unary(depth)?;
+        let Some(operator) = self.binary_operator()? else {
+            return Ok(left);
+        };
+        let right = self.unary(depth)?;
+        if self.binary_operator_ahead() {
+            return Err(self.unrecognized());
         }
-        Ok(left)
-    }
-
-    fn conjunction(&mut self, depth: u32) -> Result<NodeId, Issue> {
-        let mut left = self.binary_temporal(depth)?;
-        while self.peek() == Some(&Tok::AndAnd) {
-            self.position += 1;
-            let right = self.binary_temporal(depth)?;
-            left = self.push(NodeKind::And { left, right });
-        }
-        Ok(left)
-    }
-
-    fn binary_temporal(&mut self, depth: u32) -> Result<NodeId, Issue> {
-        let mut left = self.unary(depth)?;
-        loop {
-            let operator = match self.peek() {
-                Some(Tok::Ident(name)) if matches!(name.as_str(), "U" | "R" | "S" | "T") => {
-                    name.clone()
-                }
-                _ => break,
-            };
-            self.position += 1;
-            let interval = self.interval()?;
-            let right = self.unary(depth)?;
-            let kind = match operator.as_str() {
+        let kind = match operator {
+            BinaryOperator::Equivalent => NodeKind::Equivalent { left, right },
+            BinaryOperator::Implies => NodeKind::Implies { left, right },
+            BinaryOperator::Or => NodeKind::Or { left, right },
+            BinaryOperator::And => NodeKind::And { left, right },
+            BinaryOperator::Temporal(name, interval) => match name.as_str() {
                 "U" => NodeKind::Until {
                     interval,
                     left,
@@ -727,10 +735,9 @@ impl Parser<'_> {
                     left,
                     right,
                 },
-            };
-            left = self.push(kind);
-        }
-        Ok(left)
+            },
+        };
+        Ok(self.push(kind))
     }
 
     /// Nesting counts each prefix operator and each parenthesis (NFR-047):
@@ -771,7 +778,7 @@ impl Parser<'_> {
             Some(Tok::LParen) => {
                 let depth = self.enter(depth)?;
                 self.position += 1;
-                let inner = self.equivalence(depth)?;
+                let inner = self.binary(depth)?;
                 if self.peek() != Some(&Tok::RParen) {
                     return Err(self.unrecognized());
                 }
@@ -962,10 +969,16 @@ pub(crate) fn issue_loss_kind(issue: &Issue) -> LossKind {
 
 fn issue_loss(issue: Issue, index: usize) -> LossRecord {
     let (kind, construct, span) = match issue {
-        Issue::Construct(construct, span) => (construct.loss_kind(), construct.name().to_owned(), span),
+        Issue::Construct(construct, span) => {
+            (construct.loss_kind(), construct.name().to_owned(), span)
+        }
         Issue::Undeclared(name, span) => (LossKind::UnmappedVariable, name, span),
         Issue::Interval(span) => (LossKind::UnsupportedInterval, "interval".to_owned(), span),
-        Issue::Unbounded(span) => (LossKind::MissionClosureRequired, "unbounded-operator".to_owned(), span),
+        Issue::Unbounded(span) => (
+            LossKind::MissionClosureRequired,
+            "unbounded-operator".to_owned(),
+            span,
+        ),
         Issue::Nesting(span) => (LossKind::ResourceLimit, "nesting".to_owned(), span),
     };
     LossRecord::at(kind, ForeignFormat::C2po, construct, span, Some(index))
@@ -978,6 +991,8 @@ fn issue_loss(issue: Issue, index: usize) -> LossRecord {
 pub enum C2poExportError {
     /// The future-time exporter refused (FR-041 partition).
     Mapping(crate::MappingError),
+    /// The past surface renderer refused (depth, budget or signal name).
+    PastMapping(crate::PastMappingError),
     /// The signal catalog for rendering could not be built.
     Catalog(String),
 }
@@ -988,72 +1003,37 @@ fn catalog(signals: &[String]) -> Result<SignalCatalogDocument, C2poExportError>
             .iter()
             .enumerate()
             .map(|(index, name)| {
-                OwnedSignalDeclaration::new(SignalId(index as u32), name.clone(), SignalDomain::Boolean)
+                let id = SignalId(index as u32);
+                OwnedSignalDeclaration::new(id, name.clone(), SignalDomain::Boolean)
             })
             .collect(),
         (0..signals.len())
-            .map(|index| PropositionBinding::new(PropositionId(index as u32), SignalId(index as u32)))
+            .map(|index| {
+                PropositionBinding::new(PropositionId(index as u32), SignalId(index as u32))
+            })
             .collect(),
     )
     .map_err(|error| C2poExportError::Catalog(format!("{error:?}")))
 }
 
-/// Renders a past-time graph in the C2PO surface the importer reads.
-fn render_past(formula: Formula<'_>, node: NodeId, signals: &[String]) -> String {
-    let kind = formula.nodes()[node.0 as usize].kind;
-    let r = |id: NodeId| render_past(formula, id, signals);
-    let iv = |interval: Interval| format!("[{},{}]", interval.start(), interval.end());
-    match kind {
-        NodeKind::False => "false".to_owned(),
-        NodeKind::True => "true".to_owned(),
-        NodeKind::Proposition { proposition } => signals[proposition.0 as usize].clone(),
-        NodeKind::Not { operand } => format!("(!{})", r(operand)),
-        NodeKind::And { left, right } => format!("({} && {})", r(left), r(right)),
-        NodeKind::Or { left, right } => format!("({} || {})", r(left), r(right)),
-        NodeKind::Implies { left, right } => format!("({} -> {})", r(left), r(right)),
-        NodeKind::Equivalent { left, right } => format!("({} <-> {})", r(left), r(right)),
-        NodeKind::Once { interval, operand } => format!("O{}({})", iv(interval), r(operand)),
-        NodeKind::Historically { interval, operand } => {
-            format!("H{}({})", iv(interval), r(operand))
-        }
-        NodeKind::StrongPrevious { operand } => format!("Y({})", r(operand)),
-        NodeKind::Since {
-            interval,
-            left,
-            right,
-        } => format!("({} S{} {})", r(left), iv(interval), r(right)),
-        NodeKind::Triggered {
-            interval,
-            left,
-            right,
-        } => format!("({} T{} {})", r(left), iv(interval), r(right)),
-        // The origin-complete profile admits no future or LTLf node.
-        NodeKind::Future { .. }
-        | NodeKind::Globally { .. }
-        | NodeKind::Until { .. }
-        | NodeKind::Release { .. }
-        | NodeKind::LtlfFuture { .. }
-        | NodeKind::LtlfGlobally { .. }
-        | NodeKind::LtlfUntil { .. }
-        | NodeKind::LtlfRelease { .. }
-        | NodeKind::StrongNext { .. }
-        | NodeKind::WeakNext { .. } => unreachable!("origin-complete graphs are past-only"),
-    }
-}
-
 /// Exports an import back to C2PO text: future requirements through the
-/// production FR-004 renderer, past requirements through [`render_past`].
+/// production FR-004 renderer, past requirements through the bounded past
+/// surface renderer of `mapping::past`.
 pub fn export_c2po(import: &C2poImport, work_limit: u64) -> Result<String, C2poExportError> {
     let catalog = catalog(&import.signals)?;
-    let mut text = String::from("INPUT\n    ");
-    text.push_str(&import.signals.join(","));
-    text.push_str(": bool;\n\n");
+    let mut text = String::new();
+    if !import.signals.is_empty() {
+        text.push_str("INPUT\n    ");
+        text.push_str(&import.signals.join(","));
+        text.push_str(": bool;\n\n");
+    }
     let past = import.profile == SemanticProfile::OriginCompleteHistoryV1;
     text.push_str(if past { "PTSPEC\n" } else { "FTSPEC\n" });
     for requirement in &import.requirements {
         let formula = requirement.formula(import.profile);
         let expression = if past {
-            render_past(formula, formula.root(), &import.signals)
+            render_past_surface(formula, &catalog, work_limit)
+                .map_err(C2poExportError::PastMapping)?
         } else {
             render_contextual_expression(formula, &catalog, work_limit)
                 .map_err(C2poExportError::Mapping)?

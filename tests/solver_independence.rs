@@ -8,7 +8,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const FORBIDDEN_PACKAGES: [&str; 5] = ["tl-solve", "rustsat", "rustsat-batsat", "batsat", "varisat"];
+const FORBIDDEN_PACKAGES: [&str; 5] =
+    ["tl-solve", "rustsat", "rustsat-batsat", "batsat", "varisat"];
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))

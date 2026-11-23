@@ -419,8 +419,8 @@ pub fn evaluate_contracts(
         let mut outcomes = Vec::with_capacity(positions);
         let mut summary = ContractSummary::default();
         for time in 0..positions as u64 {
-            let outcome =
-                contract_outcome(truth(contract.assumption, time)?, truth(contract.guarantee, time)?);
+            let assumption = truth(contract.assumption, time)?;
+            let outcome = contract_outcome(assumption, truth(contract.guarantee, time)?);
             let padded = closed_padding
                 && last.is_some_and(|last| time.checked_add(reach).is_none_or(|end| end > last));
             if padded {

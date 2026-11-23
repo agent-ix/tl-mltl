@@ -18,7 +18,9 @@ use tl_mltl::numeric::{
     PredicateCell, PredicateDefinition, PredicateTable, ValidatedNumericTrace,
     NUMERIC_TRACE_V1, NUMERIC_TRACE_V1_SCHEMA_BYTES,
 };
-use tl_mltl::wire::{OwnerLimits, OwnerReadErrorCode, TraceDocument, TraceSchemaVersion, ValidatedTrace};
+use tl_mltl::wire::{
+    OwnerLimits, OwnerReadErrorCode, TraceDocument, TraceSchemaVersion, ValidatedTrace,
+};
 use tl_mltl::{evaluate_closed_at, evaluate_prefix_at, EvaluationLimits, TruthValue};
 use tl_oracle::population::CaseResult;
 use tl_oracle::Formula as O;
@@ -154,7 +156,8 @@ fn integer_and_decimal_observations_round_trip_at_every_scale() {
     assert_eq!(serde_json::to_vec(validated.document()).unwrap(), bytes);
 
     let checked_in = std::fs::read(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("schemas/numeric-trace-v1.schema.json"),
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("schemas/numeric-trace-v1.schema.json"),
     )
     .unwrap();
     assert_eq!(NUMERIC_TRACE_V1_SCHEMA_BYTES, &checked_in[..]);
@@ -179,7 +182,11 @@ fn owner_code(bytes: &[u8]) -> (OwnerReadErrorCode, &'static str) {
 
 fn wire(values: &str) -> Vec<u8> {
     format!(
-        r#"{{"schemaVersion":"tl-mltl.numeric-trace/v1","traceId":"t","closed":true,"instants":[{{"propositions":[],"values":[{values}]}}]}}"#
+        concat!(
+            r#"{{"schemaVersion":"tl-mltl.numeric-trace/v1","traceId":"t","closed":true,"#,
+            r#""instants":[{{"propositions":[],"values":[{values}]}}]}}"#
+        ),
+        values = values
     )
     .into_bytes()
 }
@@ -419,7 +426,8 @@ fn numeric_free_traces_match_the_existing_evaluators_byte_for_byte() {
         true,
         vec![instant(&[0], vec![]), instant(&[], vec![]), instant(&[0], vec![])],
     );
-    let boolean: Vec<Vec<PropositionId>> = vec![vec![PropositionId(0)], vec![], vec![PropositionId(0)]];
+    let boolean: Vec<Vec<PropositionId>> =
+        vec![vec![PropositionId(0)], vec![], vec![PropositionId(0)]];
     let empty = PredicateTable::default();
     for f in oracle_formulas() {
         let mut nodes = Vec::new();
@@ -520,7 +528,14 @@ fn generated_comparisons_equal_the_exact_reference_including_bounds() {
             let (nodes, root) = atom_formula(SemanticProfile::ClosedTraceV1, 1);
             let formula = Formula::new(SemanticProfile::ClosedTraceV1, root, &nodes).unwrap();
             let report =
-                evaluate_numeric(formula, "f", &table, &trace, 0, NumericEvaluationLimits::default())
+                evaluate_numeric(
+                    formula,
+                    "f",
+                    &table,
+                    &trace,
+                    0,
+                    NumericEvaluationLimits::default(),
+                )
                     .unwrap();
             let actual: Vec<bool> = report
                 .numeric
@@ -705,7 +720,8 @@ fn origin_complete_profile_refuses_a_gap_and_keeps_pre_origin_false() {
     // x absent at position 3 (inside the history to anchor 3).
     assert!(matches!(
         evaluate_numeric(formula, "f", &table(), &corpus_trace(), 3, limits),
-        Err(NumericEvaluationError::IncompleteHistory { position: 3, signal }) if signal == SignalId(X)
+        Err(NumericEvaluationError::IncompleteHistory { position: 3, signal })
+            if signal == SignalId(X)
     ));
     // Anchor 2: H[0,3] reaches before the origin, where the atom is false.
     let positive = document(
@@ -757,7 +773,9 @@ fn reports_repeat_byte_for_byte_and_numeric_modules_hold_no_float() {
         let text = std::fs::read_to_string(entry.unwrap().path()).unwrap();
         for token in ["f32", "f64"] {
             assert!(
-                !text.split(|c: char| !c.is_ascii_alphanumeric() && c != '_').any(|word| word == token),
+                !text
+                    .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
+                    .any(|word| word == token),
                 "{token} in numeric module"
             );
         }

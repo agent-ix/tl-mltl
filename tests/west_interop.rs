@@ -10,7 +10,9 @@ use std::path::{Path, PathBuf};
 
 use tl_mltl::interop::c2po::{import_c2po, C2poImportError};
 use tl_mltl::interop::fret::{import_fret_mltl, FretImportError, FretProfile};
-use tl_mltl::interop::west::{read_west, read_west_file, write_west, WestError};
+use tl_mltl::interop::west::{
+    read_west, read_west_file, write_west, write_west_bounded, WestError,
+};
 use tl_mltl::interop::{Attribution, LossKind, ReaderError, ReaderLimits, REVISION_UNKNOWN};
 use tl_syntax::{Formula, Interval, Node, NodeId, NodeKind, PropositionId, SemanticProfile};
 
@@ -106,7 +108,8 @@ fn selected() -> Vec<(usize, W)> {
 fn selected_cases_round_trip_to_the_same_line_and_hand_authored_graph() {
     let lines = corpus_lines();
     let manifest: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(corpus_dir().join("manifest.json")).unwrap()).unwrap();
+        serde_json::from_slice(&std::fs::read(corpus_dir().join("manifest.json")).unwrap())
+            .unwrap();
     let manifest_lines: Vec<usize> = manifest["selectedCases"]
         .as_array()
         .unwrap()
@@ -150,13 +153,27 @@ fn unexportable_classes_are_refused_with_a_loss_record_and_no_text() {
     let cases: Vec<(SemanticProfile, Vec<Node>, LossKind, &str)> = vec![
         (
             SemanticProfile::ClosedTraceV1,
-            vec![atom(0), atom(1), Node::new(NodeKind::Implies { left: NodeId(0), right: NodeId(1) })],
+            vec![
+                atom(0),
+                atom(1),
+                Node::new(NodeKind::Implies {
+                    left: NodeId(0),
+                    right: NodeId(1),
+                }),
+            ],
             LossKind::UnsupportedOperator,
             "implies",
         ),
         (
             SemanticProfile::ClosedTraceV1,
-            vec![atom(0), atom(1), Node::new(NodeKind::Equivalent { left: NodeId(0), right: NodeId(1) })],
+            vec![
+                atom(0),
+                atom(1),
+                Node::new(NodeKind::Equivalent {
+                    left: NodeId(0),
+                    right: NodeId(1),
+                }),
+            ],
             LossKind::UnsupportedOperator,
             "equivalent",
         ),
@@ -191,18 +208,31 @@ fn unexportable_classes_are_refused_with_a_loss_record_and_no_text() {
     }
 }
 
-fn sibling_tl_rewrite_copy() -> Option<PathBuf> {
-    let configured = std::env::var_os("TL_REWRITE_WEST_DIR").map(PathBuf::from);
-    let sibling = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../tl-rewrite/corpus/west-v1");
-    configured.or(Some(sibling)).filter(|path| path.is_dir())
+/// tl-rewrite's `corpus/west-v1`: `TL_REWRITE_WEST_DIR` first, then the
+/// sibling layouts this repository is checked out in (a `worktrees/` directory
+/// holding `TL-code-tl-rewrite`, or a plain `tl-rewrite` checkout next to the
+/// repository or next to its `worktrees/` directory).
+fn tl_rewrite_copy() -> Option<PathBuf> {
+    if let Some(configured) = std::env::var_os("TL_REWRITE_WEST_DIR") {
+        return Some(PathBuf::from(configured));
+    }
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    [
+        "../TL-code-tl-rewrite/corpus/west-v1",
+        "../tl-rewrite/corpus/west-v1",
+        "../../tl-rewrite/corpus/west-v1",
+    ]
+    .iter()
+    .map(|relative| root.join(relative))
+    .find(|path| path.is_dir())
 }
 
 // Trace: TC-325, TC-317, FR-092-AC-4, FR-089-AC-2, FR-089-AC-3
 #[test]
 fn retained_corpus_is_complete_attributed_and_byte_equal_to_tl_rewrite() {
     let manifest: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(corpus_dir().join("manifest.json")).unwrap()).unwrap();
+        serde_json::from_slice(&std::fs::read(corpus_dir().join("manifest.json")).unwrap())
+            .unwrap();
     let mut listed: Vec<String> = manifest["retainedFiles"]
         .as_array()
         .unwrap()
@@ -227,20 +257,27 @@ fn retained_corpus_is_complete_attributed_and_byte_equal_to_tl_rewrite() {
     assert_eq!(attribution.revision.as_deref(), Some(REVISION_UNKNOWN));
     assert_eq!(attribution.validate_west(), Ok(()));
 
-    // Byte equality with tl-rewrite's copy while that copy exists.
-    // SPEC-GAP: when the copy is absent (no sibling checkout and no
-    // TL_REWRITE_WEST_DIR) the comparison cannot run; the test says so.
-    match sibling_tl_rewrite_copy() {
+    // Byte equality with tl-rewrite's copy while that copy exists. Absence
+    // fails loudly; `TL_REWRITE_WEST_SKIP=1` is the explicit, visible opt-out
+    // for a checkout without tl-rewrite (never a silent pass).
+    match tl_rewrite_copy() {
         Some(owner) => {
             for file in ["formulas_d1.txt", "LICENSE"] {
                 assert_eq!(
                     std::fs::read(corpus_dir().join(file)).unwrap(),
-                    std::fs::read(owner.join(file)).unwrap(),
+                    std::fs::read(owner.join(file))
+                        .unwrap_or_else(|error| panic!("{}: {error}", owner.display())),
                     "{file}"
                 );
             }
         }
-        None => eprintln!("tl-rewrite corpus/west-v1 not found; byte comparison not run"),
+        None if std::env::var_os("TL_REWRITE_WEST_SKIP").is_some_and(|value| value == "1") => {
+            eprintln!("TL_REWRITE_WEST_SKIP=1: WEST byte comparison explicitly skipped");
+        }
+        None => panic!(
+            "tl-rewrite corpus/west-v1 not found; set TL_REWRITE_WEST_DIR, or \
+             TL_REWRITE_WEST_SKIP=1 to skip the byte comparison explicitly"
+        ),
     }
 }
 
@@ -322,7 +359,13 @@ fn hostile_cases() -> Vec<(&'static str, &'static str, Vec<u8>, ReaderLimits, &'
         ("c2po", "source-over", c2po_ok.clone(), sized(&c2po_ok, -1), "too-large"),
         ("c2po", "nesting-exact", c2po_nest.clone(), nested(2), "ok"),
         ("c2po", "nesting-over", c2po_nest, nested(1), "too-deep"),
-        ("c2po", "duplicate-signal", b"INPUT\n  a, a: bool;\nFTSPEC\n  a;\n".to_vec(), d, "duplicate-signal"),
+        (
+            "c2po",
+            "duplicate-signal",
+            b"INPUT\n  a, a: bool;\nFTSPEC\n  a;\n".to_vec(),
+            d,
+            "duplicate-signal",
+        ),
         ("fret", "empty", Vec::new(), d, "empty"),
         ("fret", "non-utf8", b"F[0,1] p\xff".to_vec(), d, "non-utf8"),
         ("fret", "nul", b"F[0,1] p\0".to_vec(), d, "nul"),
@@ -355,10 +398,35 @@ fn hostile_cases_yield_their_manifest_outcomes() {
     assert_eq!(cases.len(), 24);
     for (reader, class, input, limits, expected) in cases {
         let label = match reader {
-            "c2po" => label_c2po(import_c2po(&input, Some(SemanticProfile::OnlinePrefixV1), limits)),
-            "fret" => label_fret(import_fret_mltl(&input, FretProfile::ClosedTrace, &attribution, limits)),
+            "c2po" => {
+                let profile = Some(SemanticProfile::OnlinePrefixV1);
+                label_c2po(import_c2po(&input, profile, limits))
+            }
+            "fret" => {
+                let profile = FretProfile::ClosedTrace;
+                label_fret(import_fret_mltl(&input, profile, &attribution, limits))
+            }
             _ => label_west(read_west(&input, limits)),
         };
         assert_eq!(label, expected, "{reader} {class}");
     }
+}
+
+// Trace: TC-324, FR-092-AC-3
+#[test]
+fn writer_refuses_another_profile_and_stops_at_its_budget() {
+    let nodes = vec![
+        Node::new(NodeKind::Proposition {
+            proposition: PropositionId(0),
+        }),
+        Node::new(NodeKind::Not { operand: NodeId(0) }),
+        Node::new(NodeKind::Not { operand: NodeId(1) }),
+    ];
+    let prefix = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(2), &nodes).unwrap();
+    let record = write_west(prefix).unwrap_err();
+    assert_eq!(record.construct, "profile");
+    let closed = Formula::new(SemanticProfile::ClosedTraceV1, NodeId(2), &nodes).unwrap();
+    assert_eq!(write_west_bounded(closed, 3).unwrap(), "~~p0");
+    let record = write_west_bounded(closed, 2).unwrap_err();
+    assert_eq!(record.kind, LossKind::ResourceLimit);
 }

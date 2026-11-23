@@ -7,7 +7,9 @@
 //! ADR-044 rules because the tl-syntax `ltlf` corpus (FR-335) is not merged;
 //! replace with `tl_syntax::CORPUS_DIR` once it is.
 
-use tl_mltl::ltlf::{evaluate_ltlf, evaluate_ltlf_with_catalog, ltlf_charge, LtlfError, LtlfLimits, Ltl3Verdict};
+use tl_mltl::ltlf::{
+    evaluate_ltlf, evaluate_ltlf_with_catalog, ltlf_charge, Ltl3Verdict, LtlfError, LtlfLimits,
+};
 use tl_mltl::record::RecordVerdict;
 use tl_mltl::{
     analyze_horizon, evaluate_closed_at, evaluate_prefix_at, EvaluationError, EvaluationLimits,
@@ -227,7 +229,9 @@ fn catalog(bound: &[u32]) -> SignalCatalogDocument {
     SignalCatalogDocument::new(
         bound
             .iter()
-            .map(|n| OwnedSignalDeclaration::new(SignalId(*n), format!("s{n}"), SignalDomain::Boolean))
+            .map(|n| {
+                OwnedSignalDeclaration::new(SignalId(*n), format!("s{n}"), SignalDomain::Boolean)
+            })
             .collect(),
         bound
             .iter()

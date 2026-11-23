@@ -49,7 +49,9 @@ impl fmt::Display for WestError {
         match self {
             Self::Reader(error) => error.fmt(formatter),
             Self::Syntax { offset } => write!(formatter, "not WEST syntax at byte {offset}"),
-            Self::InvalidInterval { offset } => write!(formatter, "invalid interval at byte {offset}"),
+            Self::InvalidInterval { offset } => {
+                write!(formatter, "invalid interval at byte {offset}")
+            }
             Self::MissionClosureRequired { offset } => {
                 write!(formatter, "unbounded operator at byte {offset}")
             }
@@ -73,7 +75,9 @@ impl WestError {
                 )
             }
             Self::Syntax { offset } => (LossKind::ForeignConstruct, "syntax", *offset),
-            Self::InvalidInterval { offset } => (LossKind::UnsupportedInterval, "interval", *offset),
+            Self::InvalidInterval { offset } => {
+                (LossKind::UnsupportedInterval, "interval", *offset)
+            }
             Self::MissionClosureRequired { offset } => {
                 (LossKind::MissionClosureRequired, "unbounded-operator", *offset)
             }
@@ -113,6 +117,7 @@ struct Reader<'a> {
     position: usize,
     nodes: Vec<Node>,
     max_nesting: u32,
+    max_tokens: usize,
 }
 
 impl Reader<'_> {
@@ -183,6 +188,13 @@ impl Reader<'_> {
     }
 
     fn expression(&mut self, depth: u32) -> Result<NodeId, WestError> {
+        // Each call adds at most one node: the ceiling bounds parse work.
+        if self.nodes.len() >= self.max_tokens {
+            return Err(ReaderError::TooManyTokens {
+                limit: self.max_tokens,
+            }
+            .into());
+        }
         let offset = self.position;
         match self.peek() {
             Some(b'~') => {
@@ -278,18 +290,13 @@ pub fn read_west(line: &[u8], limits: ReaderLimits) -> Result<WestFormula, WestE
         position: 0,
         nodes: Vec::new(),
         max_nesting: limits.max_nesting,
+        max_tokens: limits.max_tokens,
     };
     let root = reader.expression(0)?;
     if reader.position != bytes.len() {
         return Err(WestError::Syntax {
             offset: reader.position,
         });
-    }
-    if reader.nodes.len() > limits.max_tokens {
-        return Err(ReaderError::TooManyTokens {
-            limit: limits.max_tokens,
-        }
-        .into());
     }
     Formula::new(SemanticProfile::ClosedTraceV1, root, &reader.nodes)
         .map_err(|_| WestError::Syntax { offset: 0 })?;
@@ -318,7 +325,24 @@ fn refuse(construct: &str, kind: LossKind) -> LossRecord {
     )
 }
 
-fn write_node(formula: Formula<'_>, node: NodeId, out: &mut String) -> Result<(), LossRecord> {
+/// Depth and visit budget of one write.
+struct WriteBudget {
+    visits: u64,
+    limit: u64,
+}
+
+fn write_node(
+    formula: Formula<'_>,
+    node: NodeId,
+    depth: u32,
+    budget: &mut WriteBudget,
+    out: &mut String,
+) -> Result<(), LossRecord> {
+    budget.visits = budget.visits.saturating_add(1);
+    if depth > crate::MAX_RECURSION_DEPTH || budget.visits > budget.limit {
+        return Err(refuse("resource-limit", LossKind::ResourceLimit));
+    }
+    let depth = depth + 1;
     let iv = |interval: Interval| format!("[{}:{}]", interval.start(), interval.end());
     match formula.nodes()[node.0 as usize].kind {
         NodeKind::False => out.push('!'),
@@ -326,7 +350,7 @@ fn write_node(formula: Formula<'_>, node: NodeId, out: &mut String) -> Result<()
         NodeKind::Proposition { proposition } => out.push_str(&format!("p{}", proposition.0)),
         NodeKind::Not { operand } => {
             out.push('~');
-            write_node(formula, operand, out)?;
+            write_node(formula, operand, depth, budget, out)?;
         }
         NodeKind::And { left, right } | NodeKind::Or { left, right } => {
             let symbol = if matches!(formula.nodes()[node.0 as usize].kind, NodeKind::And { .. }) {
@@ -335,20 +359,20 @@ fn write_node(formula: Formula<'_>, node: NodeId, out: &mut String) -> Result<()
                 "v"
             };
             out.push('(');
-            write_node(formula, left, out)?;
+            write_node(formula, left, depth, budget, out)?;
             out.push_str(symbol);
-            write_node(formula, right, out)?;
+            write_node(formula, right, depth, budget, out)?;
             out.push(')');
         }
         NodeKind::Future { interval, operand } => {
             out.push('F');
             out.push_str(&iv(interval));
-            write_node(formula, operand, out)?;
+            write_node(formula, operand, depth, budget, out)?;
         }
         NodeKind::Globally { interval, operand } => {
             out.push('G');
             out.push_str(&iv(interval));
-            write_node(formula, operand, out)?;
+            write_node(formula, operand, depth, budget, out)?;
         }
         NodeKind::Until {
             interval,
@@ -360,16 +384,17 @@ fn write_node(formula: Formula<'_>, node: NodeId, out: &mut String) -> Result<()
             left,
             right,
         } => {
-            let symbol = if matches!(formula.nodes()[node.0 as usize].kind, NodeKind::Until { .. }) {
+            let until = matches!(formula.nodes()[node.0 as usize].kind, NodeKind::Until { .. });
+            let symbol = if until {
                 'U'
             } else {
                 'R'
             };
             out.push('(');
-            write_node(formula, left, out)?;
+            write_node(formula, left, depth, budget, out)?;
             out.push(symbol);
             out.push_str(&iv(interval));
-            write_node(formula, right, out)?;
+            write_node(formula, right, depth, budget, out)?;
             out.push(')');
         }
         NodeKind::Implies { .. } => {
@@ -403,10 +428,25 @@ fn write_node(formula: Formula<'_>, node: NodeId, out: &mut String) -> Result<()
 ///
 /// Implements: FR-092
 pub fn write_west(formula: Formula<'_>) -> Result<String, LossRecord> {
+    write_west_bounded(formula, 1_000_000)
+}
+
+/// [`write_west`] with an explicit node-visit budget. A shared DAG is written
+/// as a tree, so the budget bounds the text produced.
+pub fn write_west_bounded(formula: Formula<'_>, work_limit: u64) -> Result<String, LossRecord> {
     // SPEC-GAP: FR-092 lists `W`/`M` as an unexportable class, but the tl-syntax
     // graph has no `W` or `M` node (they are derived source forms), so no graph
     // can carry one to this writer.
     let mut out = String::new();
-    write_node(formula, formula.root(), &mut out)?;
+    let mut budget = WriteBudget {
+        visits: 0,
+        limit: work_limit,
+    };
+    write_node(formula, formula.root(), 0, &mut budget, &mut out)?;
+    // Node refusals come first; a graph of only WEST-spellable nodes under
+    // another profile (online-prefix) still means something else in WEST.
+    if formula.profile() != SemanticProfile::ClosedTraceV1 {
+        return Err(refuse("profile", LossKind::ForeignConstruct));
+    }
     Ok(out)
 }

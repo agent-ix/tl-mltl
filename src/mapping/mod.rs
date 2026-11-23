@@ -10,4 +10,4 @@ pub use legacy::{
 };
 pub use past::{map_past_to_c2po, PastMappingError, PastMappingManifest, TargetOriginContract};
 #[cfg(feature = "infinite-trace")]
-pub(crate) use past::{target_equivalent_interval, OriginShapeGuard};
+pub(crate) use past::{render_past_surface, target_equivalent_interval, OriginShapeGuard};

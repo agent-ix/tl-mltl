@@ -471,3 +471,112 @@ pub fn map_past_to_c2po(
             "mapping records caller-supplied target-origin evidence; it does not execute R2U2",
     })
 }
+
+/// Renders an origin-complete graph in the full C2PO past surface (`O H Y S T`
+/// with their own intervals), without the reviewed target-origin lowering of
+/// [`map_past_to_c2po`]. Used only for the importer's export-then-import
+/// identity (FR-086); it is not executable target evidence. Bounded like
+/// `render_contextual_expression`: `MAX_RECURSION_DEPTH` and a visit budget.
+///
+/// UNBUILT, UNTESTED: written without a compiler (TL-DECISIONS-2026-11-23).
+pub(crate) fn render_past_surface(
+    formula: Formula<'_>,
+    catalog_document: &SignalCatalogDocument,
+    work_limit: u64,
+) -> Result<String, PastMappingError> {
+    if formula.profile() != SemanticProfile::OriginCompleteHistoryV1 {
+        return Err(PastMappingError::UnsupportedProfile);
+    }
+    bind_formula(formula, catalog_document).map_err(PastMappingError::Binding)?;
+    let catalog = catalog_document
+        .validate()
+        .expect("a constructed catalog document validates");
+    let mut visits = 0u64;
+    surface(formula, catalog, formula.root(), 0, &mut visits, work_limit)
+}
+
+fn surface(
+    formula: Formula<'_>,
+    catalog: SignalCatalog<'_>,
+    node: NodeId,
+    depth: u32,
+    visits: &mut u64,
+    limit: u64,
+) -> Result<String, PastMappingError> {
+    if depth > crate::MAX_RECURSION_DEPTH {
+        return Err(PastMappingError::ResourceIncomplete);
+    }
+    *visits = visits
+        .checked_add(1)
+        .ok_or(PastMappingError::ResourceIncomplete)?;
+    if *visits > limit {
+        return Err(PastMappingError::ResourceIncomplete);
+    }
+    let mut r = |id: NodeId| surface(formula, catalog, id, depth + 1, visits, limit);
+    let iv = |interval: Interval| format!("[{},{}]", interval.start(), interval.end());
+    // `Formula::new` guarantees every referenced node exists.
+    let rendered = match formula.nodes()[node.0 as usize].kind {
+        NodeKind::False => "false".to_owned(),
+        NodeKind::True => "true".to_owned(),
+        NodeKind::Proposition { proposition } => {
+            let signal = catalog
+                .signal_for_proposition(proposition)
+                .ok_or(PastMappingError::UnsupportedSignal(proposition))?;
+            if !is_c2po_identifier(signal.name()) {
+                return Err(PastMappingError::UnsupportedSignal(proposition));
+            }
+            signal.name().to_owned()
+        }
+        NodeKind::Not { operand } => format!("(!{})", r(operand)?),
+        NodeKind::And { left, right } => {
+            let left = r(left)?;
+            format!("({left} && {})", r(right)?)
+        }
+        NodeKind::Or { left, right } => {
+            let left = r(left)?;
+            format!("({left} || {})", r(right)?)
+        }
+        NodeKind::Implies { left, right } => {
+            let left = r(left)?;
+            format!("({left} -> {})", r(right)?)
+        }
+        NodeKind::Equivalent { left, right } => {
+            let left = r(left)?;
+            format!("({left} <-> {})", r(right)?)
+        }
+        NodeKind::Once { interval, operand } => format!("O{}({})", iv(interval), r(operand)?),
+        NodeKind::Historically { interval, operand } => {
+            format!("H{}({})", iv(interval), r(operand)?)
+        }
+        NodeKind::StrongPrevious { operand } => format!("Y({})", r(operand)?),
+        NodeKind::Since {
+            interval,
+            left,
+            right,
+        } => {
+            let left = r(left)?;
+            format!("({left} S{} {})", iv(interval), r(right)?)
+        }
+        NodeKind::Triggered {
+            interval,
+            left,
+            right,
+        } => {
+            let left = r(left)?;
+            format!("({left} T{} {})", iv(interval), r(right)?)
+        }
+        NodeKind::Future { .. }
+        | NodeKind::Globally { .. }
+        | NodeKind::Until { .. }
+        | NodeKind::Release { .. }
+        | NodeKind::LtlfFuture { .. }
+        | NodeKind::LtlfGlobally { .. }
+        | NodeKind::LtlfUntil { .. }
+        | NodeKind::LtlfRelease { .. }
+        | NodeKind::StrongNext { .. }
+        | NodeKind::WeakNext { .. } => {
+            unreachable!("the origin-complete profile admits only past and Boolean nodes")
+        }
+    };
+    Ok(rendered)
+}

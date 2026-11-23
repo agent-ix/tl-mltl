@@ -81,7 +81,11 @@ pub struct NumericLossRecord {
 }
 
 impl NumericLossRecord {
-    fn new(cause: NumericLossCause, subject: NumericLossSubject, detail: impl Into<String>) -> Self {
+    fn new(
+        cause: NumericLossCause,
+        subject: NumericLossSubject,
+        detail: impl Into<String>,
+    ) -> Self {
         Self {
             schema_version: NUMERIC_LOSS_V1.to_owned(),
             cause,
@@ -225,13 +229,17 @@ pub fn map_numeric_to_c2po(
         return Err(NumericLossRecord::new(
             NumericLossCause::ForeignIdentity,
             NumericLossSubject::Formula,
-            format!("C2PO export requires mltl.online-prefix/v1, found {}", formula.profile().as_str()),
+            format!(
+                "C2PO export requires mltl.online-prefix/v1, found {}",
+                formula.profile().as_str()
+            ),
         ));
     }
     if let Some(record) = first_refusal(formula, table, catalog) {
         return Err(record);
     }
-    let expression = render_contextual_expression(formula, catalog, work_limit).map_err(mapping_loss)?;
+    let expression =
+        render_contextual_expression(formula, catalog, work_limit).map_err(mapping_loss)?;
     Ok(NumericExportOutcome::Boolean { expression })
 }
 
@@ -273,7 +281,9 @@ fn remap(kind: NodeKind, map: &[u32]) -> NodeKind {
         NodeKind::Equivalent { left, right } => {
             NodeKind::Equivalent { left: m(left), right: m(right) }
         }
-        NodeKind::Future { interval, operand } => NodeKind::Future { interval, operand: m(operand) },
+        NodeKind::Future { interval, operand } => {
+            NodeKind::Future { interval, operand: m(operand) }
+        }
         NodeKind::Globally { interval, operand } => {
             NodeKind::Globally { interval, operand: m(operand) }
         }
@@ -296,7 +306,9 @@ fn remap(kind: NodeKind, map: &[u32]) -> NodeKind {
         }
         NodeKind::LtlfFuture { operand } => NodeKind::LtlfFuture { operand: m(operand) },
         NodeKind::LtlfGlobally { operand } => NodeKind::LtlfGlobally { operand: m(operand) },
-        NodeKind::LtlfUntil { left, right } => NodeKind::LtlfUntil { left: m(left), right: m(right) },
+        NodeKind::LtlfUntil { left, right } => {
+            NodeKind::LtlfUntil { left: m(left), right: m(right) }
+        }
         NodeKind::LtlfRelease { left, right } => {
             NodeKind::LtlfRelease { left: m(left), right: m(right) }
         }

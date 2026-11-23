@@ -40,7 +40,8 @@ fn export_then_import_is_the_identity_on_the_retained_formulas() {
     let future = corpus("corpus/r2u2-v4.2/formulas.c2po");
     let past = corpus("corpus/past-c2po-v1/target-4.2/past.c2po");
     let future_import =
-        import_c2po(&future, Some(SemanticProfile::OnlinePrefixV1), ReaderLimits::default()).unwrap();
+        import_c2po(&future, Some(SemanticProfile::OnlinePrefixV1), ReaderLimits::default())
+            .unwrap();
     assert_eq!(future_import.requirements.len(), 6);
     let past_import = import_c2po(
         &past,
@@ -154,4 +155,24 @@ fn per_requirement_entry_conserves_requirements_and_aborts_on_file_level_constru
             ..
         })
     ));
+}
+
+// Trace: TC-311, FR-086-AC-2
+#[test]
+fn chained_or_mixed_unparenthesized_binary_operators_are_refused() {
+    // C2PO precedence and associativity are not retained (SPEC-GAP), so these
+    // are refused at the second operator instead of read with a guess.
+    for (text, second) in [
+        ("INPUT\n  a, b, c: bool;\nFTSPEC\n  a -> b -> c;\n", "->"),
+        ("INPUT\n  a, b, c: bool;\nFTSPEC\n  a && b U[0,1] c;\n", "U"),
+    ] {
+        match strict(text) {
+            Err(C2poImportError::UnsupportedConstruct { construct, span }) => {
+                assert_eq!(construct, UnsupportedConstruct::UnrecognizedToken);
+                assert_eq!(&text[span.start..span.end], second);
+            }
+            other => panic!("{text}: {other:?}"),
+        }
+    }
+    assert!(strict("INPUT\n  a, b, c: bool;\nFTSPEC\n  (a -> (b -> c));\n").is_ok());
 }

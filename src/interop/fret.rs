@@ -174,7 +174,11 @@ fn foreign_issue(tokens: &[Token]) -> Option<(LossKind, String, SourceRange)> {
     None
 }
 
-fn register_variables(tokens: &[Token], variables: &mut Vec<String>, names: &mut BTreeMap<String, u32>) {
+fn register_variables(
+    tokens: &[Token],
+    variables: &mut Vec<String>,
+    names: &mut BTreeMap<String, u32>,
+) {
     for (index, token) in tokens.iter().enumerate() {
         if let Tok::Ident(name) = &token.tok {
             let operator_like = OPERATOR_WORDS.contains(&name.as_str())
@@ -213,6 +217,7 @@ pub fn import_fret_mltl(
     let mut imported = Vec::new();
     let mut unimported = Vec::new();
     let mut declared = 0usize;
+    let mut tokens_used = 0usize;
     let mut line_start = 0usize;
     for line in text.split_inclusive('\n') {
         let offset = line_start;
@@ -229,21 +234,32 @@ pub fn import_fret_mltl(
             start: offset + skip,
             end: offset + body.len(),
         };
-        let tokens = lex_line(formula_text, offset + skip, limits)?;
+        // The token ceiling is file-wide: each line gets what is left of it.
+        let remaining = ReaderLimits {
+            max_tokens: limits.max_tokens.saturating_sub(tokens_used),
+            ..limits
+        };
+        let tokens = lex_line(formula_text, offset + skip, remaining)?;
+        tokens_used += tokens.len();
         if let Some((kind, construct, at)) = foreign_issue(&tokens) {
-            unimported.push(LossRecord::at(kind, ForeignFormat::FretMltl, construct, at, Some(index)));
+            let format = ForeignFormat::FretMltl;
+            unimported.push(LossRecord::at(kind, format, construct, at, Some(index)));
             continue;
         }
         if let Some(issue) = prescan(&tokens) {
             unimported.push(issue_record(issue, index));
             continue;
         }
-        register_variables(&tokens, &mut variables, &mut names);
+        // Variables are committed only for a requirement that imports, so
+        // `variables` lists no name that only unimported requirements use.
+        let mut candidate_variables = variables.clone();
+        let mut candidate_names = names.clone();
+        register_variables(&tokens, &mut candidate_variables, &mut candidate_names);
         let mut parser = Parser {
             tokens: &tokens,
             position: 0,
             nodes: Vec::new(),
-            names: &names,
+            names: &candidate_names,
             max_nesting: limits.max_nesting,
         };
         let root = match parser.parse_all() {
@@ -263,11 +279,14 @@ pub fn import_fret_mltl(
             ));
             continue;
         }
+        let nodes = parser.nodes;
+        variables = candidate_variables;
+        names = candidate_names;
         imported.push(FretRequirement {
             id: id.map(str::to_owned),
             index,
             span,
-            nodes: parser.nodes,
+            nodes,
             root,
         });
     }
@@ -427,7 +446,8 @@ fn read_header(text: &str, losses: &mut Vec<LossRecord>) -> TraceHeader {
         let field = field.trim();
         match field.split_once(':') {
             None => {
-                header.signals = Some(field.split(',').map(|name| name.trim().to_owned()).collect());
+                let names = field.split(',').map(|name| name.trim().to_owned());
+                header.signals = Some(names.collect());
             }
             Some((key, value)) => match key.trim() {
                 "signals" => {
@@ -466,10 +486,12 @@ pub fn import_fret_bundle(
     let requirements =
         import_c2po_requirements(c2po, Some(profile), limits).map_err(FretImportError::C2po)?;
     let map_text = admit_source(variable_map, limits)?;
-    let header_text = core::str::from_utf8(trace_header)
-        .map_err(|error| ReaderError::NonUtf8 {
-            offset: error.valid_up_to(),
-        })?;
+    // Same ceilings as every reader; an empty header is legal.
+    let header_text = match admit_source(trace_header, limits) {
+        Ok(text) => text,
+        Err(ReaderError::Empty) => "",
+        Err(error) => return Err(error.into()),
+    };
     let validated = catalog
         .validate()
         .expect("a constructed catalog document validates");

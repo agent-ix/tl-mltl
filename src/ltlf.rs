@@ -69,7 +69,10 @@ impl fmt::Display for LtlfError {
         match self {
             Self::EmptyTrace => write!(formatter, "LTLf traces are nonempty"),
             Self::ProfileMismatch { actual } => {
-                write!(formatter, "LTLf evaluation requires mltl.ltlf-finite-trace/v1, found {actual}")
+                write!(
+                    formatter,
+                    "LTLf evaluation requires mltl.ltlf-finite-trace/v1, found {actual}"
+                )
             }
             Self::UnboundSignal(error) => error.fmt(formatter),
             Self::WorkLimitExceeded { charge, limit } => {
@@ -162,6 +165,8 @@ pub fn evaluate_ltlf(
                 let operand = at(operand);
                 (0..n).map(|i| i == last || operand[i + 1]).collect()
             }
+            // `Formula::new` already refuses these under the LTLf profile
+            // (`LtlfNodeRefused`); kept as a typed defence, never a default.
             NodeKind::Future { .. }
             | NodeKind::Globally { .. }
             | NodeKind::Until { .. }

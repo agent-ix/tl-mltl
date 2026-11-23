@@ -568,7 +568,8 @@ fn copy_now_is_realizable_and_copy_next_is_not() {
         id: "copy-now",
         formula: lowered.formula(SemanticProfile::ClosedTraceV1),
     }];
-    let report = play_out(&requirement, &[], &partition(0b0001, &forms(&requirement)), limits()).unwrap();
+    let split = partition(0b0001, &forms(&requirement));
+    let report = play_out(&requirement, &[], &split, limits()).unwrap();
     assert_eq!(report.verdict, PlayOutVerdict::Realizable);
     assert!(report.every_input_sequence_has_response);
 
@@ -582,7 +583,8 @@ fn copy_now_is_realizable_and_copy_next_is_not() {
         id: "copy-next",
         formula: lowered.formula(SemanticProfile::ClosedTraceV1),
     }];
-    let report = play_out(&requirement, &[], &partition(0b0001, &forms(&requirement)), limits()).unwrap();
+    let split = partition(0b0001, &forms(&requirement));
+    let report = play_out(&requirement, &[], &split, limits()).unwrap();
     assert_eq!(report.verdict, PlayOutVerdict::Unrealizable);
     // The relaxation passes: the response exists once all inputs are known.
     assert!(report.every_input_sequence_has_response);

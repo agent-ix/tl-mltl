@@ -547,10 +547,11 @@ pub fn mission_bounding_report(
             return Err(MissionReportError::UnsupportedProfile { requirement: index });
         }
         let horizon = lookahead(*formula).map_err(|error| match error {
-            HorizonError::ArithmeticOverflow { .. }
-            | HorizonError::UnsupportedProfile { .. }
-            | HorizonError::UnboundedByTraceLength => {
+            HorizonError::ArithmeticOverflow { .. } => {
                 MissionReportError::HorizonOverflow { requirement: index }
+            }
+            HorizonError::UnsupportedProfile { .. } | HorizonError::UnboundedByTraceLength => {
+                MissionReportError::UnsupportedProfile { requirement: index }
             }
         })?;
         let mut classes = Vec::new();

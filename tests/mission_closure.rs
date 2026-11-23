@@ -72,7 +72,9 @@ fn lower(f: &B, nodes: &mut Vec<Node>) -> NodeId {
 
 /// The 11-formula population at M = 5 and its hand-recorded manifest.
 fn population() -> Vec<(&'static str, B, u64, Vec<MissionClass>)> {
-    use MissionClass::{BoundEqualsMission as Bem, HorizonExceedsMission as Hem, WithinMission as Win};
+    use MissionClass::{
+        BoundEqualsMission as Bem, HorizonExceedsMission as Hem, WithinMission as Win,
+    };
     vec![
         ("bem-1", B::G(0, 5, p()), 5, vec![Bem]),
         ("bem-2", B::F(2, 5, p()), 5, vec![Bem]),
@@ -122,7 +124,7 @@ fn mission_report_population_matches_its_manifest() {
             assert_eq!(row.wording, "within mission");
         } else {
             assert_eq!(row.wording, "possibly changed upstream");
-            assert!(!row.wording.contains("changed upstream") || row.wording.starts_with("possibly"));
+            assert!(!row.wording.starts_with("changed"));
         }
     }
     assert_eq!(assignments, 12);
@@ -182,7 +184,11 @@ fn unbounded_operators_are_refused_by_every_importer_and_the_closure_api() {
 
     let c2po = "INPUT\n  a: bool;\nFTSPEC\n  G a;\n";
     assert!(matches!(
-        import_c2po(c2po.as_bytes(), Some(SemanticProfile::OnlinePrefixV1), ReaderLimits::default()),
+        import_c2po(
+            c2po.as_bytes(),
+            Some(SemanticProfile::OnlinePrefixV1),
+            ReaderLimits::default()
+        ),
         Err(C2poImportError::MissionClosureRequired { .. })
     ));
     let per_requirement = import_c2po_requirements(

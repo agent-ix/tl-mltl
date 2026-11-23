@@ -90,7 +90,10 @@ fn bare_next_is_ambiguous_and_never_lowered() {
         assert!(requirement
             .nodes
             .iter()
-            .all(|node| !matches!(node.kind, NodeKind::StrongNext { .. } | NodeKind::WeakNext { .. })));
+            .all(|node| !matches!(
+                node.kind,
+                NodeKind::StrongNext { .. } | NodeKind::WeakNext { .. }
+            )));
     }
 }
 
@@ -177,7 +180,12 @@ fn attribution_is_carried_and_incomplete_attribution_is_refused() {
     ];
     for (attribution, expected) in missing {
         assert_eq!(
-            import_fret_mltl(b"F[0,1] p\n", FretProfile::ClosedTrace, &attribution, ReaderLimits::default()),
+            import_fret_mltl(
+                b"F[0,1] p\n",
+                FretProfile::ClosedTrace,
+                &attribution,
+                ReaderLimits::default()
+            ),
             Err(FretImportError::Attribution(expected))
         );
     }
@@ -229,15 +237,21 @@ fn fixture(kind: LossKind) -> LossRecord {
     };
     let header = "INPUT\n  a, b: bool;\nFTSPEC\n  ";
     match kind {
-        LossKind::UnsupportedOperator => c2po(&format!("{header}a + b;\n"), ReaderLimits::default()),
+        LossKind::UnsupportedOperator => {
+            c2po(&format!("{header}a + b;\n"), ReaderLimits::default())
+        }
         LossKind::AmbiguousNext => fret("X p\n").unimported.remove(0),
         LossKind::UnsupportedSignalType => bundle("x:1\ny:3\n", "")
             .bundle_losses
             .into_iter()
             .find(|loss| loss.kind == LossKind::UnsupportedSignalType)
             .unwrap(),
-        LossKind::UnsupportedInterval => c2po(&format!("{header}F[2,1] a;\n"), ReaderLimits::default()),
-        LossKind::UnmappedVariable => c2po(&format!("{header}F[0,1] c;\n"), ReaderLimits::default()),
+        LossKind::UnsupportedInterval => {
+            c2po(&format!("{header}F[2,1] a;\n"), ReaderLimits::default())
+        }
+        LossKind::UnmappedVariable => {
+            c2po(&format!("{header}F[0,1] c;\n"), ReaderLimits::default())
+        }
         LossKind::DuplicateVariable => bundle("x:1\nx:2\n", "")
             .bundle_losses
             .into_iter()
@@ -271,7 +285,9 @@ fn each_loss_kind_is_produced_by_its_fixture_and_round_trips() {
             | LossKind::UnsupportedInterval
             | LossKind::UnmappedVariable
             | LossKind::ResourceLimit => ForeignFormat::C2po,
-            LossKind::AmbiguousNext | LossKind::MissionClosureRequired | LossKind::ForeignConstruct => {
+            LossKind::AmbiguousNext
+            | LossKind::MissionClosureRequired
+            | LossKind::ForeignConstruct => {
                 ForeignFormat::FretMltl
             }
             LossKind::UnsupportedSignalType

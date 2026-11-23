@@ -19,7 +19,8 @@ use tl_mltl::numeric::{
 use tl_mltl::wire::OwnerLimits;
 use tl_mltl::{map_to_c2po, map_to_c2po_with_context, MappingSourceIdentity, MappingSourceState};
 use tl_syntax::{
-    Formula, FormulaDocument, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration, PropositionBinding,
+    Formula, FormulaDocument, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration,
+    PropositionBinding,
     PropositionId, SemanticProfile, SignalCatalogDocument, SignalDomain, SignalId,
 };
 
@@ -200,7 +201,8 @@ fn unpinned_profile_refuses_every_numeric_predicate_and_boolean_export_is_unchan
                         operand: NodeId(0),
                     }),
                 ];
-                let record = map_numeric_to_c2po(single(&nodes), &table, &catalog, 1_000).unwrap_err();
+                let record =
+                    map_numeric_to_c2po(single(&nodes), &table, &catalog, 1_000).unwrap_err();
                 assert_eq!(record.cause, NumericLossCause::TargetNumericProfileUnpinned);
                 refused += 1;
             }
@@ -404,7 +406,11 @@ fn an_unexportable_clause_refuses_the_whole_contract() {
 // Trace: TC-1597, FR-060-AC-2
 #[test]
 fn a_mismatched_or_out_of_range_contract_set_is_refused_without_panicking() {
-    let nodes = vec![atom(0), atom(1), Node::new(NodeKind::And { left: NodeId(0), right: NodeId(1) })];
+    let conjunction = NodeKind::And {
+        left: NodeId(0),
+        right: NodeId(1),
+    };
+    let nodes = vec![atom(0), atom(1), Node::new(conjunction)];
     let document = graph(&nodes);
     let mut wrong_identity = contract_set(&document, &[(1, 0, 1)]);
     wrong_identity.graph_identity = "0".repeat(64);
