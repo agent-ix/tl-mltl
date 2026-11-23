@@ -20,7 +20,7 @@ pub use export::{
     ContractDecomposition, ContractExport, NumericExportOutcome, NumericLossCause,
     NumericLossRecord, NumericLossSubject, NUMERIC_LOSS_V1,
 };
-pub use model::{Comparison, ExprNode, PredicateDefinition, PredicateTable};
+pub use model::{Comparison, ExprNode, PredicateAdapterError, PredicateDefinition, PredicateTable};
 pub use trace::{
     DecimalValue, NumericAdmissionCode, NumericInstant, NumericObservation, NumericTraceDocument,
     NumericTraceError, NumericTraceLimits, NumericTraceSchemaVersion, ValidatedNumericTrace,

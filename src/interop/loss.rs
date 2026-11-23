@@ -6,6 +6,8 @@
 use serde::{Deserialize, Serialize};
 
 use super::SourceRange;
+use crate::wire::common::read as read_canonical;
+use crate::wire::{OwnerLimits, OwnerReadError, OwnerReadErrorCode, OwnerUsage};
 
 /// Loss record wire identity.
 pub const LOSS_RECORD_V1: &str = "tl-mltl.loss-record/v1";
@@ -130,18 +132,26 @@ impl LossRecord {
         serde_json::to_vec(self).expect("loss record serializes")
     }
 
-    /// Strict reader: identity, span/reason exclusivity and canonical bytes.
-    pub fn from_json_bytes(bytes: &[u8]) -> Result<Self, String> {
-        let record: Self = serde_json::from_slice(bytes).map_err(|error| error.to_string())?;
-        if record.schema_version != LOSS_RECORD_V1 {
-            return Err(format!("expected {LOSS_RECORD_V1}"));
-        }
-        if record.span.is_some() == record.no_span_reason.is_some() {
-            return Err("exactly one of span and noSpanReason is required".to_owned());
-        }
-        if record.to_json_bytes() != bytes {
-            return Err("non-canonical loss record".to_owned());
-        }
+    /// Strict reader through the owner boundary (size, depth, canonical form),
+    /// plus identity and span/reason exclusivity.
+    pub fn from_json_bytes(bytes: &[u8], limits: OwnerLimits) -> Result<Self, OwnerReadError> {
+        let (record, _) = read_canonical(bytes, limits, |record: &Self, _| {
+            let field = if record.schema_version != LOSS_RECORD_V1 {
+                Some("schemaVersion")
+            } else if record.span.is_some() == record.no_span_reason.is_some() {
+                Some("span")
+            } else {
+                None
+            };
+            match field {
+                Some(field) => Err(OwnerReadError::new(
+                    OwnerReadErrorCode::InvalidCombination,
+                    field,
+                    OwnerUsage::default(),
+                )),
+                None => Ok(OwnerUsage::default()),
+            }
+        })?;
         Ok(record)
     }
 }

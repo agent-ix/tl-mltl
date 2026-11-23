@@ -119,6 +119,16 @@ pub struct PredicateDefinition {
     pub right: u32,
 }
 
+/// A tl-syntax expression node this owned view does not carry.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PredicateAdapterError {
+    /// A template slot leaf or a node kind added after this adapter.
+    UnsupportedNode {
+        /// Expression node index.
+        node: u32,
+    },
+}
+
 /// Expression arena plus predicates strictly increasing by proposition.
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -138,23 +148,32 @@ impl PredicateTable {
             .collect()
     }
 
-    /// Signals one expression root reads, deduplicated, increasing.
+    /// Signals one expression root reads, deduplicated, increasing. Each node
+    /// is visited once, so a shared DAG costs its node count.
     pub fn signals_read(&self, root: u32) -> Vec<SignalId> {
         let mut found = Vec::new();
+        let mut visited = vec![false; self.expressions.len()];
         let mut stack = vec![root];
         while let Some(index) = stack.pop() {
-            match self.expressions.get(index as usize) {
-                Some(ExprNode::Signal { signal }) => found.push(*signal),
-                Some(ExprNode::Neg { operand })
-                | Some(ExprNode::Abs { operand })
-                | Some(ExprNode::Rescale { operand, .. }) => stack.push(*operand),
-                Some(ExprNode::Add { left, right })
-                | Some(ExprNode::Sub { left, right })
-                | Some(ExprNode::Mul { left, right }) => {
-                    stack.push(*left);
-                    stack.push(*right);
+            let Some(seen) = visited.get_mut(index as usize) else {
+                continue;
+            };
+            if *seen {
+                continue;
+            }
+            *seen = true;
+            match self.expressions[index as usize] {
+                ExprNode::Signal { signal } => found.push(signal),
+                ExprNode::Neg { operand }
+                | ExprNode::Abs { operand }
+                | ExprNode::Rescale { operand, .. } => stack.push(operand),
+                ExprNode::Add { left, right }
+                | ExprNode::Sub { left, right }
+                | ExprNode::Mul { left, right } => {
+                    stack.push(left);
+                    stack.push(right);
                 }
-                Some(ExprNode::Integer { .. }) | Some(ExprNode::Decimal { .. }) | None => {}
+                ExprNode::Integer { .. } | ExprNode::Decimal { .. } => {}
             }
         }
         found.sort_unstable();
@@ -162,45 +181,51 @@ impl PredicateTable {
         found
     }
 
-    /// Converts a validated tl-syntax predicate table.
-    // UNBUILT-PIN: tl-syntax FR-302/FR-303 (`PredicateTableDocument`) is not
-    // merged; every accessor and variant name below is a guess at the spec'd
-    // shape and must be replaced by the merged API.
-    pub fn from_tl_syntax(document: &tl_syntax::PredicateTableDocument) -> Self {
-        use tl_syntax::{ComparisonOperator as C, ExpressionNode as E};
-        let expressions = document
-            .expressions()
-            .iter()
-            .map(|node| match *node {
-                E::Signal(signal) => ExprNode::Signal { signal },
-                E::Integer(value) => ExprNode::Integer { value },
+    /// Converts a validated tl-syntax predicate table (tl-syntax FR-302/FR-303).
+    ///
+    /// A validated table never holds a template slot leaf (`SlotSignal`), and
+    /// the tl-syntax enum is `#[non_exhaustive]`; both are refused by node.
+    pub fn from_tl_syntax(
+        document: &tl_syntax::PredicateTableDocument,
+    ) -> Result<Self, PredicateAdapterError> {
+        use tl_syntax::{ComparisonOperator as C, ExprNode as E};
+        let mut expressions = Vec::with_capacity(document.expressions().len());
+        for (index, node) in document.expressions().iter().enumerate() {
+            expressions.push(match *node {
+                E::Signal { signal } => ExprNode::Signal { signal },
+                E::Integer { value } => ExprNode::Integer { value },
                 E::Decimal { coefficient, scale } => ExprNode::Decimal { coefficient, scale },
-                E::Neg(operand) => ExprNode::Neg { operand: operand.0 },
-                E::Abs(operand) => ExprNode::Abs { operand: operand.0 },
-                E::Add(left, right) => ExprNode::Add {
+                E::Neg { operand } => ExprNode::Neg { operand: operand.0 },
+                E::Abs { operand } => ExprNode::Abs { operand: operand.0 },
+                E::Add { left, right } => ExprNode::Add {
                     left: left.0,
                     right: right.0,
                 },
-                E::Sub(left, right) => ExprNode::Sub {
+                E::Sub { left, right } => ExprNode::Sub {
                     left: left.0,
                     right: right.0,
                 },
-                E::Mul(left, right) => ExprNode::Mul {
+                E::Mul { left, right } => ExprNode::Mul {
                     left: left.0,
                     right: right.0,
                 },
-                E::Rescale(operand, scale) => ExprNode::Rescale {
+                E::Rescale { operand, scale } => ExprNode::Rescale {
                     operand: operand.0,
                     scale,
                 },
-            })
-            .collect();
+                _ => {
+                    return Err(PredicateAdapterError::UnsupportedNode {
+                        node: index as u32,
+                    })
+                }
+            });
+        }
         let predicates = document
             .predicates()
             .iter()
             .map(|predicate| PredicateDefinition {
-                proposition: predicate.proposition(),
-                comparison: match predicate.operator() {
+                proposition: predicate.proposition,
+                comparison: match predicate.operator {
                     C::Lt => Comparison::Lt,
                     C::Le => Comparison::Le,
                     C::Gt => Comparison::Gt,
@@ -208,13 +233,13 @@ impl PredicateTable {
                     C::Eq => Comparison::Eq,
                     C::Ne => Comparison::Ne,
                 },
-                left: predicate.left().0,
-                right: predicate.right().0,
+                left: predicate.left.0,
+                right: predicate.right.0,
             })
             .collect();
-        Self {
+        Ok(Self {
             expressions,
             predicates,
-        }
+        })
     }
 }

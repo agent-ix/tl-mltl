@@ -12,6 +12,7 @@ use tl_mltl::interop::{
     Attribution, AttributionError, ForeignFormat, LossKind, LossRecord, ReaderLimits,
     REVISION_UNKNOWN,
 };
+use tl_mltl::wire::OwnerLimits;
 use tl_syntax::{
     NodeKind, OwnedSignalDeclaration, PropositionBinding, PropositionId, SemanticProfile,
     SignalCatalogDocument, SignalDomain, SignalId,
@@ -279,7 +280,10 @@ fn each_loss_kind_is_produced_by_its_fixture_and_round_trips() {
         };
         assert_eq!(record.format, format, "{kind:?}");
         let bytes = record.to_json_bytes();
-        assert_eq!(LossRecord::from_json_bytes(&bytes).unwrap(), record);
+        assert_eq!(
+            LossRecord::from_json_bytes(&bytes, OwnerLimits::default()).unwrap(),
+            record
+        );
     }
 }
 

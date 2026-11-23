@@ -16,9 +16,10 @@ use tl_mltl::numeric::{
     ExprNode, NumericExportOutcome, NumericLossCause, NumericLossRecord, NumericLossSubject,
     PredicateDefinition, PredicateTable,
 };
+use tl_mltl::wire::OwnerLimits;
 use tl_mltl::{map_to_c2po, map_to_c2po_with_context, MappingSourceIdentity, MappingSourceState};
 use tl_syntax::{
-    Formula, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration, PropositionBinding,
+    Formula, FormulaDocument, Interval, Node, NodeId, NodeKind, OwnedSignalDeclaration, PropositionBinding,
     PropositionId, SemanticProfile, SignalCatalogDocument, SignalDomain, SignalId,
 };
 
@@ -123,10 +124,13 @@ fn reachable_loss_causes_serialize_strictly_and_carry_no_expression() {
 
     for record in [unpinned, missing, exhausted, foreign] {
         let bytes = record.to_json_bytes();
-        assert_eq!(NumericLossRecord::from_json_bytes(&bytes).unwrap(), record);
+        assert_eq!(
+            NumericLossRecord::from_json_bytes(&bytes, OwnerLimits::default()).unwrap(),
+            record
+        );
         let mut spaced = bytes.clone();
         spaced.insert(1, b' ');
-        assert!(NumericLossRecord::from_json_bytes(&spaced).is_err());
+        assert!(NumericLossRecord::from_json_bytes(&spaced, OwnerLimits::default()).is_err());
     }
     // TargetIntegerRangeExceeded, FloatMatchingUnsafe, RescaleBeyondTarget and
     // UnsupportedNumericOperator need a pinned profile and are unreachable in
@@ -269,9 +273,14 @@ fn grid_formula_nodes() -> Vec<Node> {
     ]
 }
 
-fn contract_set(pairs: &[(u32, u32, u32)]) -> ContractSet {
+fn graph(nodes: &[Node]) -> FormulaDocument {
+    FormulaDocument::from_formula_v2(single(nodes)).unwrap()
+}
+
+fn contract_set(graph: &FormulaDocument, pairs: &[(u32, u32, u32)]) -> ContractSet {
     ContractSet {
-        graph_identity: String::new(),
+        graph_identity: graph.content_identity().unwrap(),
+        semantic_profile: SemanticProfile::OnlinePrefixV1,
         contracts: pairs
             .iter()
             .map(|&(id, assumption, guarantee)| ContractRoots {
@@ -288,9 +297,11 @@ fn contract_set(pairs: &[(u32, u32, u32)]) -> ContractSet {
 #[test]
 fn numeric_contract_grid_is_refused_and_boolean_contracts_decompose_to_three_formulas() {
     let nodes = grid_formula_nodes();
-    let formula = single(&nodes);
-    let grid = contract_set(&[(1, 0, 3), (2, 0, 5), (3, 1, 3), (4, 1, 5), (5, 2, 3), (6, 2, 5)]);
-    let export = export_contracts_c2po(formula, &grid, &grid_table(), &catalog(), 10_000);
+    let document = graph(&nodes);
+    let pairs = [(1, 0, 3), (2, 0, 5), (3, 1, 3), (4, 1, 5), (5, 2, 3), (6, 2, 5)];
+    let grid = contract_set(&document, &pairs);
+    let export =
+        export_contracts_c2po(&document, &grid, &grid_table(), &catalog(), 10_000).unwrap();
     assert!(export.exported.is_empty());
     assert_eq!(export.refused.len(), 6);
     for (_, record) in &export.refused {
@@ -307,14 +318,15 @@ fn numeric_contract_grid_is_refused_and_boolean_contracts_decompose_to_three_for
             operand: NodeId(1),
         }),
     ];
-    let boolean = single(&boolean_nodes);
+    let boolean = graph(&boolean_nodes);
     let export = export_contracts_c2po(
-        boolean,
-        &contract_set(&[(1, 0, 2)]),
+        &boolean,
+        &contract_set(&boolean, &[(1, 0, 2)]),
         &PredicateTable::default(),
         &catalog(),
         10_000,
-    );
+    )
+    .unwrap();
     assert!(export.refused.is_empty());
     let decomposition = &export.exported[0];
     let text = format!(
@@ -372,17 +384,48 @@ fn an_unexportable_clause_refuses_the_whole_contract() {
             right: NodeId(1),
         }),
     ];
+    let document = graph(&nodes);
     let export = export_contracts_c2po(
-        single(&nodes),
-        &contract_set(&[(1, 0, 1), (2, 0, 0)]),
+        &document,
+        &contract_set(&document, &[(1, 0, 1), (2, 0, 0)]),
         &grid_table(),
         &catalog(),
         10_000,
-    );
+    )
+    .unwrap();
     assert_eq!(export.refused.len(), 1);
     assert_eq!(export.refused[0].0, 1);
     assert_eq!(export.refused[0].1.cause, NumericLossCause::TargetNumericProfileUnpinned);
     // No partial output for contract 1; contract 2 (Boolean) exports whole.
     assert_eq!(export.exported.len(), 1);
     assert_eq!(export.exported[0].id, 2);
+}
+
+// Trace: TC-1597, FR-060-AC-2
+#[test]
+fn a_mismatched_or_out_of_range_contract_set_is_refused_without_panicking() {
+    let nodes = vec![atom(0), atom(1), Node::new(NodeKind::And { left: NodeId(0), right: NodeId(1) })];
+    let document = graph(&nodes);
+    let mut wrong_identity = contract_set(&document, &[(1, 0, 1)]);
+    wrong_identity.graph_identity = "0".repeat(64);
+    let record = export_contracts_c2po(
+        &document,
+        &wrong_identity,
+        &PredicateTable::default(),
+        &catalog(),
+        10_000,
+    )
+    .unwrap_err();
+    assert_eq!(record.cause, NumericLossCause::ForeignIdentity);
+    assert_eq!(record.subject, NumericLossSubject::Formula);
+    let out_of_range = contract_set(&document, &[(1, 0, 99)]);
+    let record = export_contracts_c2po(
+        &document,
+        &out_of_range,
+        &PredicateTable::default(),
+        &catalog(),
+        10_000,
+    )
+    .unwrap_err();
+    assert_eq!(record.cause, NumericLossCause::ForeignIdentity);
 }

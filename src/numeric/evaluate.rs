@@ -152,6 +152,8 @@ pub enum NumericEvaluationError {
     Evaluation(EvaluationError),
     /// History construction failed.
     History(HistoryError),
+    /// Origin-complete evaluation of a trace with no instant.
+    EmptyHistory,
     /// Past evaluation failed.
     Past(PastEvaluationError),
 }
@@ -187,6 +189,7 @@ impl fmt::Display for NumericEvaluationError {
             }
             Self::Evaluation(error) => error.fmt(formatter),
             Self::History(error) => write!(formatter, "history refused: {error:?}"),
+            Self::EmptyHistory => write!(formatter, "an empty trace has no history"),
             Self::Past(error) => write!(formatter, "past evaluation failed: {error:?}"),
         }
     }
@@ -213,22 +216,22 @@ fn observed(trace: &NumericTraceDocument, position: usize, signal: SignalId) -> 
     Some((i128::from(coefficient), scale))
 }
 
-/// Evaluates expression node `node` at `position`; `Ok(None)` when unobserved.
-pub(crate) fn expression_value(
-    table: &PredicateTable,
+/// Value of one node from its already-computed operands (`None` = unobserved).
+fn node_value(
+    kind: ExprNode,
     node: u32,
+    values: &[Option<Exact>],
     position: usize,
     trace: &NumericTraceDocument,
 ) -> Result<Option<Exact>, NumericEvaluationError> {
-    let malformed = NumericEvaluationError::MalformedExpression { node };
     let operand = |index: u32| -> Result<Option<Exact>, NumericEvaluationError> {
+        // Operands precede their user, so a later or equal index is malformed.
         if index >= node {
             return Err(NumericEvaluationError::MalformedExpression { node });
         }
-        expression_value(table, index, position, trace)
+        Ok(values[index as usize])
     };
-    let overflow = NumericEvaluationError::ArithmeticOverflow { node };
-    let kind = *table.expressions.get(node as usize).ok_or(malformed)?;
+    let overflow = || NumericEvaluationError::ArithmeticOverflow { node };
     let value = match kind {
         ExprNode::Signal { signal } => observed(trace, position, signal),
         ExprNode::Integer { value } => Some((i128::from(value), 0)),
@@ -239,11 +242,11 @@ pub(crate) fn expression_value(
             Some((i128::from(coefficient), scale))
         }
         ExprNode::Neg { operand: index } => match operand(index)? {
-            Some((value, scale)) => Some((value.checked_neg().ok_or(overflow)?, scale)),
+            Some((value, scale)) => Some((value.checked_neg().ok_or_else(overflow)?, scale)),
             None => None,
         },
         ExprNode::Abs { operand: index } => match operand(index)? {
-            Some((value, scale)) => Some((value.checked_abs().ok_or(overflow)?, scale)),
+            Some((value, scale)) => Some((value.checked_abs().ok_or_else(overflow)?, scale)),
             None => None,
         },
         ExprNode::Add { left, right } | ExprNode::Sub { left, right } => {
@@ -257,7 +260,7 @@ pub(crate) fn expression_value(
                     } else {
                         l.checked_sub(r)
                     };
-                    Some((value.ok_or(overflow)?, ls))
+                    Some((value.ok_or_else(overflow)?, ls))
                 }
                 _ => None,
             }
@@ -266,7 +269,7 @@ pub(crate) fn expression_value(
             (Some((l, ls)), Some((r, rs))) => {
                 let scale = ls.checked_add(rs).filter(|scale| *scale <= MAX_SCALE);
                 let scale = scale.ok_or(NumericEvaluationError::ScaleMismatch { node })?;
-                Some((l.checked_mul(r).ok_or(overflow)?, scale))
+                Some((l.checked_mul(r).ok_or_else(overflow)?, scale))
             }
             _ => None,
         },
@@ -282,12 +285,27 @@ pub(crate) fn expression_value(
                     return Err(NumericEvaluationError::ScaleMismatch { node });
                 }
                 let factor = pow10(scale - from, node)?;
-                Some((value.checked_mul(factor).ok_or(overflow)?, scale))
+                Some((value.checked_mul(factor).ok_or_else(overflow)?, scale))
             }
             None => None,
         },
     };
     Ok(value)
+}
+
+/// Every arena node's value at `position`, bottom-up, each node once: shared
+/// operands are never re-evaluated (cost `nodes`, not exponential).
+pub(crate) fn arena_values(
+    table: &PredicateTable,
+    position: usize,
+    trace: &NumericTraceDocument,
+) -> Result<Vec<Option<Exact>>, NumericEvaluationError> {
+    let mut values = Vec::with_capacity(table.expressions.len());
+    for (index, kind) in table.expressions.iter().enumerate() {
+        let value = node_value(*kind, index as u32, &values, position, trace)?;
+        values.push(value);
+    }
+    Ok(values)
 }
 
 /// Truth of every predicate at every observed position.
@@ -297,11 +315,16 @@ pub(crate) fn predicate_cells(
 ) -> Result<Vec<Vec<PredicateCell>>, NumericEvaluationError> {
     let mut rows = Vec::with_capacity(trace.instants.len());
     for position in 0..trace.instants.len() {
+        let values = arena_values(table, position, trace)?;
         let mut row = Vec::with_capacity(table.predicates.len());
         for predicate in &table.predicates {
-            let left = expression_value(table, predicate.left, position, trace)?;
-            let right = expression_value(table, predicate.right, position, trace)?;
-            let cell = match (left, right) {
+            let root = |index: u32| -> Result<Option<Exact>, NumericEvaluationError> {
+                values
+                    .get(index as usize)
+                    .copied()
+                    .ok_or(NumericEvaluationError::MalformedExpression { node: index })
+            };
+            let cell = match (root(predicate.left)?, root(predicate.right)?) {
                 (Some((l, ls)), Some((r, rs))) => {
                     if ls != rs {
                         return Err(NumericEvaluationError::ScaleMismatch {
@@ -329,8 +352,10 @@ fn check_work(
     limit: u64,
 ) -> Result<(), NumericEvaluationError> {
     let requested = (trace.instants.len() as u128)
-        .saturating_mul(table.predicates.len() as u128)
-        .saturating_mul(table.expressions.len().max(1) as u128);
+        .saturating_mul(table.expressions.len().max(1) as u128)
+        .saturating_add(
+            (trace.instants.len() as u128).saturating_mul(table.predicates.len() as u128),
+        );
     if requested > u128::from(limit) {
         return Err(NumericEvaluationError::WorkLimitExceeded { requested, limit });
     }
@@ -354,19 +379,28 @@ fn first_unobserved_signal(
         .unwrap_or(SignalId(u32::MAX))
 }
 
-/// Evaluates a formula whose propositions may be predicate-defined, against a
-/// numeric trace, at `time` (verdict time, or the anchor on the past profile).
-///
-/// Implements: FR-054, FR-055
-pub fn evaluate_numeric(
-    formula: Formula<'_>,
-    formula_id: &str,
+/// Predicate truth and the derived Boolean (and unobserved) rows of one trace,
+/// computed once and shared by every evaluation time (FR-054, FR-055).
+pub(crate) struct Prepared {
+    profile: SemanticProfile,
+    predicate_ids: Vec<PropositionId>,
+    cells: Vec<Vec<PredicateCell>>,
+    derived_trace: Vec<Vec<PropositionId>>,
+    derived_unobserved: Vec<Vec<PropositionId>>,
+    unobserved_cells: u64,
+    /// First position holding an unobserved cell, with its predicate index.
+    first_gap: Option<(usize, usize)>,
+    /// Origin-complete history over the derived trace, built once.
+    history: Option<PositionHistoryDocument>,
+}
+
+/// Prepares a trace for evaluation under `profile`.
+pub(crate) fn prepare(
+    profile: SemanticProfile,
     table: &PredicateTable,
     trace: &NumericTraceDocument,
-    time: u64,
     limits: NumericEvaluationLimits,
-) -> Result<NumericEvaluationReport, NumericEvaluationError> {
-    let profile = formula.profile();
+) -> Result<Prepared, NumericEvaluationError> {
     if !matches!(
         profile,
         SemanticProfile::ClosedTraceV1
@@ -394,6 +428,7 @@ pub fn evaluate_numeric(
     let mut derived_trace = Vec::with_capacity(cells.len());
     let mut derived_unobserved = Vec::with_capacity(cells.len());
     let mut unobserved_cells = 0u64;
+    let mut first_gap = None;
     for (position, row) in cells.iter().enumerate() {
         let mut truth: BTreeSet<PropositionId> =
             trace.instants[position].propositions.iter().copied().collect();
@@ -406,6 +441,9 @@ pub fn evaluate_numeric(
                 PredicateCell::False => {}
                 PredicateCell::Unobserved => {
                     unobserved_cells += 1;
+                    if first_gap.is_none() {
+                        first_gap = Some((position, index));
+                    }
                     if profile == SemanticProfile::OnlinePrefixV1 {
                         unknown.push(predicate_ids[index]);
                     }
@@ -416,59 +454,15 @@ pub fn evaluate_numeric(
         derived_trace.push(truth.into_iter().collect::<Vec<_>>());
         derived_unobserved.push(unknown);
     }
-    let (evaluation, note) = match profile {
-        SemanticProfile::ClosedTraceV1 => (
-            EmbeddedReport::Future(
-                evaluate_closed_at(
-                    formula,
-                    formula_id,
-                    &derived_trace,
-                    trace.trace_id.clone(),
-                    time,
-                    limits.evaluation,
-                )
-                .map_err(NumericEvaluationError::Evaluation)?,
-            ),
-            "closed-trace: an unobserved predicate is false (padding), so its negation is true",
-        ),
-        SemanticProfile::OnlinePrefixV1 => (
-            EmbeddedReport::Future(
-                evaluate_prefix_partial_at(
-                    formula,
-                    formula_id,
-                    &derived_trace,
-                    &derived_unobserved,
-                    trace.trace_id.clone(),
-                    trace.closed,
-                    time,
-                    limits.evaluation,
-                )
-                .map_err(NumericEvaluationError::Evaluation)?,
-            ),
-            "online-prefix: an unobserved predicate is Pending under the Kleene operators",
-        ),
-        _ => {
-            // Origin-complete: the history runs from origin 0 through the anchor.
-            for (position, row) in cells.iter().enumerate() {
-                if position as u64 > time {
-                    break;
-                }
-                if let Some(index) = row
-                    .iter()
-                    .position(|cell| *cell == PredicateCell::Unobserved)
-                {
-                    return Err(NumericEvaluationError::IncompleteHistory {
-                        position: position as u64,
-                        signal: first_unobserved_signal(table, index, position, trace),
-                    });
-                }
-            }
-            let observations = derived_trace
-                .iter()
-                .enumerate()
-                .map(|(position, row)| PositionObservation::new(position as u64, row.clone(), None))
-                .collect();
-            let history = PositionHistoryDocument::new(
+    let history = if profile == SemanticProfile::OriginCompleteHistoryV1 && !derived_trace.is_empty()
+    {
+        let observations = derived_trace
+            .iter()
+            .enumerate()
+            .map(|(position, row)| PositionObservation::new(position as u64, row.clone(), None))
+            .collect();
+        Some(
+            PositionHistoryDocument::new(
                 trace.trace_id.clone(),
                 1,
                 0,
@@ -476,45 +470,137 @@ pub fn evaluate_numeric(
                 Some(ClockBinding::EventPosition),
                 observations,
             )
-            .map_err(NumericEvaluationError::History)?;
-            (
-                EmbeddedReport::Past(
-                    evaluate_past(
-                        formula,
-                        formula_id,
-                        &history,
-                        time,
-                        "numeric-predicates",
-                        1,
-                        PastEvaluationRelationInput::Original,
-                        limits.past,
-                    )
-                    .map_err(NumericEvaluationError::Past)?,
-                ),
-                "origin-complete: an unobserved predicate inside the history refuses; \
-                 positions before the origin keep the proposition-false extension",
+            .map_err(NumericEvaluationError::History)?,
+        )
+    } else {
+        None
+    };
+    Ok(Prepared {
+        profile,
+        predicate_ids,
+        cells,
+        derived_trace,
+        derived_unobserved,
+        unobserved_cells,
+        first_gap,
+        history,
+    })
+}
+
+const CLOSED_NOTE: &str =
+    "closed-trace: an unobserved predicate is false (padding), so its negation is true";
+const PREFIX_NOTE: &str =
+    "online-prefix: an unobserved predicate is Pending under the Kleene operators";
+const PAST_NOTE: &str = "origin-complete: an unobserved predicate inside the history refuses; \
+                         positions before the origin keep the proposition-false extension";
+
+/// Evaluates `formula` (whose profile must be the prepared one) at `time` on
+/// prepared rows: one evaluator call, no recomputation of predicate truth.
+pub(crate) fn evaluate_prepared(
+    prepared: &Prepared,
+    formula: Formula<'_>,
+    formula_id: &str,
+    table: &PredicateTable,
+    trace: &NumericTraceDocument,
+    time: u64,
+    limits: NumericEvaluationLimits,
+) -> Result<EmbeddedReport, NumericEvaluationError> {
+    if formula.profile() != prepared.profile {
+        return Err(NumericEvaluationError::UnsupportedProfile {
+            actual: formula.profile().as_str(),
+        });
+    }
+    match prepared.profile {
+        SemanticProfile::ClosedTraceV1 => evaluate_closed_at(
+            formula,
+            formula_id,
+            &prepared.derived_trace,
+            trace.trace_id.clone(),
+            time,
+            limits.evaluation,
+        )
+        .map(EmbeddedReport::Future)
+        .map_err(NumericEvaluationError::Evaluation),
+        SemanticProfile::OnlinePrefixV1 => evaluate_prefix_partial_at(
+            formula,
+            formula_id,
+            &prepared.derived_trace,
+            &prepared.derived_unobserved,
+            trace.trace_id.clone(),
+            trace.closed,
+            time,
+            limits.evaluation,
+        )
+        .map(EmbeddedReport::Future)
+        .map_err(NumericEvaluationError::Evaluation),
+        _ => {
+            // The history runs from origin 0 through the anchor.
+            if let Some((position, index)) = prepared.first_gap {
+                if position as u64 <= time {
+                    return Err(NumericEvaluationError::IncompleteHistory {
+                        position: position as u64,
+                        signal: first_unobserved_signal(table, index, position, trace),
+                    });
+                }
+            }
+            let Some(history) = &prepared.history else {
+                return Err(NumericEvaluationError::EmptyHistory);
+            };
+            evaluate_past(
+                formula,
+                formula_id,
+                history,
+                time,
+                "numeric-predicates",
+                1,
+                PastEvaluationRelationInput::Original,
+                limits.past,
             )
+            .map(EmbeddedReport::Past)
+            .map_err(NumericEvaluationError::Past)
         }
+    }
+}
+
+/// Evaluates a formula whose propositions may be predicate-defined, against a
+/// numeric trace, at `time` (verdict time, or the anchor on the past profile).
+///
+/// Implements: FR-054, FR-055
+pub fn evaluate_numeric(
+    formula: Formula<'_>,
+    formula_id: &str,
+    table: &PredicateTable,
+    trace: &NumericTraceDocument,
+    time: u64,
+    limits: NumericEvaluationLimits,
+) -> Result<NumericEvaluationReport, NumericEvaluationError> {
+    let prepared = prepare(formula.profile(), table, trace, limits)?;
+    let evaluation =
+        evaluate_prepared(&prepared, formula, formula_id, table, trace, time, limits)?;
+    let note = match prepared.profile {
+        SemanticProfile::ClosedTraceV1 => CLOSED_NOTE,
+        SemanticProfile::OnlinePrefixV1 => PREFIX_NOTE,
+        _ => PAST_NOTE,
+    };
+    let ids = |rows: &[Vec<PropositionId>]| -> Vec<Vec<u32>> {
+        rows.iter()
+            .map(|row| row.iter().map(|id| id.0).collect())
+            .collect()
     };
     Ok(NumericEvaluationReport {
         schema_version: NUMERIC_EVALUATION_V1,
         evaluation,
         numeric: NumericSection {
-            predicate_proposition_ids: predicate_ids.iter().map(|id| id.0).collect(),
-            truth: cells,
-            unobserved_cells,
-            derived_trace: derived_trace
-                .iter()
-                .map(|row| row.iter().map(|id| id.0).collect())
-                .collect(),
-            derived_unobserved: derived_unobserved
-                .iter()
-                .map(|row| row.iter().map(|id| id.0).collect())
-                .collect(),
+            predicate_proposition_ids: prepared.predicate_ids.iter().map(|id| id.0).collect(),
+            derived_trace: ids(&prepared.derived_trace),
+            derived_unobserved: ids(&prepared.derived_unobserved),
+            unobserved_cells: prepared.unobserved_cells,
+            truth: prepared.cells,
             note,
         },
     })
 }
+
 
 /// Proposition identities referenced by a formula (helper for callers that
 /// split Boolean and predicate atoms).

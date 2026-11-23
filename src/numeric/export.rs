@@ -13,11 +13,16 @@
 use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
-use tl_syntax::{Formula, Node, NodeId, NodeKind, PropositionId, SemanticProfile, SignalCatalogDocument};
+use tl_syntax::{
+    Formula, FormulaDocument, Node, NodeId, NodeKind, PropositionId, SemanticProfile,
+    SignalCatalogDocument,
+};
 
 use super::model::{Comparison, ExprNode, PredicateTable};
-use crate::contract::ContractSet;
+use crate::contract::{bind_contracts, ContractSet};
 use crate::mapping::legacy::render_contextual_expression;
+use crate::wire::common::read as read_canonical;
+use crate::wire::{OwnerLimits, OwnerReadError, OwnerReadErrorCode, OwnerUsage};
 use crate::MappingError;
 
 /// Loss record identity.
@@ -55,6 +60,10 @@ pub enum NumericLossSubject {
     ExpressionNode(u32),
     /// A catalog signal.
     Signal(u32),
+    /// The formula or graph as a whole.
+    Formula,
+    /// One contract of a contract set.
+    Contract(u32),
 }
 
 /// `tl-mltl.numeric-loss/v1`. A refusal never carries a partial expression.
@@ -86,15 +95,19 @@ impl NumericLossRecord {
         serde_json::to_vec(self).expect("numeric loss record serializes")
     }
 
-    /// Strict reader: identity and canonical bytes.
-    pub fn from_json_bytes(bytes: &[u8]) -> Result<Self, String> {
-        let record: Self = serde_json::from_slice(bytes).map_err(|error| error.to_string())?;
-        if record.schema_version != NUMERIC_LOSS_V1 {
-            return Err(format!("expected {NUMERIC_LOSS_V1}"));
-        }
-        if record.to_json_bytes() != bytes {
-            return Err("non-canonical numeric loss record".to_owned());
-        }
+    /// Strict reader through the owner boundary (size, depth, canonical form).
+    pub fn from_json_bytes(bytes: &[u8], limits: OwnerLimits) -> Result<Self, OwnerReadError> {
+        let (record, _) = read_canonical(bytes, limits, |record: &Self, _| {
+            if record.schema_version == NUMERIC_LOSS_V1 {
+                Ok(OwnerUsage::default())
+            } else {
+                Err(OwnerReadError::new(
+                    OwnerReadErrorCode::InvalidCombination,
+                    "schemaVersion",
+                    OwnerUsage::default(),
+                ))
+            }
+        })?;
         Ok(record)
     }
 }
@@ -192,7 +205,7 @@ fn mapping_loss(error: MappingError) -> NumericLossRecord {
         | MappingError::UnsupportedProfile { .. }
         | MappingError::UnsupportedSignalName { .. } => NumericLossCause::ForeignIdentity,
     };
-    NumericLossRecord::new(cause, NumericLossSubject::Proposition(u32::MAX), error.to_string())
+    NumericLossRecord::new(cause, NumericLossSubject::Formula, error.to_string())
 }
 
 /// Exports a formula whose propositions may be predicate-defined.
@@ -211,7 +224,7 @@ pub fn map_numeric_to_c2po(
     if formula.profile() != SemanticProfile::OnlinePrefixV1 {
         return Err(NumericLossRecord::new(
             NumericLossCause::ForeignIdentity,
-            NumericLossSubject::Proposition(u32::MAX),
+            NumericLossSubject::Formula,
             format!("C2PO export requires mltl.online-prefix/v1, found {}", formula.profile().as_str()),
         ));
     }
@@ -345,16 +358,25 @@ pub struct ContractExport {
 }
 
 /// Exports each contract as `A`, `A && G`, `A && !G`, or refuses the whole
-/// contract with the first loss record of any clause.
+/// contract with the first loss record of any clause. The set is bound to the
+/// graph first (identity, profile, root range, as in FR-059); a binding
+/// failure refuses the whole set with one `ForeignIdentity` record.
 ///
 /// Implements: FR-060 (decomposition export, refusal-until-pinned)
 pub fn export_contracts_c2po(
-    formula: Formula<'_>,
+    graph: &FormulaDocument,
     contracts: &ContractSet,
     table: &PredicateTable,
     catalog: &SignalCatalogDocument,
     work_limit: u64,
-) -> ContractExport {
+) -> Result<ContractExport, NumericLossRecord> {
+    let formula = bind_contracts(graph, contracts).map_err(|error| {
+        NumericLossRecord::new(
+            NumericLossCause::ForeignIdentity,
+            NumericLossSubject::Formula,
+            error.to_string(),
+        )
+    })?;
     let mut exported = Vec::new();
     let mut refused = Vec::new();
     for contract in &contracts.contracts {
@@ -375,7 +397,7 @@ pub fn export_contracts_c2po(
                 .map_err(|error| {
                     NumericLossRecord::new(
                         NumericLossCause::ForeignIdentity,
-                        NumericLossSubject::Proposition(u32::MAX),
+                        NumericLossSubject::Contract(contract.id),
                         format!("{error:?}"),
                     )
                 })
@@ -401,10 +423,10 @@ pub fn export_contracts_c2po(
             }
         }
     }
-    ContractExport {
+    Ok(ContractExport {
         exported,
         refused,
         note: "decomposition export only; the native C2PO contract construct is DEFERRED \
                until its syntax is pinned from a retained R2U2 exchange",
-    }
+    })
 }

@@ -3,8 +3,8 @@
 //! UNBUILT, UNTESTED: written without a compiler (TL-DECISIONS-2026-11-23).
 
 use tl_mltl::contract::{
-    contract_outcome, evaluate_contracts, ContractEvaluationError, ContractEvaluationLimits,
-    ContractEvaluationReport, ContractOutcome, ContractRoots, ContractSet,
+    contract_truth, evaluate_contracts, ContractEvaluationError, ContractEvaluationLimits,
+    ContractEvaluationReport, ContractRoots, ContractSet,
 };
 use tl_mltl::numeric::{
     Comparison, ExprNode, NumericInstant, NumericObservation, NumericTraceDocument,
@@ -13,6 +13,7 @@ use tl_mltl::numeric::{
 use tl_mltl::wire::OwnerLimits;
 use tl_mltl::TruthValue;
 use tl_syntax::{
+    contract_outcome, ContractOutcome, ContractStatus,
     Formula, FormulaDocument, Interval, Node, NodeId, NodeKind, PropositionId, SemanticProfile,
     SignalId,
 };
@@ -42,9 +43,24 @@ fn identity(formula: Formula<'_>) -> String {
         .unwrap()
 }
 
+fn doc(formula: Formula<'_>) -> FormulaDocument {
+    FormulaDocument::from_formula_v2(formula).unwrap()
+}
+
+const INACTIVE: ContractOutcome = ContractOutcome::Status(ContractStatus::Inactive);
+const INVALID: ContractOutcome = ContractOutcome::Status(ContractStatus::Invalid);
+const VERIFIED: ContractOutcome = ContractOutcome::Status(ContractStatus::Verified);
+const PENDING: ContractOutcome = ContractOutcome::Pending;
+
+/// The tl-syntax FR-310 table applied to evaluator truth values.
+fn outcome(assumption: TruthValue, guarantee: TruthValue) -> ContractOutcome {
+    contract_outcome(contract_truth(assumption), contract_truth(guarantee))
+}
+
 fn set(formula: Formula<'_>, contracts: &[(u32, &str, u32, u32)]) -> ContractSet {
     ContractSet {
         graph_identity: identity(formula),
+        semantic_profile: formula.profile(),
         contracts: contracts
             .iter()
             .map(|&(id, name, assumption, guarantee)| ContractRoots {
@@ -133,7 +149,7 @@ fn nine_rows_on_prefix_and_four_decided_rows_without_pending_on_closed() {
 
     let prefix = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(2), &nodes).unwrap();
     let report = evaluate_contracts(
-        prefix,
+        &doc(prefix),
         "f",
         &set(prefix, &[(1, "c", 0, 1)]),
         &predicates(),
@@ -146,24 +162,23 @@ fn nine_rows_on_prefix_and_four_decided_rows_without_pending_on_closed() {
     let mut index = 0;
     for a in VALUES {
         for g in VALUES {
-            assert_eq!(outcomes[index].outcome, contract_outcome(a, g), "{a:?} {g:?}");
+            assert_eq!(outcomes[index].outcome, outcome(a, g), "{a:?} {g:?}");
             index += 1;
         }
     }
     // The table itself, row by row (tl-syntax FR-310).
-    use ContractOutcome::{Inactive, Invalid, Pending, Verified};
     use TruthValue::{False, Pending as P, True};
     for g in VALUES {
-        assert_eq!(contract_outcome(False, g), Inactive);
-        assert_eq!(contract_outcome(P, g), Pending);
+        assert_eq!(outcome(False, g), INACTIVE);
+        assert_eq!(outcome(P, g), PENDING);
     }
-    assert_eq!(contract_outcome(True, False), Invalid);
-    assert_eq!(contract_outcome(True, True), Verified);
-    assert_eq!(contract_outcome(True, P), Pending);
+    assert_eq!(outcome(True, False), INVALID);
+    assert_eq!(outcome(True, True), VERIFIED);
+    assert_eq!(outcome(True, P), PENDING);
 
     let closed = Formula::new(SemanticProfile::ClosedTraceV1, NodeId(2), &nodes).unwrap();
     let report = evaluate_contracts(
-        closed,
+        &doc(closed),
         "f",
         &set(closed, &[(1, "c", 0, 1)]),
         &predicates(),
@@ -176,9 +191,9 @@ fn nine_rows_on_prefix_and_four_decided_rows_without_pending_on_closed() {
         .iter()
         .map(|position| position.outcome)
         .collect();
-    assert!(!seen.contains(&Pending));
-    for outcome in [Inactive, Invalid, Verified] {
-        assert!(seen.contains(&outcome));
+    assert!(!seen.contains(&PENDING));
+    for status in [INACTIVE, INVALID, VERIFIED] {
+        assert!(seen.contains(&status));
     }
     // Closed reads an unobserved predicate as false: rows map through the table
     // with Pending replaced by False.
@@ -186,7 +201,7 @@ fn nine_rows_on_prefix_and_four_decided_rows_without_pending_on_closed() {
     let mut index = 0;
     for a in VALUES {
         for g in VALUES {
-            assert_eq!(seen[index], contract_outcome(decided(a), decided(g)));
+            assert_eq!(seen[index], outcome(decided(a), decided(g)));
             index += 1;
         }
     }
@@ -216,7 +231,7 @@ fn never_exercised_invalid_and_verified_contracts_on_the_corpus() {
         &[(1, "never", 2, 1), (2, "breaks", 0, 1), (3, "holds", 1, 1)],
     );
     let report = evaluate_contracts(
-        formula,
+        &doc(formula),
         "f",
         &contracts,
         &PredicateTable::default(),
@@ -228,7 +243,7 @@ fn never_exercised_invalid_and_verified_contracts_on_the_corpus() {
     assert!(never
         .outcomes
         .iter()
-        .all(|position| position.outcome == ContractOutcome::Inactive));
+        .all(|position| position.outcome == INACTIVE));
     assert_eq!(never.summary.unpadded.inactive, 4);
     let breaks = &report.contracts[1];
     assert_eq!(breaks.summary.first_invalid, Some(1));
@@ -246,7 +261,7 @@ fn graph_identity_mismatch_is_refused_and_report_round_trips_strictly() {
     let mut contracts = set(formula, &[(1, "c", 0, 1)]);
     let corpus = boolean(true, &[&[0], &[0, 1]]);
     let report = evaluate_contracts(
-        formula,
+        &doc(formula),
         "f",
         &contracts,
         &PredicateTable::default(),
@@ -266,7 +281,7 @@ fn graph_identity_mismatch_is_refused_and_report_round_trips_strictly() {
     contracts.graph_identity = "0".repeat(64);
     assert!(matches!(
         evaluate_contracts(
-            formula,
+            &doc(formula),
             "f",
             &contracts,
             &PredicateTable::default(),
@@ -304,7 +319,7 @@ fn closed_tail_padding_is_flagged_and_excluded_from_first_times() {
     let closed = Formula::new(SemanticProfile::ClosedTraceV1, NodeId(5), &nodes).unwrap();
     let contracts = set(closed, &[(1, "guarantee-pads", 0, 2), (2, "assumption-pads", 4, 0)]);
     let report = evaluate_contracts(
-        closed,
+        &doc(closed),
         "f",
         &contracts,
         &PredicateTable::default(),
@@ -314,19 +329,19 @@ fn closed_tail_padding_is_flagged_and_excluded_from_first_times() {
     .unwrap();
     let guarantee = &report.contracts[0];
     let last = guarantee.outcomes[2];
-    assert_eq!(last.outcome, ContractOutcome::Invalid);
+    assert_eq!(last.outcome, INVALID);
     assert!(last.padded);
     assert_eq!(guarantee.summary.first_invalid, None);
     assert_eq!(guarantee.summary.padded.invalid, 1);
     let assumption = &report.contracts[1];
     let last = assumption.outcomes[2];
-    assert_eq!(last.outcome, ContractOutcome::Inactive);
+    assert_eq!(last.outcome, INACTIVE);
     assert!(last.padded);
     assert_eq!(assumption.summary.first_inactive, None);
 
     let prefix = Formula::new(SemanticProfile::OnlinePrefixV1, NodeId(5), &nodes).unwrap();
     let report = evaluate_contracts(
-        prefix,
+        &doc(prefix),
         "f",
         &set(prefix, &[(1, "guarantee-pads", 0, 2)]),
         &PredicateTable::default(),
@@ -335,7 +350,7 @@ fn closed_tail_padding_is_flagged_and_excluded_from_first_times() {
     )
     .unwrap();
     let last = report.contracts[0].outcomes[2];
-    assert_eq!(last.outcome, ContractOutcome::Pending);
+    assert_eq!(last.outcome, PENDING);
     assert!(!last.padded);
 }
 
@@ -350,7 +365,7 @@ fn empty_trace_gives_an_empty_series_on_every_profile() {
     ] {
         let formula = Formula::new(profile, NodeId(2), &nodes).unwrap();
         let report = evaluate_contracts(
-            formula,
+            &doc(formula),
             "f",
             &set(formula, &[(1, "c", 0, 1)]),
             &PredicateTable::default(),
