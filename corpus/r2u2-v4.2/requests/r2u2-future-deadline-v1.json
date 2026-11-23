@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "tl-mltl.command/v1",
+  "operation": "evaluate",
+  "formulaId": "r2u2-future-deadline-v1",
+  "formula": {
+    "schema_version": "tl-syntax.formula/v1",
+    "semantic_profile": "mltl.online-prefix/v1",
+    "root": 1,
+    "nodes": [
+      {
+        "kind": "proposition",
+        "proposition": 2
+      },
+      {
+        "kind": "future",
+        "interval": {
+          "start": 0,
+          "end": 3
+        },
+        "operand": 0
+      }
+    ]
+  },
+  "trace": {
+    "schemaVersion": "tl-mltl.trace/v1",
+    "traceId": "r2u2-v4.2-corpus",
+    "closed": false,
+    "instants": [
+      [],
+      [
+        0,
+        1
+      ],
+      [
+        1
+      ],
+      [
+        1
+      ]
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "tl-mltl.evaluation-record/v1",
+  "toolchain": {
+    "name": "tl-mltl",
+    "version": "0.4.1"
+  },
+  "semanticProfile": "OnlinePrefixV1",
+  "semanticProfileId": "mltl.online-prefix/v1",
+  "formulaId": "r2u2-until-lower-bound-v1",
+  "inputSha256": "dde8e0771d818ec132f15a8ae5ae0f58af68ec2e1a6d0969c971958493cdb6a7",
+  "trace": {
+    "traceId": "r2u2-v4.2-corpus",
+    "closed": false,
+    "instants": [
+      [],
+      [
+        0,
+        1
+      ],
+      [
+        1
+      ],
+      [
+        1
+      ]
+    ]
+  },
+  "formulaInterval": {
+    "start": 1,
+    "end": 2
+  },
+  "window": {
+    "start": 0,
+    "end": 2
+  },
+  "evaluationPosition": 0,
+  "verdict": "True",
+  "observedThrough": 3,
+  "horizon": 2,
+  "witness": null
+}

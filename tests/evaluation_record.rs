@@ -245,3 +245,46 @@ fn a_refusal_exits_two_with_one_stderr_line_and_no_stdout() {
     assert_eq!(stderr.lines().count(), 1, "{stderr}");
     assert!(stderr.starts_with("evaluation_record: "), "{stderr}");
 }
+
+fn corpus_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("corpus/r2u2-v4.2")
+}
+
+// Trace: TC-187, FR-005-AC-4
+#[test]
+fn corpus_records_are_regenerated_from_the_corpus_requests() {
+    let manifest: Value =
+        serde_json::from_slice(&std::fs::read(corpus_dir().join("manifest.json")).unwrap())
+            .unwrap();
+    let mut seen = 0;
+    for entry in std::fs::read_dir(corpus_dir().join("requests")).unwrap() {
+        let path = entry.unwrap().path();
+        let id = path.file_stem().unwrap().to_str().unwrap().to_owned();
+        let bytes = std::fs::read(&path).unwrap();
+        let request: Value = serde_json::from_slice(&bytes).unwrap();
+        let case = manifest["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["id"] == id.as_str())
+            .unwrap_or_else(|| panic!("{id} is not a manifest case"));
+        assert_eq!(request["formula"], case["formula"], "{id} formula drifted");
+        assert_eq!(
+            request["trace"]["instants"], manifest["trace"],
+            "{id} trace drifted"
+        );
+        let expected = format!(
+            "{}\n",
+            serde_json::to_string_pretty(&build_record(&bytes).unwrap()).unwrap()
+        );
+        let committed =
+            std::fs::read_to_string(corpus_dir().join("records").join(format!("{id}.json")))
+                .unwrap();
+        assert_eq!(
+            committed, expected,
+            "{id} record is stale: run make corpus-records"
+        );
+        seen += 1;
+    }
+    assert!(seen > 0);
+}

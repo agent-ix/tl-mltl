@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "tl-mltl.command/v1",
+  "operation": "evaluate",
+  "formulaId": "r2u2-until-lower-bound-v1",
+  "formula": {
+    "schema_version": "tl-syntax.formula/v1",
+    "semantic_profile": "mltl.online-prefix/v1",
+    "root": 2,
+    "nodes": [
+      {
+        "kind": "proposition",
+        "proposition": 0
+      },
+      {
+        "kind": "proposition",
+        "proposition": 1
+      },
+      {
+        "kind": "until",
+        "interval": {
+          "start": 1,
+          "end": 2
+        },
+        "left": 0,
+        "right": 1
+      }
+    ]
+  },
+  "trace": {
+    "schemaVersion": "tl-mltl.trace/v1",
+    "traceId": "r2u2-v4.2-corpus",
+    "closed": false,
+    "instants": [
+      [],
+      [
+        0,
+        1
+      ],
+      [
+        1
+      ],
+      [
+        1
+      ]
+    ]
+  }
+}
