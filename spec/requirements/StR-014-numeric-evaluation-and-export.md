@@ -31,9 +31,9 @@ evidence.
 | ID | Criteria | Validation |
 |---|---|---|
 | StR-014-VC-1 | Two runs of the evaluator on one numeric trace give byte-identical reports on every platform. | Demonstration |
-| StR-014-VC-2 | For the numeric corpus a reviewer sees admitted, refused (with typed cause) and disagreeing cases counted separately, and a refusal is never counted as agreement. | Demonstration |
+| StR-014-VC-2 | For the numeric corpus a reviewer sees admitted, refused (with typed cause), no-R2U2-verdict and disagreeing cases counted separately, and neither a refusal nor an absent verdict is counted as agreement. | Demonstration |
 | StR-014-VC-3 | A reviewer sees a contract's inactive, invalid or verified status per step beside R2U2's. | Demonstration |
 
 ## Dependencies
 
-tl-syntax FR-302..FR-311 and ADR-014..ADR-018.
+tl-syntax FR-302..FR-311 and tl-syntax ADR-014..ADR-019 (this repository's own ADR-014 is a different record).

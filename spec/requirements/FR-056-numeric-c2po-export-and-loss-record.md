@@ -24,6 +24,12 @@ typed loss record and neither expression nor manifest.
 
 ## Behavior
 
+- **Grounding.** The only retained C2PO and R2U2 input is Boolean: `INPUT` of type
+  `bool` and the `FTSPEC` and `PTSPEC` sections (`corpus/r2u2-v4.2`). The numeric
+  export grammar below (typed integer or float `INPUT`, arithmetic, `abs`, numeric
+  comparison, threshold literals) is UNGROUNDED: it is a proposal checked only by
+  tl-mltl's own reader until a retained exchange shows that C2PO accepts it. Nothing
+  here is evidence about R2U2.
 - A new entry point `map_numeric_to_c2po` consumes the validated bound formula,
   predicate table, catalog, event-position clock and the pinned target numeric
   profile; it emits `tl-mltl.numeric-mapping/v1`. Existing
@@ -54,7 +60,7 @@ typed loss record and neither expression nor manifest.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-056-AC-1 | Admitted predicates export to C2PO text that parses back to the expected expression structure and keeps graph, clock and catalog identities; legacy manifests are byte-identical. | property-based-testing (TC-1581, TC-1582) |
+| FR-056-AC-1 | Admitted predicates (under the synthetic profile of FR-057) export to C2PO text that tl-mltl's own export reader parses back to the expected expression structure and keeps the graph, clock and catalog structural identities (no digest); legacy manifests are byte-identical. No claim is made that C2PO accepts the text (UNGROUNDED). | property-based-testing (TC-1581, TC-1582) |
 | FR-056-AC-2 | Each loss cause is produced by a minimal input, serialized, strictly read, and produces no expression and no manifest. | unit-testing (TC-1583) |
 | FR-056-AC-3 | The node-kind by context partition has one class per cell and no wildcard, with a positive or negative test per cell. | unit-testing (TC-1584) |
 

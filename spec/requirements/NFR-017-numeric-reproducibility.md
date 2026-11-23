@@ -24,7 +24,7 @@ type, with all work bounded by limits checked before evaluation.
 |---|---|---|---|
 | Floating-point types in numeric modules | 0 | 0 | Inspection |
 | Repeat-run report byte difference | 0 | 0 | Test |
-| Retained numeric exchange digests verified at replay | 100% | 100% | Test |
+| Retained numeric exchange digests verified at replay (BLOCKED until an exchange exists) | 100% | 100% | Test |
 
 ## Verification
 

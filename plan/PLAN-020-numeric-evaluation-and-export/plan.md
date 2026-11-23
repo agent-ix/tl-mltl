@@ -67,8 +67,9 @@ Layers follow `ix-board project-chunk P-TL-150`:
 
 | Item | Why deferred | Evidence needed to close |
 |---|---|---|
-| Fresh R2U2/C2PO output for the 216-formula numeric and 6-contract populations (TC-1589, TC-1590, TC-1592, TC-1598, TC-1601, TC-1602) | Nothing in this repository executes R2U2 or C2PO; no R2U2 checkout available to the specification session | Local `make r2u2-numeric-live` run against the pinned revision, retained under `corpus/r2u2-numeric-v1/` |
+| Fresh R2U2/C2PO output for the 216-formula numeric and 6-contract populations (TC-1589, TC-1590, TC-1592, TC-1598, TC-1601, TC-1602); TL-423 AC1 and TL-425 AC2 | BLOCKED: nothing in this repository executes R2U2 or C2PO, no R2U2 checkout was available, and no task in this plan can produce the exchange. The only deliverable toward these ACs is the refusal-until-pinned path (Task-004, TC-1587) | A human runs `make r2u2-numeric-live` locally against the pinned revision, pins the numeric profile from that run, and retains the exchange under `corpus/r2u2-numeric-v1/` |
 | Pinned target numeric profile (integer width, float width, tolerance, division behaviour) | Ungrounded in retained evidence | Profile recorded in the retained manifest with evidence |
-| Native C2PO contract syntax | Not retained | Pinned from the R2U2 checkout at the recorded revision |
+| Native C2PO contract syntax and R2U2 contract output encoding | Not retained (UNGROUNDED) | Pinned from the R2U2 checkout at the recorded revision |
+| C2PO numeric input grammar (typed INPUT, arithmetic, abs, comparison), float tolerance and rounding behaviour | Not retained (UNGROUNDED); the corpus has only bool INPUT and FTSPEC/PTSPEC | The same retained exchange |
 | tl-oracle numeric extension | Out of scope; composition used instead | Not required |
 | Build, test and `make guarded-ci` | No build capacity | Gate at implementation head |

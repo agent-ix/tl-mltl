@@ -23,11 +23,15 @@ differential for contract statuses by the FR-058 retained-exchange pattern.
 
 ## Behavior
 
-- **Decomposition export (grounded).** Each contract `c` exports three ordinary
-  formulas whose per-step truth decodes the status: `A`, `A && G`, `A && !G`
-  (inactive is `!A`; verified is `A && G`; invalid is `A && !G`). This needs only
-  Boolean and temporal constructs already in the export partition and every
-  numeric constraint of FR-056/FR-057.
+- **Decomposition export (design only, UNGROUNDED).** Each contract `c` exports
+  three ordinary formulas whose per-step truth is intended to decode the status: `A`,
+  `A && G`, `A && !G` (inactive is `!A`; verified is `A && G`; invalid is `A && !G`).
+  The Boolean and temporal constructs are in the retained export partition, but nothing
+  in the retained corpus (`corpus/r2u2-v4.2`, `past-c2po-v1`, `r2u2-live-v1`) shows how
+  R2U2 reports three formulas per contract or that this decoding matches R2U2's own
+  contract status, so it is a design, not a grounded fact. Every numeric constraint of
+  FR-056 and FR-057 applies, which means that with no pinned profile every contract that
+  contains a numeric predicate is refused and the export is empty.
 - **Native C2PO contract construct (DEFERRED).** The exact C2PO contract syntax
   and R2U2's contract output encoding are not retained in this repository and
   cannot be verified without running or reading the pinned checkout. A native
@@ -40,8 +44,12 @@ differential for contract statuses by the FR-058 retained-exchange pattern.
   [-2, 1]) by guarantees `d >= 0.2` and `G[0,1] (d >= 0.1)` (Decimal scale 1,
   coefficients [0, 3]) = 6 contracts; 8 traces of 4 steps; 6 x 8 x 4 = 192
   per-step status records, each with tl-mltl's outcome, the decoded R2U2
-  outcome, and `agree`, `disagree` or `refused-at-export`. Generation is
-  DEFERRED as in FR-058.
+  outcome or `none`, and `agree`, `disagree`, `refused-at-export` or
+  `no-r2u2-verdict` (R2U2 emitted no verdict for any of the three decomposed formulas
+  at that step; never counted as agreement). Generation is DEFERRED as in FR-058.
+- **Status.** The differential half of this requirement is OPEN/BLOCKED exactly as
+  FR-058 (TL-425 AC2): no specified work produces the exchange, and the only
+  deliverable is the refusal-until-pinned path.
 - Contract status is per evaluation position; the differential compares per
   position and never aggregates over a trace.
 
@@ -49,9 +57,9 @@ differential for contract statuses by the FR-058 retained-exchange pattern.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-060-AC-1 | The decomposition export of each contract in the grid parses to the three expected formulas, with legacy manifests unchanged. | unit-testing (TC-1596) |
+| FR-060-AC-1 | Under the synthetic profile the decomposition export of each contract in the grid is read back by tl-mltl's own reader as the three expected formulas, with legacy manifests unchanged; with no pinned profile every contract in the grid is refused with `TargetNumericProfileUnpinned` and nothing is exported. | unit-testing (TC-1596) |
 | FR-060-AC-2 | An unexportable clause refuses the contract with the typed loss record and no partial output. | unit-testing (TC-1597) |
-| FR-060-AC-3 | The retained contract differential (192 per-step records) replays and counts agree, disagree and refused separately; generation is DEFERRED. | demonstration (TC-1598) |
+| FR-060-AC-3 | The retained contract differential (192 per-step records) replays and counts agree, disagree, refused and no-R2U2-verdict separately. OPEN/BLOCKED: it cannot pass until a human R2U2 run produces the bytes. | demonstration (TC-1598) |
 
 ## Dependencies
 

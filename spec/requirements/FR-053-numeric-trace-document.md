@@ -29,8 +29,9 @@ observation against the supplied signal catalog, and shall leave
 ## Outputs
 
 - A validated `NumericTraceDocument` with a checked-in schema
-  `schemas/numeric-trace-v1.schema.json`, an embedded-bytes constant and SHA-256
-  constant, and typed `OwnerReadError` codes following the owner-contract pattern
+  `schemas/numeric-trace-v1.schema.json`, an embedded-bytes constant identified by
+  the string `tl-mltl.numeric-trace/v1` (no digest constant, see the tl-syntax
+  ADR-019 register), and typed `OwnerReadError` codes following the owner-contract pattern
   of `src/wire/`.
 
 ## Behavior
@@ -39,7 +40,6 @@ Wire shape (camelCase, `deny_unknown_fields`):
 
 ```
 { "schemaVersion": "tl-mltl.numeric-trace/v1", "traceId": str, "closed": bool,
-  "catalogIdentity": hex-sha256,
   "instants": [ { "propositions": [PropositionId...],
                   "values": [ {"signal": u32, "integer": i64}
                             | {"signal": u32, "decimal": {"coefficient": i64, "scale": u8}} ] } ] }
@@ -49,8 +49,9 @@ Wire shape (camelCase, `deny_unknown_fields`):
   propositions. `values` is strictly increasing by `signal`; a signal absent from
   an instant is unobserved there (FR-055). A signal appears at most once per
   instant.
-- `catalogIdentity` shall equal the content identity of the catalog supplied to
-  the reader (`CatalogIdentityMismatch`).
+- There is no catalog identity field: every observation is admitted against the
+  catalog supplied to the reader, and the same observation means the same thing
+  under any catalog that admits it.
 - Admission against the catalog: the signal is declared (`UnknownSignal`) and
   numeric (`NonNumericSignal`); the kind matches the domain
   (`KindMismatch`); a decimal's scale equals the declared scale
@@ -68,7 +69,7 @@ Wire shape (camelCase, `deny_unknown_fields`):
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-053-AC-1 | Integer and fixed-Decimal observations at scales 0, 1, 2, 9, 18 round-trip byte-identically through the strict reader; schema digest constants match the checked-in bytes. | integration-testing (TC-1570) |
+| FR-053-AC-1 | Integer and fixed-Decimal observations at scales 0, 1, 2, 9, 18 round-trip byte-identically through the strict reader; the embedded schema bytes equal the checked-in schema file and carry the identity string. | integration-testing (TC-1570) |
 | FR-053-AC-2 | Each admission and wire error class is produced by a minimal input with its own code and no output. | unit-testing (TC-1571) |
 | FR-053-AC-3 | `tl-mltl.trace/v1` fixtures, schema and reader outcomes are unchanged, and the numeric reader rejects them. | integration-testing (TC-1572) |
 

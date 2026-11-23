@@ -31,7 +31,7 @@ past evaluators over those truth values, adding no temporal semantics.
 
 - The existing report types extended by a `numeric` section: predicate
   proposition ids, per-position truth (`true`, `false`, `unobserved`), counts of
-  unobserved cells, and the SHA-256 of the derived Boolean/three-valued trace.
+  unobserved cells, and the derived Boolean or three-valued trace itself (no digest of it).
   Existing report schemas are unchanged; the numeric section lives in a new
   `tl-mltl.numeric-evaluation/v1` wrapper that embeds the existing report.
 - Typed `NumericEvaluationError`; never a verdict on error.
