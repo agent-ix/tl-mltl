@@ -11,14 +11,19 @@ relationships:
 
 ## Description
 
-While the P-TL-151 build tickets are blocked on TL-427, the specification set
-shall list each ADR with its acceptance state, map every acceptance criterion of
-TL-427 to TL-435 to a requirement and a test row, and record the review result
-before any build ticket starts.
+While the P-TL-151 build tickets are blocked on TL-427,
+the specification set shall list each ADR with its acceptance state, map every
+acceptance criterion of TL-427 to TL-435 to a requirement and a test row, and
+record the review result before any build ticket starts.
 
 ## Behavior
 
-The ledger lives in `spec/ltlf-interop-test-matrix.md` (TM-047). ADR status is
+The ledger lives in `spec/ltlf-interop-test-matrix.md` (TM-047), which also states
+the identifier-scope rule: ids are local to a repository and ids cited from another
+repository are qualified with its name; same-numbered ids in different repositories
+are homonyms, not collisions (for example this repository's FR-092 and
+`filament-specification` FR-092). The open decisions listed in PLAN-050 are
+recorded there for Peter and are not resolved by this specification. ADR status is
 `proposed` until a human accepts it; no automated step marks an ADR accepted.
 
 ## Acceptance Criteria

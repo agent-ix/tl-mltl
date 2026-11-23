@@ -39,8 +39,8 @@ directory census at retrieval time.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-087-AC-1 | Every fixture in the FRET example manifest imports to the graphs recorded by hand in the manifest, or to the loss records it declares, and the manifest count equals the directory census. | Test (TC-240) |
-| FR-087-AC-2 | A bare next is reported as `AmbiguousNext` and never lowered as strong or weak. | Test (TC-241) |
+| FR-087-AC-1 | Every fixture in the FRET example manifest imports to the graphs recorded by hand in the manifest, or to the loss records it declares, and the manifest count equals the directory census. | Test (TC-313) |
+| FR-087-AC-2 | A bare next is reported as `AmbiguousNext` and never lowered as strong or weak. | Test (TC-314) |
 
 ## Dependencies
 

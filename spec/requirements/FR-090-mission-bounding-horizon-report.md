@@ -31,15 +31,17 @@ Classes are not exclusive; a requirement may carry both of the first two. The
 report is a statement about the formula's shape, not a proof of the original:
 the original unbounded formula is not available, so a flagged requirement is
 `possibly changed upstream`, and the wording never says `changed`. Each flag
-cites the known-case row of FR-094. The report has a SHA-256 digest used by
-ADR-045 acknowledgements.
+cites the known-case row of FR-094 (the table is computed for LTLf against
+closed-trace; for a flagged requirement the cited row is the one for the same
+operator and `M`). The report carries a SHA-256 of its own canonical bytes as its identity for
+reproducibility; nothing is acknowledged by it (ADR-045).
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-090-AC-1 | For a hand-authored population of 12 formulas (4 designed for each of `bound-equals-mission`, `horizon-exceeds-mission`, `within-mission`, one of them carrying two classes) at `M = 5`, the classes and horizons match the manifest. | Test (TC-245) |
-| FR-090-AC-2 | With no mission time the report says `mission-time-absent`, makes no divergence claim, and an overflowing `H` is refused rather than wrapped. | Test (TC-246) |
+| FR-090-AC-1 | For a hand-authored population of 11 formulas that realize 12 class assignments (4 assignments for each of `bound-equals-mission`, `horizon-exceeds-mission`, `within-mission`; exactly one formula carries two classes, `bound-equals-mission` and `horizon-exceeds-mission`, and is counted in both) at `M = 5`, the classes and horizons match the manifest. | Test (TC-318) |
+| FR-090-AC-2 | With no mission time the report says `mission-time-absent`, makes no divergence claim, and an overflowing `H` is refused rather than wrapped. | Test (TC-319) |
 
 ## Dependencies
 

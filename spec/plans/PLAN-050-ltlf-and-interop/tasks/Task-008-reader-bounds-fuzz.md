@@ -16,9 +16,9 @@ relationships:
     type: depends_on
   - target: ix://agent-ix/tl-mltl/NFR-047
     type: references
-  - target: ix://agent-ix/tl-mltl/TC-257
+  - target: ix://agent-ix/tl-mltl/TC-330
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-258
+  - target: ix://agent-ix/tl-mltl/TC-331
     type: verifies
 ---
 

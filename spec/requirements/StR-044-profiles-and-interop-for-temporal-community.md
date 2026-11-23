@@ -37,8 +37,8 @@ horizon-based note about mission-bounding keep the user in control.
 
 | ID | Criteria | Validation |
 |---|---|---|
-| StR-044-VC-1 | LTLf verdicts agree with an outside reference on a retained corpus. | Test (TC-231, TC-232) |
-| StR-044-VC-2 | No import drops, defaults or approximates a construct without a typed record. | Test (TC-247, TC-248) |
+| StR-044-VC-1 | LTLf verdicts agree with an outside reference on a retained corpus. | Test (TC-304, TC-305) |
+| StR-044-VC-2 | No import drops, defaults or approximates a construct without a typed record. | Test (TC-320, TC-321) |
 
 ## Stakeholders
 

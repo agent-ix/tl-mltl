@@ -48,7 +48,9 @@ neither depends on nor runs tl-parse.
    or a typed refusal naming it; it is never dropped, defaulted or approximated.
 4. **Attribution.** Every imported FRET or WEST artifact carries its upstream
    source, path, revision and licence into the result, and retained fixtures keep
-   their licence files.
+   their licence files. The retained WEST corpus records no upstream revision in
+   tl-rewrite's manifest, so its revision is the explicit marker `UNKNOWN`
+   (never invented) and no content hash is recorded (FR-089).
 5. **Bare next.** A bare next in foreign text is a loss record `AmbiguousNext`;
    the importer does not choose strong or weak (tl-syntax ADR-045).
 
@@ -60,7 +62,15 @@ neither depends on nor runs tl-parse.
 
 ## Consequences
 
-tl-mltl gains no dependency on tl-parse. The WEST corpus bytes owned by
-tl-rewrite are copied byte-identically with their licence and a recorded digest
-so the two repositories cannot drift unnoticed (open decision for Peter: copy
-versus move to the shared tl-syntax corpus).
+tl-mltl gains no dependency on tl-parse.
+
+## Open decisions (Peter)
+
+1. **WEST corpus: copy or move.** Option copy: tl-mltl holds a byte-identical copy
+   of `formulas_d1.txt` and its licence file next to a retained-file list, and a
+   test compares it with tl-rewrite's copy; two owners of the bytes exist, with no
+   recorded hash. Option move: the corpus moves to one shared home (for example the
+   tl-syntax corpus) and both repositories read it there; this edits tl-rewrite.
+   **Recommendation: copy.**
+2. **Importers in tl-mltl.** This ADR places them in tl-mltl. **Recommendation:
+   keep** (no tl-parse dependency; the C2PO reader sits next to its exporter).

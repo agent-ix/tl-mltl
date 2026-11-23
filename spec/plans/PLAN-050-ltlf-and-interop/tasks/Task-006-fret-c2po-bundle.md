@@ -14,9 +14,9 @@ relationships:
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-088
     type: references
-  - target: ix://agent-ix/tl-mltl/TC-242
+  - target: ix://agent-ix/tl-mltl/TC-315
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-243
+  - target: ix://agent-ix/tl-mltl/TC-316
     type: verifies
 ---
 
@@ -37,4 +37,4 @@ Bundle importer binding variables to catalog signals and carrying header fields.
 
 ## Notes
 
-- Needs Task-003 reader.
+- Needs the Task-003 reader, including its per-requirement entry point (FR-086).

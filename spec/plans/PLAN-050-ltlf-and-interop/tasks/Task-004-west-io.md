@@ -12,13 +12,13 @@ relationships:
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-092
     type: references
-  - target: ix://agent-ix/tl-mltl/TC-249
+  - target: ix://agent-ix/tl-mltl/TC-322
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-250
+  - target: ix://agent-ix/tl-mltl/TC-323
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-251
+  - target: ix://agent-ix/tl-mltl/TC-324
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-252
+  - target: ix://agent-ix/tl-mltl/TC-325
     type: verifies
 ---
 
@@ -26,7 +26,7 @@ relationships:
 
 ## Scope
 
-interop::west reader and writer, byte-copied corpus with licence and digest.
+interop::west reader and writer, byte-identical corpus copy with licence file and retained-file list (no recorded hash; revision UNKNOWN, FR-089).
 
 ## Subtasks
 
@@ -35,7 +35,7 @@ interop::west reader and writer, byte-copied corpus with licence and digest.
 
 ## Deliverables
 
-- reader, writer, corpus copy
+- reader, writer, corpus copy (copy versus move is an open decision, ADR-046)
 
 ## Notes
 

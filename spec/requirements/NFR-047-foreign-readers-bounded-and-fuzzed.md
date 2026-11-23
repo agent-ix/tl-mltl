@@ -16,9 +16,9 @@ relationships:
 
 ## Statement
 
-When any of the C2PO, FRET MLTL or WEST readers processes untrusted bytes, tl-mltl
-shall apply source-size, nesting and token ceilings before excess retention and
-shall never panic.
+When any of the C2PO, FRET MLTL or WEST readers processes untrusted bytes,
+tl-mltl shall apply source-size, nesting and token ceilings before excess
+retention and never panic.
 
 ## Measurement and Evaluation
 
@@ -36,5 +36,5 @@ limit exact and over (2), nesting limit exact and over (2), duplicate signal.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| NFR-047-AC-1 | The 24 hostile cases yield their manifest outcomes with stable typed errors. | Test (TC-257) |
-| NFR-047-AC-2 | The three fuzz targets build and replay their seeds with no panic and assert export-import identity or loss-record presence on accepted input. | Test (TC-258) |
+| NFR-047-AC-1 | The 24 hostile cases yield their manifest outcomes with stable typed errors. | Test (TC-330) |
+| NFR-047-AC-2 | The three fuzz targets build and replay their seeds with no panic and assert export-import identity or loss-record presence on accepted input. | Test (TC-331) |

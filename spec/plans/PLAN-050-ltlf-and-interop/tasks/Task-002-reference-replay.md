@@ -12,15 +12,15 @@ relationships:
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-084
     type: references
-  - target: ix://agent-ix/tl-mltl/TC-231
+  - target: ix://agent-ix/tl-mltl/TC-304
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-232
+  - target: ix://agent-ix/tl-mltl/TC-305
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-233
+  - target: ix://agent-ix/tl-mltl/TC-306
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-234
+  - target: ix://agent-ix/tl-mltl/TC-307
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-235
+  - target: ix://agent-ix/tl-mltl/TC-308
     type: verifies
 ---
 
@@ -41,4 +41,4 @@ Corpus reader with provenance checks, replay of 40,820 rows, test-only direct ev
 
 ## Notes
 
-- TC-231 and TC-232 stay unmet until the DEFERRED generation happens.
+- TC-304 and TC-305 stay unmet until the DEFERRED generation happens.

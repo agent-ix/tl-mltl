@@ -12,12 +12,15 @@ relationships:
     type: depends_on
   - target: ix://agent-ix/tl-mltl/FR-086
     type: references
-  - target: ix://agent-ix/tl-mltl/TC-237
+  - target: ix://agent-ix/tl-mltl/TC-310
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-238
+  - target: ix://agent-ix/tl-mltl/TC-311
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-239
+  - target: ix://agent-ix/tl-mltl/TC-312
     type: verifies
+  - target: ix://agent-ix/tl-mltl/TC-332
+    type: verifies
+
 ---
 
 # Task-003: C2PO import
@@ -37,4 +40,4 @@ interop::c2po reader, 12-formula identity test, 10 construct refusals.
 
 ## Notes
 
-- Reconcile the 10 constructs with the R2U2 4.2 grammar first.
+- Reconcile the 10 constructs with the C2PO 4.1.0 grammar first.

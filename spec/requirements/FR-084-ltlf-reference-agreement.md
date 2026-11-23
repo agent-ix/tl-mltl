@@ -17,9 +17,9 @@ relationships:
 
 ## Description
 
-When the retained corpus `tl-mltl.ltlf-reference-corpus/v1` is replayed, tl-mltl
-shall produce, for every row, the verdict the outside reference recorded, and
-shall detect a stale or tampered corpus.
+When the retained corpus `tl-mltl.ltlf-reference-corpus/v1` is replayed,
+tl-mltl shall produce, for every row, the verdict the outside reference recorded
+and detect a stale or tampered corpus.
 
 ## Inputs
 
@@ -45,10 +45,10 @@ exists the criteria below stay unmet.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-084-AC-1 | All 40,820 retained LTLf rows (40,800 population plus 20 rule and counterexample rows) are reproduced by `evaluate_ltlf`. | Test (TC-231) |
-| FR-084-AC-2 | The 4 counterexample entries reproduce, with the 2 infinite readings evaluated by the lasso evaluator and each pair differing. | Test (TC-232) |
-| FR-084-AC-3 | A corpus whose provenance block is missing a field, or whose rows or digest are altered, is refused before replay. | Test (TC-233) |
-| FR-084-AC-4 | The test-only direct evaluator agrees on all 40,820 rows and a single flipped rule is detected. | Test (TC-234) |
+| FR-084-AC-1 | All 40,820 retained LTLf rows (40,800 population plus 20 rule and counterexample rows) are reproduced by `evaluate_ltlf`. | Test (TC-304) |
+| FR-084-AC-2 | The 4 counterexample entries reproduce, with the 2 infinite readings evaluated by the lasso evaluator and each pair differing. | Test (TC-305) |
+| FR-084-AC-3 | A corpus whose provenance block is missing a field, or whose rows or digest are altered, is refused before replay. | Test (TC-306) |
+| FR-084-AC-4 | The test-only direct evaluator agrees on all 40,820 rows and a single flipped rule is detected. | Test (TC-307) |
 
 ## Dependencies
 

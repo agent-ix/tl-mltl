@@ -24,8 +24,8 @@ name.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-085-AC-1 | Every variant of `TruthValue`, `RecordVerdict` and `Disposition` (3 + 3 + 5 = 11 variants) maps as in ADR-047, `Unsupported` and `Failed` map to none, and an added variant fails compilation of the exhaustive test. | Test (TC-236) |
-| FR-085-AC-2 | Every serialized name and every retained corpus byte is unchanged. | Test (TC-236) |
+| FR-085-AC-1 | Every variant of `TruthValue`, `RecordVerdict` and `Disposition` (3 + 3 + 5 = 11 variants) maps as in ADR-047, `Unsupported` and `Failed` map to none, and an added variant fails compilation of the exhaustive test. | Test (TC-309) |
+| FR-085-AC-2 | Every serialized name and every retained corpus byte is unchanged. | Test (TC-309) |
 
 ## Dependencies
 

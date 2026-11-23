@@ -14,15 +14,15 @@ relationships:
     type: references
   - target: ix://agent-ix/tl-mltl/FR-085
     type: references
-  - target: ix://agent-ix/tl-mltl/TC-227
+  - target: ix://agent-ix/tl-mltl/TC-300
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-228
+  - target: ix://agent-ix/tl-mltl/TC-301
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-229
+  - target: ix://agent-ix/tl-mltl/TC-302
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-230
+  - target: ix://agent-ix/tl-mltl/TC-303
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-236
+  - target: ix://agent-ix/tl-mltl/TC-309
     type: verifies
 ---
 
@@ -43,4 +43,4 @@ evaluate_ltlf, typed refusals, unbounded horizon result, LTL3 accessor.
 
 ## Notes
 
-- Needs tl-syntax TL-428 landed.
+- Needs the tl-syntax TL-428 change landed and released. First step of this task is the pin bump: bump the tl-syntax and tl-parse git pins in Cargo.toml (currently tl-syntax 9f7b1c8 and tl-parse 9607722) in a PR that adds the explicit `NodeKind` arms for the new LTLf kinds and changes nothing else (tl-syntax ADR-044 type shape, PLAN-051).

@@ -53,10 +53,10 @@ cost is bounded by `nodes x n`, charged against the work limit.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-083-AC-1 | The 18 hand-authored rule cases and the LTLf reading of the 2 counterexamples (20 evaluations) return their manifest verdicts. | Test (TC-227) |
-| FR-083-AC-2 | An empty trace, a foreign profile and an unbound signal each produce their own typed refusal, and cross-profile evaluator calls refuse an LTLf formula. | Test (TC-228) |
-| FR-083-AC-3 | Over all 120 depth-one formulas and all 340 traces of length 1 to 4 on two atoms, `Xw p = not Xs not p`, `G p = not F not p` and `p R q = not(not p U not q)` hold. | Test (TC-229) |
-| FR-083-AC-4 | LTLf horizon analysis returns the typed unbounded result, and a work limit one below the charge refuses while the exact charge succeeds. | Test (TC-230) |
+| FR-083-AC-1 | The 18 hand-authored rule cases and the LTLf reading of the 2 counterexamples (20 evaluations) return their manifest verdicts. | Test (TC-300) |
+| FR-083-AC-2 | An empty trace, a foreign profile and an unbound signal each produce their own typed refusal, and cross-profile evaluator calls refuse an LTLf formula. | Test (TC-301) |
+| FR-083-AC-3 | Over all 120 depth-one formulas and all 340 traces of length 1 to 4 on two atoms, `Xw p = not Xs not p`, `G p = not F not p` and `p R q = not(not p U not q)` hold. | Test (TC-302) |
+| FR-083-AC-4 | LTLf horizon analysis returns the typed unbounded result, and a work limit one below the charge refuses while the exact charge succeeds. | Test (TC-303) |
 
 ## Dependencies
 

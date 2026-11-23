@@ -16,23 +16,26 @@ relationships:
     type: references
   - target: ix://agent-ix/tl-mltl/FR-094
     type: references
-  - target: ix://agent-ix/tl-mltl/TC-245
+  - target: ix://agent-ix/tl-mltl/TC-318
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-246
+  - target: ix://agent-ix/tl-mltl/TC-319
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-254
+  - target: ix://agent-ix/tl-mltl/TC-327
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-255
+  - target: ix://agent-ix/tl-mltl/TC-328
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-256
+  - target: ix://agent-ix/tl-mltl/TC-329
     type: verifies
+  - target: ix://agent-ix/tl-mltl/TC-333
+    type: verifies
+
 ---
 
 # Task-007: Mission-bounding report and closure refusal
 
 ## Scope
 
-Report classes, digest, MissionClosureRequired refusal, acknowledgement binding, known-case table.
+Report classes, MissionClosureRequired refusal, the closure report API, known-case table including Xs and Xw. The closure conversion and ClosurePolicy are built only if Peter decides so (ADR-045 Open decision).
 
 ## Subtasks
 
@@ -45,4 +48,4 @@ Report classes, digest, MissionClosureRequired refusal, acknowledgement binding,
 
 ## Notes
 
-- Peter decides whether the closure conversion itself is built (ADR-045).
+- Peter decides whether the closure conversion itself is built (ADR-045); the recommendation is refusal and report only, in which case TC-333 is withdrawn. export_safety_monitor stays unchanged (FR-094).

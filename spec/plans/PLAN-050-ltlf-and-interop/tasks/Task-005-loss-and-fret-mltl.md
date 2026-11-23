@@ -16,15 +16,15 @@ relationships:
     type: references
   - target: ix://agent-ix/tl-mltl/FR-089
     type: references
-  - target: ix://agent-ix/tl-mltl/TC-240
+  - target: ix://agent-ix/tl-mltl/TC-313
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-241
+  - target: ix://agent-ix/tl-mltl/TC-314
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-244
+  - target: ix://agent-ix/tl-mltl/TC-317
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-247
+  - target: ix://agent-ix/tl-mltl/TC-320
     type: verifies
-  - target: ix://agent-ix/tl-mltl/TC-248
+  - target: ix://agent-ix/tl-mltl/TC-321
     type: verifies
 ---
 

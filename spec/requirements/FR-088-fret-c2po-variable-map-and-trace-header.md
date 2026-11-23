@@ -18,7 +18,7 @@ relationships:
 ## Description
 
 When a FRET export bundle supplies a C2PO file, a variable map and a trace
-header, tl-mltl shall import the C2PO through FR-086, bind each variable to one
+header, tl-mltl shall import the C2PO through the per-requirement entry point of FR-086, bind each variable to one
 catalog signal, and carry the header fields it understands, with every
 unrecognized field recorded.
 
@@ -35,8 +35,8 @@ layouts are ungrounded here and are fixed by the retrieved fixtures.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-088-AC-1 | Every bundle in the FRET example manifest imports with each variable bound to exactly one catalog signal and the header's recognized fields preserved. | Test (TC-242) |
-| FR-088-AC-2 | Unmapped, duplicate, non-Boolean and unknown-header-field cases each yield their loss record and no silently bound signal. | Test (TC-243) |
+| FR-088-AC-1 | Every bundle in the FRET example manifest imports with each variable bound to exactly one catalog signal and the header's recognized fields preserved. | Test (TC-315) |
+| FR-088-AC-2 | Unmapped, duplicate, non-Boolean and unknown-header-field cases each yield their loss record and no silently bound signal. | Test (TC-316) |
 
 ## Dependencies
 

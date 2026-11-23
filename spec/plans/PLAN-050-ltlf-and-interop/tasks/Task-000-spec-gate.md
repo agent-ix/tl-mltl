@@ -10,7 +10,7 @@ relationships:
     type: part_of
   - target: ix://agent-ix/tl-mltl/FR-093
     type: references
-  - target: ix://agent-ix/tl-mltl/TC-253
+  - target: ix://agent-ix/tl-mltl/TC-326
     type: verifies
 ---
 
