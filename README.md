@@ -34,7 +34,7 @@ Enable the `infinite-trace` feature for the infinite-trace evaluator: `features 
 To install the command-line tool:
 
 ```sh
-cargo install --git https://github.com/agent-ix/tl-mltl --bin tl-mltl
+cargo install --git https://github.com/agent-ix/tl-mltl --tag v0.4.1 tl-mltl --bin tl-mltl
 ```
 
 To build from a clone:
