@@ -9,16 +9,16 @@ on:
 
 jobs:
   msrv:
-    name: Rust 1.98.1 Feature Boundary
+    name: Rust 1.100.0 Feature Boundary
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Install MSRV
+      - name: Install pinned compiler
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.98.1
+          toolchain: 1.100.0
       - name: Cache cargo artifacts
         uses: Swatinem/rust-cache@v2
       - name: Check library, CLI, examples, and integration tests
@@ -33,16 +33,16 @@ jobs:
           fetch-depth: 0
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.100.0
         with:
           components: rustfmt, clippy
 
-      # `make msrv` runs cargo through this toolchain. Without it installed,
+      # The legacy `make msrv` target now checks the pinned compiler. Without it installed,
       # `make ci` cannot run.
-      - name: Install MSRV toolchain
+      - name: Install pinned compiler toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.98.1
+          toolchain: 1.100.0
 
       # `make miri` runs on the nightly named by MIRI_TOOLCHAIN in the Makefile.
       # Read the name from the Makefile so there is no second copy to drift.
@@ -104,7 +104,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.100.0
       - name: Cache cargo artifacts
         uses: Swatinem/rust-cache@v2
       - name: Install cargo-deny

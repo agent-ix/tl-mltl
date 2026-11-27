@@ -67,7 +67,7 @@ help:
 	@echo "  make figures-check    - Fail on a missing or stale figure, writes nothing"
 	@echo "  make deny             - cargo deny check licenses and sources"
 	@echo "  make spec             - Validate specification and coverage with Quire"
-	@echo "  make msrv             - Check all targets and features with Rust 1.98.1"
+	@echo "  make msrv             - Check all targets and features with pinned Rust 1.100.0"
 	@echo "  make rustdoc          - Build warning-free public documentation"
 	@echo "  make miri             - Unit and property suites under Miri (pinned nightly)"
 	@echo "  make build            - Release build"
@@ -251,8 +251,10 @@ spec:
 	$(CI_GUARD) record spec
 
 .PHONY: msrv
+# Retain the gate name for existing completion records; this validates the pinned
+# compiler, not the Cargo.toml compatibility floor.
 msrv:
-	rustup run 1.98.1 $(CARGO) check --locked --all-targets --all-features
+	rustup run 1.100.0 $(CARGO) check --locked --all-targets --all-features
 	$(CI_GUARD) record msrv
 
 .PHONY: rustdoc
