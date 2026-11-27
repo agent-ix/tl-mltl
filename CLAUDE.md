@@ -23,7 +23,7 @@ make campaign-run     # run all campaign members, write target/campaign/report.j
 make campaign-replay REPORT=path # source-bound replay of a retained report
 make deny             # cargo deny check licenses and sources
 make spec             # validate specs and strict coverage
-make msrv             # check all targets and features with Rust 1.98.1
+make msrv             # check all targets and features with pinned Rust 1.100.0
 make rustdoc          # build warning-free public docs
 make miri             # unit and property suites under Miri (pinned nightly, MIRI_TOOLCHAIN)
 make ci               # complete local gate, unguarded (see Makefile header)
@@ -93,7 +93,7 @@ Backported from `agent-ix/ecaz`:
 - `deny.toml` allow-lists licenses and denies unknown registries/git sources
 - Clippy lints deny undocumented unsafe blocks.
 - `rustfmt.toml` uses 100-char width and `StdExternalCrate` import grouping
-- `rust-toolchain.toml` pins to stable + rustfmt + clippy
+- `rust-toolchain.toml` pins to 1.100.0 + rustfmt + clippy; the legacy `make msrv` target checks this compiler, while the declared compatibility floor remains 1.98.1
 
 ## Layout
 
